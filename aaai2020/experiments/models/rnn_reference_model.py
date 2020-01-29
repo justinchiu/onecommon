@@ -24,6 +24,28 @@ class RnnReferenceModel(nn.Module):
     corpus_ty = data.ReferenceCorpus
     engine_ty = RnnReferenceEngine
 
+    @classmethod
+    def add_args(cls, parser):
+
+        parser.add_argument('--nembed_word', type=int, default=128,
+                            help='size of word embeddings')
+        parser.add_argument('--nhid_rel', type=int, default=64,
+                            help='size of the hidden state for the language module')
+        parser.add_argument('--nembed_ctx', type=int, default=128,
+                            help='size of context embeddings')
+        parser.add_argument('--nembed_cond', type=int, default=128,
+                            help='size of condition embeddings')
+        parser.add_argument('--nhid_lang', type=int, default=128,
+                            help='size of the hidden state for the language module')
+        parser.add_argument('--nhid_strat', type=int, default=128,
+                            help='size of the hidden state for the strategy module')
+        parser.add_argument('--nhid_attn', type=int, default=64,
+                            help='size of the hidden state for the attention module')
+        parser.add_argument('--nhid_sel', type=int, default=64,
+                            help='size of the hidden state for the selection module')
+        parser.add_argument('--share_attn', action='store_true', default=False,
+                            help='share attention modules for selection and language output')
+
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
 
@@ -48,6 +70,11 @@ class RnnReferenceModel(nn.Module):
             input_size=args.nembed_word,
             hidden_size=args.nhid_lang,
             bias=True)
+
+        # if args.attentive_selection_encoder:
+        #     self.selection_attention = nn.Sequential(
+        #
+        #     )
 
         self.hid2output = nn.Sequential(
             nn.Linear(args.nhid_lang + args.nembed_ctx, args.nembed_word),
@@ -127,6 +154,8 @@ class RnnReferenceModel(nn.Module):
 
         bsz = ctx_h.size(0)
 
+        ref_inpt_old = ref_inpt
+
         # reshape
         ref_inpt = torch.transpose(ref_inpt, 0, 2).contiguous().view(-1, bsz)
         ref_inpt = ref_inpt.view(-1, bsz).unsqueeze(2)
@@ -139,6 +168,7 @@ class RnnReferenceModel(nn.Module):
         # reshape
         ref_inpt = ref_inpt.view(3, -1, ref_inpt.size(1), ref_inpt.size(2))
 
+        # this mean pools embeddings for the referent's start and end, as well as the end of the sentence it occurs in
         # take mean
         ref_inpt = torch.mean(ref_inpt, 0)
         
@@ -172,7 +202,7 @@ class RnnReferenceModel(nn.Module):
         else:
             sel_logit = self.sel_attn(self.attn(torch.cat([sel_inpt, ctx_h], 2)))
         return sel_logit.squeeze(2)
-    
+
     def forward(self, ctx, inpt, ref_inpt, sel_idx):
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
         bsz = ctx_h.size(0)

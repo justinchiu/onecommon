@@ -21,6 +21,7 @@ from torch.nn.modules.loss import _Loss
 import numpy as np
 
 from engines import EngineBase, Criterion
+import tqdm
 import utils
 
 
@@ -119,7 +120,7 @@ class RnnReferenceEngine(EngineBase):
         total_lang_loss, total_select_loss, total_select, total_select_correct, total_reference_loss, total_reference, total_reference_correct = 0, 0, 0, 0, 0, 0, 0
         start_time = time.time()
 
-        for batch in trainset:
+        for batch in tqdm.tqdm(trainset, ncols=80):
             lang_loss, ref_loss, ref_correct, ref_total, sel_loss, sel_correct, sel_total = self.train_batch(batch)
             total_lang_loss += lang_loss
             total_select_loss += sel_loss
@@ -200,7 +201,7 @@ class RnnReferenceEngine(EngineBase):
     def combine_loss(self, lang_loss, select_loss, reference_loss):
         return lang_loss * int(self.args.lang_weight > 0) + select_loss * int(self.args.sel_weight > 0) + reference_loss * int(self.args.ref_weight > 0)
 
-    def train(self, corpus):
+    def train(self, corpus, model_filename_fn):
         best_model, best_combined_valid_loss = copy.deepcopy(self.model), 1e100
         validdata = corpus.valid_dataset(self.args.bsz)
         
@@ -215,6 +216,9 @@ class RnnReferenceEngine(EngineBase):
                 best_combined_valid_loss = combined_valid_loss
                 best_model = copy.deepcopy(self.model)
                 best_model.flatten_parameters()
+
+                utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'))
+                utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'))
 
         return best_combined_valid_loss, best_model
 

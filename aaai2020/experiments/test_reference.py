@@ -108,8 +108,12 @@ def main():
         device_id = utils.use_cuda(args.cuda)
         utils.set_seed(args.seed)
 
+        def model_filename_fn(name, extension):
+            return '{}_{}_{}.{}'.format(args.model_file, seed, name, extension)
+
         domain = get_domain(args.domain)
-        model = utils.load_model(args.model_file + '_' + str(seed) + '.th')
+        model = utils.load_model(model_filename_fn('best', 'th'))
+        # model = utils.load_model(args.model_file + '_' + str(seed) + '.th')
         if args.cuda:
             model.cuda()
         else:

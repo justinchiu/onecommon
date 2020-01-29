@@ -301,6 +301,7 @@ class ReferenceCorpus(object):
         }
 
         i = 0
+        i_lookups = []
         while i < len(dataset):
             markable_length = len(dataset[i][2])
 
@@ -309,8 +310,11 @@ class ReferenceCorpus(object):
             for _ in range(bsz):
                 if i >= len(dataset) or len(dataset[i][2]) != markable_length:
                     break
+                i_lookups.append(i)
                 ctxs.append(dataset[i][0])
-                dials.append(dataset[i][1])
+                # deepcopy to prevent any padding issues with repeated calls
+                dials.append(copy.deepcopy(dataset[i][1]))
+                # dials.append(dataset[i][1])
                 refs.append(dataset[i][2])
                 sels.append(dataset[i][3])
                 scenario_ids.append(dataset[i][4])
@@ -370,7 +374,10 @@ class ReferenceCorpus(object):
 
             sel_idxs = torch.Tensor(sel_idxs).long()
 
-            batches.append((ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, real_ids, agents, chat_ids, sel_idxs))
+            batches.append((
+                ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt,
+                scenario_ids, real_ids, agents, chat_ids, sel_idxs
+            ))
 
         if shuffle:
             random.shuffle(batches)

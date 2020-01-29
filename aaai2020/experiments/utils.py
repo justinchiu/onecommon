@@ -7,6 +7,7 @@
 Various helpers.
 """
 
+import os
 import random
 import copy
 import pdb
@@ -21,18 +22,22 @@ def backward_hook(grad):
     pdb.set_trace()
     return grad
 
+MODEL_DIR = 'serialized_models'
 
 def save_model(model, file_name):
     """Serializes model to a file."""
     if file_name != '':
-        with open(file_name, 'wb') as f:
-            torch.save(model, f)
+        with open(os.path.join(MODEL_DIR, file_name), 'wb') as f:
+            torch.save(model.cpu(), f)
 
 
-def load_model(file_name):
+def load_model(file_name, map_location=None):
     """Reads model from a file."""
-    with open(file_name, 'rb') as f:
-        return torch.load(f)
+    with open(os.path.join(MODEL_DIR, file_name), 'rb') as f:
+        if map_location is not None:
+            return torch.load(f, map_location=map_location)
+        else:
+            return torch.load(f)
 
 
 def set_seed(seed):
@@ -46,6 +51,9 @@ def set_seed(seed):
 def use_cuda(enabled, device_id=0):
     """Verifies if CUDA is available and sets default device to be device_id."""
     if not enabled:
+        return None
+    if not torch.cuda.is_available():
+        print('CUDA is not available')
         return None
     assert torch.cuda.is_available(), 'CUDA is not available'
     torch.set_default_tensor_type('torch.cuda.FloatTensor')

@@ -18,6 +18,8 @@ from dialog import Dialog, DialogLogger
 from models.rnn_reference_model import RnnReferenceModel
 import domain
 
+import pprint
+
 def dump_json(file, path):
     try:
         with open(path, "w") as fout:
@@ -123,7 +125,9 @@ def main():
     parser.add_argument('--repeat_selfplay', action='store_true', default=False,
         help='repeat selfplay')
 
+    print(' '.join(sys.argv))
     args = parser.parse_args()
+    pprint.pprint(vars(args))
 
     if args.repeat_selfplay:
         seeds = list(range(10))
@@ -135,6 +139,9 @@ def main():
     for seed in seeds:
         utils.use_cuda(args.cuda)
         utils.set_seed(args.seed)
+
+        def model_filename_fn(model_file, name, extension):
+            return '{}_{}_{}.{}'.format(model_file, seed, name, extension)
 
         if args.record_markables:
             if not os.path.exists(args.markable_detector_file + '_' + str(seed) + '.th'):
@@ -152,11 +159,13 @@ def main():
             markable_detector = None
             markable_detector_corpus = None
 
-        alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
+        # alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
+        alice_model = utils.load_model(model_filename_fn(args.alice_model_file, 'best', 'th'))
         alice_ty = get_agent_type(alice_model, args.smart_alice)
         alice = alice_ty(alice_model, args, name='Alice', train=False)
 
-        bob_model = utils.load_model(args.bob_model_file + '_' + str(seed) + '.th')
+        # bob_model = utils.load_model(args.bob_model_file + '_' + str(seed) + '.th')
+        bob_model = utils.load_model(model_filename_fn(args.bob_model_file, 'best', 'th'))
         bob_ty = get_agent_type(bob_model, args.smart_bob)
         bob = bob_ty(bob_model, args, name='Bob', train=False)
 

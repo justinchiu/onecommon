@@ -1,5 +1,4 @@
 # Code referenced from https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
-import tensorflow as tf
 import numpy as np
 import scipy.misc 
 try:
@@ -9,18 +8,40 @@ except ImportError:
 
 
 class Logger(object):
-    
+
+    def __init__(self):
+        pass
+
+    def scalar_summary(self, tag, value, step):
+        """Log a scalar variable."""
+        pass
+
+    def image_summary(self, tag, images, step):
+        """Log a list of images."""
+        pass
+
+    def histo_summary(self, tag, values, step, bins=1000):
+        """Log a histogram of the tensor of values."""
+        pass
+
+
+class TFLogger(object):
+
     def __init__(self, log_dir):
         """Create a summary writer logging to log_dir."""
+        # do the imports inside the functions so that we only need to install tensorflow if we use this logger
+        import tensorflow as tf
         self.writer = tf.summary.FileWriter(log_dir)
 
     def scalar_summary(self, tag, value, step):
         """Log a scalar variable."""
+        import tensorflow as tf
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag, simple_value=value)])
         self.writer.add_summary(summary, step)
 
     def image_summary(self, tag, images, step):
         """Log a list of images."""
+        import tensorflow as tf
 
         img_summaries = []
         for i, img in enumerate(images):
@@ -44,6 +65,7 @@ class Logger(object):
         
     def histo_summary(self, tag, values, step, bins=1000):
         """Log a histogram of the tensor of values."""
+        import tensorflow as tf
 
         # Create a histogram using numpy
         counts, bin_edges = np.histogram(values, bins=bins)

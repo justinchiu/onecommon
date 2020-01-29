@@ -1,4 +1,4 @@
-from models.ctx_encoder import MlpContextEncoder, AttentionContextEncoder
+from models.ctx_encoder import MlpContextEncoder, AttentionContextEncoder, RelationalAttentionContextEncoder
 from models.rnn_reference_model import RnnReferenceModel
 
 MODELS = {
@@ -8,7 +8,14 @@ MODELS = {
 CTX_ENCODERS = {
     'mlp_encoder': MlpContextEncoder,
     'attn_encoder': AttentionContextEncoder,
+    'rel_attn_encoder': RelationalAttentionContextEncoder,
 }
+
+def add_model_args(parser):
+    group = parser.add_argument_group('model')
+    for models in [MODELS, CTX_ENCODERS]:
+        for model in models.values():
+            model.add_args(group)
 
 def get_model_names():
     return MODELS.keys()

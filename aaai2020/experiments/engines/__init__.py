@@ -17,7 +17,9 @@ from torch.autograd import Variable
 from torch.nn.modules.loss import _Loss
 import numpy as np
 
-from logger import Logger
+from logger import Logger, TFLogger
+
+import utils
 
 
 class Criterion(object):
@@ -98,7 +100,10 @@ class EngineBase(object):
             if os.path.exists(log_name):
                 print("remove old tensorboard log")
                 shutil.rmtree(log_name)
-            self.logger = Logger(log_name)
+            self.logger = TFLogger(log_name)
+        else:
+            self.logger = Logger()
+
 
     def make_opt(self, lr):
         if self.args.optimizer == 'adam':
@@ -200,7 +205,7 @@ class EngineBase(object):
     def combine_loss(self, lang_loss, select_loss):
         return lang_loss + select_loss * self.args.sel_weight
 
-    def train(self, corpus):
+    def train(self, corpus, model_filename_fn):
         best_model, best_combined_valid_loss = copy.deepcopy(self.model), 1e100
         validdata = corpus.valid_dataset(self.args.bsz)
         
@@ -216,9 +221,12 @@ class EngineBase(object):
                 best_model = copy.deepcopy(self.model)
                 best_model.flatten_parameters()
 
+                utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'))
+                utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'))
+
         return best_combined_valid_loss, best_model
 
-    def train_scheduled(self, corpus):
+    def train_scheduled(self, corpus, model_filename_fn):
         best_model, best_combined_valid_loss = copy.deepcopy(self.model), 1e100
         lr = self.args.lr
         last_decay_epoch = 0
@@ -261,6 +269,9 @@ class EngineBase(object):
                 best_combined_valid_loss = combined_valid_loss
                 best_model = copy.deepcopy(self.model)
                 best_model.flatten_parameters()
+
+                utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'))
+                utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'))
 
         return best_combined_valid_loss, best_model
 

@@ -3,7 +3,6 @@ python train_reference.py \
 	--max_epoch 30 \
 	--optimizer adam \
 	--model_file tsel_model \
-	--cuda \
 	--tensorboard_log \
 	--nembed_word 256 \
 	--nembed_ctx 256 \
@@ -16,4 +15,4 @@ python train_reference.py \
 	--clip 0.5 \
 	--dropout 0.5 \
 	--unk_threshold 10 \
-	--repeat_train \
+	--repeat_train
