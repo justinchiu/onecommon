@@ -301,7 +301,6 @@ class ReferenceCorpus(object):
         }
 
         i = 0
-        i_lookups = []
         while i < len(dataset):
             markable_length = len(dataset[i][2])
 
@@ -310,7 +309,6 @@ class ReferenceCorpus(object):
             for _ in range(bsz):
                 if i >= len(dataset) or len(dataset[i][2]) != markable_length:
                     break
-                i_lookups.append(i)
                 ctxs.append(dataset[i][0])
                 # deepcopy to prevent any padding issues with repeated calls
                 dials.append(copy.deepcopy(dataset[i][1]))
