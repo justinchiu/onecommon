@@ -27,13 +27,13 @@ class AttentionContextEncoder(nn.Module):
 
         self.property_encoder = nn.Sequential(
             torch.nn.Linear(domain.dim_ent(), int(args.nembed_ctx / 2)),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Dropout(args.dropout)
         )
 
         self.relation_encoder = nn.Sequential(
             torch.nn.Linear(domain.dim_ent() + 1, int(args.nembed_ctx / 2)),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Dropout(args.dropout)
         )
 
@@ -119,11 +119,11 @@ class RelationContextEncoder(nn.Module):
 
         self.relation_encoder = nn.Sequential(
             torch.nn.Linear(2 * domain.dim_ent(), args.nhid_rel),
-            nn.Tanh()
+            nn.ReLU()
         )
 
         self.fc1 = nn.Linear(num_rel * args.nhid_rel, args.nembed_ctx) 
-        self.tanh = nn.Tanh()
+        self.tanh = nn.ReLU()
         self.dropout = nn.Dropout(args.dropout)
 
         init_cont([self.relation_encoder, self.fc1], args.init_range)
@@ -157,7 +157,7 @@ class MlpContextEncoder(nn.Module):
 
         self.fc1 = nn.Linear(domain.num_ent() * domain.dim_ent(), args.nembed_ctx)
         self.fc2 = nn.Linear(args.nembed_ctx, args.nembed_ctx)
-        self.tanh = nn.Tanh()
+        self.tanh = nn.ReLU()
         self.dropout = nn.Dropout(args.dropout)
 
         init_cont([self.fc1, self.fc2], args.init_range)

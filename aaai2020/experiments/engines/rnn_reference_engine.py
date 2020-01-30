@@ -121,6 +121,7 @@ class RnnReferenceEngine(EngineBase):
         start_time = time.time()
 
         for batch in tqdm.tqdm(trainset, ncols=80):
+        # for batch in trainset:
             lang_loss, ref_loss, ref_correct, ref_total, sel_loss, sel_correct, sel_total = self.train_batch(batch)
             total_lang_loss += lang_loss
             total_select_loss += sel_loss
@@ -166,18 +167,20 @@ class RnnReferenceEngine(EngineBase):
         valid_lang_loss, valid_reference_loss, valid_reference_accuracy, valid_select_loss, valid_select_accuracy = self.valid_pass(validset, validset_stats)
 
         if self.verbose:
-            print('| epoch %03d | trainlangloss(scaled) %.6f | trainlangppl %.6f | s/epoch %.2f | lr %0.8f' % (
-                epoch, train_lang_loss * self.args.lang_weight, np.exp(train_lang_loss), train_time, lr))
-            print('| epoch %03d | trainselectloss(scaled) %.6f | trainselectaccuracy %.4f | s/epoch %.2f | lr %0.8f' % (
-                epoch, train_select_loss * self.args.sel_weight, train_select_accuracy, train_time, lr))
-            print('| epoch %03d | trainreferenceloss(scaled) %.6f | trainreferenceaccuracy %.4f | s/epoch %.2f | lr %0.8f' % (
-                epoch, train_reference_loss * self.args.ref_weight, train_reference_accuracy, train_time, lr))
-            print('| epoch %03d | validlangloss %.6f | validlangppl %.8f' % (
+            print('epoch %03d \t s/epoch %.2f \t lr %.2E' % (epoch, train_time, lr))
+            print('epoch %03d \t train_lang_loss(scaled) %.4f \t train_ppl %.4f' % (
+                epoch, train_lang_loss * self.args.lang_weight, np.exp(train_lang_loss)))
+            print('epoch %03d \t train_select_loss(scaled) %.4f \t train_select_acc %.4f' % (
+                epoch, train_select_loss * self.args.sel_weight, train_select_accuracy))
+            print('epoch %03d \t train_ref_loss(scaled) %.4f \t train_ref_acc %.4f' % (
+                epoch, train_reference_loss * self.args.ref_weight, train_reference_accuracy))
+            print('epoch %03d \t valid_lang_loss %.4f \t valid_ppl %.4f' % (
                 epoch, valid_lang_loss, np.exp(valid_lang_loss)))
-            print('| epoch %03d | validselectloss %.6f | validselectaccuracy %.4f' % (
+            print('epoch %03d \t valid_select_loss %.4f \t valid_select_acc %.4f' % (
                 epoch, valid_select_loss, valid_select_accuracy))
-            print('| epoch %03d | validreferenceloss %.6f | validreferenceaccuracy %.4f' % (
+            print('epoch %03d \t valid_ref_loss %.4f \t valid_ref_acc %.4f' % (
                 epoch, valid_reference_loss, valid_reference_accuracy))
+            print()
 
         if self.args.tensorboard_log:
             info = {'Train_Lang_Loss': train_lang_loss,
@@ -196,7 +199,7 @@ class RnnReferenceEngine(EngineBase):
                 self.logger.histo_summary(
                     tag + '/grad', value.grad.data.cpu().numpy(), epoch)
 
-        return valid_lang_loss, valid_select_loss, valid_reference_loss
+        return valid_lang_loss, valid_select_loss, valid_reference_loss, valid_select_accuracy
 
     def combine_loss(self, lang_loss, select_loss, reference_loss):
         return lang_loss * int(self.args.lang_weight > 0) + select_loss * int(self.args.sel_weight > 0) + reference_loss * int(self.args.ref_weight > 0)
@@ -207,18 +210,21 @@ class RnnReferenceEngine(EngineBase):
         
         for epoch in range(1, self.args.max_epoch + 1):
             traindata = corpus.train_dataset(self.args.bsz)
-            valid_lang_loss, valid_select_loss, valid_reference_loss = self.iter(epoch, self.args.lr, traindata, validdata)
+            valid_lang_loss, valid_select_loss, valid_reference_loss, valid_select_acc = self.iter(epoch, self.opt.param_groups[0]["lr"], traindata, validdata)
+
+            if self.scheduler is not None:
+                self.scheduler.step(valid_select_loss)
 
             combined_valid_loss = self.combine_loss(valid_lang_loss, valid_select_loss, valid_reference_loss)
             if combined_valid_loss < best_combined_valid_loss:
-                print("update best model: validlangloss %.8f | validselectloss %.8f | validreferenceloss %.8f" % 
-                    (valid_lang_loss, valid_select_loss, valid_reference_loss))
+                print("update best model: valid_lang_loss %.4f \t valid_select_loss %.4f \t valid_select_acc %.4f \t valid_ref_loss %.4f " %
+                    (valid_lang_loss, valid_select_loss, valid_select_acc, valid_reference_loss))
                 best_combined_valid_loss = combined_valid_loss
                 best_model = copy.deepcopy(self.model)
                 best_model.flatten_parameters()
 
-                utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'))
-                utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'))
+                # utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'))
+                # utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'))
 
         return best_combined_valid_loss, best_model
 
