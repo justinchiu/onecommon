@@ -46,6 +46,8 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--share_attn', action='store_true', default=False,
                             help='share attention modules for selection and language output')
 
+        parser.add_argument('--selection_attention', action='store_true')
+
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
 
@@ -78,39 +80,56 @@ class RnnReferenceModel(nn.Module):
 
         self.hid2output = nn.Sequential(
             nn.Linear(args.nhid_lang + args.nembed_ctx, args.nembed_word),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Dropout(args.dropout),
             )
 
         if args.share_attn:
             self.attn = nn.Sequential(
                 nn.Linear(args.nhid_lang + args.nembed_ctx, args.nhid_attn),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Dropout(args.dropout),
                 torch.nn.Linear(args.nhid_attn, args.nhid_attn),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Dropout(args.dropout),
                 torch.nn.Linear(args.nhid_attn, 1))
         else:
             self.attn = nn.Sequential(
                 nn.Linear(args.nhid_lang + args.nembed_ctx, args.nhid_sel),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Dropout(args.dropout))
             self.lang_attn = nn.Sequential(
                 torch.nn.Linear(args.nhid_sel, args.nhid_attn),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Dropout(args.dropout),
                 torch.nn.Linear(args.nhid_attn, 1))
             self.sel_attn = nn.Sequential(
                 torch.nn.Linear(args.nhid_sel, args.nhid_sel),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Dropout(args.dropout),
                 torch.nn.Linear(args.nhid_sel, 1))
             self.ref_attn = nn.Sequential(
                 torch.nn.Linear(args.nhid_sel, args.nhid_sel),
-                nn.Tanh(),
+                nn.ReLU(),
                 nn.Dropout(args.dropout),
                 torch.nn.Linear(args.nhid_sel, 1))
+
+        if self.args.selection_attention:
+            self.ctx_layer = nn.Sequential(
+                torch.nn.Linear(args.nembed_ctx, args.nhid_attn),
+                # nn.ReLU(),
+                # nn.Dropout(args.dropout),
+                # torch.nn.Linear(args.nhid_attn, args.nhid_attn),
+            )
+
+            self.selection_attention_layer = nn.Sequential(
+                # takes nembed_ctx and the output of ctx_layer
+                torch.nn.Linear(args.nembed_ctx + args.nhid_attn, args.nhid_attn),
+                nn.ReLU(),
+                nn.Dropout(args.dropout),
+                torch.nn.Linear(args.nhid_attn, 1)
+            )
+
 
         # tie the weights between reader and writer
         self.writer.weight_ih = self.reader.weight_ih_l0
@@ -189,13 +208,30 @@ class RnnReferenceModel(nn.Module):
         return ref_logit.squeeze(3) 
 
     def selection(self, ctx_h, outs_emb, sel_idx):
-        sel_idx = sel_idx.unsqueeze(0)
-        sel_idx = sel_idx.unsqueeze(2) 
-        sel_idx = sel_idx.expand(sel_idx.size(0), sel_idx.size(1), outs_emb.size(2))       
+        # outs_emb: length x batch_size x dim
 
-        sel_inpt = torch.gather(outs_emb, 0, sel_idx)
-        sel_inpt = sel_inpt.squeeze(0)
+        if self.args.selection_attention:
+            # batch_size x entity_dim
+            transformed_ctx = self.ctx_layer(ctx_h).mean(1)
+            # length x batch_size x dim
+            #
+            text_and_transformed_ctx = torch.cat([
+                transformed_ctx.unsqueeze(0).expand(outs_emb.size(0), -1, -1),
+                outs_emb], dim=-1)
+            # TODO: add a mask
+            # length x batch_size
+            attention_logits = self.selection_attention_layer(text_and_transformed_ctx).squeeze(-1)
+            attention_probs = attention_logits.softmax(dim=0)
+            sel_inpt = torch.einsum("lb,lbd->bd", [attention_probs,outs_emb])
+        else:
+            sel_idx = sel_idx.unsqueeze(0)
+            sel_idx = sel_idx.unsqueeze(2)
+            sel_idx = sel_idx.expand(sel_idx.size(0), sel_idx.size(1), outs_emb.size(2))
+            sel_inpt = torch.gather(outs_emb, 0, sel_idx)
+            sel_inpt = sel_inpt.squeeze(0)
+        #  batch_size x hidden
         sel_inpt = sel_inpt.unsqueeze(1)
+        # stack alongside the entity embeddings
         sel_inpt = sel_inpt.expand(ctx_h.size(0), ctx_h.size(1), ctx_h.size(2))
         if self.args.share_attn:
             sel_logit = self.attn(torch.cat([sel_inpt, ctx_h], 2))

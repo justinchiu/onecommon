@@ -18,30 +18,7 @@ import models
 import utils
 from domain import get_domain
 
-def add_training_args(parser):
-    group = parser.add_argument_group('training')
-    group.add_argument('--optimizer', choices=['adam', 'rmsprop'], default='adam',
-                        help='optimizer to use')
-    group.add_argument('--lr', type=float, default=0.001,
-                        help='initial learning rate')
-    group.add_argument('--min_lr', type=float, default=1e-5,
-                        help='min threshold for learning rate annealing')
-    group.add_argument('--decay_rate', type=float,  default=9.0,
-                        help='decrease learning rate by this factor')
-    group.add_argument('--decay_every', type=int,  default=1,
-                        help='decrease learning rate after decay_every epochs')
-    group.add_argument('--momentum', type=float, default=0.0,
-                        help='momentum for sgd')
-    group.add_argument('--clip', type=float, default=0.5,
-                        help='gradient clipping')
-    group.add_argument('--dropout', type=float, default=0.5,
-                        help='dropout rate in embedding layer')
-    group.add_argument('--init_range', type=float, default=0.01,
-                        help='initialization range')
-    group.add_argument('--max_epoch', type=int, default=20,
-                        help='max number of epochs')
-    group.add_argument('--bsz', type=int, default=16,
-                        help='batch size')
+import engines
 
 def add_loss_args(parser):
     group = parser.add_argument_group('loss')
@@ -81,7 +58,7 @@ def main():
     parser.add_argument('--corpus_type', choices=['full', 'uncorrelated', 'success_only'], default='full',
         help='type of training corpus to use')
 
-    add_training_args(parser)
+    engines.add_training_args(parser)
     add_loss_args(parser)
     models.add_model_args(parser)
 
@@ -121,8 +98,8 @@ def main():
         elif args.optimizer == 'rmsprop':
             best_valid_loss, best_model = engine.train_scheduled(corpus, model_filename_fn)
 
-        utils.save_model(best_model, model_filename_fn('best', 'th'))
-        utils.save_model(best_model.state_dict(), model_filename_fn('best', 'stdict'))
+        utils.save_model(best_model.cpu(), model_filename_fn('best', 'th'))
+        utils.save_model(best_model.cpu().state_dict(), model_filename_fn('best', 'stdict'))
 
 
 if __name__ == '__main__':

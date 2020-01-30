@@ -62,68 +62,73 @@ def get_agent_type(model, smart=False):
             return RnnAgent
     else:
         assert False, 'unknown model type: %s' % (model)
-        
 
-def main():
+def make_parser():
     parser = argparse.ArgumentParser(description='selfplaying script')
     parser.add_argument('--alice_model_file', type=str,
-        help='Alice model file')
+                        help='Alice model file')
     parser.add_argument('--alice_forward_model_file', type=str,
-        help='Alice forward model file')
+                        help='Alice forward model file')
     parser.add_argument('--bob_model_file', type=str,
-        help='Bob model file')
+                        help='Bob model file')
     parser.add_argument('--context_file', type=str,
-        help='context file')
+                        help='context file')
     parser.add_argument('--temperature', type=float, default=1.0,
-        help='temperature')
+                        help='temperature')
     parser.add_argument('--pred_temperature', type=float, default=1.0,
-        help='temperature')
+                        help='temperature')
     parser.add_argument('--log_attention', action='store_true', default=False,
-        help='log attention')
+                        help='log attention')
     parser.add_argument('--verbose', action='store_true', default=False,
-        help='print out converations')
+                        help='print out converations')
     parser.add_argument('--seed', type=int, default=1,
-        help='random seed')
+                        help='random seed')
     parser.add_argument('--max_turns', type=int, default=20,
-        help='maximum number of turns in a dialog')
+                        help='maximum number of turns in a dialog')
     parser.add_argument('--log_file', type=str, default='selfplay.log',
-        help='log dialogs to file')
+                        help='log dialogs to file')
     parser.add_argument('--smart_alice', action='store_true', default=False,
-        help='make Alice smart again')
+                        help='make Alice smart again')
     parser.add_argument('--rollout_bsz', type=int, default=3,
-        help='rollout batch size')
+                        help='rollout batch size')
     parser.add_argument('--rollout_count_threshold', type=int, default=3,
-        help='rollout count threshold')
+                        help='rollout count threshold')
     parser.add_argument('--smart_bob', action='store_true', default=False,
-        help='make Bob smart again')
+                        help='make Bob smart again')
     parser.add_argument('--selection_model_file', type=str,  default='',
-        help='path to save the final model')
+                        help='path to save the final model')
     parser.add_argument('--rollout_model_file', type=str,  default='',
-        help='path to save the final model')
+                        help='path to save the final model')
     parser.add_argument('--ref_text', type=str,
-        help='file with the reference text')
+                        help='file with the reference text')
     parser.add_argument('--cuda', action='store_true', default=False,
-        help='use CUDA')
+                        help='use CUDA')
     parser.add_argument('--domain', type=str, default='one_common',
-        help='domain for the dialogue')
+                        help='domain for the dialogue')
     parser.add_argument('--visual', action='store_true', default=False,
-        help='plot graphs')
+                        help='plot graphs')
     parser.add_argument('--eps', type=float, default=0.0,
-        help='eps greedy')
+                        help='eps greedy')
     parser.add_argument('--data', type=str, default='data/onecommon',
-        help='location of the data corpus')
+                        help='location of the data corpus')
     parser.add_argument('--unk_threshold', type=int, default=10,
-        help='minimum word frequency to be in dictionary')
+                        help='minimum word frequency to be in dictionary')
     parser.add_argument('--bsz', type=int, default=16,
-        help='batch size')
+                        help='batch size')
     parser.add_argument('--plot_metrics', action='store_true', default=False,
-        help='plot metrics')
+                        help='plot metrics')
     parser.add_argument('--markable_detector_file', type=str, default="markable_detector",
-        help='visualize referents')
+                        help='visualize referents')
     parser.add_argument('--record_markables', action='store_true', default=False,
-        help='record markables and referents')
+                        help='record markables and referents')
     parser.add_argument('--repeat_selfplay', action='store_true', default=False,
-        help='repeat selfplay')
+                        help='repeat selfplay')
+
+    return parser
+
+
+def main():
+    parser = make_parser()
 
     print(' '.join(sys.argv))
     args = parser.parse_args()

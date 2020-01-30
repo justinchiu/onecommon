@@ -112,7 +112,11 @@ def main():
             return '{}_{}_{}.{}'.format(args.model_file, seed, name, extension)
 
         domain = get_domain(args.domain)
-        model = utils.load_model(model_filename_fn('best', 'th'))
+        try:
+            model = utils.load_model(model_filename_fn('best', 'th'))
+        except FileNotFoundError as e:
+            print(e)
+            continue
         # model = utils.load_model(args.model_file + '_' + str(seed) + '.th')
         if args.cuda:
             model.cuda()
@@ -358,7 +362,10 @@ def main():
         repeat_results["location_exact_match"].append(copy.copy(location_exact_match))
 
 
+
+
     print("=================================\n\n")
+    print("number of models averaged: {}".format(len(repeat_results['test_lang_loss'])))
     print("repeat test lang loss %.8f" % np.mean(repeat_results["test_lang_loss"]))
     print("repeat test select loss %.8f" % np.mean(repeat_results["test_select_loss"]))
     print("repeat test select accuracy %.8f ( %.8f )" % (np.mean(repeat_results["test_select_accuracy"]), np.std(repeat_results["test_select_accuracy"])))
@@ -376,6 +383,8 @@ def main():
         exact_match_rate = []
         num_markables_correct = []
         for seed in range(len(seeds)):
+            if seed >= len(repeat_results["num_markables_counter"]):
+                continue
             num_markables.append(repeat_results["num_markables_counter"][seed][k])
             exact_match.append(repeat_results["exact_match_counter"][seed][k])
             exact_match_rate.append(repeat_results["exact_match_counter"][seed][k] / repeat_results["num_markables_counter"][seed][k])
@@ -384,7 +393,7 @@ def main():
 
     dump_json(model_referent_annotation, "model_referent_annotation.json")
 
-    pdb.set_trace()
+    # pdb.set_trace()
 
 if __name__ == '__main__':
     main()

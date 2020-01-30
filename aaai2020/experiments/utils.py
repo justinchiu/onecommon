@@ -28,7 +28,7 @@ def save_model(model, file_name):
     """Serializes model to a file."""
     if file_name != '':
         with open(os.path.join(MODEL_DIR, file_name), 'wb') as f:
-            torch.save(model.cpu(), f)
+            torch.save(model, f)
 
 
 def load_model(file_name, map_location=None):
