@@ -228,3 +228,53 @@ class RnnReferenceEngine(EngineBase):
 
         return best_combined_valid_loss, best_model
 
+class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
+    def _append_pad(self, inpts, tgts, lens, rev_idxs, hid_idxs):
+        bsz = inpts[0].size(1)
+        pad = torch.Tensor(bsz).fill_(self.model.word_dict.get_idx('<pad>')).long()
+        inpts.append(Variable(pad.unsqueeze(0)))
+        tgts.append(Variable(pad))
+        lens.append(torch.Tensor(bsz).cpu().fill_(0).long())
+        rev_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
+        hid_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
+        return inpts, tgts, lens, rev_idxs, hid_idxs
+
+    def _forward(self, batch):
+        ctx, inpts, tgts, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, sel_idx, lens, rev_idxs, hid_idxs = batch
+
+        ctx = Variable(ctx)
+        if ref_inpt is not None:
+            ref_inpt = Variable(ref_inpt)
+
+        inpts = [Variable(inpt) for inpt in inpts]
+        tgts = [Variable(tgt) for tgt in tgts]
+        rev_idxs = [Variable(idx) for idx in rev_idxs]
+        hid_idxs = [Variable(idx) for idx in hid_idxs]
+
+        inpts, tgts, rev_idxs, hid_idxs = self._append_pad(inpts, tgts, rev_idxs, hid_idxs)
+
+        outs, ref_out, sel_out = self.model.forward(ctx, inpts, ref_inpt, sel_idx)
+
+        sel_tgt = Variable(sel_tgt)
+        lang_losses = []
+        assert len(inpts) == len(tgts) == len(outs)
+        for out, tgt in zip(outs, tgts):
+            lang_losses.append(self.crit(out, tgt))
+        lang_loss = sum(lang_losses)
+
+        if ref_inpt is not None:
+            ref_tgt = Variable(ref_tgt)
+            ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
+            ref_loss = self.ref_crit(ref_out, ref_tgt)
+            ref_correct = ((ref_out > 0).long() == ref_tgt.long()).sum().item()
+            ref_total = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
+        else:
+            ref_loss = None
+            ref_correct = 0
+            ref_total = 0
+
+        sel_loss = self.sel_crit(sel_out, sel_tgt)
+        sel_correct = (sel_out.max(dim=1)[1] == sel_tgt).sum().item()
+        sel_total = sel_out.size(0)
+
+        return lang_loss, ref_loss, ref_correct, ref_total, sel_loss, sel_correct, sel_total

@@ -4,7 +4,7 @@ import sys
 import pdb
 import copy
 import re
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict, namedtuple
 
 import torch
 import numpy as np
@@ -226,6 +226,20 @@ class WordCorpus(object):
 
         return batches, stats
 
+ReferenceRaw = namedtuple(
+    "ReferenceRaw",
+    "input_vals word_idxs referent_idxs output_idx scenario_id real_ids agent chat_id".split()
+)
+
+ReferenceInstance = namedtuple(
+    "ReferenceInstance",
+    "ctx inpt tgt ref_inpt ref_tgt sel_tgt scenario_ids real_ids agents chat_ids sel_idxs".split()
+)
+
+ReferenceSentenceInstance = namedtuple(
+    "ReferenceSentenceInstance",
+    "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids agents chat_ids sel_idxs lens rev_idxs hid_idxs".split()
+)
 
 class ReferenceCorpus(object):
     """An utility that stores the entire dataset.
@@ -266,7 +280,9 @@ class ReferenceCorpus(object):
             real_ids = get_tag(tokens, 'real_ids')
             agent = int(get_tag(tokens, 'agent')[0])
             chat_id = get_tag(tokens, 'chat_id')[0]
-            dataset.append((input_vals, word_idxs, referent_idxs, output_idx, scenario_id, real_ids, agent, chat_id))
+            dataset.append(ReferenceRaw(
+                input_vals, word_idxs, referent_idxs, output_idx, scenario_id, real_ids, agent, chat_id
+            ))
             # compute statistics
             total += len(word_idxs)
             unks += np.count_nonzero([idx == unk for idx in word_idxs])
@@ -372,7 +388,7 @@ class ReferenceCorpus(object):
 
             sel_idxs = torch.Tensor(sel_idxs).long()
 
-            batches.append((
+            batches.append(ReferenceInstance(
                 ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt,
                 scenario_ids, real_ids, agents, chat_ids, sel_idxs
             ))
@@ -381,6 +397,204 @@ class ReferenceCorpus(object):
             random.shuffle(batches)
 
         return batches, stats
+
+class ReferenceSentenceCorpus(ReferenceCorpus):
+    # based on code from https://github.com/facebookresearch/end-to-end-negotiator/
+    def _split_into_sentences(self, dataset):
+        stops = [self.word_dict.get_idx(w) for w in ['YOU:', 'THEM:']]
+        sent_dataset = []
+        for reference_raw in dataset:
+            words = reference_raw.word_idxs
+            sents, current = [], []
+            all_refs, current_refs = [], []
+            split_ref_indices = []
+            split_ref_objs = []
+            for k in range(0, len(reference_raw.referent_idxs), 10):
+                split_ref_indices.append(reference_raw.referent_idxs[k:k+3])
+                split_ref_objs.append(reference_raw.referent_idxs[k+3:k+10])
+            split_ref_indices = np.array(split_ref_indices)
+            ref_ix = 0
+            for w in words:
+                if w in stops:
+                    while ref_ix < len(split_ref_indices) and split_ref_indices[ref_ix][-1] < len(current):
+                        current_refs.extend(list(split_ref_indices[ref_ix]) + split_ref_objs[ref_ix])
+                        ref_ix += 1
+                    split_ref_indices[ref_ix:] -= len(current)
+                    if len(current) > 0:
+                        sents.append(current)
+                        all_refs.append(current_refs)
+                    current = []
+                    current_refs = []
+                current.append(w)
+            if len(current) > 0:
+                while ref_ix < len(split_ref_indices) and split_ref_indices[ref_ix][-1] < len(current):
+                    current_refs.extend(list(split_ref_indices[ref_ix]) + split_ref_objs[ref_ix])
+                    ref_ix += 1
+                sents.append(current)
+                all_refs.append(current_refs)
+            assert sum(len(refs) for refs in all_refs) == len(reference_raw.referent_idxs)
+            assert len(all_refs) == len(sents)
+            new_ref_raw = reference_raw._replace(
+                word_idxs=sents,
+                referent_idxs=all_refs,
+            )
+            sent_dataset.append(new_ref_raw)
+        # Sort by number of sentences, and then markable length
+        sent_dataset.sort(key=lambda x: (len(x[1]), len(x[2])))
+
+        return sent_dataset
+
+    def _make_reverse_idxs(self, inpts, lens):
+        idxs = []
+        for inpt, ln in zip(inpts, lens):
+            idx = torch.Tensor(inpt.size(0), inpt.size(1), 1).long().fill_(-1)
+            for i in range(inpt.size(1)):
+                arngmt = torch.Tensor(inpt.size(0), 1, 1).long()
+                for j in range(arngmt.size(0)):
+                    arngmt[j][0][0] = j if j > ln[i] else ln[i] - j
+                idx.narrow(1, i, 1).copy_(arngmt)
+            idxs.append(idx)
+        return idxs
+
+    def _make_hidden_idxs(self, lens):
+        idxs = []
+        for s, ln in enumerate(lens):
+            idx = torch.Tensor(1, ln.size(0), 1).long()
+            for i in range(ln.size(0)):
+                idx[0][i][0] = ln[i]
+            idxs.append(idx)
+        return idxs
+
+    def _split_into_batches(self, dataset, bsz, shuffle=True, device=None, name="unknown"):
+        """Splits given dataset into batches."""
+        if shuffle:
+            random.shuffle(dataset)
+
+        dataset = self._split_into_sentences(dataset)
+        pad = self.word_dict.get_idx('<pad>')
+
+        batches = []
+        stats = {
+            'n': 0,
+            'nonpadn': 0,
+        }
+
+        i = 0
+        while i < len(dataset):
+            dial_len = len(dataset[i][1])
+            markable_length = len(dataset[i][2])
+
+            ctxs, dials, refs, sels, scenario_ids, real_ids, agents, chat_ids, sel_idxs = [], [], [], [], [], [], [], [], []
+
+            for _ in range(bsz):
+                if i >= len(dataset) or len(dataset[i][1]) != dial_len or len(dataset[i][2]) != markable_length:
+                    break
+                ctxs.append(dataset[i][0])
+                # deepcopy to prevent any padding issues with repeated calls
+                dials.append(copy.deepcopy(dataset[i][1]))
+                # dials.append(dataset[i][1])
+                # TODO: may need to deal with per-sentence refs
+                refs.append(dataset[i][2])
+                sels.append(dataset[i][3])
+                scenario_ids.append(dataset[i][4])
+                real_ids.append(dataset[i][5])
+                agents.append(dataset[i][6])
+                chat_ids.append(dataset[i][7])
+                sel_idxs.append(len(dataset[i][1]) - 1)
+                i += 1
+
+            inpts, lens, tgts = [], [], []
+            for s in range(dial_len):
+                batch = []
+                for dial in dials:
+                    batch.append(dial[s])
+                if s + 1 < dial_len:
+                    # add YOU:/THEM: as the last tokens in order to connect sentences
+                    for j in range(len(batch)):
+                        batch[j].append(dials[j][s + 1][0])
+                else:
+                    # add <pad> after <selection>
+                    for j in range(len(batch)):
+                        batch[j].append(pad)
+
+                max_len = max([len(sent) for sent in batch])
+                ln = torch.LongTensor(len(batch))
+                for j in range(len(batch)):
+                    stats['n'] += max_len
+                    stats['nonpadn'] += len(batch[j]) - 1
+                    ln[j] = len(batch[j]) - 2
+                    batch[j] += [pad] * (max_len - len(batch[j]))
+                sent = torch.Tensor(batch).long().transpose(0, 1).contiguous()
+                inpt = sent.narrow(0, 0, sent.size(0) - 1)
+                tgt = sent.narrow(0, 1, sent.size(0) - 1).view(-1)
+                inpts.append(inpt)
+                lens.append(ln)
+                tgts.append(tgt)
+
+            # # pad all the dialogues to match the longest dialogue
+            # for j in range(len(dials)):
+            #     stats['n'] += max_len
+            #     stats['nonpadn'] += len(dials[j])
+            #     # one additional pad
+            #     dials[j] += [pad] * (max_len - len(dials[j]) + 1)
+
+            # construct tensor for context (bsz, num_ent * dim_ent)
+            ctx = torch.Tensor(ctxs).float()
+
+            if inpts[0].size(-1) > 1:
+                raise ValueError()
+
+            # dialog data (seq_len, bsz)
+            # data = torch.Tensor(dials).long().transpose(0, 1).contiguous()
+
+            rev_idxs = self._make_reverse_idxs(inpts, lens)
+            hid_idxs = self._make_hidden_idxs(lens)
+
+            # construct tensor for reference target
+            num_markables = int(markable_length / 10)
+
+            ref_inpt = []
+            ref_tgt = []
+            for j in range(len(refs)):
+                _ref_inpt = []
+                _ref_tgt = []
+                for k in range(num_markables):
+                    _ref_inpt.append(refs[j][10 * k: 10 * k + 3])
+                    _ref_tgt.append(refs[j][10 * k + 3: 10 * (k + 1)])
+                ref_inpt.append(_ref_inpt)
+                ref_tgt.append(_ref_tgt)
+
+            if num_markables == 0:
+                ref_inpt = None
+                ref_tgt = None
+            else:
+                ref_inpt = torch.Tensor(ref_inpt).long()
+                ref_tgt = torch.Tensor(ref_tgt).long()
+
+            # construct tensor for selection target
+            sel_tgt = torch.Tensor(sels).long()
+            if device is not None:
+                ctx = ctx.to(device)
+                data = data.to(device)
+                sel_tgt = sel_tgt.to(device)
+
+            # # construct tensor for input and target
+            # inpt = data.narrow(0, 0, data.size(0) - 1)
+            # tgt = data.narrow(0, 1, data.size(0) - 1).view(-1)
+
+            sel_idxs = torch.Tensor(sel_idxs).long()
+
+            batches.append(ReferenceSentenceInstance(
+                ctx, inpts, tgts, ref_inpt, ref_tgt, sel_tgt,
+                scenario_ids, real_ids, agents, chat_ids, sel_idxs,
+                lens, rev_idxs, hid_idxs,
+            ))
+
+        if shuffle:
+            random.shuffle(batches)
+
+        return batches, stats
+
 
 class MarkableCorpus(object):
     """An utility that stores the entire dataset.

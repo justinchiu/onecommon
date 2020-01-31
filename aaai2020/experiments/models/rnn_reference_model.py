@@ -16,7 +16,7 @@ import data
 from models.utils import *
 import models
 from domain import get_domain
-from engines.rnn_reference_engine import RnnReferenceEngine
+from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
 from models.ctx_encoder import *
 
 
@@ -341,3 +341,11 @@ class RnnReferenceModel(nn.Module):
         return outs, logprobs, lang_h, torch.cat(lang_hs, 0)
 
 
+class HierarchicalRnnReferenceModel(RnnReferenceModel):
+    corpus_ty = data.ReferenceSentenceCorpus
+    engine_ty = HierarchicalRnnReferenceEngine
+
+    @classmethod
+    def add_args(cls, parser):
+        # args from RnnReferenceModel will be added separately
+        pass

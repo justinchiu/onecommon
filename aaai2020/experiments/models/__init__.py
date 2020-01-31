@@ -1,8 +1,9 @@
 from models.ctx_encoder import MlpContextEncoder, AttentionContextEncoder, RelationalAttentionContextEncoder
-from models.rnn_reference_model import RnnReferenceModel
+from models.rnn_reference_model import RnnReferenceModel, HierarchicalRnnReferenceModel
 
 MODELS = {
     'rnn_reference_model': RnnReferenceModel,
+    'hierarchical_rnn_reference_model': HierarchicalRnnReferenceModel,
 }
 
 CTX_ENCODERS = {
