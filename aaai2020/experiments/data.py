@@ -238,7 +238,7 @@ ReferenceInstance = namedtuple(
 
 ReferenceSentenceInstance = namedtuple(
     "ReferenceSentenceInstance",
-    "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids agents chat_ids sel_idxs lens rev_idxs hid_idxs".split()
+    "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids agents chat_ids sel_idxs lens rev_idxs hid_idxs num_markables".split()
 )
 
 class ReferenceCorpus(object):
@@ -482,12 +482,13 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
         i = 0
         while i < len(dataset):
             dial_len = len(dataset[i][1])
-            markable_length = len(dataset[i][2])
+            # markable_length = len(dataset[i][2])
 
             ctxs, dials, refs, sels, scenario_ids, real_ids, agents, chat_ids, sel_idxs = [], [], [], [], [], [], [], [], []
 
             for _ in range(bsz):
-                if i >= len(dataset) or len(dataset[i][1]) != dial_len or len(dataset[i][2]) != markable_length:
+                # if i >= len(dataset) or len(dataset[i][1]) != dial_len or len(dataset[i][2]) != markable_length:
+                if i >= len(dataset) or len(dataset[i][1]) != dial_len:
                     break
                 ctxs.append(dataset[i][0])
                 # deepcopy to prevent any padding issues with repeated calls
@@ -500,10 +501,11 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 real_ids.append(dataset[i][5])
                 agents.append(dataset[i][6])
                 chat_ids.append(dataset[i][7])
-                sel_idxs.append(len(dataset[i][1]) - 1)
+                sel_idxs.append(len(dataset[i][1][-1]) - 1)
                 i += 1
 
             inpts, lens, tgts = [], [], []
+            ref_inpts, ref_tgts, all_num_markables = [], [], []
             for s in range(dial_len):
                 batch = []
                 for dial in dials:
@@ -531,6 +533,33 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 lens.append(ln)
                 tgts.append(tgt)
 
+                ref_inpt = []
+                ref_tgt = []
+                num_markables = []
+                for batch_idx in range(len(refs)):
+                    this_markables = refs[batch_idx][s]
+                    this_num_markables = int(len(this_markables) / 10)
+                    num_markables.append(this_num_markables)
+                    _ref_inpt = []
+                    _ref_tgt = []
+                    for k in range(this_num_markables):
+                        _ref_inpt.append(this_markables[10 * k: 10 * k + 3])
+                        _ref_tgt.append(this_markables[10 * k + 3: 10 * (k + 1)])
+                    ref_inpt.append(torch.Tensor(_ref_inpt).flatten().long())
+                    ref_tgt.append(torch.Tensor(_ref_tgt).flatten().long())
+
+                if all(nm == 0 for nm in num_markables):
+                    ref_inpts.append(None)
+                    ref_tgts.append(None)
+                else:
+                    ref_inpt = torch.nn.utils.rnn.pad_sequence(ref_inpt, batch_first=True).reshape(len(refs), -1, 3)
+                    ref_tgt = torch.nn.utils.rnn.pad_sequence(ref_tgt, batch_first=True).reshape(len(refs), -1, 7)
+                    ref_inpts.append(ref_inpt)
+                    ref_tgts.append(ref_tgt)
+                    assert ref_tgt.dim() == 3
+                    assert ref_inpt.dim() == 3
+                all_num_markables.append(torch.Tensor(num_markables).long())
+
             # # pad all the dialogues to match the longest dialogue
             # for j in range(len(dials)):
             #     stats['n'] += max_len
@@ -541,41 +570,18 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             # construct tensor for context (bsz, num_ent * dim_ent)
             ctx = torch.Tensor(ctxs).float()
 
-            if inpts[0].size(-1) > 1:
-                raise ValueError()
-
             # dialog data (seq_len, bsz)
             # data = torch.Tensor(dials).long().transpose(0, 1).contiguous()
 
             rev_idxs = self._make_reverse_idxs(inpts, lens)
             hid_idxs = self._make_hidden_idxs(lens)
 
-            # construct tensor for reference target
-            num_markables = int(markable_length / 10)
-
-            ref_inpt = []
-            ref_tgt = []
-            for j in range(len(refs)):
-                _ref_inpt = []
-                _ref_tgt = []
-                for k in range(num_markables):
-                    _ref_inpt.append(refs[j][10 * k: 10 * k + 3])
-                    _ref_tgt.append(refs[j][10 * k + 3: 10 * (k + 1)])
-                ref_inpt.append(_ref_inpt)
-                ref_tgt.append(_ref_tgt)
-
-            if num_markables == 0:
-                ref_inpt = None
-                ref_tgt = None
-            else:
-                ref_inpt = torch.Tensor(ref_inpt).long()
-                ref_tgt = torch.Tensor(ref_tgt).long()
 
             # construct tensor for selection target
             sel_tgt = torch.Tensor(sels).long()
             if device is not None:
                 ctx = ctx.to(device)
-                data = data.to(device)
+                # data = data.to(device)
                 sel_tgt = sel_tgt.to(device)
 
             # # construct tensor for input and target
@@ -584,10 +590,12 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
 
             sel_idxs = torch.Tensor(sel_idxs).long()
 
+            assert len(inpts) == len(ref_inpts)
+
             batches.append(ReferenceSentenceInstance(
-                ctx, inpts, tgts, ref_inpt, ref_tgt, sel_tgt,
+                ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt,
                 scenario_ids, real_ids, agents, chat_ids, sel_idxs,
-                lens, rev_idxs, hid_idxs,
+                lens, rev_idxs, hid_idxs, all_num_markables
             ))
 
         if shuffle:

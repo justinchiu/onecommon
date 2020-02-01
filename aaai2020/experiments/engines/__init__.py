@@ -118,9 +118,11 @@ class EngineBase(object):
         self.args = args
         self.verbose = verbose
         self.opt, self.scheduler = self.make_opt()
-        self.crit = Criterion(self.model.word_dict)
+        self.crit = Criterion(self.model.word_dict, bad_toks=['<pad>'])
+        self.crit_no_reduce = Criterion(self.model.word_dict, bad_toks=['<pad>'], reduction='none')
         self.sel_crit = nn.CrossEntropyLoss(reduction='mean')
         self.ref_crit = nn.BCEWithLogitsLoss(reduction='mean')
+        self.ref_crit_no_reduce = nn.BCEWithLogitsLoss(reduction='none')
         if args.tensorboard_log:
             log_name = 'tensorboard_logs/{}'.format(args.model_type)
             if os.path.exists(log_name):

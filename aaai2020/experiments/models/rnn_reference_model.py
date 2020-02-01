@@ -239,20 +239,22 @@ class RnnReferenceModel(nn.Module):
             sel_logit = self.sel_attn(self.attn(torch.cat([sel_inpt, ctx_h], 2)))
         return sel_logit.squeeze(2)
 
-    def forward(self, ctx, inpt, ref_inpt, sel_idx):
-        ctx_h = self.ctx_encoder(ctx.transpose(0,1))
+    def _forward(self, ctx_h, inpt, ref_inpt, sel_idx, lang_h=None, compute_sel_out=False):
         bsz = ctx_h.size(0)
         seq_len = inpt.size(0)
 
+        # print('inpt size: {}'.format(inpt.size()))
+
         dialog_emb = self.embed_dialogue(inpt)
-        lang_h = self._zero(1, bsz, self.args.nhid_lang)
+        if lang_h is None:
+            lang_h = self._zero(1, bsz, self.args.nhid_lang)
+        # print('lang_h size: {}'.format(lang_h.size()))
         outs_emb, last_h = self.reader(dialog_emb, lang_h)
-        last_h = last_h.squeeze(0) # remove seq dimension
 
         # expand num_ent dimensions to calculate attention scores
-        outs_emb_expand = outs_emb.unsqueeze(2).expand(outs_emb.size(0), outs_emb.size(1), ctx_h.size(1), outs_emb.size(2))
-        ctx_h_expand = ctx_h.unsqueeze(0).expand(outs_emb.size(0), ctx_h.size(0), ctx_h.size(1), ctx_h.size(2))
-        
+        outs_emb_expand = outs_emb.unsqueeze(2).expand(-1, -1, ctx_h.size(1), -1)
+        ctx_h_expand = ctx_h.unsqueeze(0).expand(outs_emb.size(0), -1, -1, -1)
+
         # compute attention for language output
         if self.args.share_attn:
             lang_logit = self.attn(torch.cat([outs_emb_expand, ctx_h_expand], 3))
@@ -267,11 +269,22 @@ class RnnReferenceModel(nn.Module):
         outs = outs.view(-1, outs.size(2))
 
         # compute referents output
+        # print('ref_inpt.size(): {}'.format(ref_inpt.size()))
+        # print('outs_emb.size(): {}'.format(outs_emb.size()))
         ref_out = self.reference_resolution(ctx_h, outs_emb, ref_inpt)
 
-        # compute selection
-        sel_out = self.selection(ctx_h, outs_emb, sel_idx)
+        if compute_sel_out:
+            # compute selection
+            # print('sel_idx size: {}'.format(sel_idx.size()))
+            sel_out = self.selection(ctx_h, outs_emb, sel_idx)
+        else:
+            sel_out = None
 
+        return outs, ref_out, sel_out, last_h
+
+    def forward(self, ctx, inpt, ref_inpt, sel_idx):
+        ctx_h = self.ctx_encoder(ctx.transpose(0,1))
+        outs, ref_out, sel_out, last_h = self._forward(ctx_h, inpt, ref_inpt, sel_idx, lang_h=None, compute_sel_out=True)
         return outs, ref_out, sel_out
 
     def read(self, ctx_h, inpt, lang_h, prefix_token='THEM:'):
@@ -349,3 +362,31 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
     def add_args(cls, parser):
         # args from RnnReferenceModel will be added separately
         pass
+
+    def forward(self, ctx, inpts, ref_inpts, sel_idx):
+        # inpts is a list, one item per sentence
+        # ref_inpts also a list, one per sentence
+        # sel_idx is index into the last sentence in the dialogue
+
+        ctx_h = self.ctx_encoder(ctx.transpose(0,1))
+        lang_h = None
+
+        all_outs = []
+        all_ref_outs = []
+
+        sel_out = None
+
+        assert len(inpts) == len(ref_inpts)
+        for i in range(len(inpts)):
+            inpt = inpts[i]
+            ref_inpt = ref_inpts[i]
+            is_last = i == len(inpts) - 1
+            outs, ref_out, sel_out, lang_h = self._forward(
+                ctx_h, inpt, ref_inpt, sel_idx, lang_h=lang_h, compute_sel_out=is_last
+            )
+            all_outs.append(outs)
+            all_ref_outs.append(ref_out)
+
+        assert sel_out is not None
+
+        return all_outs, all_ref_outs, sel_out
