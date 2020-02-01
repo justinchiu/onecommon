@@ -15,6 +15,8 @@ import pdb
 import torch
 import numpy as np
 
+from contextlib import contextmanager
+
 
 def backward_hook(grad):
     """Hook for backward pass."""
@@ -59,6 +61,17 @@ def use_cuda(enabled, device_id=0):
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
     torch.cuda.set_device(device_id)
     return device_id
+
+@contextmanager
+def set_temporary_default_tensor_type(tensor_type):
+    if torch.tensor(0).is_cuda:
+        old_tensor_type = torch.cuda.FloatTensor
+    else:
+        old_tensor_type = torch.FloatTensor
+
+    torch.set_default_tensor_type(tensor_type)
+    yield
+    torch.set_default_tensor_type(old_tensor_type)
 
 def prob_random():
     """Prints out the states of various RNGs."""

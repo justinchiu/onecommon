@@ -36,7 +36,7 @@ class RnnReferenceEngine(EngineBase):
         inpt = Variable(inpt)
         if ref_inpt is not None:
             ref_inpt = Variable(ref_inpt)
-        out, ref_out, sel_out = self.model.forward(ctx, inpt, ref_inpt, sel_idx)
+        out, ref_out, sel_out = self.model.forward(ctx, inpt, ref_inpt, sel_idx, lens=None)
 
         tgt = Variable(tgt)
         sel_tgt = Variable(sel_tgt)
@@ -48,7 +48,7 @@ class RnnReferenceEngine(EngineBase):
             ref_loss = self.ref_crit(ref_out, ref_tgt)
             ref_correct = ((ref_out > 0).long() == ref_tgt.long()).sum().item()
             ref_total = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
-            ref_positive = ref_tgt.sum()
+            ref_positive = ref_tgt.sum().item()
         else:
             ref_loss = None
             ref_correct = 0
@@ -135,7 +135,10 @@ class RnnReferenceEngine(EngineBase):
             total_reference += ref_total
             total_ref_positive += ref_positive
 
-        print("total_ref_positive: {}".format(total_ref_positive))
+        print("train total_ref_positive: {}".format(total_ref_positive))
+        print("train total_ref_correct/total_ref: {}/{} {:.4f}".format(
+            total_reference_correct, total_reference, total_reference_correct/total_reference
+        ))
 
         total_lang_loss /= len(trainset)
         total_select_loss /= len(trainset)
@@ -150,6 +153,7 @@ class RnnReferenceEngine(EngineBase):
         self.model.eval()
 
         total_lang_loss, total_select_loss, total_select, total_select_correct, total_reference_loss, total_reference, total_reference_correct = 0, 0, 0, 0, 0, 0, 0
+        total_ref_positive = 0
         for batch in validset:
             lang_loss, ref_loss, ref_correct, ref_total, sel_loss, sel_correct, sel_total, ref_positive = self.valid_batch(batch)
             total_lang_loss += lang_loss
@@ -159,6 +163,12 @@ class RnnReferenceEngine(EngineBase):
             total_reference_loss += ref_loss
             total_reference_correct += ref_correct
             total_reference += ref_total
+            total_ref_positive += ref_positive
+
+        print("val total_ref_positive: {}".format(total_ref_positive))
+        print("val total_ref_correct/total_ref: {}/{} {:.4f}".format(
+            total_reference_correct, total_reference, total_reference_correct/total_reference
+        ))
 
         total_lang_loss /= len(validset)
         total_select_loss /= len(validset)
@@ -263,7 +273,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         # inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables, = self._append_pad(inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables)
 
-        outs, ref_outs, sel_out = self.model.forward(ctx, inpts, ref_inpts, sel_idx)
+        outs, ref_outs, sel_out = self.model.forward(ctx, inpts, ref_inpts, sel_idx, lens)
 
         sel_tgt = Variable(sel_tgt)
         lang_losses = []
@@ -291,14 +301,15 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 ref_mask[i,:nm,:] = 1
             ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
             # print(ref_tgt.size())
-            assert ref_tgt.size() == ref_out.size()
             ref_mask = torch.transpose(ref_mask, 0, 1).contiguous()
+            assert ref_tgt.size() == ref_out.size()
+            assert ref_tgt.size() == ref_mask.size()
             # print('ref_out size: {}'.format(ref_out.size()))
             # print('ref_tgt size: {}'.format(ref_tgt.size()))
             ref_loss = (self.ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum() / ref_mask.sum()
-            ref_correct += ((ref_out > 0).long() == ref_tgt.long()).sum().item()
-            ref_total += ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
-            ref_positive += ref_tgt.sum()
+            ref_correct += (((ref_out > 0).long() == ref_tgt.long()) * ref_mask.byte()).sum().item()
+            ref_total += ref_mask.sum().item()
+            ref_positive += ref_tgt.sum().item()
             ref_losses.append(ref_loss)
         ref_loss = sum(ref_losses)
 

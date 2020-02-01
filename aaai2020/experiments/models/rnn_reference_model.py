@@ -19,6 +19,10 @@ from domain import get_domain
 from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
 from models.ctx_encoder import *
 
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
+from utils import set_temporary_default_tensor_type
+
 
 class RnnReferenceModel(nn.Module):
     corpus_ty = data.ReferenceCorpus
@@ -239,17 +243,25 @@ class RnnReferenceModel(nn.Module):
             sel_logit = self.sel_attn(self.attn(torch.cat([sel_inpt, ctx_h], 2)))
         return sel_logit.squeeze(2)
 
-    def _forward(self, ctx_h, inpt, ref_inpt, sel_idx, lang_h=None, compute_sel_out=False):
+    def _forward(self, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False):
         bsz = ctx_h.size(0)
         seq_len = inpt.size(0)
 
         # print('inpt size: {}'.format(inpt.size()))
 
         dialog_emb = self.embed_dialogue(inpt)
+        if pack:
+            assert lens is not None
+            with set_temporary_default_tensor_type(torch.FloatTensor):
+                dialog_emb = pack_padded_sequence(dialog_emb, lens.cpu(), enforce_sorted=False)
+
         if lang_h is None:
             lang_h = self._zero(1, bsz, self.args.nhid_lang)
         # print('lang_h size: {}'.format(lang_h.size()))
         outs_emb, last_h = self.reader(dialog_emb, lang_h)
+
+        if pack:
+            outs_emb, _ = pad_packed_sequence(outs_emb, total_length=seq_len)
 
         # expand num_ent dimensions to calculate attention scores
         outs_emb_expand = outs_emb.unsqueeze(2).expand(-1, -1, ctx_h.size(1), -1)
@@ -282,9 +294,10 @@ class RnnReferenceModel(nn.Module):
 
         return outs, ref_out, sel_out, last_h
 
-    def forward(self, ctx, inpt, ref_inpt, sel_idx):
+    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens):
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
-        outs, ref_out, sel_out, last_h = self._forward(ctx_h, inpt, ref_inpt, sel_idx, lang_h=None, compute_sel_out=True)
+        outs, ref_out, sel_out, last_h = self._forward(ctx_h, inpt, ref_inpt, sel_idx,
+                                                       lens=lens, lang_h=None, compute_sel_out=True, pack=False)
         return outs, ref_out, sel_out
 
     def read(self, ctx_h, inpt, lang_h, prefix_token='THEM:'):
@@ -363,7 +376,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def forward(self, ctx, inpts, ref_inpts, sel_idx):
+    def forward(self, ctx, inpts, ref_inpts, sel_idx, lens):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
         # sel_idx is index into the last sentence in the dialogue
@@ -381,8 +394,9 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             inpt = inpts[i]
             ref_inpt = ref_inpts[i]
             is_last = i == len(inpts) - 1
+            this_lens = lens[i]
             outs, ref_out, sel_out, lang_h = self._forward(
-                ctx_h, inpt, ref_inpt, sel_idx, lang_h=lang_h, compute_sel_out=is_last
+                ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True
             )
             all_outs.append(outs)
             all_ref_outs.append(ref_out)
