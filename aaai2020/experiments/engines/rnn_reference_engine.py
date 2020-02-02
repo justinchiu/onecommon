@@ -306,12 +306,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             assert ref_tgt.size() == ref_mask.size()
             # print('ref_out size: {}'.format(ref_out.size()))
             # print('ref_tgt size: {}'.format(ref_tgt.size()))
-            ref_loss = (self.ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum() / ref_mask.sum()
+            ref_loss = (self.ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum()
             ref_correct += (((ref_out > 0).long() == ref_tgt.long()) * ref_mask.byte()).sum().item()
             ref_total += ref_mask.sum().item()
             ref_positive += ref_tgt.sum().item()
             ref_losses.append(ref_loss)
-        ref_loss = sum(ref_losses)
+        ref_loss = sum(ref_losses) / ref_total
 
         # print('sel_out.size(): {}'.format(sel_out.size()))
         # print('sel_tgt.size(): {}'.format(sel_tgt.size()))

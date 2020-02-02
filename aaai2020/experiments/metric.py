@@ -1,12 +1,7 @@
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 import numpy as np
-import pdb
 import time
 import re
-
-from nltk import word_tokenize, bigrams
-
-import data
 
 import seaborn as sns
 import matplotlib.pyplot as plt

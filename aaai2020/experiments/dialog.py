@@ -1,13 +1,11 @@
 import sys
-import pdb
 
 import numpy as np
 
 import torch
 
 from metric import MetricsContainer
-import data
-import utils
+from corpora import data
 import domain
 
 class DialogLogger(object):

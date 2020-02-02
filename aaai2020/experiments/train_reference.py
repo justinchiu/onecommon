@@ -1,19 +1,7 @@
 import argparse
 import pprint
 import sys
-import time
-import random
-import itertools
-import re
-import pdb
 
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.optim as optim
-from torch.autograd import Variable
-
-import data
 import models
 import utils
 from domain import get_domain

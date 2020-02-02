@@ -1,19 +1,8 @@
-import sys
-import re
-import time
-import copy
-import pdb
-
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.nn.init
-from torch.autograd import Variable
-import torch.nn.functional as F
 
-import data
-from models.utils import *
+import corpora.reference
+import corpora.reference_sentence
+from corpora import data
 import models
 from domain import get_domain
 from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
@@ -25,7 +14,7 @@ from utils import set_temporary_default_tensor_type
 
 
 class RnnReferenceModel(nn.Module):
-    corpus_ty = data.ReferenceCorpus
+    corpus_ty = corpora.reference.ReferenceCorpus
     engine_ty = RnnReferenceEngine
 
     @classmethod
@@ -316,7 +305,7 @@ class RnnReferenceModel(nn.Module):
         return Variable(x)
 
     def write(self, ctx_h, lang_h, max_words, temperature,
-        start_token='YOU:', stop_tokens=data.STOP_TOKENS):
+              start_token='YOU:', stop_tokens=data.STOP_TOKENS):
         # autoregress starting from start_token
         inpt = self.word2var(start_token)
 
@@ -368,7 +357,7 @@ class RnnReferenceModel(nn.Module):
 
 
 class HierarchicalRnnReferenceModel(RnnReferenceModel):
-    corpus_ty = data.ReferenceSentenceCorpus
+    corpus_ty = corpora.reference_sentence.ReferenceSentenceCorpus
     engine_ty = HierarchicalRnnReferenceEngine
 
     @classmethod

@@ -6,7 +6,6 @@ import argparse
 import copy
 import json
 import os
-import pdb
 from collections import Counter, defaultdict
 
 import numpy as np
@@ -16,15 +15,14 @@ import torch.nn as nn
 
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 
-import data
+from corpora import data
 import utils
 from engines import Criterion
 from domain import get_domain
 
 import matplotlib.pyplot as plt
-from matplotlib.pyplot import cm
 import seaborn as sns
-import pandas as pd
+
 sns.set(font_scale=1.15)
 
 def read_json(path):
