@@ -174,6 +174,13 @@ def main():
         bob_ty = get_agent_type(bob_model, args.smart_bob)
         bob = bob_ty(bob_model, args, name='Bob', train=False)
 
+        for model in [alice_model, bob_model]:
+            if args.cuda:
+                model.cuda()
+            else:
+                model.cpu()
+            model.eval()
+
         dialog = Dialog([alice, bob], args, markable_detector, markable_detector_corpus)
         ctx_gen = ContextGenerator(os.path.join(args.data, args.context_file + '.txt'))
         with open(os.path.join(args.data, args.context_file + '.json'), "r") as f:

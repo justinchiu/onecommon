@@ -30,7 +30,8 @@ class DialogLogger(object):
     def _dump_with_name(self, name, s):
         self._dump('{0: <5} : {1}'.format(name, s))
 
-    def _scenario_to_svg(self, scenario, choice=None):
+    @staticmethod
+    def _scenario_to_svg(scenario, choice=None):
         svg_list = []
         for agent in [0,1]:
             svg = "<svg width=\"{0}\" height=\"{0}\" id=\"{1}\">".format(430, "agent_" + str(agent))
@@ -49,11 +50,21 @@ class DialogLogger(object):
             svg_list.append(svg)
         return svg_list
 
-    def _attention_to_svg(self, scenario, agent, attention=None):
+    @staticmethod
+    def _attention_to_svg(scenario, agent, attention=None):
         svg = '''<svg id="svg" width="430" height="430"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/> '''
         for obj, attention_weight in zip(scenario['kbs'][agent], attention):
             svg += "<circle cx=\"{0}\" cy=\"{1}\" r=\"{2}\" fill=\"rgb(255,{3},{3})\" />".format(obj['x'], obj['y'],
                                                                                                  obj['size'], int((1 - attention_weight) * 255))
+        svg += '''</svg>'''
+        return svg
+
+    @staticmethod
+    def _attention_to_svg_color(scenario, agent, attention=None):
+        svg = '''<svg id="svg" width="430" height="430"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/> '''
+        for obj, attention_weight in zip(scenario['kbs'][agent], attention):
+            svg += "<circle cx=\"{0}\" cy=\"{1}\" r=\"{2}\" fill=\"rgb({4},{3},{3})\" />".format(obj['x'], obj['y'],
+                                                                                                 obj['size'], int((1 - attention_weight) * 255), obj['color'])
         svg += '''</svg>'''
         return svg
 

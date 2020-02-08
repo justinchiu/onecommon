@@ -75,7 +75,8 @@ class RnnAgent(Agent):
         self.context = context
         self.ctx = torch.Tensor([float(x) for x in context]).float().unsqueeze(1)
         self.ctx_h = self.model.ctx_encoder(Variable(self.ctx))
-        self.lang_h = self.model._zero(1, self.model.args.nhid_lang)
+        self.lang_h = self.model.init_h.unsqueeze(0) # get batch size of 1
+        self.extras = []
 
     def feed_partner_context(self, partner_context):
         pass
@@ -91,13 +92,14 @@ class RnnAgent(Agent):
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
     def write(self, max_words=100):
-        outs, logprobs, self.lang_h, lang_hs = self.model.write(self.ctx_h, self.lang_h, 
+        outs, logprobs, self.lang_h, lang_hs, extra = self.model.write(self.ctx_h, self.lang_h,
                                                             max_words, self.args.temperature)
         self.logprobs.extend(logprobs)
         self.lang_hs.append(lang_hs)
         #self.words.append(self.model.word2var('YOU:').unsqueeze(0))
         self.words.append(outs)
         self.sents.append(torch.cat([self.model.word2var('YOU:').unsqueeze(1), outs], 0))
+        self.extras.append(extra)
 
         """if self.args.visualize_referents:
             #utterance = self._decode(outs, self.model.word_dict)[1:-1]
