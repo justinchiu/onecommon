@@ -110,6 +110,7 @@ class RelationalAttentionContextEncoder2(nn.Module):
     def add_args(cls, parser):
         parser.add_argument('--relation_encoder_layers', type=int, choices=[1,2], default=1)
         parser.add_argument('--relation_pooling', choices=['mean', 'max'], default='mean')
+        parser.add_argument('--relation_ablate_properties', action='store_true')
 
     def __init__(self, domain, args):
         super(RelationalAttentionContextEncoder2, self).__init__()
@@ -124,14 +125,19 @@ class RelationalAttentionContextEncoder2(nn.Module):
         # property and shape for both objects, and subtracted representation, and distance
         relation_input_dim = 4 + domain.dim_ent() + 1
 
-        property_output_dim = int(args.nembed_ctx / 2)
-        relation_output_dim = int(args.nembed_ctx / 2)
 
-        self.property_encoder = nn.Sequential(
-            torch.nn.Linear(property_input_dim, property_output_dim),
-            nn.ReLU(),
-            nn.Dropout(args.dropout),
-        )
+        if args.relation_ablate_properties:
+            self.property_encoder = None
+            property_output_dim = args.nembed_ctx
+            relation_output_dim = args.nembed_ctx
+        else:
+            property_output_dim = int(args.nembed_ctx / 2)
+            relation_output_dim = int(args.nembed_ctx / 2)
+            self.property_encoder = nn.Sequential(
+                torch.nn.Linear(property_input_dim, property_output_dim),
+                nn.ReLU(),
+                nn.Dropout(args.dropout),
+            )
 
         if args.relation_encoder_layers == 2:
             hidden_dim = relation_output_dim
@@ -156,7 +162,6 @@ class RelationalAttentionContextEncoder2(nn.Module):
     def forward(self, ctx):
         ctx_t = ctx.transpose(0, 1)
         ents = ctx_t.view(ctx_t.size(0), self.num_ent, self.dim_ent)
-        prop_emb = self.property_encoder(ents[:,:,2:])
         ent_rel_pairs = []
         for i in range(self.num_ent):
             rel_pairs = []
@@ -173,7 +178,11 @@ class RelationalAttentionContextEncoder2(nn.Module):
         else:
             assert self.relation_pooling == 'max'
             rel_emb_pooled, _ = rel_emb.max(2)
-        out = torch.cat([prop_emb, rel_emb_pooled], 2)
+        if self.property_encoder is not None:
+            prop_emb = self.property_encoder(ents[:,:,2:])
+            out = torch.cat([prop_emb, rel_emb_pooled], 2)
+        else:
+            out = rel_emb_pooled
         return out
 
 class RelationContextEncoder(nn.Module):

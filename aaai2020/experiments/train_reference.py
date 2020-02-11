@@ -16,6 +16,7 @@ def add_loss_args(parser):
                         help='reference loss weight')
     group.add_argument('--sel_weight', type=float, default=1.0,
                         help='selection loss weight')
+    group.add_argument('--lang_only_self', action='store_true')
 
 
 def main():

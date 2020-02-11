@@ -263,6 +263,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, _, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables = batch
 
         ctx = Variable(ctx)
+        bsz = ctx.size(0)
 
         inpts = [Variable(inpt) for inpt in inpts]
         ref_inpts = [Variable(ref_inpt) if ref_inpt is not None else None
@@ -281,7 +282,15 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         for i, (out, tgt) in enumerate(zip(outs, tgts)):
             # print('{} out.size(): {}'.format(i, out.size()))
             # print('{} tgt.size(): {}'.format(i, tgt.size()))
-            lang_losses.append(self.crit_no_reduce(out, tgt).sum())
+            YOU = self.model.word_dict.word2idx['YOU:']
+            THEM = self.model.word_dict.word2idx['THEM:']
+            is_self = inpts[i][0] == YOU
+            is_other = inpts[i][0] == THEM
+            assert is_self.sum() + is_other.sum() == bsz
+            crit = self.crit_no_reduce(out, tgt).view(-1, bsz)
+            if self.args.lang_only_self:
+                crit = crit * (is_self.unsqueeze(0).expand_as(crit))
+            lang_losses.append(crit.sum())
         total_lens = sum(l.sum() for l in lens)
         lang_loss = sum(lang_losses) / total_lens
 
