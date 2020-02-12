@@ -41,6 +41,13 @@ def load_model(file_name, map_location=None):
         else:
             return torch.load(f)
 
+def sum_dicts(d1, d2):
+    ret = {}
+    for key in set(d1.keys()) | set(d2.keys()):
+        v = d1.get(key, 0.0) + d2.get(key, 0.0)
+        ret[key] = v
+    return ret
+
 
 def set_seed(seed):
     """Sets random seed everywhere."""

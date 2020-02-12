@@ -93,12 +93,14 @@ class RnnAgent(Agent):
         self.words.append(Variable(inpt))
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
-    def write(self, max_words=100, force_words=None, start_token='YOU:'):
+    def write(self, max_words=100, force_words=None, start_token='YOU:', dots_mentioned=None):
         outs, logprobs, self.lang_h, lang_hs, extra = self.model.write(
             self.ctx_h, self.lang_h,
             max_words, self.args.temperature,
             start_token=start_token,
-            force_words=force_words)
+            force_words=force_words,
+            dots_mentioned=dots_mentioned
+        )
         self.logprobs.extend(logprobs)
         self.lang_hs.append(lang_hs)
         #self.words.append(self.model.word2var('YOU:').unsqueeze(0))

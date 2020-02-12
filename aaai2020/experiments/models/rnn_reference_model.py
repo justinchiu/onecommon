@@ -12,6 +12,7 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 from utils import set_temporary_default_tensor_type
 
+BIG_NEG = -1e6
 
 class FeedForward(nn.Module):
     def __init__(self, n_hidden_layers, input_dim, hidden_dim, output_dim, dropout_p=None):
@@ -75,6 +76,14 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--untie_grus',
                             action='store_true',
                             help="don't use the same weights for the reader and writer")
+
+        parser.add_argument('--word_attention_constrained',
+                            action='store_true',
+                            help="don't allow attention to dots that aren't mentioned in the utterance")
+
+        parser.add_argument('--feed_attention_constrained',
+                            action='store_true',
+                            help="don't allow attention to dots that aren't mentioned in the utterance")
 
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
@@ -298,14 +307,25 @@ class RnnReferenceModel(nn.Module):
         sel_logit = self._apply_attention('sel', torch.cat([sel_inpt, ctx_h], 2))
         return sel_logit
 
-    def _language_conditioned_dot_attention(self, ctx_h, lang_hs, use_feed_attn):
+    def _language_conditioned_dot_attention(self, ctx_h, lang_hs, use_feed_attn, dots_to_allow=None):
         # lang_hs: seq_len x batch_size x hidden
         # ctx_h: batch_size x num_dots x nembed_ctx
+        # dots_to_allow: batch_size x num_dots, binary tensor of which dots to allow attention on. if all zero, output zeros
         assert ctx_h.dim() == 3
         assert lang_hs.dim() == 3
 
-        seq_len = lang_hs.size(0)
-        num_dots = ctx_h.size(1)
+        seq_len, bsz, _ = lang_hs.size()
+        bsz_, num_dots, _ = ctx_h.size()
+        assert bsz == bsz_, (bsz, bsz_)
+
+        # seq_len = lang_hs.size(0)
+        # bsz = lang_hs.size(1)
+        # num_dots = ctx_h.size(1)
+
+        if dots_to_allow is not None:
+            bsz_, num_dots_ = dots_to_allow.size()
+            assert bsz == bsz_, (bsz, bsz_)
+            assert num_dots == num_dots_, (num_dots, num_dots_)
 
         # expand num_ent dimensions to calculate attention scores
         # seq_len x batch_size x num_dots x _
@@ -314,28 +334,22 @@ class RnnReferenceModel(nn.Module):
         # seq_len x batch_size x num_dots x nembed_ctx
         ctx_h_expand = ctx_h.unsqueeze(0).expand(seq_len, -1, -1, -1)
 
+        # seq_len x batch_size x num_dots
         attn_logit = self._apply_attention(
             'feed' if use_feed_attn else 'lang',
             torch.cat([lang_h_expand, ctx_h_expand], 3)
         )
 
-        # # compute attention for language output
-        # if self.args.share_attn:
-        #     # seq_len x batch_size x num_dots
-        #     # concatenate and MLP to get a score for each (seq_len position x dot)
-        #     if use_feed_attn and hasattr(self, 'feed_attn') and self.feed_attn is not None:
-        #         attn_logit = self.feed_attn(torch.cat([lang_h_expand, ctx_h_expand], 3)).squeeze(-1)
-        #     else:
-        #         attn_logit = self.attn(torch.cat([lang_h_expand, ctx_h_expand], 3)).squeeze(-1)
-        # else:
-        #     # seq_len x batch_size x num_dots
-        #     if use_feed_attn and hasattr(self, 'feed_attn') and self.feed_attn is not None:
-        #         attn_logit = self.feed_attn(self.attn(torch.cat([lang_h_expand, ctx_h_expand], 3))).squeeze(-1)
-        #     else:
-        #         attn_logit = self.lang_attn(self.attn(torch.cat([lang_h_expand, ctx_h_expand], 3))).squeeze(-1)
+        if dots_to_allow is not None:
+            attn_logit = attn_logit.masked_fill(~dots_to_allow.unsqueeze(0).expand_as(attn_logit), BIG_NEG)
+
         # language-conditioned attention over the dots
         # seq_len x batch_size x num_dots
         attn_prob = F.softmax(attn_logit, dim=2)
+
+        if dots_to_allow is not None:
+            zero_rows = (dots_to_allow.sum(dim=-1) == 0)
+            attn_prob = attn_prob.masked_fill(zero_rows.unsqueeze(0).unsqueeze(-1).expand_as(attn_prob), 0.0)
 
         # attn_prob[:] = 0
         # attn_prob[:,:,0] = 1.0
@@ -345,7 +359,7 @@ class RnnReferenceModel(nn.Module):
 
         return attn_prob
 
-    def _forward(self, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False):
+    def _forward(self, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False, dots_mentioned=None):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
         bsz = ctx_h.size(0)
@@ -353,13 +367,18 @@ class RnnReferenceModel(nn.Module):
 
         # print('inpt size: {}'.format(inpt.size()))
 
-        lang_hs, last_h = self._read(ctx_h, inpt, lang_h=lang_h, lens=lens, pack=pack)
+        lang_hs, last_h = self._read(ctx_h, inpt, lang_h=lang_h, lens=lens, pack=pack, dots_mentioned=dots_mentioned)
 
         # compute language output
         if self.args.no_word_attention:
             outs = self.hid2output(lang_hs)
+            ctx_attn_prob = None
         else:
-            ctx_attn_prob = self._language_conditioned_dot_attention(ctx_h, lang_hs, use_feed_attn=False)
+            if vars(self.args).get('word_attention_constrained', False):
+                dots_to_allow = dots_mentioned
+            else:
+                dots_to_allow = None
+            ctx_attn_prob = self._language_conditioned_dot_attention(ctx_h, lang_hs, use_feed_attn=False, dots_to_allow=dots_to_allow)
             ctx_h_expand = ctx_h.unsqueeze(0).expand(seq_len, -1, -1, -1)
 
             ctx_h_lang = torch.einsum("tbnd,tbn->tbd", (ctx_h_expand,ctx_attn_prob))
@@ -381,18 +400,23 @@ class RnnReferenceModel(nn.Module):
         else:
             sel_out = None
 
-        return outs, ref_out, sel_out, last_h
+        return outs, ref_out, sel_out, last_h, ctx_attn_prob
 
-    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens):
+    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned):
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
-        outs, ref_out, sel_out, last_h = self._forward(ctx_h, inpt, ref_inpt, sel_idx,
-                                                       lens=lens, lang_h=None, compute_sel_out=True, pack=False)
-        return outs, ref_out, sel_out
+        outs, ref_out, sel_out, last_h, ctx_attn_prob = self._forward(ctx_h, inpt, ref_inpt, sel_idx,
+                                                       lens=lens, lang_h=None, compute_sel_out=True, pack=False,
+                                                       dots_mentioned=dots_mentioned)
+        return outs, ref_out, sel_out, ctx_attn_prob
 
-    def _context_for_feeding(self, ctx_h, lang_hs):
+    def _context_for_feeding(self, ctx_h, lang_hs, dots_mentioned):
         if self.args.feed_context_attend:
             # bsz x num_dots
-            feed_ctx_attn_prob = self._language_conditioned_dot_attention(ctx_h, lang_hs, use_feed_attn=True).squeeze(0).squeeze(-1)
+            if vars(self.args).get('feed_attention_constrained', False):
+                dots_to_allow = dots_mentioned
+            else:
+                dots_to_allow = None
+            feed_ctx_attn_prob = self._language_conditioned_dot_attention(ctx_h, lang_hs, use_feed_attn=True, dots_to_allow=dots_to_allow).squeeze(0).squeeze(-1)
             # bsz x num_dots x nembed_ctx
             ctx_emb = self.feed_ctx_layer(ctx_h)
             ctx_emb = torch.einsum("bn,bnd->bd", (feed_ctx_attn_prob, ctx_emb))
@@ -402,7 +426,7 @@ class RnnReferenceModel(nn.Module):
             feed_ctx_attn_prob = None
         return ctx_emb, feed_ctx_attn_prob
 
-    def _read(self, ctx_h, inpt, lang_h, lens=None, pack=False):
+    def _read(self, ctx_h, inpt, lang_h, lens=None, pack=False, dots_mentioned=None):
         # lang_h: num_layers * num_directions x batch x nhid_lang
         bsz = ctx_h.size(0)
         seq_len = inpt.size(0)
@@ -419,7 +443,7 @@ class RnnReferenceModel(nn.Module):
         dialog_emb = self.embed_dialogue(inpt)
         if self.args.feed_context:
             # seq_len x bsz x (nembed_word+nembed_ctx)
-            ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(ctx_h, writer_lang_h)
+            ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(ctx_h, writer_lang_h, dots_mentioned=dots_mentioned)
             dialog_emb = torch.cat((dialog_emb, ctx_emb.expand(seq_len, -1, -1)), dim=-1)
         if pack:
             dialog_emb_before_pack = dialog_emb
@@ -440,11 +464,11 @@ class RnnReferenceModel(nn.Module):
             lang_hs, _ = pad_packed_sequence(lang_hs, total_length=seq_len)
         return lang_hs, last_h
 
-    def read(self, ctx_h, inpt, lang_h, prefix_token='THEM:'):
+    def read(self, ctx_h, inpt, lang_h, prefix_token='THEM:', dots_mentioned=None):
         # Add a 'THEM:' token to the start of the message
         prefix = self.word2var(prefix_token).unsqueeze(0)
         inpt = torch.cat([prefix, inpt])
-        lang_hs, lang_h = self._read(ctx_h, inpt, lang_h, lens=None, pack=False)
+        lang_hs, lang_h = self._read(ctx_h, inpt, lang_h, lens=None, pack=False, dots_mentioned=dots_mentioned)
         return lang_hs, lang_h
 
     def word2var(self, word):
@@ -452,7 +476,7 @@ class RnnReferenceModel(nn.Module):
         return Variable(x)
 
     def write(self, ctx_h, lang_h, max_words, temperature,
-              start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None):
+              start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None, dots_mentioned=None):
         # ctx_h: batch x num_dots x nembed_ctx
         # lang_h: batch x hidden
         bsz, _ = lang_h.size()
@@ -476,7 +500,7 @@ class RnnReferenceModel(nn.Module):
 
         if self.args.feed_context:
             # add a time dimension
-            ctx_emb, dot_attention1 = self._context_for_feeding(ctx_h, lang_h.unsqueeze(1))
+            ctx_emb, dot_attention1 = self._context_for_feeding(ctx_h, lang_h.unsqueeze(1), dots_mentioned)
         else:
             ctx_emb, dot_attention1 = None, None
         dot_attention2s = []
@@ -566,9 +590,10 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
     @classmethod
     def add_args(cls, parser):
         # args from RnnReferenceModel will be added separately
+        parser.add_argument('--filter_contexts')
         pass
 
-    def forward(self, ctx, inpts, ref_inpts, sel_idx, lens):
+    def forward(self, ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
         # sel_idx is index into the last sentence in the dialogue
@@ -581,18 +606,22 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         sel_out = None
 
+        all_ctx_attn_prob = []
+
         assert len(inpts) == len(ref_inpts)
         for i in range(len(inpts)):
             inpt = inpts[i]
             ref_inpt = ref_inpts[i]
             is_last = i == len(inpts) - 1
             this_lens = lens[i]
-            outs, ref_out, sel_out, lang_h = self._forward(
-                ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True
+            outs, ref_out, sel_out, lang_h, ctx_attn_prob = self._forward(
+                ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
+                dots_mentioned=dots_mentioned[i],
             )
             all_outs.append(outs)
             all_ref_outs.append(ref_out)
+            all_ctx_attn_prob.append(ctx_attn_prob)
 
         assert sel_out is not None
 
-        return all_outs, all_ref_outs, sel_out
+        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob
