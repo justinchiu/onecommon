@@ -11,12 +11,19 @@ import utils
 from engines import EngineBase
 
 
+def unwrap(loss):
+    if loss is not None:
+        return loss.item()
+    else:
+        return 0
+
 class RnnReferenceEngine(EngineBase):
     def __init__(self, model, args, verbose=False):
         super(RnnReferenceEngine, self).__init__(model, args, verbose)
 
     def _forward(self, batch):
         assert not self.args.word_attention_supervised
+        assert not self.args.feed_attention_supervised
         ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, sel_idx = batch
 
         ctx = Variable(ctx)
@@ -54,12 +61,13 @@ class RnnReferenceEngine(EngineBase):
         attn_ref_stats = {}
 
         # TODO
-        attn_loss = None
+        word_attn_loss = None
+        feed_attn_loss = None
 
-        return lang_loss, ref_loss, ref_correct, ref_total, sel_loss, attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats
+        return lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats
 
     def train_batch(self, batch):
-        lang_loss, ref_loss, ref_correct, ref_total, sel_loss, attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self._forward(
+        lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self._forward(
             batch)
 
         # default
@@ -81,8 +89,11 @@ class RnnReferenceEngine(EngineBase):
             loss = self.args.ref_weight * ref_loss
             return_ref_loss = ref_loss.item()
 
-        if attn_loss is not None:
-            loss = loss + attn_loss
+        if word_attn_loss is not None:
+            loss = loss + word_attn_loss
+
+        if feed_attn_loss is not None:
+            loss = loss + feed_attn_loss
 
         if loss:
             self.opt.zero_grad()
@@ -90,65 +101,35 @@ class RnnReferenceEngine(EngineBase):
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
             self.opt.step()
 
-        if attn_loss is not None:
-            return_attn_loss = attn_loss.item()
-        else:
-            return_attn_loss = 0
-
-        return lang_loss.item(), return_ref_loss, ref_correct, ref_total, sel_loss.item(), return_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats
+        return lang_loss.item(), return_ref_loss, ref_correct, ref_total, sel_loss.item(), unwrap(word_attn_loss), unwrap(feed_attn_loss), sel_correct, sel_total, ref_positive, attn_ref_stats
 
     def valid_batch(self, batch):
         with torch.no_grad():
-            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self._forward(
+            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self._forward(
                 batch)
 
-        if ref_loss is not None:
-            return_ref_loss = ref_loss.item()
-        else:
-            return_ref_loss = 0
-
-        if attn_loss is not None:
-            return_attn_loss = attn_loss.item()
-        else:
-            return_attn_loss = 0
-
-        return lang_loss.item(), return_ref_loss, ref_correct, ref_total, sel_loss.item(), return_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats
+        return lang_loss.item(), unwrap(ref_loss), ref_correct, ref_total, sel_loss.item(), unwrap(word_attn_loss), unwrap(feed_attn_loss), sel_correct, sel_total, ref_positive, attn_ref_stats
 
     def test_batch(self, batch):
         with torch.no_grad():
-            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self._forward(
+            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self._forward(
                 batch)
 
-        if ref_loss is not None:
-            return_ref_loss = ref_loss.item()
-        else:
-            return_ref_loss = 0
+        return lang_loss.item(), unwrap(ref_loss), ref_correct, ref_total, sel_loss.item(), unwrap(word_attn_loss), unwrap(feed_attn_loss), sel_correct, sel_total, ref_positive, attn_ref_stats
 
-        if attn_loss is not None:
-            return_attn_loss = attn_loss.item()
-        else:
-            return_attn_loss = 0
-
-        return lang_loss.item(), return_ref_loss, ref_correct, ref_total, sel_loss.item(), return_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats
-
-    def train_pass(self, trainset, trainset_stats):
-        '''
-        basic implementation of one training pass
-        '''
-        self.model.train()
-
+    def _pass(self, dataset, dataset_stats, batch_fn, name, use_tqdm):
         total_lang_loss, total_select_loss, total_select, total_select_correct, total_reference_loss, total_reference, total_reference_correct = 0, 0, 0, 0, 0, 0, 0
         total_ref_positive = 0
         start_time = time.time()
 
         total_attn_ref_stats = {}
 
-        total_attn_loss = 0
+        total_word_attn_loss = 0
+        total_feed_attn_loss = 0
 
-        for batch in tqdm.tqdm(trainset, ncols=80):
+        for batch in tqdm.tqdm(dataset, ncols=80) if use_tqdm else dataset:
             # for batch in trainset:
-            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self.train_batch(
-                batch)
+            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
             total_lang_loss += lang_loss
             total_select_loss += sel_loss
             total_select_correct += sel_correct
@@ -157,24 +138,34 @@ class RnnReferenceEngine(EngineBase):
             total_reference_correct += ref_correct
             total_reference += ref_total
             total_ref_positive += ref_positive
-            total_attn_loss += attn_loss
+            total_word_attn_loss += word_attn_loss
+            total_feed_attn_loss += feed_attn_loss
 
             total_attn_ref_stats = utils.sum_dicts(total_attn_ref_stats, attn_ref_stats)
 
-        print("train total_ref_positive: {}".format(total_ref_positive))
-        print("train total_ref_correct/total_ref: {}/{} {:.4f}".format(
-            total_reference_correct, total_reference, total_reference_correct / total_reference
+        print("{} total_ref_positive: {}".format(name, total_ref_positive))
+        print("{} total_ref_correct/total_ref: {}/{} {:.4f}".format(
+            name, total_reference_correct, total_reference, total_reference_correct / total_reference
         ))
 
-        print("train attn_loss: {:.4f}".format(total_attn_loss))
+        print("{} word_attn_loss: {:.4f}".format(name, total_word_attn_loss))
+        print("{} feed_attn_loss: {:.4f}".format(name, total_feed_attn_loss))
 
-        pprint.pprint({'train_{}'.format(k): v for k, v in total_attn_ref_stats.items()})
+        pprint.pprint({'{}_{}'.format(name, k): v for k, v in total_attn_ref_stats.items()})
 
-        total_lang_loss /= len(trainset)
-        total_select_loss /= len(trainset)
-        total_reference_loss /= len(trainset)
+        total_lang_loss /= len(dataset)
+        total_select_loss /= len(dataset)
+        total_reference_loss /= len(dataset)
         time_elapsed = time.time() - start_time
         return total_lang_loss, total_reference_loss, total_reference_correct / total_reference, total_select_loss, total_select_correct / total_select, time_elapsed
+
+    def train_pass(self, trainset, trainset_stats):
+        '''
+        basic implementation of one training pass
+        '''
+        self.model.train()
+        return self._pass(trainset, trainset_stats, self.train_batch, "train", use_tqdm=True)
+
 
     def valid_pass(self, validset, validset_stats):
         '''
@@ -182,41 +173,8 @@ class RnnReferenceEngine(EngineBase):
         '''
         self.model.eval()
 
-        total_lang_loss, total_select_loss, total_select, total_select_correct, total_reference_loss, total_reference, total_reference_correct = 0, 0, 0, 0, 0, 0, 0
-        total_ref_positive = 0
+        return self._pass(validset, validset_stats, self.valid_batch, "val", use_tqdm=False)
 
-        total_attn_ref_stats = {}
-
-        total_attn_loss = 0
-
-        for batch in validset:
-            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self.valid_batch(
-                batch)
-            total_lang_loss += lang_loss
-            total_select_loss += sel_loss
-            total_select_correct += sel_correct
-            total_select += sel_total
-            total_reference_loss += ref_loss
-            total_reference_correct += ref_correct
-            total_reference += ref_total
-            total_ref_positive += ref_positive
-            total_attn_loss += attn_loss
-
-            total_attn_ref_stats = utils.sum_dicts(total_attn_ref_stats, attn_ref_stats)
-
-        print("val total_ref_positive: {}".format(total_ref_positive))
-        print("val total_ref_correct/total_ref: {}/{} {:.4f}".format(
-            total_reference_correct, total_reference, total_reference_correct / total_reference
-        ))
-
-        print("val attn_loss: {:.4f}".format(total_attn_loss))
-
-        pprint.pprint({'val_{}'.format(k): v for k, v in total_attn_ref_stats.items()})
-
-        total_lang_loss /= len(validset)
-        total_select_loss /= len(validset)
-        total_reference_loss /= len(validset)
-        return total_lang_loss, total_reference_loss, total_reference_correct / total_reference, total_select_loss, total_select_correct / total_select
 
     def iter(self, epoch, lr, traindata, validdata):
         trainset, trainset_stats = traindata
@@ -224,7 +182,7 @@ class RnnReferenceEngine(EngineBase):
 
         train_lang_loss, train_reference_loss, train_reference_accuracy, train_select_loss, train_select_accuracy, train_time = self.train_pass(
             trainset, trainset_stats)
-        valid_lang_loss, valid_reference_loss, valid_reference_accuracy, valid_select_loss, valid_select_accuracy = self.valid_pass(
+        valid_lang_loss, valid_reference_loss, valid_reference_accuracy, valid_select_loss, valid_select_accuracy, val_time = self.valid_pass(
             validset, validset_stats)
 
         if self.verbose:
@@ -335,8 +293,9 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             assert ref_tgt.dim() == 3
             dots_mentioned.append(ref_tgt.sum(1) > 0)
 
-        outs, ref_outs, sel_out, ctx_attn_prob = self.model.forward(ctx, inpts, ref_inpts, sel_idx, lens,
-                                                                    dots_mentioned)
+        outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
+            ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned
+        )
 
         sel_tgt = Variable(sel_tgt)
         lang_losses = []
@@ -367,11 +326,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         attn_ref_gold_positive = 0
         attn_ref_pred_positive = 0
 
-        attn_losses = []
+        word_attn_losses = []
+        feed_attn_losses = []
 
         assert len(ref_inpts) == len(ref_tgts) == len(num_markables)
-        for ref_inpt, ref_out, ref_tgt, this_num_markables, this_ctx_attn_prob, inpt, tgt in zip(
-                ref_inpts, ref_outs, ref_tgts, num_markables, ctx_attn_prob, inpts, tgts
+        for ref_inpt, ref_out, ref_tgt, this_num_markables, this_ctx_attn_prob, this_feed_ctx_attn_prob, this_dots_mentioned, inpt, tgt in utils.safe_zip(
+                ref_inpts, ref_outs, ref_tgts, num_markables, ctx_attn_prob, feed_ctx_attn_prob, dots_mentioned, inpts, tgts
         ):
             if (this_num_markables == 0).all() or ref_tgt is None:
                 continue
@@ -443,8 +403,26 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                                 # print("markable start: {}\tmarkable end: {}".format(markable_start, markable_end))
                                 pass
                             else:
-                                attn_losses.append(attn_loss)
+                                word_attn_losses.append(attn_loss)
 
+            if this_feed_ctx_attn_prob is not None and self.args.feed_attention_supervised:
+                tdm_sum = this_dots_mentioned.sum(-1)
+                mask = (tdm_sum > 0)
+                filtered_attention = this_feed_ctx_attn_prob[mask]
+                filtered_target = this_dots_mentioned[mask].float()
+                filtered_target /= filtered_target.sum(-1, keepdims=True)
+                feed_attn_loss = torch.nn.functional.kl_div(
+                    filtered_attention.log(),
+                    filtered_target,
+                    reduction='batchmean',
+                )
+                if feed_attn_loss != feed_attn_loss:
+                    # nan
+                    print("feed nan loss: {}\nthis_feed_ctx_attn_prob: {} \t this_dots_mentioned: {}".format(
+                        feed_attn_loss.item(), this_feed_ctx_attn_prob.log(), this_dots_mentioned
+                    ))
+                else:
+                    feed_attn_losses.append(feed_attn_loss)
         ref_loss = sum(ref_losses) / ref_total
 
         # print('sel_out.size(): {}'.format(sel_out.size()))
@@ -471,9 +449,15 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             'total': attn_ref_total,
         }
 
-        if attn_losses:
-            attn_loss = sum(attn_losses) / len(attn_losses)
+        if word_attn_losses:
+            word_attn_loss = sum(word_attn_losses) / len(word_attn_losses)
         else:
-            attn_loss = None
+            word_attn_loss = None
 
-        return lang_loss, ref_loss, ref_correct, ref_total, sel_loss, attn_loss, sel_correct, sel_total, ref_gold_positive, attn_ref_stats
+        if feed_attn_losses:
+            feed_attn_loss = sum(feed_attn_losses) / len(feed_attn_losses)
+        else:
+            feed_attn_loss = None
+
+        return lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, \
+               sel_correct, sel_total, ref_gold_positive, attn_ref_stats

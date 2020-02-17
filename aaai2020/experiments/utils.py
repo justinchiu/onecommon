@@ -48,6 +48,10 @@ def sum_dicts(d1, d2):
         ret[key] = v
     return ret
 
+def safe_zip(*lists):
+    for l in lists[1:]:
+        assert len(l) == len(lists[0])
+    return zip(*lists)
 
 def set_seed(seed):
     """Sets random seed everywhere."""

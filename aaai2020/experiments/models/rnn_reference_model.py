@@ -86,6 +86,7 @@ class RnnReferenceModel(nn.Module):
                             help="don't allow attention to dots that aren't mentioned in the utterance")
 
         parser.add_argument('--word_attention_supervised', action='store_true')
+        parser.add_argument('--feed_attention_supervised', action='store_true')
 
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
@@ -369,7 +370,7 @@ class RnnReferenceModel(nn.Module):
 
         # print('inpt size: {}'.format(inpt.size()))
 
-        lang_hs, last_h = self._read(ctx_h, inpt, lang_h=lang_h, lens=lens, pack=pack, dots_mentioned=dots_mentioned)
+        lang_hs, last_h, feed_ctx_attn_prob = self._read(ctx_h, inpt, lang_h=lang_h, lens=lens, pack=pack, dots_mentioned=dots_mentioned)
 
         # compute language output
         if self.args.no_word_attention:
@@ -402,14 +403,14 @@ class RnnReferenceModel(nn.Module):
         else:
             sel_out = None
 
-        return outs, ref_out, sel_out, last_h, ctx_attn_prob
+        return outs, ref_out, sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob
 
     def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned):
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
-        outs, ref_out, sel_out, last_h, ctx_attn_prob = self._forward(ctx_h, inpt, ref_inpt, sel_idx,
+        outs, ref_out, sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(ctx_h, inpt, ref_inpt, sel_idx,
                                                        lens=lens, lang_h=None, compute_sel_out=True, pack=False,
                                                        dots_mentioned=dots_mentioned)
-        return outs, ref_out, sel_out, ctx_attn_prob
+        return outs, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob
 
     def _context_for_feeding(self, ctx_h, lang_hs, dots_mentioned):
         if self.args.feed_context_attend:
@@ -447,6 +448,8 @@ class RnnReferenceModel(nn.Module):
             # seq_len x bsz x (nembed_word+nembed_ctx)
             ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(ctx_h, writer_lang_h, dots_mentioned=dots_mentioned)
             dialog_emb = torch.cat((dialog_emb, ctx_emb.expand(seq_len, -1, -1)), dim=-1)
+        else:
+            feed_ctx_attn_prob = None
         if pack:
             dialog_emb_before_pack = dialog_emb
             assert lens is not None
@@ -464,13 +467,13 @@ class RnnReferenceModel(nn.Module):
 
         if pack:
             lang_hs, _ = pad_packed_sequence(lang_hs, total_length=seq_len)
-        return lang_hs, last_h
+        return lang_hs, last_h, feed_ctx_attn_prob
 
     def read(self, ctx_h, inpt, lang_h, prefix_token='THEM:', dots_mentioned=None):
         # Add a 'THEM:' token to the start of the message
         prefix = self.word2var(prefix_token).unsqueeze(0)
         inpt = torch.cat([prefix, inpt])
-        lang_hs, lang_h = self._read(ctx_h, inpt, lang_h, lens=None, pack=False, dots_mentioned=dots_mentioned)
+        lang_hs, lang_h, feed_ctx_attn_prob = self._read(ctx_h, inpt, lang_h, lens=None, pack=False, dots_mentioned=dots_mentioned)
         return lang_hs, lang_h
 
     def word2var(self, word):
@@ -609,6 +612,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         sel_out = None
 
         all_ctx_attn_prob = []
+        all_feed_ctx_attn_prob = []
 
         assert len(inpts) == len(ref_inpts)
         for i in range(len(inpts)):
@@ -616,14 +620,15 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             ref_inpt = ref_inpts[i]
             is_last = i == len(inpts) - 1
             this_lens = lens[i]
-            outs, ref_out, sel_out, lang_h, ctx_attn_prob = self._forward(
+            outs, ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
                 ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
                 dots_mentioned=dots_mentioned[i],
             )
             all_outs.append(outs)
             all_ref_outs.append(ref_out)
             all_ctx_attn_prob.append(ctx_attn_prob)
+            all_feed_ctx_attn_prob.append(feed_ctx_attn_prob)
 
         assert sel_out is not None
 
-        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob
+        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob
