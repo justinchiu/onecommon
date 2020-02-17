@@ -19,17 +19,14 @@ def unwrap(loss):
 class RnnReferenceEngine(EngineBase):
     @classmethod
     def add_args(cls, parser):
-        parser.add_argument('--word_attention_supervised', action='store_true')
-        parser.add_argument('--feed_attention_supervised', action='store_true')
-
-        parser.add_argument('--attention_supervision_method', choices=['kl', 'penalize_unmentioned'])
-
+        pass
     def __init__(self, model, args, verbose=False):
         super(RnnReferenceEngine, self).__init__(model, args, verbose)
 
     def _forward(self, batch):
-        assert not self.args.word_attention_supervised
-        assert not self.args.feed_attention_supervised
+        assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
+        assert not self.args.feed_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
+        assert not self.args.mark_dots_mentioned, 'this only makes sense for a hierarchical model, and --lang_only_self'
         ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, sel_idx = batch
 
         ctx = Variable(ctx)
@@ -265,6 +262,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         # don't need to call super because its arguments will already be registered by engines.add_engine_args
         pass
 
+
     def _append_pad(self, inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables):
         # TODO: figure out why FAIR's e2e code had this; call it if necessary
         bsz = inpts[0].size(1)
@@ -280,6 +278,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         return inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables
 
     def _forward(self, batch):
+        if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
+            assert self.args.lang_only_self
         ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, _, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables = batch
 
         ctx = Variable(ctx)

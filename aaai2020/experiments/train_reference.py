@@ -9,6 +9,7 @@ from domain import get_domain
 import engines
 
 def add_loss_args(parser):
+    pass
     group = parser.add_argument_group('loss')
     group.add_argument('--lang_weight', type=float, default=1.0,
                         help='language loss weight')
@@ -18,6 +19,11 @@ def add_loss_args(parser):
                         help='selection loss weight')
     group.add_argument('--lang_only_self', action='store_true')
 
+    # these args only make sense if --lang_only_self is True
+    group.add_argument('--word_attention_supervised', action='store_true')
+    group.add_argument('--feed_attention_supervised', action='store_true')
+
+    group.add_argument('--attention_supervision_method', choices=['kl', 'penalize_unmentioned'], default='kl')
 
 def main():
     parser = argparse.ArgumentParser(description='training script for reference resolution')
