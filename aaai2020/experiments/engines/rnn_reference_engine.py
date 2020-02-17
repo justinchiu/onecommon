@@ -412,7 +412,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                                 )
                             elif self.args.attention_supervision_method == 'penalize_unmentioned':
                                 # attn_loss = referent_attention[gold_dist == 0].log().sum()
-                                attn_loss = referent_attention[gold_dist == 0].sum()
+                                attn_loss = referent_attention[(gold_dist == 0).unsqueeze(0).expand_as(referent_attention)].sum()
                             else:
                                 raise ValueError("invalid --attention_supervision_method {}".format(self.args.attention_supervision_method))
 
