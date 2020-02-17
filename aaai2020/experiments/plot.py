@@ -4,10 +4,12 @@ import pandas
 
 STATS = ['valid_ppl', 'valid_select_acc', 'valid_ref_acc']
 
+DEFAULT_STATS = ['valid_ppl']
+
 def make_parser():
     parser = argparse.ArgumentParser()
-    parser.add_argument("--log_files", nargs='+')
-    parser.add_argument("--stats", choices=STATS, nargs='+', default=STATS)
+    parser.add_argument("log_files", nargs='+')
+    parser.add_argument("--stats", choices=STATS, nargs='+', default=DEFAULT_STATS)
     return parser
 
 def parse(log_file):

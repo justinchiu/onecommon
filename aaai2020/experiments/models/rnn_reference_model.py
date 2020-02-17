@@ -85,9 +85,6 @@ class RnnReferenceModel(nn.Module):
                             action='store_true',
                             help="don't allow attention to dots that aren't mentioned in the utterance")
 
-        parser.add_argument('--word_attention_supervised', action='store_true')
-        parser.add_argument('--feed_attention_supervised', action='store_true')
-
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
 

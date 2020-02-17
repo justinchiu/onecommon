@@ -10,7 +10,6 @@ from torch.autograd import Variable
 import utils
 from engines import EngineBase
 
-
 def unwrap(loss):
     if loss is not None:
         return loss.item()
@@ -18,6 +17,13 @@ def unwrap(loss):
         return 0
 
 class RnnReferenceEngine(EngineBase):
+    @classmethod
+    def add_args(cls, parser):
+        parser.add_argument('--word_attention_supervised', action='store_true')
+        parser.add_argument('--feed_attention_supervised', action='store_true')
+
+        parser.add_argument('--attention_supervision_method', choices=['kl', 'penalize_unmentioned'])
+
     def __init__(self, model, args, verbose=False):
         super(RnnReferenceEngine, self).__init__(model, args, verbose)
 
@@ -254,6 +260,11 @@ class RnnReferenceEngine(EngineBase):
 
 
 class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
+    @classmethod
+    def add_args(cls, parser):
+        # don't need to call super because its arguments will already be registered by engines.add_engine_args
+        pass
+
     def _append_pad(self, inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables):
         # TODO: figure out why FAIR's e2e code had this; call it if necessary
         bsz = inpts[0].size(1)
@@ -393,15 +404,21 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                             # num_locations x num_dots
                             referent_attention = this_ctx_attn_prob[markable_start-1:markable_end,batch_ix]
                             # kl_div takes inputs as log probabilities, and target probabilities
-                            attn_loss = torch.nn.functional.kl_div(
-                                referent_attention.log(),
-                                gold_dist.unsqueeze(0).expand_as(referent_attention),
-                                reduction='batchmean'
-                            )
+                            if self.args.attention_supervision_method == 'kl':
+                                attn_loss = torch.nn.functional.kl_div(
+                                    referent_attention.log(),
+                                    gold_dist.unsqueeze(0).expand_as(referent_attention),
+                                    reduction='batchmean'
+                                )
+                            elif self.args.attention_supervision_method == 'penalize_unmentioned':
+                                # attn_loss = referent_attention[gold_dist == 0].log().sum()
+                                attn_loss = referent_attention[gold_dist == 0].sum()
+                            else:
+                                raise ValueError("invalid --attention_supervision_method {}".format(self.args.attention_supervision_method))
+
                             if attn_loss != attn_loss:
-                                # print("nan loss: {}\nreferent_attention: {} \t gold_dist: {}".format(attn_loss.item(), referent_attention.log(), gold_dist))
-                                # print("markable start: {}\tmarkable end: {}".format(markable_start, markable_end))
-                                pass
+                                print("nan loss: {}\nreferent_attention: {} \t gold_dist: {}".format(attn_loss.item(), referent_attention.log(), gold_dist))
+                                print("markable start: {}\tmarkable end: {}".format(markable_start, markable_end))
                             else:
                                 word_attn_losses.append(attn_loss)
 
@@ -411,11 +428,17 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 filtered_attention = this_feed_ctx_attn_prob[mask]
                 filtered_target = this_dots_mentioned[mask].float()
                 filtered_target /= filtered_target.sum(-1, keepdims=True)
-                feed_attn_loss = torch.nn.functional.kl_div(
-                    filtered_attention.log(),
-                    filtered_target,
-                    reduction='batchmean',
-                )
+                if self.args.attention_supervision_method == 'kl':
+                    feed_attn_loss = torch.nn.functional.kl_div(
+                        filtered_attention.log(),
+                        filtered_target,
+                        reduction='batchmean',
+                    )
+                elif self.args.attention_supervision_method == 'penalize_unmentioned':
+                    # feed_attn_loss = filtered_attention[filtered_target == 0].log().sum()
+                    feed_attn_loss = filtered_attention[filtered_target == 0].sum()
+                else:
+                    raise ValueError("invalid --attention_supervision_method {}".format(self.args.attention_supervision_method))
                 if feed_attn_loss != feed_attn_loss:
                     # nan
                     print("feed nan loss: {}\nthis_feed_ctx_attn_prob: {} \t this_dots_mentioned: {}".format(

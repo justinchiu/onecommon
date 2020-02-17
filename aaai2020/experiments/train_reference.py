@@ -51,6 +51,7 @@ def main():
     engines.add_training_args(parser)
     add_loss_args(parser)
     models.add_model_args(parser)
+    engines.add_engine_args(parser)
 
     print(' '.join(sys.argv))
     args = parser.parse_args()

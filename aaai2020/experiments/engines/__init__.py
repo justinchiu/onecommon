@@ -41,6 +41,10 @@ def add_training_args(parser):
     group.add_argument('--reduce_plateau_patience', type=float, default=4)
     group.add_argument('--reduce_plateau_min_lr', type=float, default=1e-6)
 
+def add_engine_args(parser):
+    from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
+    for eng in [RnnReferenceEngine, HierarchicalRnnReferenceEngine]:
+        eng.add_args(parser)
 
 class Criterion(object):
     """Weighted CrossEntropyLoss."""
@@ -112,6 +116,10 @@ class Entropy(_Loss):
 
 class EngineBase(object):
     """Base class for training engine."""
+
+    @classmethod
+    def add_args(cls, parser):
+        pass
 
     def __init__(self, model, args, verbose=False):
         self.model = model
