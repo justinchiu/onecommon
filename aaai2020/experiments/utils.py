@@ -11,9 +11,12 @@ import os
 import random
 import copy
 import pdb
+import sys
+import json
 
 import torch
 import numpy as np
+import subprocess
 
 from contextlib import contextmanager
 
@@ -138,3 +141,7 @@ class ContextTestGenerator(object):
                     self.ctxs.append(ctx_data)
                     ctx_data = []
 
+def dump_git_status(out_file=sys.stdout, exclude_file_patterns=['*.ipynb', '*.th', '*.sh']):
+    subprocess.call('git rev-parse HEAD', shell=True, stdout=out_file)
+    exclude_string = ' '.join("':(exclude){}'".format(f) for f in exclude_file_patterns)
+    subprocess.call('git --no-pager diff -- . {}'.format(exclude_string), shell=True, stdout=out_file)
