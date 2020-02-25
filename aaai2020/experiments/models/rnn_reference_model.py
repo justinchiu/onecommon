@@ -89,6 +89,8 @@ class RnnReferenceModel(nn.Module):
                             action='store_true',
                             help='give an indicator feature for whether the given dot should be mentioned')
 
+        parser.add_argument('--attention_type', choices=['softmax', 'sigmoid'], default='softmax')
+
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
 
@@ -349,7 +351,7 @@ class RnnReferenceModel(nn.Module):
         lang_h_expand = lang_hs.unsqueeze(2).expand(-1, -1, num_dots, -1)
 
         # seq_len x batch_size x num_dots x nembed_ctx
-        if self.args.mark_dots_mentioned:
+        if vars(self.args).get('mark_dots_mentioned', False):
             # TODO: consider tiling this indicator feature across more dimensions
             ctx_h_marked = torch.cat((ctx_h, dots_mentioned.float().unsqueeze(-1)), -1)
         else:
@@ -367,7 +369,12 @@ class RnnReferenceModel(nn.Module):
 
         # language-conditioned attention over the dots
         # seq_len x batch_size x num_dots
-        attn_prob = F.softmax(attn_logit, dim=2)
+        if self.args.attention_type == 'softmax':
+            attn_prob = F.softmax(attn_logit, dim=2)
+        elif self.args.attention_type == 'sigmoid':
+            attn_prob = torch.sigmoid(attn_logit)
+        else:
+            raise ValueError("invalid --attention_type: {}".format(self.args.attention_type))
 
         if constrain_attention:
             zero_rows = (dots_mentioned.sum(dim=-1) == 0)
@@ -516,10 +523,10 @@ class RnnReferenceModel(nn.Module):
 
         if self.args.feed_context:
             # add a time dimension
-            ctx_emb, dot_attention1 = self._context_for_feeding(ctx_h, lang_h.unsqueeze(1), dots_mentioned)
+            ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(ctx_h, lang_h.unsqueeze(1), dots_mentioned)
         else:
-            ctx_emb, dot_attention1 = None, None
-        dot_attention2s = []
+            ctx_emb, feed_ctx_attn_prob = None, None
+        ctx_attn_probs = []
         top_words = []
         for word_ix in range(max_words):
             # embed
@@ -533,20 +540,24 @@ class RnnReferenceModel(nn.Module):
             if self.word_dict.get_word(inpt.data[0]) in stop_tokens:
                 break
 
-            # compute attention for language output
-            # bsz x num_dots x hidden
-            lang_h_expand = lang_h.unsqueeze(1).expand(-1, num_dots, -1)
-            lang_logit = self._apply_attention('lang', torch.cat([lang_h_expand, ctx_h], -1))
-
             # compute language output
             if vars(self.args).get('no_word_attention', False):
                 out_emb = self.hid2output(lang_h)
             else:
-                dot_attention2 = F.softmax(lang_logit, dim=1)
-                dot_attention2s.append(dot_attention2)
+                # compute attention for language output
+                # bsz x num_dots x hidden
+                # lang_h_expand = lang_h.unsqueeze(1).expand(-1, num_dots, -1)
+                # lang_logit = self._apply_attention('lang', torch.cat([lang_h_expand, ctx_h], -1))
+                # dot_attention2 = F.softmax(lang_logit, dim=1)
+
+                # add a time dimension to lang_h
+                ctx_attn_prob = self._language_conditioned_dot_attention(ctx_h, lang_h.unsqueeze(0), use_feed_attn=False, dots_mentioned=dots_mentioned)
+                # remove the time dimension
+                ctx_attn_prob = ctx_attn_prob.squeeze(0)
+                ctx_attn_probs.append(ctx_attn_prob)
                 # lang_prob = dot_attention2.expand_as(ctx_h)
                 # ctx_h_lang = torch.sum(torch.mul(ctx_h, dot_attention2.expand_as(ctx_h)), 1)
-                ctx_h_lang = torch.einsum("bnd,bn->bd", (ctx_h,dot_attention2))
+                ctx_h_lang = torch.einsum("bnd,bn->bd", (ctx_h,ctx_attn_prob))
                 out_emb = self.hid2output(torch.cat([lang_h, ctx_h_lang], 1))
             out = F.linear(out_emb, self.word_embed.weight)
 
@@ -585,16 +596,16 @@ class RnnReferenceModel(nn.Module):
         # TODO: consider swapping in partner context
 
         # read the output utterance
-        _, lang_h = self.read(ctx_h, outs, lang_h.unsqueeze(0))
+        _, lang_h = self.read(ctx_h, outs, lang_h.unsqueeze(0), dots_mentioned=dots_mentioned)
         lang_h = lang_h.squeeze(0)
 
         extra = {
-            'dot_attention1': dot_attention1,
-            'dot_attention2s': dot_attention2s,
+            'feed_ctx_attn_prob': feed_ctx_attn_prob,
+            'word_ctx_attn_probs': ctx_attn_probs,
             'top_words': top_words,
         }
-        if dot_attention2s:
-            extra['dot_attention2_mean'] = torch.mean(torch.stack(dot_attention2s, 0), 0)
+        if ctx_attn_probs:
+            extra['word_ctx_attn_prob_mean'] = torch.mean(torch.stack(ctx_attn_probs, 0), 0)
 
         return outs, logprobs, lang_h, torch.cat(lang_hs, 0), extra
 
@@ -607,7 +618,6 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
     def add_args(cls, parser):
         # args from RnnReferenceModel will be added separately
         pass
-
 
     def forward(self, ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned):
         # inpts is a list, one item per sentence

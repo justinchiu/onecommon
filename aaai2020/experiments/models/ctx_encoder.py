@@ -21,6 +21,7 @@ class AttentionContextEncoder(nn.Module):
 
     def __init__(self, domain, args):
         super(AttentionContextEncoder, self).__init__()
+        self.args = args
 
         self.num_ent = domain.num_ent()
         self.dim_ent = domain.dim_ent()
@@ -66,6 +67,7 @@ class RelationalAttentionContextEncoder(nn.Module):
 
     def __init__(self, domain, args):
         super(RelationalAttentionContextEncoder, self).__init__()
+        self.args = args
 
         self.num_ent = domain.num_ent()
         self.dim_ent = domain.dim_ent()
@@ -111,19 +113,27 @@ class RelationalAttentionContextEncoder2(nn.Module):
         parser.add_argument('--relation_encoder_layers', type=int, choices=[1,2], default=1)
         parser.add_argument('--relation_pooling', choices=['mean', 'max'], default='mean')
         parser.add_argument('--relation_ablate_properties', action='store_true')
+        parser.add_argument('--relation_include_angle', action='store_true')
+        parser.add_argument('--property_include_coordinates', action='store_true')
 
     def __init__(self, domain, args):
         super(RelationalAttentionContextEncoder2, self).__init__()
+        self.args = args
 
         self.num_ent = domain.num_ent()
         self.dim_ent = domain.dim_ent()
 
         self.relation_pooling = args.relation_pooling
 
-        # only embed property and shape
+        # default: only embed property and shape
         property_input_dim = 2
-        # property and shape for both objects, and subtracted representation, and distance
+        if args.property_include_coordinates:
+            property_input_dim += 2
+
+        # default: color and size for both objects, and subtracted representation, and distance
         relation_input_dim = 4 + domain.dim_ent() + 1
+        if args.relation_include_angle:
+            relation_input_dim += 2
 
 
         if args.relation_ablate_properties:
@@ -169,7 +179,15 @@ class RelationalAttentionContextEncoder2(nn.Module):
                 if i == j:
                     continue
                 dist = torch.sqrt((ents[:,i,0] - ents[:,j,0])**2 + (ents[:,i,1] - ents[:,j,1])**2)
-                rel_pairs.append((torch.cat([ents[:,i,2:], ents[:,j,2:], ents[:,i,:] - ents[:,j,:], dist.unsqueeze(1)], 1).unsqueeze(1)))
+                to_cat = [ents[:,i,2:], ents[:,j,2:], ents[:,i,:] - ents[:,j,:], dist.unsqueeze(1)]
+                if self.args.relation_include_angle:
+                    diff = ents[:,i,:2] - ents[:,j,:2]
+                    diff_x, diff_y = torch.split(diff, (1,1), dim=-1)
+                    rad_1 = torch.atan2(diff_x, diff_y) / math.pi
+                    rad_2 = torch.atan2(diff_y, diff_x) / math.pi
+                    to_cat.append(rad_1)
+                    to_cat.append(rad_2)
+                rel_pairs.append((torch.cat(to_cat, 1).unsqueeze(1)))
             ent_rel_pairs.append(torch.cat(rel_pairs, 1).unsqueeze(1))
         ent_rel_pairs = torch.cat(ent_rel_pairs, 1)
         rel_emb = self.relation_encoder(ent_rel_pairs)
@@ -179,7 +197,10 @@ class RelationalAttentionContextEncoder2(nn.Module):
             assert self.relation_pooling == 'max'
             rel_emb_pooled, _ = rel_emb.max(2)
         if self.property_encoder is not None:
-            prop_emb = self.property_encoder(ents[:,:,2:])
+            if self.args.property_include_coordinates:
+                prop_emb = self.property_encoder(ents)
+            else:
+                prop_emb = self.property_encoder(ents[:,:,2:])
             out = torch.cat([prop_emb, rel_emb_pooled], 2)
         else:
             out = rel_emb_pooled
