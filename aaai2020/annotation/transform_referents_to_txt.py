@@ -251,8 +251,12 @@ if __name__ == "__main__":
 
 	args.train_proportion = 1 - args.valid_proportion - args.test_proportion
 
+        # contains all dialogues (6.7K)
 	dialogue_corpus = read_json("final_transcripts.json")
+
+        # contains successful dialogues (5.1K)
 	markable_annotation = read_json("markable_annotation.json")
+        # contains successful dialogues (5.1K)
 	aggregated_referent_annotation = read_json("aggregated_referent_annotation.json")
 	
 	chat_ids = list(aggregated_referent_annotation.keys())

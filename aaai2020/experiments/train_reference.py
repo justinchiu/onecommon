@@ -60,7 +60,6 @@ def main():
     engines.add_engine_args(parser)
 
     utils.dump_git_status(sys.stdout)
-
     print(' '.join(sys.argv))
     args = parser.parse_args()
     pprint.pprint(vars(args))

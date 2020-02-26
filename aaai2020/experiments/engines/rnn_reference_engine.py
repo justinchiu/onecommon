@@ -120,7 +120,7 @@ class RnnReferenceEngine(EngineBase):
 
         return lang_loss.item(), unwrap(ref_loss), ref_correct, ref_total, sel_loss.item(), unwrap(word_attn_loss), unwrap(feed_attn_loss), sel_correct, sel_total, ref_positive, attn_ref_stats
 
-    def _pass(self, dataset, dataset_stats, batch_fn, name, use_tqdm):
+    def _pass(self, dataset, batch_fn, name, use_tqdm):
         total_lang_loss, total_select_loss, total_select, total_select_correct, total_reference_loss, total_reference, total_reference_correct = 0, 0, 0, 0, 0, 0, 0
         total_ref_positive = 0
         start_time = time.time()
@@ -167,7 +167,7 @@ class RnnReferenceEngine(EngineBase):
         basic implementation of one training pass
         '''
         self.model.train()
-        return self._pass(trainset, trainset_stats, self.train_batch, "train", use_tqdm=True)
+        return self._pass(trainset, self.train_batch, "train", use_tqdm=True)
 
 
     def valid_pass(self, validset, validset_stats):
@@ -176,7 +176,7 @@ class RnnReferenceEngine(EngineBase):
         '''
         self.model.eval()
 
-        return self._pass(validset, validset_stats, self.valid_batch, "val", use_tqdm=False)
+        return self._pass(validset, self.valid_batch, "val", use_tqdm=False)
 
 
     def iter(self, epoch, lr, traindata, validdata):
@@ -261,7 +261,6 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def add_args(cls, parser):
         # don't need to call super because its arguments will already be registered by engines.add_engine_args
         pass
-
 
     def _append_pad(self, inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables):
         # TODO: figure out why FAIR's e2e code had this; call it if necessary

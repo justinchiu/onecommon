@@ -326,8 +326,6 @@ class RnnReferenceModel(nn.Module):
         assert ctx_h.dim() == 3
         assert lang_hs.dim() == 3
 
-        assert dots_mentioned is not None
-
         seq_len, bsz, _ = lang_hs.size()
         bsz_, num_dots, _ = ctx_h.size()
         assert bsz == bsz_, (bsz, bsz_)
@@ -342,9 +340,13 @@ class RnnReferenceModel(nn.Module):
         if (not use_feed_attn) and vars(self.args).get('word_attention_constrained', False):
             constrain_attention = True
 
-        bsz_, num_dots_ = dots_mentioned.size()
-        assert bsz == bsz_, (bsz, bsz_)
-        assert num_dots == num_dots_, (num_dots, num_dots_)
+        if constrain_attention:
+            assert dots_mentioned is not None
+
+        if dots_mentioned is not None:
+            bsz_, num_dots_ = dots_mentioned.size()
+            assert bsz == bsz_, (bsz, bsz_)
+            assert num_dots == num_dots_, (num_dots, num_dots_)
 
         # expand num_ent dimensions to calculate attention scores
         # seq_len x batch_size x num_dots x _
@@ -353,6 +355,7 @@ class RnnReferenceModel(nn.Module):
         # seq_len x batch_size x num_dots x nembed_ctx
         if vars(self.args).get('mark_dots_mentioned', False):
             # TODO: consider tiling this indicator feature across more dimensions
+            assert dots_mentioned is not None
             ctx_h_marked = torch.cat((ctx_h, dots_mentioned.float().unsqueeze(-1)), -1)
         else:
             ctx_h_marked = ctx_h
@@ -369,12 +372,13 @@ class RnnReferenceModel(nn.Module):
 
         # language-conditioned attention over the dots
         # seq_len x batch_size x num_dots
-        if self.args.attention_type == 'softmax':
+        attention_type = vars(self.args).get('attention_type', 'softmax')
+        if attention_type == 'softmax':
             attn_prob = F.softmax(attn_logit, dim=2)
-        elif self.args.attention_type == 'sigmoid':
+        elif attention_type == 'sigmoid':
             attn_prob = torch.sigmoid(attn_logit)
         else:
-            raise ValueError("invalid --attention_type: {}".format(self.args.attention_type))
+            raise ValueError("invalid --attention_type: {}".format(attention_type))
 
         if constrain_attention:
             zero_rows = (dots_mentioned.sum(dim=-1) == 0)
@@ -399,7 +403,7 @@ class RnnReferenceModel(nn.Module):
         lang_hs, last_h, feed_ctx_attn_prob = self._read(ctx_h, inpt, lang_h=lang_h, lens=lens, pack=pack, dots_mentioned=dots_mentioned)
 
         # compute language output
-        if self.args.no_word_attention:
+        if vars(self.args).get('no_word_attention', False):
             outs = self.hid2output(lang_hs)
             ctx_attn_prob = None
         else:
@@ -455,8 +459,13 @@ class RnnReferenceModel(nn.Module):
 
         if lang_h is None:
             # lang_h = self._zero(1, bsz, self.args.nhid_lang)
-            reader_lang_h = self.reader_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
-            writer_lang_h = self.writer_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
+            if hasattr(self, 'reader_init_h'):
+                reader_lang_h = self.reader_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
+                writer_lang_h = self.writer_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
+            else:
+                reader_lang_h = self.init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
+                writer_lang_h = reader_lang_h
+
         else:
             reader_lang_h, writer_lang_h = lang_h, lang_h
 
@@ -475,12 +484,12 @@ class RnnReferenceModel(nn.Module):
                 dialog_emb = pack_padded_sequence(dialog_emb, lens.cpu(), enforce_sorted=False)
         # print('lang_h size: {}'.format(lang_h.size()))
         reader_lang_hs, reader_last_h = self.reader(dialog_emb, reader_lang_h)
-        if self.args.untie_grus:
+        if vars(self.args).get('untie_grus', False):
+            # todo: implement this?
+            raise NotImplementedError("untie_grus")
             assert False
             # writer_lang_hs, writer_last_h = self.writer(dialog_emb)
 
-        # todo: implement this?
-        assert not self.args.untie_grus
         lang_hs, last_h = reader_lang_hs, reader_last_h
 
         if pack:

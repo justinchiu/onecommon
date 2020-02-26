@@ -113,8 +113,8 @@ class RelationalAttentionContextEncoder2(nn.Module):
         parser.add_argument('--relation_encoder_layers', type=int, choices=[1,2], default=1)
         parser.add_argument('--relation_pooling', choices=['mean', 'max'], default='mean')
         parser.add_argument('--relation_ablate_properties', action='store_true')
-        parser.add_argument('--relation_include_angle', action='store_true')
-        parser.add_argument('--property_include_coordinates', action='store_true')
+        parser.add_argument('--relation_include_angle', action='store_true') # doesn't seem to help
+        parser.add_argument('--property_include_coordinates', action='store_true') # doesn't seem to help
 
     def __init__(self, domain, args):
         super(RelationalAttentionContextEncoder2, self).__init__()

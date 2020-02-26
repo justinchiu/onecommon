@@ -7,6 +7,8 @@ import copy
 import json
 import os
 from collections import Counter, defaultdict
+import pprint
+import sys
 
 import numpy as np
 import torch
@@ -16,6 +18,8 @@ import torch.nn as nn
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 
 from corpora import data
+from corpora.reference import ReferenceCorpus
+from corpora.reference_sentence import ReferenceSentenceCorpus
 import utils
 from engines import Criterion
 from domain import get_domain
@@ -60,8 +64,6 @@ def main():
         help='pretrained model file')
     parser.add_argument('--seed', type=int, default=1,
         help='random seed')
-    parser.add_argument('--hierarchical', action='store_true', default=False,
-        help='use hierarchical model')
     parser.add_argument('--bsz', type=int, default=16,
         help='batch size')
     parser.add_argument('--cuda', action='store_true', default=False,
@@ -89,6 +91,11 @@ def main():
 
     args = parser.parse_args()
 
+    utils.dump_git_status(sys.stdout)
+    print(' '.join(sys.argv))
+    args = parser.parse_args()
+    pprint.pprint(vars(args))
+
     if args.bleu_n > 0:
         # current support
         args.bsz = 1
@@ -110,17 +117,19 @@ def main():
             return '{}_{}_{}.{}'.format(args.model_file, seed, name, extension)
 
         domain = get_domain(args.domain)
+        if args.cuda:
+            device = torch.device("cuda")
+        else:
+            device = torch.device("cpu")
+
         try:
-            model = utils.load_model(model_filename_fn('best', 'th'))
+            model = utils.load_model(model_filename_fn('best', 'th'), map_location=device)
         except FileNotFoundError as e:
             print(e)
             continue
         # model = utils.load_model(args.model_file + '_' + str(seed) + '.th')
         if args.cuda:
             model.cuda()
-        else:
-            device = torch.device("cpu")
-            model.to(device)
         model.eval()
 
         corpus = model.corpus_ty(domain, args.data, train='train_reference_{}.txt'.format(seed), valid='valid_reference_{}.txt'.format(seed), test='test_reference_{}.txt'.format(seed), #test='selfplay_reference_{}.txt'.format(seed),
@@ -175,13 +184,23 @@ def main():
         bleu_scores = []
 
         for batch in testset:
+            # don't cheat!
             ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, real_ids, agents, chat_ids, sel_idx = batch
+
+            lens = None
+            dots_mentioned = None
 
             ctx = Variable(ctx)
             inpt = Variable(inpt)
             if ref_inpt is not None:
                 ref_inpt = Variable(ref_inpt)
-            out, ref_out, sel_out = model.forward(ctx, inpt, ref_inpt, sel_idx)
+
+            tpl = model.forward(ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned)
+            out, ref_out, sel_out = tpl[0], tpl[1], tpl[2]
+
+            # out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
+            #     ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned
+            # )
 
             tgt = Variable(tgt)
             sel_tgt = Variable(sel_tgt)
