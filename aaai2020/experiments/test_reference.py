@@ -147,6 +147,7 @@ def main():
         crit = Criterion(model.word_dict, device_id=device_id)
         sel_crit = nn.CrossEntropyLoss()
         ref_crit = nn.BCEWithLogitsLoss()
+        ref_crit_no_reduce = nn.BCEWithLogitsLoss(reduction='none')
 
         testset, testset_stats = corpus.test_dataset(args.bsz)
         test_lang_loss, test_select_loss, test_reference_loss, test_select_correct, test_select_total, test_reference_correct, test_reference_total = 0, 0, 0, 0, 0, 0, 0
@@ -299,11 +300,18 @@ def main():
                 if ref_inpt is not None:
                     ref_tgt = Variable(ref_tgt)
                     ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
-                    ref_loss = ref_crit(ref_out, ref_tgt)
-                    t = Variable(torch.FloatTensor([0])) # threshold
-                    ref_results = ((ref_out > 0).long() == ref_tgt.long())
-                    ref_correct = ((ref_out > 0).long() == ref_tgt.long()).sum().item()
-                    ref_total = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
+                    ref_mask = torch.zeros_like(ref_tgt)
+                    for i, nm in enumerate(sentence_num_markables):
+                        ref_mask[:nm, i, :] = 1
+
+                    ref_loss = (ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum()
+                    ref_correct = (((ref_out > 0).long() == ref_tgt.long()) * ref_mask.byte()).sum().item()
+                    ref_total = ref_mask.sum().item()
+                    # ref_loss = ref_crit(ref_out, ref_tgt)
+                    # t = Variable(torch.FloatTensor([0])) # threshold
+                    ref_results = ((ref_out > 0).long() == ref_tgt.long()) * ref_mask
+                    # ref_correct = ((ref_out > 0).long() == ref_tgt.long()).sum().item()
+                    # ref_total = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
 
                     # compute more details of reference resolution
                     for j in range(bsz): # batch idx
@@ -315,12 +323,13 @@ def main():
                         if chat_id not in reference_correct:
                             reference_correct[chat_id] = ref_results[:,j,:].sum().item()
                         if chat_id not in reference_total:
-                            reference_total[chat_id] = ref_results[:,j,:].size(0) * ref_results[:,j,:].size(1)
+                            reference_total[chat_id] = ref_mask[:,j,:].sum() #ref_results[:,j,:].size(0) * ref_results[:,j,:].size(1)
                         if chat_id not in model_referent_annotation:
                             model_referent_annotation[chat_id] = {}
 
                         for i in range(this_num_markables): # markable idx
-                            correct_result = ((ref_out > 0).long()[i][j] == ref_tgt.long())[i][j].sum().item()
+                            # fixed a typo (?) here that was autobroadcasting, but it shouldn't affect correctness
+                            correct_result = ((ref_out > 0).long() == ref_tgt.long())[i,j].sum().item()
                             exact_match_result = torch.equal((ref_out > 0).long()[i][j], ref_tgt.long()[i][j])
 
                             """
@@ -365,27 +374,27 @@ def main():
                     ref_correct = 0
                     ref_total = 0
 
-                sel_loss = sel_crit(sel_out, sel_tgt)
-                sel_correct = (sel_out.max(dim=1)[1] == sel_tgt).sum().item()
-                sel_total = sel_out.size(0)
-                for i in range(sel_tgt.size(0)): # batch idx
-                    chat_id = chat_ids[i]
-                    sel_resuts = (sel_out.max(dim=1)[1] == sel_tgt)
-                    if sel_resuts[i]:
-                        select_correct[chat_id] = 1
-                    else:
-                        select_correct[chat_id] = 0
-
                 test_lang_loss += lang_loss.item()
-                test_select_loss += sel_loss.item()
                 if ref_loss:
                     test_reference_loss += ref_loss.item()
-                test_select_correct += sel_correct
-                test_select_total += sel_total
                 test_reference_correct += ref_correct
                 test_reference_total += ref_total
 
                 # END loop over sentences
+
+            sel_loss = sel_crit(sel_out, sel_tgt)
+            sel_correct = (sel_out.max(dim=1)[1] == sel_tgt).sum().item()
+            sel_total = sel_out.size(0)
+            for i in range(sel_tgt.size(0)): # batch idx
+                chat_id = chat_ids[i]
+                sel_resuts = (sel_out.max(dim=1)[1] == sel_tgt)
+                if sel_resuts[i]:
+                    select_correct[chat_id] = 1
+                else:
+                    select_correct[chat_id] = 0
+            test_select_loss += sel_loss.item()
+            test_select_correct += sel_correct
+            test_select_total += sel_total
 
             if args.bleu_n > 0:
                 ctx_h = model.ctx_encoder(ctx.transpose(0,1))
@@ -418,11 +427,12 @@ def main():
         test_select_loss /= len(testset)
         test_select_accuracy = test_select_correct / test_select_total
         test_reference_accuracy = test_reference_correct / test_reference_total
+        print('test_reference_correct {} ; test_reference_total {}'.format(test_reference_correct, test_reference_total))
         print('testlangloss %.8f | testlangppl %.8f' % (test_lang_loss, np.exp(test_lang_loss)))
         print('testselectloss %.8f | testselectaccuracy %.6f' % (test_select_loss, test_select_accuracy))
         print('testreferenceloss %.8f | testreferenceaccuracy %.6f' % (test_reference_loss, test_reference_accuracy))
         print('reference_exact_match %.6f' % (exact_match / total_num_markables))
-        for k in num_markables_counter.keys():
+        for k in sorted(num_markables_counter.keys()):
             print('{}: {:.4f} {:.4f} (out of {})'.format(k, num_markables_correct[k] / (num_markables_counter[k] * 7), exact_match_counter[k] / num_markables_counter[k], num_markables_counter[k]))
         print('test anaphora: {} (out of {})'.format(correct_anaphora / total_anaphora, total_anaphora))
 
@@ -432,7 +442,7 @@ def main():
         # reference/selection correlation
         reference_score = []
         selection_score = []
-        for chat_id in reference_correct.keys():
+        for chat_id in sorted(reference_correct.keys()):
             reference_score.append(reference_correct[chat_id] / reference_total[chat_id])
             selection_score.append(select_correct[chat_id])
         plt.xlabel('reference score', fontsize=14)
