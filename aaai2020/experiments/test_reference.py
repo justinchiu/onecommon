@@ -156,7 +156,7 @@ def main():
         """
 
         # num_referents --> count, count correct
-        num_markables = 0
+        total_num_markables = 0
         num_markables_counter = Counter()
         num_markables_correct = Counter()
 
@@ -184,41 +184,132 @@ def main():
         bleu_scores = []
 
         for batch in testset:
-            # don't cheat!
-            ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, real_ids, agents, chat_ids, sel_idx = batch
-
-            lens = None
-            dots_mentioned = None
+            if isinstance(corpus, ReferenceSentenceCorpus):
+                ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, agents, chat_ids, sel_idx, lens, _, _, num_markables_by_sentence = batch
+                bsz = ctx.size(0)
+            elif isinstance(corpus, ReferenceCorpus):
+                # needs to come second since it's a subclass
+                ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, real_ids, agents, chat_ids, sel_idx = batch
+                bsz = ctx.size(0)
+                inpts, tgts, ref_inpts, ref_tgts = [inpt], [tgt], [ref_inpt], [ref_tgt]
+                lens = None
+                if ref_inpt is None:
+                    nm = 0
+                else:
+                    nm = ref_inpt.size(1)
+                num_markables_by_sentence = [
+                    torch.full((bsz,), nm).long()
+                ]
+            else:
+                raise ValueError("invalid corpus type {}".format(type(corpus)))
 
             ctx = Variable(ctx)
-            inpt = Variable(inpt)
-            if ref_inpt is not None:
-                ref_inpt = Variable(ref_inpt)
-
-            tpl = model.forward(ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned)
-            out, ref_out, sel_out = tpl[0], tpl[1], tpl[2]
-
-            # out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
-            #     ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned
-            # )
-
-            tgt = Variable(tgt)
+            inpts = [Variable(inpt) for inpt in inpts]
+            ref_inpts = [Variable(ref_inpt) if ref_inpt is not None else None
+                         for ref_inpt in ref_inpts]
+            tgts = [Variable(tgt) for tgt in tgts]
             sel_tgt = Variable(sel_tgt)
-            lang_loss = crit(out, tgt)
 
-            if ref_inpt is not None:
-                ref_tgt = Variable(ref_tgt)
-                ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
-                ref_loss = ref_crit(ref_out, ref_tgt)
-                t = Variable(torch.FloatTensor([0])) # threshold
-                ref_results = ((ref_out > 0).long() == ref_tgt.long())
-                ref_correct = ((ref_out > 0).long() == ref_tgt.long()).sum().item()
-                ref_total = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
 
-                # compute more details of reference resolution
-                for i in range(ref_tgt.size(0)): # markable idx
-                    for j in range(ref_tgt.size(1)): # batch idx
-                        chat_id = chat_ids[j]
+            if isinstance(corpus, ReferenceSentenceCorpus):
+                # don't cheat!
+                dots_mentioned = [None] * len(inpts)
+                outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
+                    ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned
+                )
+            elif isinstance(corpus, ReferenceCorpus):
+                # don't cheat!
+                dots_mentioned = None
+                out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
+                    ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned
+                )
+                outs, ref_outs = [out], [ref_out]
+            else:
+                raise ValueError("invalid corpus type {}".format(type(corpus)))
+
+            markables_by_sentence_by_batch = []
+
+            for j in range(bsz):
+                chat_id = chat_ids[j]
+
+                remaining_markables = markable_annotation[chat_id]["markables"]
+
+                def keep_markable(markable):
+                    markable_id = markable["markable_id"]
+                    if markable_id in aggregated_referent_annotation[chat_id] and markable["speaker"] == agents[j]:
+                        if "unidentifiable" in aggregated_referent_annotation[chat_id][markable_id] and aggregated_referent_annotation[chat_id][markable_id]["unidentifiable"]:
+                            return False
+                        return True
+                    return False
+
+                if lens is None:
+                    markables = [
+                        markable for markable in remaining_markables
+                        if keep_markable(markable)
+                    ]
+                    markables_by_sentence = [markables]
+                else:
+                    markables_by_sentence = []
+                    # markables information from aggregated_referent_annotation
+
+                    chat = next(chat for chat in dialog_corpus if chat['uuid'] == chat_id)
+                    messages = markable_annotation[chat_id]['text'].split('\n')
+
+                    assert len(messages) == len(inpts)
+
+                    # def foo(ix):
+                    #     start = m[ix]['start'] - 3 * (ix + 1)
+                    #     end   = m[ix]['end'] - 3 * (ix + 1)
+                    #     start -= sum(len(m) for m in messages[:ix])
+                    #     end   -= sum(len(m) for m in messages[:ix])
+                    #     return messages[ix][start:end]
+
+                    acc_sent_length = 0
+                    for sentence_ix, _ in enumerate(inpts):
+                        this_len = len(messages[sentence_ix]) + 1 # add 1 for newline
+                        markables = []
+                        if not remaining_markables:
+                            markables_by_sentence.append(markables)
+                            continue
+                        while remaining_markables and remaining_markables[0]['end'] < acc_sent_length + this_len:
+                            markable, remaining_markables = remaining_markables[0], remaining_markables[1:]
+                            if keep_markable(markable):
+                                markables.append(markable)
+
+                                extracted_text = messages[sentence_ix][markable['start']-acc_sent_length:markable['end']-acc_sent_length]
+                                if markable['text'] != extracted_text:
+                                    print(chat_id)
+                                    print(j, sentence_ix, markable['text'])
+                                    print(j, sentence_ix, extracted_text)
+                                    print(acc_sent_length)
+                                    print(markable)
+                                    assert False
+                        acc_sent_length += this_len
+                        markables_by_sentence.append(markables)
+                    assert not remaining_markables
+                markables_by_sentence_by_batch.append(markables_by_sentence)
+
+            for sentence_ix, (inpt, out, tgt, ref_inpt, ref_out, ref_tgt) in enumerate(
+                utils.safe_zip(inpts, outs, tgts, ref_inpts, ref_outs, ref_tgts)
+            ):
+                sentence_num_markables = num_markables_by_sentence[sentence_ix]
+                tgt = Variable(tgt)
+                lang_loss = crit(out, tgt)
+
+                if ref_inpt is not None:
+                    ref_tgt = Variable(ref_tgt)
+                    ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
+                    ref_loss = ref_crit(ref_out, ref_tgt)
+                    t = Variable(torch.FloatTensor([0])) # threshold
+                    ref_results = ((ref_out > 0).long() == ref_tgt.long())
+                    ref_correct = ((ref_out > 0).long() == ref_tgt.long()).sum().item()
+                    ref_total = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
+
+                    # compute more details of reference resolution
+                    for j in range(bsz): # batch idx
+                        markables = markables_by_sentence_by_batch[j][sentence_ix]
+                        this_num_markables = sentence_num_markables[j].item()
+                        assert len(markables) == this_num_markables
 
                         # add chat level details if not exists
                         if chat_id not in reference_correct:
@@ -228,80 +319,73 @@ def main():
                         if chat_id not in model_referent_annotation:
                             model_referent_annotation[chat_id] = {}
 
-                        markables = []
-                        # markables information from aggregated_referent_annotation
-                        for markable in markable_annotation[chat_id]["markables"]:
-                            markable_id = markable["markable_id"]
-                            if markable_id in aggregated_referent_annotation[chat_id] and markable["speaker"] == agents[j]:
-                                if "unidentifiable" in aggregated_referent_annotation[chat_id][markable_id] and aggregated_referent_annotation[chat_id][markable_id]["unidentifiable"]:
-                                    continue
-                                markables.append(markable)
-                        assert len(markables) == ref_tgt.size(0)
+                        for i in range(this_num_markables): # markable idx
+                            correct_result = ((ref_out > 0).long()[i][j] == ref_tgt.long())[i][j].sum().item()
+                            exact_match_result = torch.equal((ref_out > 0).long()[i][j], ref_tgt.long()[i][j])
 
-                        correct_result = ((ref_out > 0).long()[i][j] == ref_tgt.long())[i][j].sum().item()
-                        exact_match_result = torch.equal((ref_out > 0).long()[i][j], ref_tgt.long()[i][j])
+                            """
+                                Add information to variables
+                            """
+                            total_num_markables += 1
+                            num_markables_counter[ref_tgt.long()[i][j].sum().item()] += 1
+                            num_markables_correct[ref_tgt.long()[i][j].sum().item()] += correct_result
 
-                        """
-                            Add information to variables
-                        """
-                        num_markables += 1
-                        num_markables_counter[ref_tgt.long()[i][j].sum().item()] += 1
-                        num_markables_correct[ref_tgt.long()[i][j].sum().item()] += correct_result
-
-                        # compute exact match 
-                        if exact_match_result:
-                            exact_match += 1
-                            exact_match_counter[ref_tgt.long()[i][j].sum().item()] += 1
-                            text_correct[markables[i]["text"].lower()] += 1
-
-                        location_correct[i] += correct_result
-                        if exact_match_result:
-                            location_exact_match[i] += 1
-                        location_counter[i] += 1
-
-                        text_counter[markables[i]["text"].lower()] += 1
-
-                        # test anaphora
-                        if markables[i]["text"].lower() in anaphora_list:
-                            total_anaphora += 1
+                            # compute exact match
                             if exact_match_result:
-                                correct_anaphora += 1
+                                exact_match += 1
+                                exact_match_counter[ref_tgt.long()[i][j].sum().item()] += 1
+                                text_correct[markables[i]["text"].lower()] += 1
 
-                        # keep track of model predictions for later visualization
-                        chat = [chat for chat in dialog_corpus if chat['uuid'] == chat_id]
-                        chat = chat[0]
-                        if markables[i]['markable_id'] not in model_referent_annotation[chat_id]:
-                            model_referent_annotation[chat_id][markables[i]['markable_id']] = {}
-                            model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'] = []
-                            model_referent_annotation[chat_id][markables[i]['markable_id']]['ambiguous'] = False
-                            model_referent_annotation[chat_id][markables[i]['markable_id']]['unidentifiable'] = False
-                            for ent, is_referent in zip(chat['scenario']['kbs'][agents[j]], (ref_out > 0).long()[i][j].tolist()):
-                                if is_referent:
-                                    model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'].append("agent_{}_{}".format(agents[j], ent['id']))
-            else:
-                ref_loss = None
-                ref_correct = 0
-                ref_total = 0
+                            location_correct[i] += correct_result
+                            if exact_match_result:
+                                location_exact_match[i] += 1
+                            location_counter[i] += 1
 
-            sel_loss = sel_crit(sel_out, sel_tgt)
-            sel_correct = (sel_out.max(dim=1)[1] == sel_tgt).sum().item()
-            sel_total = sel_out.size(0)
-            for i in range(sel_tgt.size(0)): # batch idx
-                chat_id = chat_ids[i]
-                sel_resuts = (sel_out.max(dim=1)[1] == sel_tgt)
-                if sel_resuts[i]:
-                    select_correct[chat_id] = 1
+                            text_counter[markables[i]["text"].lower()] += 1
+
+                            # test anaphora
+                            if markables[i]["text"].lower() in anaphora_list:
+                                total_anaphora += 1
+                                if exact_match_result:
+                                    correct_anaphora += 1
+
+                            # keep track of model predictions for later visualization
+                            chat = [chat for chat in dialog_corpus if chat['uuid'] == chat_id]
+                            chat = chat[0]
+                            if markables[i]['markable_id'] not in model_referent_annotation[chat_id]:
+                                model_referent_annotation[chat_id][markables[i]['markable_id']] = {}
+                                model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'] = []
+                                model_referent_annotation[chat_id][markables[i]['markable_id']]['ambiguous'] = False
+                                model_referent_annotation[chat_id][markables[i]['markable_id']]['unidentifiable'] = False
+                                for ent, is_referent in zip(chat['scenario']['kbs'][agents[j]], (ref_out > 0).long()[i][j].tolist()):
+                                    if is_referent:
+                                        model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'].append("agent_{}_{}".format(agents[j], ent['id']))
                 else:
-                    select_correct[chat_id] = 0
+                    ref_loss = None
+                    ref_correct = 0
+                    ref_total = 0
 
-            test_lang_loss += lang_loss.item()
-            test_select_loss += sel_loss.item()
-            if ref_loss:
-                test_reference_loss += ref_loss.item()
-            test_select_correct += sel_correct
-            test_select_total += sel_total
-            test_reference_correct += ref_correct
-            test_reference_total += ref_total
+                sel_loss = sel_crit(sel_out, sel_tgt)
+                sel_correct = (sel_out.max(dim=1)[1] == sel_tgt).sum().item()
+                sel_total = sel_out.size(0)
+                for i in range(sel_tgt.size(0)): # batch idx
+                    chat_id = chat_ids[i]
+                    sel_resuts = (sel_out.max(dim=1)[1] == sel_tgt)
+                    if sel_resuts[i]:
+                        select_correct[chat_id] = 1
+                    else:
+                        select_correct[chat_id] = 0
+
+                test_lang_loss += lang_loss.item()
+                test_select_loss += sel_loss.item()
+                if ref_loss:
+                    test_reference_loss += ref_loss.item()
+                test_select_correct += sel_correct
+                test_select_total += sel_total
+                test_reference_correct += ref_correct
+                test_reference_total += ref_total
+
+                # END loop over sentences
 
             if args.bleu_n > 0:
                 ctx_h = model.ctx_encoder(ctx.transpose(0,1))
@@ -337,7 +421,7 @@ def main():
         print('testlangloss %.8f | testlangppl %.8f' % (test_lang_loss, np.exp(test_lang_loss)))
         print('testselectloss %.8f | testselectaccuracy %.6f' % (test_select_loss, test_select_accuracy))
         print('testreferenceloss %.8f | testreferenceaccuracy %.6f' % (test_reference_loss, test_reference_accuracy))
-        print('reference_exact_match %.6f' % (exact_match / num_markables))
+        print('reference_exact_match %.6f' % (exact_match / total_num_markables))
         for k in num_markables_counter.keys():
             print('{}: {:.4f} {:.4f} (out of {})'.format(k, num_markables_correct[k] / (num_markables_counter[k] * 7), exact_match_counter[k] / num_markables_counter[k], num_markables_counter[k]))
         print('test anaphora: {} (out of {})'.format(correct_anaphora / total_anaphora, total_anaphora))
@@ -372,7 +456,7 @@ def main():
         repeat_results["num_markables_counter"].append(copy.copy(num_markables_counter))
         repeat_results["exact_match_counter"].append(copy.copy(exact_match_counter))
         repeat_results["num_markables_correct"].append(copy.copy(num_markables_correct))
-        repeat_results["reference_exact_match"].append(exact_match / num_markables)
+        repeat_results["reference_exact_match"].append(exact_match / total_num_markables)
         repeat_results["test_perplexity"].append(np.exp(test_lang_loss))
         repeat_results["location_counter"].append(copy.copy(location_counter))
         repeat_results["location_correct"].append(copy.copy(location_correct))
@@ -393,7 +477,7 @@ def main():
     print("repeat reference exact match %.8f ( %.8f )" % (np.mean(repeat_results["reference_exact_match"]), np.std(repeat_results["reference_exact_match"])))
     print("repeat test perplexity %.8f ( %.8f )" % (np.mean(repeat_results["test_perplexity"]), np.std(repeat_results["test_perplexity"])))
 
-    for k in num_markables_counter.keys():
+    for k in sorted(num_markables_counter.keys()):
         print("repeat accuracy and exact match:")
         num_markables = []
         exact_match = []
