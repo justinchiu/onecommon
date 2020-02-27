@@ -91,7 +91,7 @@ class RelationalAttentionContextEncoder(nn.Module):
     def forward(self, ctx):
         ctx_t = ctx.transpose(0, 1)
         ents = ctx_t.view(ctx_t.size(0), self.num_ent, self.dim_ent)
-        # only embed property and shape
+        # only embed color and size
         prop_emb = self.property_encoder(ents[:,:,2:])
         ent_rel_pairs = []
         for i in range(self.num_ent):
@@ -125,7 +125,7 @@ class RelationalAttentionContextEncoder2(nn.Module):
 
         self.relation_pooling = args.relation_pooling
 
-        # default: only embed property and shape
+        # default: only embed color and size
         property_input_dim = 2
         if args.property_include_coordinates:
             property_input_dim += 2
@@ -134,7 +134,6 @@ class RelationalAttentionContextEncoder2(nn.Module):
         relation_input_dim = 4 + domain.dim_ent() + 1
         if args.relation_include_angle:
             relation_input_dim += 2
-
 
         if args.relation_ablate_properties:
             self.property_encoder = None
@@ -180,7 +179,7 @@ class RelationalAttentionContextEncoder2(nn.Module):
                     continue
                 dist = torch.sqrt((ents[:,i,0] - ents[:,j,0])**2 + (ents[:,i,1] - ents[:,j,1])**2)
                 to_cat = [ents[:,i,2:], ents[:,j,2:], ents[:,i,:] - ents[:,j,:], dist.unsqueeze(1)]
-                if self.args.relation_include_angle:
+                if hasattr(self, 'args') and self.args.relation_include_angle:
                     diff = ents[:,i,:2] - ents[:,j,:2]
                     diff_x, diff_y = torch.split(diff, (1,1), dim=-1)
                     rad_1 = torch.atan2(diff_x, diff_y) / math.pi
@@ -191,13 +190,16 @@ class RelationalAttentionContextEncoder2(nn.Module):
             ent_rel_pairs.append(torch.cat(rel_pairs, 1).unsqueeze(1))
         ent_rel_pairs = torch.cat(ent_rel_pairs, 1)
         rel_emb = self.relation_encoder(ent_rel_pairs)
-        if self.relation_pooling == 'mean':
-            rel_emb_pooled = rel_emb.mean(2)
+        if hasattr(self, 'relation_pooling'):
+            if self.relation_pooling == 'mean':
+                rel_emb_pooled = rel_emb.mean(2)
+            else:
+                assert self.relation_pooling == 'max'
+                rel_emb_pooled, _ = rel_emb.max(2)
         else:
-            assert self.relation_pooling == 'max'
             rel_emb_pooled, _ = rel_emb.max(2)
         if self.property_encoder is not None:
-            if self.args.property_include_coordinates:
+            if hasattr(self, 'args') and self.args.property_include_coordinates:
                 prop_emb = self.property_encoder(ents)
             else:
                 prop_emb = self.property_encoder(ents[:,:,2:])
@@ -273,3 +275,122 @@ class MlpContextEncoder(nn.Module):
         out = self.dropout(out)
         return out
 
+class RelationalAttentionContextEncoder3(nn.Module):
+    @classmethod
+    def add_args(cls, parser):
+        # parser.add_argument('--relation_encoder_layers', type=int, choices=[1,2], default=1)
+        # parser.add_argument('--relation_pooling', choices=['mean', 'max'], default='mean')
+        parser.add_argument('--properties_include',
+                            choices=['position', 'appearance'],
+                            default=['appearance'],
+                            nargs='*')
+        parser.add_argument('--relation_include',
+                            choices=['i_position', 'i_appearance', 'j_position', 'j_appearance'],
+                            default=['i_appearance', 'j_appearance'],
+                            nargs='*')
+
+    def __init__(self, domain, args):
+        super(RelationalAttentionContextEncoder3, self).__init__()
+        self.args = args
+
+        self.num_ent = domain.num_ent()
+        self.dim_ent = domain.dim_ent()
+
+        self.relation_pooling = args.relation_pooling
+
+        property_input_dim = 2 * len(self.args.properties_include)
+
+        relation_input_dim = 2 * len(self.args.relation_include) + domain.dim_ent() + 1
+
+        if property_input_dim == 0:
+            property_output_dim = args.nembed_ctx
+            relation_output_dim = args.nembed_ctx
+            self.property_encoder = None
+        else:
+            property_output_dim = int(args.nembed_ctx / 2)
+            relation_output_dim = int(args.nembed_ctx / 2)
+            self.property_encoder = nn.Sequential(
+                torch.nn.Linear(property_input_dim, property_output_dim),
+                nn.ReLU(),
+                nn.Dropout(args.dropout),
+            )
+
+        if args.relation_encoder_layers == 2:
+            hidden_dim = relation_output_dim
+            self.relation_encoder = nn.Sequential(
+                torch.nn.Linear(relation_input_dim, hidden_dim),
+                nn.ReLU(),
+                nn.Dropout(args.dropout),
+                torch.nn.Linear(hidden_dim, relation_output_dim),
+                nn.ReLU(),
+                nn.Dropout(args.dropout),
+            )
+        else:
+            assert args.relation_encoder_layers == 1
+            self.relation_encoder = nn.Sequential(
+                torch.nn.Linear(relation_input_dim, relation_output_dim),
+                nn.ReLU(),
+                nn.Dropout(args.dropout),
+            )
+
+        init_cont([self.property_encoder, self.relation_encoder], args.init_range)
+
+    def forward(self, ctx):
+        ctx_t = ctx.transpose(0, 1)
+        ents = ctx_t.view(ctx_t.size(0), self.num_ent, self.dim_ent)
+        ent_rel_pairs = []
+
+        position, appearance = torch.split(ents, (2,2), dim=-1)
+
+        for i in range(self.num_ent):
+            rel_pairs = []
+            for j in range(self.num_ent):
+                if i == j:
+                    continue
+                dist = torch.sqrt((ents[:,i,0] - ents[:,j,0])**2 + (ents[:,i,1] - ents[:,j,1])**2)
+
+                to_cat = []
+                if 'i_position' in self.args.relation_include:
+                    to_cat.append(position[:,i])
+                if 'i_appearance' in self.args.relation_include:
+                    to_cat.append(appearance[:,i])
+                if 'j_position' in self.args.relation_include:
+                    to_cat.append(position[:,j])
+                if 'j_appearance' in self.args.relation_include:
+                    to_cat.append(appearance[:,j])
+                to_cat.extend([ents[:,i,:] - ents[:,j,:], dist.unsqueeze(1)])
+
+                if hasattr(self, 'args') and self.args.relation_include_angle:
+                    diff = position[:,i] - position[:,j]
+                    diff_x, diff_y = torch.split(diff, (1,1), dim=-1)
+                    rad_1 = torch.atan2(diff_x, diff_y) / math.pi
+                    rad_2 = torch.atan2(diff_y, diff_x) / math.pi
+                    to_cat.append(rad_1)
+                    to_cat.append(rad_2)
+
+                rel_pairs.append((torch.cat(to_cat, 1).unsqueeze(1)))
+            ent_rel_pairs.append(torch.cat(rel_pairs, 1).unsqueeze(1))
+        ent_rel_pairs = torch.cat(ent_rel_pairs, 1)
+        rel_emb = self.relation_encoder(ent_rel_pairs)
+
+        if self.relation_pooling == 'mean':
+            rel_emb_pooled = rel_emb.mean(2)
+        else:
+            assert self.relation_pooling == 'max'
+            rel_emb_pooled, _ = rel_emb.max(2)
+
+        if self.property_encoder is not None:
+            to_cat = []
+            if 'position' in self.args.properties_include:
+                to_cat.append(position)
+            if 'appearance' in self.args.properties_include:
+                to_cat.append(appearance)
+            if len(to_cat) > 1:
+                to_embed = torch.cat(to_cat, dim=-1)
+            else:
+                to_embed = to_cat[0]
+            prop_emb = self.property_encoder(to_embed)
+            out = torch.cat([prop_emb, rel_emb_pooled], 2)
+        else:
+            out = rel_emb_pooled
+        return out

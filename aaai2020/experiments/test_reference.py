@@ -215,14 +215,17 @@ def main():
             if isinstance(corpus, ReferenceSentenceCorpus):
                 # don't cheat!
                 dots_mentioned = [None] * len(inpts)
+                selection_beliefs = None
                 outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
-                    ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned
+                    ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, selection_beliefs
+
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
                 dots_mentioned = None
+                selection_beliefs = None
                 out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
-                    ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned
+                    ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, selection_beliefs
                 )
                 outs, ref_outs = [out], [ref_out]
             else:

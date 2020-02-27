@@ -27,7 +27,7 @@ class RnnReferenceEngine(EngineBase):
         assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.feed_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.mark_dots_mentioned, 'this only makes sense for a hierarchical model, and --lang_only_self'
-        ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, sel_idx = batch
+        ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, _, sel_idx = batch
 
         ctx = Variable(ctx)
         inpt = Variable(inpt)
@@ -36,8 +36,10 @@ class RnnReferenceEngine(EngineBase):
 
         assert ref_tgt.dim() == 3
         dots_mentioned = ref_tgt.sum(1) > 0
-        out, ref_out, sel_out, ctx_attn_prob = self.model.forward(ctx, inpt, ref_inpt, sel_idx, lens=None,
-                                                                  dots_mentioned=dots_mentioned)
+        out, ref_out, sel_out, ctx_attn_prob = self.model.forward(
+            ctx, inpt, ref_inpt, sel_idx, lens=None, dots_mentioned=dots_mentioned,
+            selection_beliefs=None
+        )
 
         tgt = Variable(tgt)
         sel_tgt = Variable(sel_tgt)
@@ -279,7 +281,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _forward(self, batch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
-        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, _, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables = batch
+        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)
@@ -303,8 +305,23 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             assert ref_tgt.dim() == 3
             dots_mentioned.append(ref_tgt.sum(1) > 0)
 
+        if self.args.selection_beliefs == 'none':
+            selection_beliefs=None
+        elif self.args.selection_beliefs == 'selected':
+            # bsz x num_dots x 1, one-hot if that dot is the one selected
+            selection_beliefs = torch.zeros(sel_tgt.size(0), num_dots).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
+        elif self.args.selection_beliefs == 'partners':
+            partner_has = []
+            for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
+                p_rids = set(p_rids)
+                partner_has.append([a_rid in p_rids for a_rid in a_rids])
+            selection_beliefs = torch.BoolTensor(partner_has)
+        else:
+            raise ValueError('invalid --selection_beliefs {}'.format(self.args.selection_beliefs))
+
         outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
-            ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned
+            ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,
+            selection_beliefs=selection_beliefs
         )
 
         sel_tgt = Variable(sel_tgt)

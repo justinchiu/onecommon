@@ -213,6 +213,12 @@ def create_real_ids(kb):
 		real_ids.append(obj['id'])
 	return ['<real_ids>'] + real_ids + ['</real_ids>']
 
+def create_partner_real_ids(kb):
+	real_ids = []
+	for obj in kb:
+		real_ids.append(obj['id'])
+	return ['<partner_real_ids>'] + real_ids + ['</partner_real_ids>']
+
 def create_scenario_id(scenario_id):
 	return ['<scenario_id>'] + [scenario_id] + ['</scenario_id>']
 
@@ -272,19 +278,21 @@ if __name__ == "__main__":
 	output_file_names = ['train_reference_' + str(args.seed), 'valid_reference_' + str(args.seed), 'test_reference_' + str(args.seed)]
 
 	for i, output_file in enumerate(output_file_names):
-		with open('{}.txt'.format(output_file), 'w') as out:
+		with open('{}.txt'.format('../experiments/data/onecommon/' + output_file), 'w') as out:
 			start = split_index[i]
 			end = split_index[i+1]
 			for chat_id in tqdm(chat_ids[start:end]):	
 				chat = [chat for chat in dialogue_corpus if chat['uuid'] == chat_id]
 				chat = chat[0]
-				for agent in [0,1]:
+				for agent in [0,1]: 
+					partner = 1 - agent
 					tokens = []
 					tokens += create_input(chat['scenario']['kbs'][agent], args)
 					tokens += create_dialogue(markable_annotation[chat_id]["text"], agent)
 					tokens += create_referents(markable_annotation[chat_id]["text"], markable_annotation[chat_id]["markables"], aggregated_referent_annotation[chat_id], chat['scenario']['kbs'][agent], agent)
 					tokens += create_output(chat['scenario']['kbs'][agent], chat['events'], agent)
-					tokens += create_real_ids(chat['scenario']['kbs'][agent])
+					tokens += create_real_ids(chat['scenario']['kbs'][agent]) 
+					tokens += create_partner_real_ids(chat['scenario']['kbs'][partner])
 					tokens += create_scenario_id(chat['scenario']['uuid'])
 					tokens += create_agent(agent)
 					tokens += create_chat_id(chat['uuid'])

@@ -1,4 +1,4 @@
-from models.ctx_encoder import MlpContextEncoder, AttentionContextEncoder, RelationalAttentionContextEncoder, RelationalAttentionContextEncoder2
+from models.ctx_encoder import MlpContextEncoder, AttentionContextEncoder, RelationalAttentionContextEncoder, RelationalAttentionContextEncoder2, RelationalAttentionContextEncoder3
 from models.rnn_reference_model import RnnReferenceModel, HierarchicalRnnReferenceModel
 
 MODELS = {
@@ -11,6 +11,7 @@ CTX_ENCODERS = {
     'attn_encoder': AttentionContextEncoder,
     'rel_attn_encoder': RelationalAttentionContextEncoder,
     'rel_attn_encoder_2': RelationalAttentionContextEncoder2,
+    'rel_attn_encoder_3': RelationalAttentionContextEncoder3,
 }
 
 def add_model_args(parser):
