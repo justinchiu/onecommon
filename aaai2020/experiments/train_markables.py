@@ -1,22 +1,13 @@
 import argparse
-import sys
 import time
-import random
-import itertools
-import re
-import pdb
 import copy
 
 from tqdm import tqdm
 
-import numpy as np
 import torch
-import torch.nn as nn
 import torch.optim as optim
 from torch.autograd import Variable
 
-import data
-import models
 from models.markable_detector import BiLSTM_CRF
 import utils
 from domain import get_domain

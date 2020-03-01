@@ -7,12 +7,18 @@
 Various helpers.
 """
 
+import os
 import random
 import copy
 import pdb
+import sys
+import json
 
 import torch
 import numpy as np
+import subprocess
+
+from contextlib import contextmanager
 
 
 def backward_hook(grad):
@@ -21,19 +27,34 @@ def backward_hook(grad):
     pdb.set_trace()
     return grad
 
+MODEL_DIR = 'serialized_models'
 
 def save_model(model, file_name):
     """Serializes model to a file."""
     if file_name != '':
-        with open(file_name, 'wb') as f:
+        with open(os.path.join(MODEL_DIR, file_name), 'wb') as f:
             torch.save(model, f)
 
 
-def load_model(file_name):
+def load_model(file_name, map_location=None):
     """Reads model from a file."""
-    with open(file_name, 'rb') as f:
-        return torch.load(f)
+    with open(os.path.join(MODEL_DIR, file_name), 'rb') as f:
+        if map_location is not None:
+            return torch.load(f, map_location=map_location)
+        else:
+            return torch.load(f)
 
+def sum_dicts(d1, d2):
+    ret = {}
+    for key in set(d1.keys()) | set(d2.keys()):
+        v = d1.get(key, 0.0) + d2.get(key, 0.0)
+        ret[key] = v
+    return ret
+
+def safe_zip(*lists):
+    for l in lists[1:]:
+        assert len(l) == len(lists[0])
+    return zip(*lists)
 
 def set_seed(seed):
     """Sets random seed everywhere."""
@@ -47,10 +68,24 @@ def use_cuda(enabled, device_id=0):
     """Verifies if CUDA is available and sets default device to be device_id."""
     if not enabled:
         return None
+    if not torch.cuda.is_available():
+        print('CUDA is not available')
+        return None
     assert torch.cuda.is_available(), 'CUDA is not available'
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
     torch.cuda.set_device(device_id)
     return device_id
+
+@contextmanager
+def set_temporary_default_tensor_type(tensor_type):
+    if torch.tensor(0).is_cuda:
+        old_tensor_type = torch.cuda.FloatTensor
+    else:
+        old_tensor_type = torch.FloatTensor
+
+    torch.set_default_tensor_type(tensor_type)
+    yield
+    torch.set_default_tensor_type(old_tensor_type)
 
 def prob_random():
     """Prints out the states of various RNGs."""
@@ -106,3 +141,7 @@ class ContextTestGenerator(object):
                     self.ctxs.append(ctx_data)
                     ctx_data = []
 
+def dump_git_status(out_file=sys.stdout, exclude_file_patterns=['*.ipynb', '*.th', '*.sh', '*.txt', '*.json']):
+    subprocess.call('git rev-parse HEAD', shell=True, stdout=out_file)
+    exclude_string = ' '.join("':(exclude){}'".format(f) for f in exclude_file_patterns)
+    subprocess.call('git --no-pager diff -- . {}'.format(exclude_string), shell=True, stdout=out_file)

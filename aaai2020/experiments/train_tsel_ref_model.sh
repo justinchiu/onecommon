@@ -1,10 +1,23 @@
-python train_reference.py \
+#!/bin/bash
+
+name=$1
+if [[ -z $name ]]
+then
+  name="default"
+else
+  shift
+fi
+
+script_name=tsel_ref_model
+
+mkdir -p serialized_models/$script_name
+mkdir -p expts/$script_name
+
+python -u train_reference.py \
 	--ctx_encoder_type attn_encoder \
 	--max_epoch 30 \
 	--optimizer adam \
-	--model_file tsel_ref_model \
-	--cuda \
-	--tensorboard_log \
+	--model_file ${script_name}/${name} \
 	--nembed_word 256 \
 	--nembed_ctx 256 \
 	--nhid_lang 256 \
@@ -17,3 +30,5 @@ python train_reference.py \
 	--dropout 0.5 \
 	--unk_threshold 10 \
 	--repeat_train \
+  $@ \
+  | tee expts/${script_name}/${name}.out

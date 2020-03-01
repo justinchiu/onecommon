@@ -1,3 +1,5 @@
+#!/bin/bash
+
 python train_reference.py \
 	--ctx_encoder_type attn_encoder \
 	--max_epoch 30 \

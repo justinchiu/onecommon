@@ -213,10 +213,10 @@ class ObjectDivisionDomain(Domain):
         choice = [int(x) for x in output.strip().split()]
 
         if len(choice) != len(cnts):
-            raise
+            raise Exception()
         for x, n in zip(choice, cnts):
             if x < 0 or x > n:
-                raise
+                raise Exception()
         return ['item%d=%d' % (i, x) for i, x in enumerate(choice)]
 
     def _to_int(self, x):

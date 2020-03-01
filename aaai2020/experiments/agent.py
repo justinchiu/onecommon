@@ -75,29 +75,39 @@ class RnnAgent(Agent):
         self.context = context
         self.ctx = torch.Tensor([float(x) for x in context]).float().unsqueeze(1)
         self.ctx_h = self.model.ctx_encoder(Variable(self.ctx))
-        self.lang_h = self.model._zero(1, self.model.args.nhid_lang)
+        # self.lang_h = self.model.init_h.unsqueeze(0) # get batch size of 1
+        # TODO: writer_lang_h
+        self.lang_h = self.model.reader_init_h.unsqueeze(0) # get batch size of 1
+        self.extras = []
 
     def feed_partner_context(self, partner_context):
         pass
 
-    def read(self, inpt):
+    def read(self, inpt, dots_mentioned=None):
         self.sents.append(Variable(self._encode(['THEM:'] + inpt, self.model.word_dict)))
         inpt = self._encode(inpt, self.model.word_dict)
-        lang_hs, self.lang_h = self.model.read(self.ctx_h, Variable(inpt), self.lang_h.unsqueeze(0))
-        self.lang_h = self.lang_h.squeeze(0)
+        lang_hs, lang_h = self.model.read(self.ctx_h, Variable(inpt), self.lang_h.unsqueeze(0), dots_mentioned=dots_mentioned)
+        self.lang_h = lang_h.squeeze(0)
         self.lang_hs.append(lang_hs.squeeze(1))
         self.words.append(self.model.word2var('THEM:').unsqueeze(0))
         self.words.append(Variable(inpt))
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
-    def write(self, max_words=100):
-        outs, logprobs, self.lang_h, lang_hs = self.model.write(self.ctx_h, self.lang_h, 
-                                                            max_words, self.args.temperature)
+    def write(self, max_words=100, force_words=None, start_token='YOU:', dots_mentioned=None, temperature_override=None):
+        temperature = temperature_override if temperature_override is not None else self.args.temperature
+        outs, logprobs, self.lang_h, lang_hs, extra = self.model.write(
+            self.ctx_h, self.lang_h,
+            max_words, temperature,
+            start_token=start_token,
+            force_words=force_words,
+            dots_mentioned=dots_mentioned
+        )
         self.logprobs.extend(logprobs)
         self.lang_hs.append(lang_hs)
         #self.words.append(self.model.word2var('YOU:').unsqueeze(0))
         self.words.append(outs)
-        self.sents.append(torch.cat([self.model.word2var('YOU:').unsqueeze(1), outs], 0))
+        self.sents.append(torch.cat([self.model.word2var(start_token).unsqueeze(1), outs], 0))
+        self.extras.append(extra)
 
         """if self.args.visualize_referents:
             #utterance = self._decode(outs, self.model.word_dict)[1:-1]

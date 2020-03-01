@@ -1,22 +1,7 @@
-import sys
-import re
-import time
-import copy
-import pdb
-
-import numpy as np
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
 import torch.nn.init
-from torch.autograd import Variable
-import torch.nn.functional as F
 
-import data
-from models.utils import *
-import models
-from domain import get_domain
-from engines.rnn_reference_engine import RnnReferenceEngine
+import corpora.markable
+from corpora import data
 from models.ctx_encoder import *
 
 START_TAG = "<START>"
@@ -39,7 +24,7 @@ def log_sum_exp(vec):
         torch.log(torch.sum(torch.exp(vec - max_score_broadcast)))
 
 class BiLSTM_CRF(nn.Module):
-    corpus_ty = data.MarkableCorpus
+    corpus_ty = corpora.markable.MarkableCorpus
 
     def __init__(self, vocab_size, tag_to_ix, embedding_dim, hidden_dim):
         super(BiLSTM_CRF, self).__init__()

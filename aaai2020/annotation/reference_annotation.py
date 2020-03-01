@@ -283,6 +283,8 @@ def output_brat_format(args, dialogue_corpus, batch_size=200):
 		batch_len += 1
 		if batch_len % batch_size == 0:
 			batch_id += 1
+		if args.start_batch_index is not None and batch_id < args.start_batch_index:
+			continue
 
 		if args.success_only and dialogue['outcome']['reward'] == 0:
 			continue
@@ -1642,6 +1644,7 @@ if __name__ == "__main__":
 	parser.add_argument('--referent_color', action='store_true', default=False)
 	parser.add_argument('--count_unique_referents', action='store_true', default=False)
 	parser.add_argument('--referent_disagreement', action='store_true', default=False)
+	parser.add_argument('--start_batch_index', type=int)
 	args = parser.parse_args()
 
 	dialogue_corpus = read_json(args.transcript_file)

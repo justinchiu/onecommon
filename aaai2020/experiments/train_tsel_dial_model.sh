@@ -2,7 +2,7 @@ python train_reference.py \
 	--ctx_encoder_type attn_encoder \
 	--max_epoch 30 \
 	--optimizer adam \
-	--model_file retrain_tsel_dial_model \
+	--model_file tsel_dial_model \
 	--cuda \
 	--tensorboard_log \
 	--nembed_word 256 \
