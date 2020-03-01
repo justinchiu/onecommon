@@ -89,6 +89,12 @@ def main():
     parser.add_argument('--show_errors', action='store_true', default=False,
         help='show errors')
 
+    parser.add_argument(
+        '--lang_only_self',
+        action='store_true',
+        help='if passed, compute perplexity over both players\' utterances'
+    )
+
     args = parser.parse_args()
 
     utils.dump_git_status(sys.stdout)
@@ -144,7 +150,8 @@ def main():
 
         scenarios = {scenario['scenario_uuid']: scenario for scenario in dialog_corpus}
 
-        crit = Criterion(model.word_dict, device_id=device_id)
+        crit = Criterion(model.word_dict, device_id=device_id, bad_toks = ['<pad>'])
+        crit_no_reduce = Criterion(model.word_dict, device_id=device_id, bad_toks = ['<pad>'], reduction='none')
         sel_crit = nn.CrossEntropyLoss()
         ref_crit = nn.BCEWithLogitsLoss()
         ref_crit_no_reduce = nn.BCEWithLogitsLoss(reduction='none')
@@ -186,14 +193,17 @@ def main():
 
         for batch in testset:
             if isinstance(corpus, ReferenceSentenceCorpus):
-                ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, agents, chat_ids, sel_idx, lens, _, _, num_markables_by_sentence = batch
+                ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, \
+                scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, \
+                lens, _, _, num_markables_by_sentence, is_self = batch
                 bsz = ctx.size(0)
+                multi_sentence = True
             elif isinstance(corpus, ReferenceCorpus):
                 # needs to come second since it's a subclass
-                ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, real_ids, agents, chat_ids, sel_idx = batch
+                ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, \
+                scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, lens = batch
                 bsz = ctx.size(0)
-                inpts, tgts, ref_inpts, ref_tgts = [inpt], [tgt], [ref_inpt], [ref_tgt]
-                lens = None
+                inpts, tgts, ref_inpts, ref_tgts, lens = [inpt], [tgt], [ref_inpt], [ref_tgt], [lens]
                 if ref_inpt is None:
                     nm = 0
                 else:
@@ -201,6 +211,7 @@ def main():
                 num_markables_by_sentence = [
                     torch.full((bsz,), nm).long()
                 ]
+                multi_sentence = False
             else:
                 raise ValueError("invalid corpus type {}".format(type(corpus)))
 
@@ -211,21 +222,22 @@ def main():
             tgts = [Variable(tgt) for tgt in tgts]
             sel_tgt = Variable(sel_tgt)
 
-
             if isinstance(corpus, ReferenceSentenceCorpus):
                 # don't cheat!
                 dots_mentioned = [None] * len(inpts)
                 selection_beliefs = None
+                generation_beliefs = None
                 outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
-                    ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, selection_beliefs
+                    ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, selection_beliefs, generation_beliefs
 
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
                 dots_mentioned = None
                 selection_beliefs = None
+                generation_beliefs = None
                 out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
-                    ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, selection_beliefs
+                    ctx, inpts[0], ref_inpts[0], sel_idx, lens[0], dots_mentioned, selection_beliefs, generation_beliefs
                 )
                 outs, ref_outs = [out], [ref_out]
             else:
@@ -246,7 +258,7 @@ def main():
                         return True
                     return False
 
-                if lens is None:
+                if not multi_sentence:
                     markables = [
                         markable for markable in remaining_markables
                         if keep_markable(markable)
@@ -298,7 +310,13 @@ def main():
             ):
                 sentence_num_markables = num_markables_by_sentence[sentence_ix]
                 tgt = Variable(tgt)
-                lang_loss = crit(out, tgt)
+                # lang_loss = crit(out, tgt)
+
+                lang_loss = crit_no_reduce(out, tgt).view(-1, bsz)
+                if args.lang_only_self:
+                    assert multi_sentence
+                    lang_loss = lang_loss * is_self[sentence_ix].unsqueeze(0).expand_as(lang_loss)
+                lang_loss = lang_loss.sum()
 
                 if ref_inpt is not None:
                     ref_tgt = Variable(ref_tgt)
@@ -426,12 +444,19 @@ def main():
         # Main results:
         # Dividing by the number of words in the input, not the tokens modeled,
         # because the latter includes padding
-        test_lang_loss /= testset_stats['nonpadn']
+        if args.lang_only_self:
+            test_lang_loss /= testset_stats['self_nonpadn']
+            lang_loss_name = 'langloss[SELF]'
+            lang_ppl_name = 'langppl[SELF]'
+        else:
+            test_lang_loss /= testset_stats['nonpadn']
+            lang_loss_name = 'langloss'
+            lang_ppl_name = 'langppl'
         test_select_loss /= len(testset)
         test_select_accuracy = test_select_correct / test_select_total
         test_reference_accuracy = test_reference_correct / test_reference_total
         print('test_reference_correct {} ; test_reference_total {}'.format(test_reference_correct, test_reference_total))
-        print('testlangloss %.8f | testlangppl %.8f' % (test_lang_loss, np.exp(test_lang_loss)))
+        print('test%s %.8f | test%s %.8f' % (lang_loss_name, test_lang_loss, lang_ppl_name, np.exp(test_lang_loss)))
         print('testselectloss %.8f | testselectaccuracy %.6f' % (test_select_loss, test_select_accuracy))
         print('testreferenceloss %.8f | testreferenceaccuracy %.6f' % (test_reference_loss, test_reference_accuracy))
         print('reference_exact_match %.6f' % (exact_match / total_num_markables))
@@ -475,12 +500,17 @@ def main():
         repeat_results["location_correct"].append(copy.copy(location_correct))
         repeat_results["location_exact_match"].append(copy.copy(location_exact_match))
 
-
-
+    if args.lang_only_self:
+        lang_loss_name = 'loss [SELF]'
+        lang_ppl_name = 'perplexity [SELF]'
+    else:
+        test_lang_loss /= testset_stats['nonpadn']
+        lang_loss_name = 'loss'
+        lang_ppl_name = 'perplexity'
 
     print("=================================\n\n")
     print("number of models averaged: {}".format(len(repeat_results['test_lang_loss'])))
-    print("repeat test lang loss %.8f" % np.mean(repeat_results["test_lang_loss"]))
+    print("repeat test lang %s %.8f" % np.mean(lang_loss_name, repeat_results["test_lang_loss"]))
     print("repeat test select loss %.8f" % np.mean(repeat_results["test_select_loss"]))
     print("repeat test select accuracy %.8f ( %.8f )" % (np.mean(repeat_results["test_select_accuracy"]), np.std(repeat_results["test_select_accuracy"])))
     print("repeat test reference loss %.8f" % np.mean(repeat_results["test_reference_loss"]))
@@ -488,7 +518,7 @@ def main():
     print("repeat correlation score %.8f ( %.8f )" % (np.mean(repeat_results["correlation_score"]), np.std(repeat_results["correlation_score"])))
     print("repeat correlation score %.8f ( %.8f )" % (np.mean(repeat_results["correlation_score"]), np.std(repeat_results["correlation_score"])))
     print("repeat reference exact match %.8f ( %.8f )" % (np.mean(repeat_results["reference_exact_match"]), np.std(repeat_results["reference_exact_match"])))
-    print("repeat test perplexity %.8f ( %.8f )" % (np.mean(repeat_results["test_perplexity"]), np.std(repeat_results["test_perplexity"])))
+    print("repeat test %s %.8f ( %.8f )" % (lang_ppl_name, np.mean(repeat_results["test_perplexity"]), np.std(repeat_results["test_perplexity"])))
 
     for k in sorted(num_markables_counter.keys()):
         print("repeat accuracy and exact match:")

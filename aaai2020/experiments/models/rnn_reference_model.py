@@ -94,6 +94,9 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--selection_beliefs', choices=['none', 'selected', 'partners'],
                             default='none', help='selected: indicator on what you chose. partners: indicator on what the other person has')
 
+        parser.add_argument('--generation_beliefs', choices=['none', 'selected', 'partners'],
+                            default='none', help='selected: indicator on what you chose. partners: indicator on what the other person has')
+
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
 
@@ -171,6 +174,7 @@ class RnnReferenceModel(nn.Module):
             # TODO: get rid of layers here
             assert not args.mark_dots_mentioned
             assert args.selection_beliefs == 'none'
+            assert args.generation_beliefs == 'none'
             self.attn = FeedForward(2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, 1, dropout_p = args.dropout)
             if self.args.feed_context_attend_separate:
                 self.feed_attn = FeedForward(2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, 1, dropout_p = args.dropout)
@@ -184,6 +188,8 @@ class RnnReferenceModel(nn.Module):
                     input_dim += 1
                 if args.selection_beliefs != 'none' and attn_name == 'sel':
                     input_dim += 1
+                if args.generation_beliefs != 'none' and attn_name in ['lang', 'feed']:
+                    input_dim += 1
                 setattr(
                     self,
                     self._attention_name(attn_name),
@@ -192,6 +198,7 @@ class RnnReferenceModel(nn.Module):
         else:
             assert not args.mark_dots_mentioned
             assert args.selection_beliefs == 'none'
+            assert args.generation_beliefs == 'none'
 
             self.attn = nn.Sequential(
                 nn.Linear(args.nhid_lang + args.nembed_ctx, args.nhid_sel),
@@ -330,7 +337,7 @@ class RnnReferenceModel(nn.Module):
         sel_logit = self._apply_attention('sel', torch.cat(to_cat, 2))
         return sel_logit
 
-    def _language_conditioned_dot_attention(self, ctx_h, lang_hs, use_feed_attn, dots_mentioned):
+    def _language_conditioned_dot_attention(self, ctx_h, lang_hs, use_feed_attn, dots_mentioned, generation_beliefs):
         # lang_hs: seq_len x batch_size x hidden
         # ctx_h: batch_size x num_dots x nembed_ctx
         # dots_mentioned: batch_size x num_dots, binary tensor of which dots to allow attention on. if all zero, output zeros
@@ -370,6 +377,8 @@ class RnnReferenceModel(nn.Module):
             ctx_h_marked = torch.cat((ctx_h, dots_mentioned.float().unsqueeze(-1)), -1)
         else:
             ctx_h_marked = ctx_h
+        if generation_beliefs is not None:
+            ctx_h_marked = torch.cat((ctx_h_marked, generation_beliefs), dim=-1)
         ctx_h_expand = ctx_h_marked.unsqueeze(0).expand(seq_len, -1, -1, -1)
 
         # seq_len x batch_size x num_dots
@@ -404,7 +413,7 @@ class RnnReferenceModel(nn.Module):
         return attn_prob
 
     def _forward(self, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False,
-                 dots_mentioned=None, selection_beliefs=None):
+                 dots_mentioned=None, selection_beliefs=None, generation_beliefs=None):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
         bsz = ctx_h.size(0)
@@ -412,14 +421,19 @@ class RnnReferenceModel(nn.Module):
 
         # print('inpt size: {}'.format(inpt.size()))
 
-        lang_hs, last_h, feed_ctx_attn_prob = self._read(ctx_h, inpt, lang_h=lang_h, lens=lens, pack=pack, dots_mentioned=dots_mentioned)
+        lang_hs, last_h, feed_ctx_attn_prob = self._read(
+            ctx_h, inpt, lang_h=lang_h, lens=lens, pack=pack, dots_mentioned=dots_mentioned,
+            generation_beliefs=generation_beliefs,
+        )
 
         # compute language output
         if vars(self.args).get('no_word_attention', False):
             outs = self.hid2output(lang_hs)
             ctx_attn_prob = None
         else:
-            ctx_attn_prob = self._language_conditioned_dot_attention(ctx_h, lang_hs, use_feed_attn=False, dots_mentioned=dots_mentioned)
+            ctx_attn_prob = self._language_conditioned_dot_attention(
+                ctx_h, lang_hs, use_feed_attn=False, dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
+            )
             ctx_h_expand = ctx_h.unsqueeze(0).expand(seq_len, -1, -1, -1)
 
             ctx_h_lang = torch.einsum("tbnd,tbn->tbd", (ctx_h_expand,ctx_attn_prob))
@@ -443,20 +457,22 @@ class RnnReferenceModel(nn.Module):
 
         return outs, ref_out, sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob
 
-    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, selection_beliefs):
+    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, selection_beliefs, generation_beliefs):
         if selection_beliefs is not None:
             raise NotImplementedError("selection_belief for non-hierarchical model")
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
         outs, ref_out, sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
             ctx_h, inpt, ref_inpt, sel_idx, lens=lens, lang_h=None, compute_sel_out=True, pack=False,
-            dots_mentioned=dots_mentioned, selection_belief=selection_beliefs
+            dots_mentioned=dots_mentioned, selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs
         )
         return outs, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob
 
-    def _context_for_feeding(self, ctx_h, lang_hs, dots_mentioned):
+    def _context_for_feeding(self, ctx_h, lang_hs, dots_mentioned, generation_beliefs):
         if self.args.feed_context_attend:
             # bsz x num_dots
-            feed_ctx_attn_prob = self._language_conditioned_dot_attention(ctx_h, lang_hs, use_feed_attn=True, dots_mentioned=dots_mentioned).squeeze(0).squeeze(-1)
+            feed_ctx_attn_prob = self._language_conditioned_dot_attention(
+                ctx_h, lang_hs, use_feed_attn=True, dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
+            ).squeeze(0).squeeze(-1)
             # bsz x num_dots x nembed_ctx
             ctx_emb = self.feed_ctx_layer(ctx_h)
             ctx_emb = torch.einsum("bn,bnd->bd", (feed_ctx_attn_prob, ctx_emb))
@@ -466,7 +482,7 @@ class RnnReferenceModel(nn.Module):
             feed_ctx_attn_prob = None
         return ctx_emb, feed_ctx_attn_prob
 
-    def _read(self, ctx_h, inpt, lang_h, lens=None, pack=False, dots_mentioned=None):
+    def _read(self, ctx_h, inpt, lang_h, lens=None, pack=False, dots_mentioned=None, generation_beliefs=None):
         # lang_h: num_layers * num_directions x batch x nhid_lang
         bsz = ctx_h.size(0)
         seq_len = inpt.size(0)
@@ -488,7 +504,9 @@ class RnnReferenceModel(nn.Module):
         dialog_emb = self.embed_dialogue(inpt)
         if self.args.feed_context:
             # seq_len x bsz x (nembed_word+nembed_ctx)
-            ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(ctx_h, writer_lang_h, dots_mentioned=dots_mentioned)
+            ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(
+                ctx_h, writer_lang_h, dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
+            )
             dialog_emb = torch.cat((dialog_emb, ctx_emb.expand(seq_len, -1, -1)), dim=-1)
         else:
             feed_ctx_attn_prob = None
@@ -523,7 +541,8 @@ class RnnReferenceModel(nn.Module):
         return Variable(x)
 
     def write(self, ctx_h, lang_h, max_words, temperature,
-              start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None, dots_mentioned=None):
+              start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None, dots_mentioned=None,
+              generation_beliefs=None):
         # ctx_h: batch x num_dots x nembed_ctx
         # lang_h: batch x hidden
         bsz, _ = lang_h.size()
@@ -575,7 +594,10 @@ class RnnReferenceModel(nn.Module):
                 # dot_attention2 = F.softmax(lang_logit, dim=1)
 
                 # add a time dimension to lang_h
-                ctx_attn_prob = self._language_conditioned_dot_attention(ctx_h, lang_h.unsqueeze(0), use_feed_attn=False, dots_mentioned=dots_mentioned)
+                ctx_attn_prob = self._language_conditioned_dot_attention(
+                    ctx_h, lang_h.unsqueeze(0), use_feed_attn=False, dots_mentioned=dots_mentioned,
+                    generation_beliefs=generation_beliefs
+                )
                 # remove the time dimension
                 ctx_attn_prob = ctx_attn_prob.squeeze(0)
                 ctx_attn_probs.append(ctx_attn_prob)
@@ -643,7 +665,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def forward(self, ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, selection_beliefs):
+    def forward(self, ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, selection_beliefs, generation_beliefs):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
         # sel_idx is index into the last sentence in the dialogue
@@ -659,6 +681,9 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         all_ctx_attn_prob = []
         all_feed_ctx_attn_prob = []
 
+        if generation_beliefs is not None:
+            assert len(generation_beliefs) == len(inpts)
+
         assert len(inpts) == len(ref_inpts)
         for i in range(len(inpts)):
             inpt = inpts[i]
@@ -668,6 +693,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             outs, ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
                 ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
                 dots_mentioned=dots_mentioned[i], selection_beliefs=selection_beliefs if is_last else None,
+                generation_beliefs=generation_beliefs[i] if generation_beliefs is not None else None
             )
             all_outs.append(outs)
             all_ref_outs.append(ref_out)

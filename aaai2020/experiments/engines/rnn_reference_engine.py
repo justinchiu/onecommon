@@ -27,18 +27,21 @@ class RnnReferenceEngine(EngineBase):
         assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.feed_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.mark_dots_mentioned, 'this only makes sense for a hierarchical model, and --lang_only_self'
-        ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, _, sel_idx = batch
+        ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, _, sel_idx, lens = batch
 
         ctx = Variable(ctx)
         inpt = Variable(inpt)
         if ref_inpt is not None:
             ref_inpt = Variable(ref_inpt)
 
-        assert ref_tgt.dim() == 3
-        dots_mentioned = ref_tgt.sum(1) > 0
-        out, ref_out, sel_out, ctx_attn_prob = self.model.forward(
+        if ref_tgt is not None:
+            assert ref_tgt.dim() == 3
+            dots_mentioned = ref_tgt.sum(1) > 0
+        else:
+            dots_mentioned = None
+        out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
             ctx, inpt, ref_inpt, sel_idx, lens=None, dots_mentioned=dots_mentioned,
-            selection_beliefs=None
+            selection_beliefs=None, generation_beliefs=None
         )
 
         tgt = Variable(tgt)
@@ -235,6 +238,8 @@ class RnnReferenceEngine(EngineBase):
 
         for epoch in range(1, self.args.max_epoch + 1):
             traindata = corpus.train_dataset(self.args.bsz)
+            print("train set stats:")
+            pprint.pprint(traindata[1])
             valid_lang_loss, valid_select_loss, valid_reference_loss, valid_select_acc = self.iter(epoch,
                                                                                                    self.opt.param_groups[
                                                                                                        0]["lr"],
@@ -265,7 +270,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         pass
 
     def _append_pad(self, inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables):
-        # TODO: figure out why FAIR's e2e code had this; call it if necessary
+        # FAIR's e2e code had this because it was used in the latent clustering pre-training objective; we shouldn't need it
         bsz = inpts[0].size(1)
         pad = torch.Tensor(bsz).fill_(self.model.word_dict.get_idx('<pad>')).long()
         inpts.append(Variable(pad.unsqueeze(0)))
@@ -281,7 +286,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _forward(self, batch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
-        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables = batch
+        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)
@@ -305,23 +310,31 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             assert ref_tgt.dim() == 3
             dots_mentioned.append(ref_tgt.sum(1) > 0)
 
-        if self.args.selection_beliefs == 'none':
-            selection_beliefs=None
-        elif self.args.selection_beliefs == 'selected':
-            # bsz x num_dots x 1, one-hot if that dot is the one selected
-            selection_beliefs = torch.zeros(sel_tgt.size(0), num_dots).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
-        elif self.args.selection_beliefs == 'partners':
-            partner_has = []
-            for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
-                p_rids = set(p_rids)
-                partner_has.append([a_rid in p_rids for a_rid in a_rids])
-            selection_beliefs = torch.BoolTensor(partner_has)
+        def make_beliefs(beliefs_name, arg_name):
+            if beliefs_name == 'none':
+                return None
+            elif beliefs_name == 'selected':
+                # bsz x num_dots x 1, one-hot if that dot is the one selected
+                return torch.zeros(sel_tgt.size(0), num_dots).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
+            elif beliefs_name == 'partners':
+                partner_has = []
+                for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
+                    p_rids = set(p_rids)
+                    partner_has.append([a_rid in p_rids for a_rid in a_rids])
+                return torch.BoolTensor(partner_has).float().to(sel_tgt.device).unsqueeze(-1)
+            else:
+                raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
+
+        selection_beliefs = make_beliefs(self.args.selection_beliefs, 'selection_beliefs')
+        single_sent_generation_beliefs = make_beliefs(self.args.generation_beliefs, 'generation_beliefs')
+        if single_sent_generation_beliefs is not None:
+            generation_beliefs = [single_sent_generation_beliefs] * len(inpts)
         else:
-            raise ValueError('invalid --selection_beliefs {}'.format(self.args.selection_beliefs))
+            generation_beliefs = None
 
         outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,
-            selection_beliefs=selection_beliefs
+            selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs
         )
 
         sel_tgt = Variable(sel_tgt)
@@ -332,13 +345,15 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             # print('{} tgt.size(): {}'.format(i, tgt.size()))
             YOU = self.model.word_dict.word2idx['YOU:']
             THEM = self.model.word_dict.word2idx['THEM:']
-            is_self = inpts[i][0] == YOU
-            is_other = inpts[i][0] == THEM
-            assert is_self.sum() + is_other.sum() == bsz
-            crit = self.crit_no_reduce(out, tgt).view(-1, bsz)
+            this_is_self = inpts[i][0] == YOU
+            this_is_other = inpts[i][0] == THEM
+            assert torch.allclose(is_self[i].float(), this_is_self.float())
+            assert this_is_self.sum() + this_is_other.sum() == bsz
+            # T x bsz
+            loss = self.crit_no_reduce(out, tgt).view(-1, bsz)
             if self.args.lang_only_self:
-                crit = crit * (is_self.unsqueeze(0).expand_as(crit))
-            lang_losses.append(crit.sum())
+                loss = loss * (this_is_self.unsqueeze(0).expand_as(loss))
+            lang_losses.append(loss.sum())
         total_lens = sum(l.sum() for l in lens)
         lang_loss = sum(lang_losses) / total_lens
 
