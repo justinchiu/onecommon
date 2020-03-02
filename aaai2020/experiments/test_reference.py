@@ -95,6 +95,12 @@ def main():
         help='if passed, compute perplexity over both players\' utterances'
     )
 
+    parser.add_argument(
+        '--allow_belief_cheating',
+        action='store_true',
+        help='pass dots_mentioned and selection_beliefs and generation_beliefs'
+    )
+
     args = parser.parse_args()
 
     utils.dump_git_status(sys.stdout)
@@ -224,15 +230,48 @@ def main():
 
             if isinstance(corpus, ReferenceSentenceCorpus):
                 # don't cheat!
-                dots_mentioned = [None] * len(inpts)
-                selection_beliefs = None
-                generation_beliefs = None
+                if args.allow_belief_cheating:
+                    dots_mentioned = []
+                    for ref_tgt in ref_tgts:
+                        if ref_tgt is None:
+                            dots_mentioned.append(torch.zeros(bsz, 7).bool())
+                            continue
+                        assert ref_tgt.dim() == 3
+                        dots_mentioned.append(ref_tgt.sum(1) > 0)
+
+                    # TODO: cut this out
+                    def make_beliefs(beliefs_name, arg_name):
+                        if beliefs_name == 'none':
+                            return None
+                        elif beliefs_name == 'selected':
+                            # bsz x num_dots x 1, one-hot if that dot is the one selected
+                            return torch.zeros(sel_tgt.size(0), 7).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
+                        elif beliefs_name == 'partners':
+                            partner_has = []
+                            for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
+                                p_rids = set(p_rids)
+                                partner_has.append([a_rid in p_rids for a_rid in a_rids])
+                            return torch.BoolTensor(partner_has).float().to(sel_tgt.device).unsqueeze(-1)
+                        else:
+                            raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
+
+                    selection_beliefs = make_beliefs(model.args.selection_beliefs, 'selection_beliefs')
+                    if  hasattr(model.args, 'generation_beliefs'):
+                        single_sent_generation_beliefs = make_beliefs(model.args.generation_beliefs, 'generation_beliefs')
+                        generation_beliefs = [single_sent_generation_beliefs] * len(inpts)
+                    else:
+                        generation_beliefs = None
+                else:
+                    dots_mentioned = [None] * len(inpts)
+                    selection_beliefs = None
+                    generation_beliefs = None
                 outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
                     ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, selection_beliefs, generation_beliefs
 
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
+                assert not args.allow_belief_cheating
                 dots_mentioned = None
                 selection_beliefs = None
                 generation_beliefs = None
@@ -510,7 +549,7 @@ def main():
 
     print("=================================\n\n")
     print("number of models averaged: {}".format(len(repeat_results['test_lang_loss'])))
-    print("repeat test lang %s %.8f" % np.mean(lang_loss_name, repeat_results["test_lang_loss"]))
+    print("repeat test lang %s %.8f" % (lang_loss_name, np.mean(repeat_results["test_lang_loss"])))
     print("repeat test select loss %.8f" % np.mean(repeat_results["test_select_loss"]))
     print("repeat test select accuracy %.8f ( %.8f )" % (np.mean(repeat_results["test_select_accuracy"]), np.std(repeat_results["test_select_accuracy"])))
     print("repeat test reference loss %.8f" % np.mean(repeat_results["test_reference_loss"]))

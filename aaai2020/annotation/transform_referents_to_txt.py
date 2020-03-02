@@ -114,9 +114,11 @@ def create_dialogue(text, agent):
 
 	return ['<dialogue>'] + dialogue_tokens + ['</dialogue>']
 
-def create_referents(text, markables, referent_annotation, kb, agent):
+def create_referents(text, markables, referent_annotation, kb_by_agent, agent):
 
 	referent_tokens = []
+	partner_referent_tokens = []
+	partner_referent_our_view_tokens = []
 
 	# map: tokens in output dialogue -> starting position in text
 	token2start = []
@@ -145,9 +147,11 @@ def create_referents(text, markables, referent_annotation, kb, agent):
 
 	assert len(token2start) == len(dialogue_tokens)
 
+
 	for markable in markables:
 		markable_id = markable["markable_id"]
-		if markable_id in referent_annotation and markable["speaker"] == agent:
+		if markable_id in referent_annotation:
+			is_self = markable["speaker"] == agent
 			if "unidentifiable" in referent_annotation[markable_id] and referent_annotation[markable_id]["unidentifiable"]:
 				continue
 			markable_id = markable["markable_id"]
@@ -185,17 +189,26 @@ def create_referents(text, markables, referent_annotation, kb, agent):
 			#print(dialogue_tokens[start_tok:end_tok+1])
 			#print(dialogue_tokens[end_of_utterance_tok])
 
-			referent_tokens.append(str(start_tok))
-			referent_tokens.append(str(end_tok))
-			referent_tokens.append(str(end_of_utterance_tok))
+			if is_self:
+				all_destination_toks = [(referent_tokens, markable['speaker'])]
+			else:
+				all_destination_toks = [(partner_referent_tokens, markable['speaker']), (partner_referent_our_view_tokens, 1 - markable['speaker'])]
 
-			for ent in kb:
-				if "agent_{}_{}".format(agent, ent['id']) in referent_annotation[markable_id]["referents"]:
-					referent_tokens.append("1")
-				else:
-					referent_tokens.append("0")
+			for destination_toks, agent_view in all_destination_toks:
+				destination_toks.append(str(start_tok))
+				destination_toks.append(str(end_tok))
+				destination_toks.append(str(end_of_utterance_tok))
 
-	return ['<referents>'] + referent_tokens + ['</referents>']
+				for ent in kb_by_agent[agent_view]:
+					if "agent_{}_{}".format(markable['speaker'], ent['id']) in referent_annotation[markable_id]["referents"]:
+						destination_toks.append("1")
+					else:
+						destination_toks.append("0")
+
+	return ['<referents>'] + referent_tokens + ['</referents>'] +\
+                ['<partner_referents>'] + partner_referent_tokens + ['</partner_referents>'] + \
+                ['<partner_referents_our_view>'] + partner_referent_our_view_tokens + ['</partner_referents_our_view>']
+
 
 def create_output(kb, events, agent):
 	ids = []
@@ -289,7 +302,7 @@ if __name__ == "__main__":
 					tokens = []
 					tokens += create_input(chat['scenario']['kbs'][agent], args)
 					tokens += create_dialogue(markable_annotation[chat_id]["text"], agent)
-					tokens += create_referents(markable_annotation[chat_id]["text"], markable_annotation[chat_id]["markables"], aggregated_referent_annotation[chat_id], chat['scenario']['kbs'][agent], agent)
+					tokens += create_referents(markable_annotation[chat_id]["text"], markable_annotation[chat_id]["markables"], aggregated_referent_annotation[chat_id], chat['scenario']['kbs'], agent)
 					tokens += create_output(chat['scenario']['kbs'][agent], chat['events'], agent)
 					tokens += create_real_ids(chat['scenario']['kbs'][agent]) 
 					tokens += create_partner_real_ids(chat['scenario']['kbs'][partner])

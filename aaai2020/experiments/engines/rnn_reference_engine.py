@@ -27,7 +27,7 @@ class RnnReferenceEngine(EngineBase):
         assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.feed_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.mark_dots_mentioned, 'this only makes sense for a hierarchical model, and --lang_only_self'
-        ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, _, sel_idx, lens = batch
+        ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, _, sel_idx, lens, partner_ref_inpt, partner_ref_tgt_our_view, partner_num_markables = batch
 
         ctx = Variable(ctx)
         inpt = Variable(inpt)
@@ -286,7 +286,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _forward(self, batch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
-        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self = batch
+        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)
@@ -347,7 +347,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             THEM = self.model.word_dict.word2idx['THEM:']
             this_is_self = inpts[i][0] == YOU
             this_is_other = inpts[i][0] == THEM
-            assert torch.allclose(is_self[i].float(), this_is_self.float())
+            assert torch.allclose(is_self[i].float().cpu(), this_is_self.float().cpu())
             assert this_is_self.sum() + this_is_other.sum() == bsz
             # T x bsz
             loss = self.crit_no_reduce(out, tgt).view(-1, bsz)
