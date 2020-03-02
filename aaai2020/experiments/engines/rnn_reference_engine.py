@@ -16,6 +16,68 @@ def unwrap(loss):
     else:
         return 0
 
+def _make_dots_mentioned_and_beliefs(
+        bsz, num_dots, args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self
+):
+    def make_dots_mentioned(refs):
+        dots_mentioned = []
+        for ref_tgt in refs:
+            if ref_tgt is None:
+                dots_mentioned.append(torch.zeros(bsz, num_dots).bool())
+                continue
+            assert ref_tgt.dim() == 3
+            dots_mentioned.append(ref_tgt.sum(1) > 0)
+        return dots_mentioned
+
+    dots_mentioned = make_dots_mentioned(ref_tgts)
+    partner_dots_mentioned_our_view = make_dots_mentioned(partner_ref_tgts_our_view)
+
+    def make_beliefs(beliefs_name, arg_name, timestep):
+        if beliefs_name == 'none':
+            beliefs = None
+        elif beliefs_name == 'selected':
+            # bsz x num_dots x 1, one-hot if that dot is the one selected
+            beliefs = torch.zeros(sel_tgt.size(0), num_dots).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
+        elif beliefs_name == 'partners':
+            partner_has = []
+            for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
+                p_rids = set(p_rids)
+                partner_has.append([a_rid in p_rids for a_rid in a_rids])
+            beliefs = torch.tensor(partner_has).float().unsqueeze(-1)
+        elif beliefs_name == 'last_partner_mentioned':
+            beliefs = torch.zeros(bsz, num_dots)
+            if timestep > 0:
+                ts = (torch.tensor([timestep] * bsz).long() - 1) - is_self[timestep-1].long()
+                for j, t_j in enumerate(ts):
+                    if t_j >= 0:
+                        beliefs[j] = partner_dots_mentioned_our_view[t_j][j]
+            beliefs = beliefs.unsqueeze(-1)
+        elif beliefs_name == 'cumulative_partner_mentioned':
+            beliefs = torch.zeros(bsz, num_dots).bool()
+            for t in range(timestep):
+                beliefs |= partner_dots_mentioned_our_view[t]
+            beliefs = beliefs.float().unsqueeze(-1)
+        else:
+            raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
+        return beliefs
+
+    if hasattr(args, 'selection_beliefs'):
+        selection_beliefs = make_beliefs(args.selection_beliefs, 'selection_beliefs', len(inpts) - 1)
+    else:
+        selection_beliefs = None
+    if hasattr(args, 'generation_beliefs'):
+        generation_beliefs = [
+            make_beliefs(args.generation_beliefs, 'generation_beliefs', t)
+            for t in range(len(inpts))
+        ]
+        if any(b is None for b in generation_beliefs):
+            assert all(b is None for b in generation_beliefs)
+            generation_beliefs = None
+    else:
+        generation_beliefs = None
+
+    return dots_mentioned, selection_beliefs, generation_beliefs
+
 class RnnReferenceEngine(EngineBase):
     @classmethod
     def add_args(cls, parser):
@@ -302,35 +364,15 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         # inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables, = self._append_pad(inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables)
 
-        dots_mentioned = []
-        for ref_tgt in ref_tgts:
-            if ref_tgt is None:
-                dots_mentioned.append(torch.zeros(bsz, num_dots).bool())
-                continue
-            assert ref_tgt.dim() == 3
-            dots_mentioned.append(ref_tgt.sum(1) > 0)
 
-        def make_beliefs(beliefs_name, arg_name):
-            if beliefs_name == 'none':
-                return None
-            elif beliefs_name == 'selected':
-                # bsz x num_dots x 1, one-hot if that dot is the one selected
-                return torch.zeros(sel_tgt.size(0), num_dots).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
-            elif beliefs_name == 'partners':
-                partner_has = []
-                for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
-                    p_rids = set(p_rids)
-                    partner_has.append([a_rid in p_rids for a_rid in a_rids])
-                return torch.BoolTensor(partner_has).float().to(sel_tgt.device).unsqueeze(-1)
-            else:
-                raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
+        # if single_sent_generation_beliefs is not None:
+        #     generation_beliefs = [single_sent_generation_beliefs] * len(inpts)
+        # else:
+        #     generation_beliefs = None
 
-        selection_beliefs = make_beliefs(self.args.selection_beliefs, 'selection_beliefs')
-        single_sent_generation_beliefs = make_beliefs(self.args.generation_beliefs, 'generation_beliefs')
-        if single_sent_generation_beliefs is not None:
-            generation_beliefs = [single_sent_generation_beliefs] * len(inpts)
-        else:
-            generation_beliefs = None
+        dots_mentioned, selection_beliefs, generation_beliefs = _make_dots_mentioned_and_beliefs(
+            bsz, num_dots, self.args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self
+        )
 
         outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,

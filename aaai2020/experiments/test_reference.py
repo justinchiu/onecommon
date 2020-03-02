@@ -17,6 +17,8 @@ import torch.nn as nn
 
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 
+from engines.rnn_reference_engine import _make_dots_mentioned_and_beliefs
+
 from corpora import data
 from corpora.reference import ReferenceCorpus
 from corpora.reference_sentence import ReferenceSentenceCorpus
@@ -201,15 +203,18 @@ def main():
             if isinstance(corpus, ReferenceSentenceCorpus):
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, \
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, \
-                lens, _, _, num_markables_by_sentence, is_self = batch
+                lens, _, _, num_markables_by_sentence, is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables = batch
                 bsz = ctx.size(0)
                 multi_sentence = True
             elif isinstance(corpus, ReferenceCorpus):
                 # needs to come second since it's a subclass
                 ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, \
-                scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, lens = batch
+                scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, lens, partner_ref_inpt, partner_ref_tgt_our_view, this_partner_num_markables = batch
                 bsz = ctx.size(0)
                 inpts, tgts, ref_inpts, ref_tgts, lens = [inpt], [tgt], [ref_inpt], [ref_tgt], [lens]
+                partner_ref_inpts = [partner_ref_inpt]
+                partner_ref_tgts_our_view = [partner_ref_tgt_our_view]
+                partner_num_markables = [partner_num_markables]
                 if ref_inpt is None:
                     nm = 0
                 else:
@@ -231,36 +236,11 @@ def main():
             if isinstance(corpus, ReferenceSentenceCorpus):
                 # don't cheat!
                 if args.allow_belief_cheating:
-                    dots_mentioned = []
-                    for ref_tgt in ref_tgts:
-                        if ref_tgt is None:
-                            dots_mentioned.append(torch.zeros(bsz, 7).bool())
-                            continue
-                        assert ref_tgt.dim() == 3
-                        dots_mentioned.append(ref_tgt.sum(1) > 0)
-
                     # TODO: cut this out
-                    def make_beliefs(beliefs_name, arg_name):
-                        if beliefs_name == 'none':
-                            return None
-                        elif beliefs_name == 'selected':
-                            # bsz x num_dots x 1, one-hot if that dot is the one selected
-                            return torch.zeros(sel_tgt.size(0), 7).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
-                        elif beliefs_name == 'partners':
-                            partner_has = []
-                            for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
-                                p_rids = set(p_rids)
-                                partner_has.append([a_rid in p_rids for a_rid in a_rids])
-                            return torch.BoolTensor(partner_has).float().to(sel_tgt.device).unsqueeze(-1)
-                        else:
-                            raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
-
-                    selection_beliefs = make_beliefs(model.args.selection_beliefs, 'selection_beliefs')
-                    if  hasattr(model.args, 'generation_beliefs'):
-                        single_sent_generation_beliefs = make_beliefs(model.args.generation_beliefs, 'generation_beliefs')
-                        generation_beliefs = [single_sent_generation_beliefs] * len(inpts)
-                    else:
-                        generation_beliefs = None
+                    num_dots = 7
+                    dots_mentioned, selection_beliefs, generation_beliefs = _make_dots_mentioned_and_beliefs(
+                        bsz, num_dots, args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self
+                    )
                 else:
                     dots_mentioned = [None] * len(inpts)
                     selection_beliefs = None

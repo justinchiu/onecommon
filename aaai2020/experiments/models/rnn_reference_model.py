@@ -14,6 +14,8 @@ from utils import set_temporary_default_tensor_type
 
 BIG_NEG = -1e6
 
+BELIEF_TYPES = ['none', 'selected', 'partners', 'last_partner_mentioned', 'cumulative_partner_mentioned']
+
 class FeedForward(nn.Module):
     def __init__(self, n_hidden_layers, input_dim, hidden_dim, output_dim, dropout_p=None):
         super(FeedForward, self).__init__()
@@ -91,10 +93,10 @@ class RnnReferenceModel(nn.Module):
 
         parser.add_argument('--attention_type', choices=['softmax', 'sigmoid'], default='softmax')
 
-        parser.add_argument('--selection_beliefs', choices=['none', 'selected', 'partners'],
+        parser.add_argument('--selection_beliefs', choices=BELIEF_TYPES,
                             default='none', help='selected: indicator on what you chose. partners: indicator on what the other person has')
 
-        parser.add_argument('--generation_beliefs', choices=['none', 'selected', 'partners'],
+        parser.add_argument('--generation_beliefs', choices=BELIEF_TYPES,
                             default='none', help='selected: indicator on what you chose. partners: indicator on what the other person has')
 
     def __init__(self, word_dict, args):
