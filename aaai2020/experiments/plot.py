@@ -44,8 +44,12 @@ if __name__ == "__main__":
             print("error parsing {}".format(log_file))
         dfs_by_name[log_file] = pandas.DataFrame(stats_by_epoch).transpose()
     for stat in args.stats:
-        collected_df = pandas.DataFrame({
-            name: df[stat] for name, df in dfs_by_name.items()
-        })
+        data = {}
+        for name, df in dfs_by_name.items():
+            if stat in df.columns:
+                data[name] = df[stat]
+            else:
+                print('df {} does not have stat {}'.format(name, stat))
+        collected_df = pandas.DataFrame(data)
         collected_df.plot(title=stat)
         plt.show()
