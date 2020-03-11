@@ -66,18 +66,22 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--separate_attn', action='store_true', default=False,
                             help="don't share the first layer of the attention module")
 
+        parser.add_argument('--hid2output', choices=['activation-final', '1-hidden-layer', '2-hidden-layer'], default='activation-final')
+
         parser.add_argument('--selection_attention', action='store_true')
         parser.add_argument('--feed_context', action='store_true')
         parser.add_argument('--feed_context_attend', action='store_true')
         parser.add_argument('--feed_context_attend_separate', action='store_true')
 
-        parser.add_argument('--no_word_attention',
-                            action='store_true',
-                            help="don't attend to the context in the word output layer")
-
         parser.add_argument('--untie_grus',
                             action='store_true',
                             help="don't use the same weights for the reader and writer")
+
+        parser.add_argument('--attention_type', choices=['softmax', 'sigmoid'], default='softmax')
+
+        parser.add_argument('--no_word_attention',
+                            action='store_true',
+                            help="don't attend to the context in the word output layer")
 
         parser.add_argument('--word_attention_constrained',
                             action='store_true',
@@ -91,13 +95,13 @@ class RnnReferenceModel(nn.Module):
                             action='store_true',
                             help='give an indicator feature for whether the given dot should be mentioned')
 
-        parser.add_argument('--attention_type', choices=['softmax', 'sigmoid'], default='softmax')
-
         parser.add_argument('--selection_beliefs', choices=BELIEF_TYPES,
                             default='none', help='selected: indicator on what you chose. partners: indicator on what the other person has')
 
         parser.add_argument('--generation_beliefs', choices=BELIEF_TYPES,
                             default='none', help='selected: indicator on what you chose. partners: indicator on what the other person has')
+
+        parser.add_argument('--marks_in_word_prediction', action='store_true')
 
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
@@ -164,12 +168,24 @@ class RnnReferenceModel(nn.Module):
             h2o_input_dim = args.nhid_lang
         else:
             h2o_input_dim = args.nhid_lang + args.nembed_ctx
+            if vars(self.args).get('marks_in_word_prediction', False):
+                if args.mark_dots_mentioned:
+                    h2o_input_dim += 1
+                if args.generation_beliefs != 'none':
+                    h2o_input_dim += 1
 
-        self.hid2output = nn.Sequential(
-            nn.Linear(h2o_input_dim, args.nembed_word),
-            nn.ReLU(),
-            nn.Dropout(args.dropout),
-            )
+        if args.hid2output == 'activation-final':
+            self.hid2output = nn.Sequential(
+                nn.Linear(h2o_input_dim, args.nembed_word),
+                nn.ReLU(),
+                nn.Dropout(args.dropout),
+                )
+        elif args.hid2output == '1-hidden-layer':
+            self.hid2output = FeedForward(1, h2o_input_dim, args.nhid_lang, args.nembed_word, dropout_p=args.dropout)
+        elif args.hid2output == '2-hidden-layer':
+            self.hid2output = FeedForward(2, h2o_input_dim, args.nhid_lang, args.nembed_word, dropout_p=args.dropout)
+        else:
+            raise ValueError("invalid --hid2output {}".format(args.hid2output))
 
         if args.share_attn:
             assert not args.separate_attn
@@ -436,7 +452,19 @@ class RnnReferenceModel(nn.Module):
             ctx_attn_prob = self._language_conditioned_dot_attention(
                 ctx_h, lang_hs, use_feed_attn=False, dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
             )
-            ctx_h_expand = ctx_h.unsqueeze(0).expand(seq_len, -1, -1, -1)
+            ctx_h_to_expand = ctx_h
+            if vars(self.args).get('marks_in_word_prediction', False):
+                to_cat = [ctx_h]
+                if vars(self.args).get('mark_dots_mentioned', False):
+                    assert dots_mentioned is not None
+                    to_cat.append(dots_mentioned.float().unsqueeze(-1))
+                if generation_beliefs is not None:
+                    to_cat.append(generation_beliefs)
+                if len(to_cat) > 1:
+                    ctx_h_to_expand = torch.cat(to_cat, dim=-1)
+                else:
+                    ctx_h_to_expand = to_cat[0]
+            ctx_h_expand = ctx_h_to_expand.unsqueeze(0).expand(seq_len, -1, -1, -1)
 
             ctx_h_lang = torch.einsum("tbnd,tbn->tbd", (ctx_h_expand,ctx_attn_prob))
             # ctx_h_lang = torch.sum(torch.mul(ctx_h_expand, lang_prob.unsqueeze(-1)), 2)

@@ -383,18 +383,11 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         lang_losses = []
         assert len(inpts) == len(tgts) == len(outs)
         for i, (out, tgt) in enumerate(zip(outs, tgts)):
-            # print('{} out.size(): {}'.format(i, out.size()))
-            # print('{} tgt.size(): {}'.format(i, tgt.size()))
-            YOU = self.model.word_dict.word2idx['YOU:']
-            THEM = self.model.word_dict.word2idx['THEM:']
-            this_is_self = inpts[i][0] == YOU
-            this_is_other = inpts[i][0] == THEM
-            assert torch.allclose(is_self[i].float().cpu(), this_is_self.float().cpu())
-            assert this_is_self.sum() + this_is_other.sum() == bsz
             # T x bsz
             loss = self.crit_no_reduce(out, tgt).view(-1, bsz)
             if self.args.lang_only_self:
-                loss = loss * (this_is_self.unsqueeze(0).expand_as(loss))
+                # loss = loss * (this_is_self.unsqueeze(0).expand_as(loss))
+                loss = loss * (is_self[i].unsqueeze(0).expand_as(loss))
             lang_losses.append(loss.sum())
         total_lens = sum(l.sum() for l in lens)
         lang_loss = sum(lang_losses) / total_lens
