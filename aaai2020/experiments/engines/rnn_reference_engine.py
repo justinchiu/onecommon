@@ -296,6 +296,7 @@ class RnnReferenceEngine(EngineBase):
         total_lang_loss /= len(dataset)
         total_select_loss /= len(dataset)
         total_ref_loss /= len(dataset)
+        total_partner_ref_loss /= len(dataset)
         time_elapsed = time.time() - start_time
 
         metrics = {
