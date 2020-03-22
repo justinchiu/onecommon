@@ -1,3 +1,4 @@
+from collections import namedtuple
 import copy
 import pprint
 import time
@@ -10,56 +11,81 @@ from torch.autograd import Variable
 import utils
 from engines import EngineBase
 
+ForwardRet = namedtuple(
+    "ForwardRet",
+    ['lang_loss', 'ref_loss', 'ref_correct', 'sel_loss',
+     'word_attn_loss', 'feed_attn_loss',
+     'sel_correct', 'sel_total',
+     'ref_positive', 'ref_total',
+     'attn_ref_stats',
+     'partner_ref_loss', 'partner_ref_correct', 'partner_ref_positive', 'partner_ref_total'
+     ],
+)
+
 def unwrap(loss):
     if loss is not None:
         return loss.item()
     else:
         return 0
 
+def make_dots_mentioned(ref_tgt, args):
+    assert ref_tgt.dim() == 3
+    if args.only_first_mention:
+        return ref_tgt[:,0,:] > 0
+    else:
+        return ref_tgt.sum(1) > 0
+
+
 def _make_dots_mentioned_and_beliefs(
         bsz, num_dots, args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self
 ):
-    def make_dots_mentioned(refs):
+    def make_dots_mentioned_multi(refs):
         dots_mentioned = []
         for ref_tgt in refs:
             if ref_tgt is None:
                 dots_mentioned.append(torch.zeros(bsz, num_dots).bool())
                 continue
-            assert ref_tgt.dim() == 3
-            dots_mentioned.append(ref_tgt.sum(1) > 0)
+            dots_mentioned.append(make_dots_mentioned(ref_tgt, args))
         return dots_mentioned
 
-    dots_mentioned = make_dots_mentioned(ref_tgts)
-    partner_dots_mentioned_our_view = make_dots_mentioned(partner_ref_tgts_our_view)
+    dots_mentioned = make_dots_mentioned_multi(ref_tgts)
+    partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view)
 
-    def make_beliefs(beliefs_name, arg_name, timestep):
-        if beliefs_name == 'none':
-            beliefs = None
-        elif beliefs_name == 'selected':
-            # bsz x num_dots x 1, one-hot if that dot is the one selected
-            beliefs = torch.zeros(sel_tgt.size(0), num_dots).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
-        elif beliefs_name == 'partners':
-            partner_has = []
-            for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
-                p_rids = set(p_rids)
-                partner_has.append([a_rid in p_rids for a_rid in a_rids])
-            beliefs = torch.tensor(partner_has).float().unsqueeze(-1)
-        elif beliefs_name == 'last_partner_mentioned':
-            beliefs = torch.zeros(bsz, num_dots)
-            if timestep > 0:
-                ts = (torch.tensor([timestep] * bsz).long() - 1) - is_self[timestep-1].long()
-                for j, t_j in enumerate(ts):
-                    if t_j >= 0:
-                        beliefs[j] = partner_dots_mentioned_our_view[t_j][j]
-            beliefs = beliefs.unsqueeze(-1)
-        elif beliefs_name == 'cumulative_partner_mentioned':
-            beliefs = torch.zeros(bsz, num_dots).bool()
-            for t in range(timestep):
-                beliefs |= partner_dots_mentioned_our_view[t]
-            beliefs = beliefs.float().unsqueeze(-1)
+    def make_beliefs(beliefs_list, arg_name, timestep):
+        all_beliefs = []
+        for beliefs_name in beliefs_list:
+            if beliefs_name == 'selected':
+                # bsz x num_dots x 1, one-hot if that dot is the one selected
+                beliefs = torch.zeros(sel_tgt.size(0), num_dots).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
+            elif beliefs_name == 'partners':
+                partner_has = []
+                for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
+                    p_rids = set(p_rids)
+                    partner_has.append([a_rid in p_rids for a_rid in a_rids])
+                beliefs = torch.tensor(partner_has).float().unsqueeze(-1)
+            elif beliefs_name == 'last_partner_mentioned':
+                beliefs = torch.zeros(bsz, num_dots)
+                if timestep > 0:
+                    ts = (torch.tensor([timestep] * bsz).long() - 1) - is_self[timestep-1].long()
+                    for j, t_j in enumerate(ts):
+                        if t_j >= 0:
+                            beliefs[j] = partner_dots_mentioned_our_view[t_j][j]
+                beliefs = beliefs.unsqueeze(-1)
+            elif beliefs_name == 'cumulative_partner_mentioned':
+                beliefs = torch.zeros(bsz, num_dots).bool()
+                for t in range(timestep):
+                    beliefs |= partner_dots_mentioned_our_view[t]
+                beliefs = beliefs.float().unsqueeze(-1)
+            else:
+                raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
+            all_beliefs.append(beliefs)
+        if all_beliefs:
+            if len(all_beliefs) > 1:
+                return torch.cat(all_beliefs, dim=-1)
+            else:
+                return all_beliefs[0]
         else:
-            raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
-        return beliefs
+            return None
 
     if hasattr(args, 'selection_beliefs'):
         selection_beliefs = make_beliefs(args.selection_beliefs, 'selection_beliefs', len(inpts) - 1)
@@ -85,31 +111,7 @@ class RnnReferenceEngine(EngineBase):
     def __init__(self, model, args, verbose=False):
         super(RnnReferenceEngine, self).__init__(model, args, verbose)
 
-    def _forward(self, batch):
-        assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
-        assert not self.args.feed_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
-        assert not self.args.mark_dots_mentioned, 'this only makes sense for a hierarchical model, and --lang_only_self'
-        ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, _, sel_idx, lens, partner_ref_inpt, partner_ref_tgt_our_view, partner_num_markables = batch
-
-        ctx = Variable(ctx)
-        inpt = Variable(inpt)
-        if ref_inpt is not None:
-            ref_inpt = Variable(ref_inpt)
-
-        if ref_tgt is not None:
-            assert ref_tgt.dim() == 3
-            dots_mentioned = ref_tgt.sum(1) > 0
-        else:
-            dots_mentioned = None
-        out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
-            ctx, inpt, ref_inpt, sel_idx, lens=None, dots_mentioned=dots_mentioned,
-            selection_beliefs=None, generation_beliefs=None
-        )
-
-        tgt = Variable(tgt)
-        sel_tgt = Variable(sel_tgt)
-        lang_loss = self.crit(out, tgt)
-
+    def _ref_loss(self, ref_inpt, ref_tgt, ref_out):
         if ref_inpt is not None:
             ref_tgt = Variable(ref_tgt)
             ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
@@ -122,6 +124,40 @@ class RnnReferenceEngine(EngineBase):
             ref_correct = 0
             ref_total = 0
             ref_positive = 0
+        return ref_loss, ref_correct, ref_total, ref_positive
+
+    def _forward(self, batch):
+        assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
+        assert not self.args.feed_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
+        assert not self.args.mark_dots_mentioned, 'this only makes sense for a hierarchical model, and --lang_only_self'
+        ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, _, sel_idx, lens, partner_ref_inpt, partner_ref_tgt_our_view, partner_num_markables = batch
+
+        ctx = Variable(ctx)
+        inpt = Variable(inpt)
+        if ref_inpt is not None:
+            ref_inpt = Variable(ref_inpt)
+
+        if ref_tgt is not None:
+            dots_mentioned = make_dots_mentioned(ref_tgt, self.args)
+        else:
+            dots_mentioned = None
+
+        out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
+            ctx, inpt, ref_inpt, sel_idx, lens=None, dots_mentioned=dots_mentioned,
+            selection_beliefs=None, generation_beliefs=None
+        )
+
+        tgt = Variable(tgt)
+        sel_tgt = Variable(sel_tgt)
+        lang_loss = self.crit(out, tgt)
+
+        ref_loss, ref_correct, ref_total, ref_positive = self._ref_loss(
+            ref_inpt, ref_tgt, ref_out
+        )
+
+        partner_ref_loss, partner_ref_correct, partner_ref_total, partner_ref_positive = self._ref_loss(
+            partner_ref_inpt, partner_ref_tgt_our_view, partner_ref_out
+        )
 
         sel_loss = self.sel_crit(sel_out, sel_tgt)
         sel_correct = (sel_out.max(dim=1)[1] == sel_tgt).sum().item()
@@ -134,36 +170,59 @@ class RnnReferenceEngine(EngineBase):
         word_attn_loss = None
         feed_attn_loss = None
 
-        return lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats
+        return ForwardRet(
+            lang_loss=lang_loss,
+            ref_loss=ref_loss,
+            ref_correct=ref_correct,
+            sel_loss=sel_loss,
+            word_attn_loss=word_attn_loss,
+            feed_attn_loss=feed_attn_loss,
+            sel_correct=sel_correct,
+            sel_total=sel_total,
+            ref_positive=ref_positive,
+            ref_total=ref_total,
+            attn_ref_stats=attn_ref_stats,
+            partner_ref_loss=partner_ref_loss,
+            partner_ref_correct=partner_ref_correct,
+            partner_ref_positive=partner_ref_positive,
+            partner_ref_total=partner_ref_total,
+        )
+
 
     def train_batch(self, batch):
-        lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self._forward(
-            batch)
+        forward_ret = self._forward(batch)
 
         # default
-        loss = None
-        return_ref_loss = 0
+        # TODO: sel_loss scaling varies based on whether lang_weight is positive
+        # loss = None
+        # if self.args.lang_weight > 0:
+        #     loss = self.args.lang_weight * forward_ret.lang_loss
+        #     if self.args.sel_weight > 0:
+        #         loss += self.args.sel_weight * forward_ret.sel_loss
+        #     if self.args.ref_weight > 0 and forward_ret.ref_loss is not None:
+        #         loss += self.args.ref_weight * forward_ret.ref_loss
+        # elif self.args.sel_weight > 0:
+        #     loss = self.args.sel_weight * forward_ret.sel_loss / forward_ret.sel_total
+        #     if self.args.ref_weight > 0 and forward_ret.ref_loss is not None:
+        #         loss += self.args.ref_weight * forward_ret.ref_loss
+        # elif self.args.ref_weight > 0 and forward_ret.ref_loss is not None:
+        #     loss = self.args.ref_weight * forward_ret.ref_loss
+
+        loss = 0
         if self.args.lang_weight > 0:
-            loss = self.args.lang_weight * lang_loss
-            if self.args.sel_weight > 0:
-                loss += self.args.sel_weight * sel_loss
-            if self.args.ref_weight > 0 and ref_loss is not None:
-                loss += self.args.ref_weight * ref_loss
-                return_ref_loss = ref_loss.item()
-        elif self.args.sel_weight > 0:
-            loss = self.args.sel_weight * sel_loss / sel_total
-            if self.args.ref_weight > 0 and ref_loss is not None:
-                loss += self.args.ref_weight * ref_loss
-                return_ref_loss = ref_loss.item()
-        elif self.args.ref_weight > 0 and ref_loss is not None:
-            loss = self.args.ref_weight * ref_loss
-            return_ref_loss = ref_loss.item()
+            loss += self.args.lang_weight * forward_ret.lang_loss
+        if self.args.sel_weight > 0:
+            loss += self.args.sel_weight * forward_ret.sel_loss
+        if self.args.ref_weight > 0 and forward_ret.ref_loss is not None:
+            loss += self.args.ref_weight * forward_ret.ref_loss
+        if self.args.partner_ref_weight > 0 and forward_ret.partner_ref_loss is not None:
+            loss += self.args.partner_ref_weight * forward_ret.partner_ref_loss
 
-        if word_attn_loss is not None:
-            loss = loss + word_attn_loss
+        if forward_ret.word_attn_loss is not None:
+            loss = loss + forward_ret.word_attn_loss
 
-        if feed_attn_loss is not None:
-            loss = loss + feed_attn_loss
+        if forward_ret.feed_attn_loss is not None:
+            loss = loss + forward_ret.feed_attn_loss
 
         if loss:
             self.opt.zero_grad()
@@ -171,26 +230,22 @@ class RnnReferenceEngine(EngineBase):
             torch.nn.utils.clip_grad_norm_(self.model.parameters(), self.args.clip)
             self.opt.step()
 
-        return lang_loss.item(), return_ref_loss, ref_correct, ref_total, sel_loss.item(), unwrap(word_attn_loss), unwrap(feed_attn_loss), sel_correct, sel_total, ref_positive, attn_ref_stats
+        return forward_ret
 
     def valid_batch(self, batch):
         with torch.no_grad():
-            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self._forward(
-                batch)
-
-        return lang_loss.item(), unwrap(ref_loss), ref_correct, ref_total, sel_loss.item(), unwrap(word_attn_loss), unwrap(feed_attn_loss), sel_correct, sel_total, ref_positive, attn_ref_stats
+            return self._forward(batch)
 
     def test_batch(self, batch):
         with torch.no_grad():
-            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = self._forward(
-                batch)
-
-        return lang_loss.item(), unwrap(ref_loss), ref_correct, ref_total, sel_loss.item(), unwrap(word_attn_loss), unwrap(feed_attn_loss), sel_correct, sel_total, ref_positive, attn_ref_stats
+            return self._forward(batch)
 
     def _pass(self, dataset, batch_fn, name, use_tqdm):
-        total_lang_loss, total_select_loss, total_select, total_select_correct, total_reference_loss, total_reference, total_reference_correct = 0, 0, 0, 0, 0, 0, 0
-        total_ref_positive = 0
+        total_lang_loss, total_select_loss, total_select, total_select_correct = 0, 0, 0, 0
         start_time = time.time()
+
+        total_ref_loss, total_ref, total_ref_correct, total_ref_positive = 0, 0, 0, 0
+        total_partner_ref_loss, total_partner_ref, total_partner_ref_correct, total_partner_ref_positive = 0, 0, 0, 0
 
         total_attn_ref_stats = {}
 
@@ -199,24 +254,39 @@ class RnnReferenceEngine(EngineBase):
 
         for batch in tqdm.tqdm(dataset, ncols=80) if use_tqdm else dataset:
             # for batch in trainset:
-            lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
-            total_lang_loss += lang_loss
-            total_select_loss += sel_loss
-            total_select_correct += sel_correct
-            total_select += sel_total
-            total_reference_loss += ref_loss
-            total_reference_correct += ref_correct
-            total_reference += ref_total
-            total_ref_positive += ref_positive
-            total_word_attn_loss += word_attn_loss
-            total_feed_attn_loss += feed_attn_loss
+            # lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
+            forward_ret = batch_fn(batch)
+            total_lang_loss += forward_ret.lang_loss.item()
+            total_select_loss += forward_ret.sel_loss.item()
+            total_select_correct += forward_ret.sel_correct
+            total_select += forward_ret.sel_total
 
-            total_attn_ref_stats = utils.sum_dicts(total_attn_ref_stats, attn_ref_stats)
+            total_ref_loss += unwrap(forward_ret.ref_loss)
+            total_ref_correct += forward_ret.ref_correct
+            total_ref += forward_ret.ref_total
+            total_ref_positive += forward_ret.ref_positive
+
+            total_partner_ref_loss += unwrap(forward_ret.partner_ref_loss)
+            total_partner_ref_correct += forward_ret.partner_ref_correct
+            total_partner_ref += forward_ret.partner_ref_total
+            total_partner_ref_positive += forward_ret.partner_ref_positive
+
+            total_word_attn_loss += unwrap(forward_ret.word_attn_loss)
+            total_feed_attn_loss += unwrap(forward_ret.feed_attn_loss)
+
+            total_attn_ref_stats = utils.sum_dicts(total_attn_ref_stats, forward_ret.attn_ref_stats)
 
         print("{} total_ref_positive: {}".format(name, total_ref_positive))
         print("{} total_ref_correct/total_ref: {}/{} {:.4f}".format(
-            name, total_reference_correct, total_reference, total_reference_correct / total_reference
+            name, total_ref_correct, total_ref, total_ref_correct / total_ref
         ))
+        print()
+
+        print("{} total_partner_ref_positive: {}".format(name, total_partner_ref_positive))
+        print("{} total_partner_ref_correct/total_partner_ref: {}/{} {:.4f}".format(
+            name, total_partner_ref_correct, total_partner_ref, total_partner_ref_correct / total_partner_ref
+        ))
+        print()
 
         print("{} word_attn_loss: {:.4f}".format(name, total_word_attn_loss))
         print("{} feed_attn_loss: {:.4f}".format(name, total_feed_attn_loss))
@@ -225,9 +295,20 @@ class RnnReferenceEngine(EngineBase):
 
         total_lang_loss /= len(dataset)
         total_select_loss /= len(dataset)
-        total_reference_loss /= len(dataset)
+        total_ref_loss /= len(dataset)
         time_elapsed = time.time() - start_time
-        return total_lang_loss, total_reference_loss, total_reference_correct / total_reference, total_select_loss, total_select_correct / total_select, time_elapsed
+
+        metrics = {
+            'lang_loss': total_lang_loss,
+            'ref_loss': total_ref_loss,
+            'ref_accuracy': total_ref_correct / total_ref,
+            'partner_ref_loss': total_partner_ref_loss,
+            'partner_ref_accuracy': total_partner_ref_correct / total_partner_ref,
+            'select_loss': total_select_loss,
+            'select_accuracy': total_select_correct / total_select,
+            'time': time_elapsed
+        }
+        return metrics
 
     def train_pass(self, trainset, trainset_stats):
         '''
@@ -242,7 +323,6 @@ class RnnReferenceEngine(EngineBase):
         basic implementation of one validation pass
         '''
         self.model.eval()
-
         return self._pass(validset, self.valid_batch, "val", use_tqdm=False)
 
 
@@ -250,35 +330,39 @@ class RnnReferenceEngine(EngineBase):
         trainset, trainset_stats = traindata
         validset, validset_stats = validdata
 
-        train_lang_loss, train_reference_loss, train_reference_accuracy, train_select_loss, train_select_accuracy, train_time = self.train_pass(
-            trainset, trainset_stats)
-        valid_lang_loss, valid_reference_loss, valid_reference_accuracy, valid_select_loss, valid_select_accuracy, val_time = self.valid_pass(
-            validset, validset_stats)
+        train_metrics = self.train_pass(trainset, trainset_stats)
+        valid_metrics = self.valid_pass(validset, validset_stats)
 
         if self.verbose:
-            print('epoch %03d \t s/epoch %.2f \t lr %.2E' % (epoch, train_time, lr))
+            print('epoch %03d \t s/epoch %.2f \t lr %.2E' % (epoch, train_metrics['time'], lr))
             print('epoch %03d \t train_lang_loss(scaled) %.4f \t train_ppl %.4f' % (
-                epoch, train_lang_loss * self.args.lang_weight, np.exp(train_lang_loss)))
+                epoch, train_metrics['lang_loss'] * self.args.lang_weight, np.exp(train_metrics['lang_loss'])))
             print('epoch %03d \t train_select_loss(scaled) %.4f \t train_select_acc %.4f' % (
-                epoch, train_select_loss * self.args.sel_weight, train_select_accuracy))
+                epoch, train_metrics['select_loss'] * self.args.sel_weight, train_metrics['select_accuracy']))
             print('epoch %03d \t train_ref_loss(scaled) %.4f \t train_ref_acc %.4f' % (
-                epoch, train_reference_loss * self.args.ref_weight, train_reference_accuracy))
+                epoch, train_metrics['ref_loss'] * self.args.ref_weight, train_metrics['ref_accuracy']))
+            print('epoch %03d \t train_partner_ref_loss(scaled) %.4f \t train_partner_ref_acc %.4f' % (
+                epoch, train_metrics['partner_ref_loss'] * self.args.partner_ref_weight, train_metrics['partner_ref_accuracy']))
             print('epoch %03d \t valid_lang_loss %.4f \t valid_ppl %.4f' % (
-                epoch, valid_lang_loss, np.exp(valid_lang_loss)))
+                epoch, valid_metrics['lang_loss'], np.exp(valid_metrics['lang_loss'])))
             print('epoch %03d \t valid_select_loss %.4f \t valid_select_acc %.4f' % (
-                epoch, valid_select_loss, valid_select_accuracy))
+                epoch, valid_metrics['select_loss'], valid_metrics['select_accuracy']))
             print('epoch %03d \t valid_ref_loss %.4f \t valid_ref_acc %.4f' % (
-                epoch, valid_reference_loss, valid_reference_accuracy))
+                epoch, valid_metrics['ref_loss'], valid_metrics['ref_accuracy']))
+            print('epoch %03d \t valid_partner_ref_loss %.4f \t valid_partner_ref_acc %.4f' % (
+                epoch, valid_metrics['partner_ref_loss'], valid_metrics['partner_ref_accuracy']))
             print()
 
+        metrics = {
+            'train': train_metrics,
+            'valid': valid_metrics
+        }
+
         if self.args.tensorboard_log:
-            info = {'Train_Lang_Loss': train_lang_loss,
-                    'Train_Select_Loss': train_select_loss,
-                    'Valid_Lang_Loss': valid_lang_loss,
-                    'Valid_Select_Loss': valid_select_loss,
-                    'Valid_Select_Accuracy': valid_select_accuracy}
-            for tag, value in info.items():
-                self.logger.scalar_summary(tag, value, epoch)
+            for split, split_metrics in metrics.items():
+                for t, value in split_metrics.items():
+                    tag = '{}_{}'.format(split, t)
+                    self.logger.scalar_summary(tag, value, epoch)
 
             for tag, value in self.model.named_parameters():
                 if value.grad is None:
@@ -288,11 +372,18 @@ class RnnReferenceEngine(EngineBase):
                 self.logger.histo_summary(
                     tag + '/grad', value.grad.data.cpu().numpy(), epoch)
 
-        return valid_lang_loss, valid_select_loss, valid_reference_loss, valid_select_accuracy
+        return metrics
 
-    def combine_loss(self, lang_loss, select_loss, reference_loss):
-        return lang_loss * int(self.args.lang_weight > 0) + select_loss * int(
-            self.args.sel_weight > 0) + reference_loss * int(self.args.ref_weight > 0)
+    def combine_loss(self, metrics):
+        # return metrics['lang_loss'] * int(self.args.lang_weight > 0) \
+        #        + metrics['select_loss'] * int(self.args.sel_weight > 0) \
+        #        + metrics['ref_loss'] * int(self.args.ref_weight > 0) \
+        #        + metrics['partner_ref_loss'] * int(self.args.partner_ref_weight > 0)
+        return metrics['lang_loss'] * self.args.lang_weight \
+               + metrics['select_loss'] * self.args.sel_weight \
+               + metrics['ref_loss'] * self.args.ref_weight \
+               + metrics['partner_ref_loss'] * self.args.partner_ref_weight
+
 
     def train(self, corpus, model_filename_fn):
         best_model, best_combined_valid_loss = copy.deepcopy(self.model), 1e100
@@ -302,25 +393,29 @@ class RnnReferenceEngine(EngineBase):
             traindata = corpus.train_dataset(self.args.bsz)
             print("train set stats:")
             pprint.pprint(traindata[1])
-            valid_lang_loss, valid_select_loss, valid_reference_loss, valid_select_acc = self.iter(epoch,
-                                                                                                   self.opt.param_groups[
-                                                                                                       0]["lr"],
-                                                                                                   traindata, validdata)
+
+            metrics = self.iter(epoch, self.opt.param_groups[0]["lr"], traindata, validdata)
+
+            # valid_lang_loss, valid_select_loss, valid_reference_loss, valid_select_acc = self.iter(
+            # )
+
+            combined_valid_loss = self.combine_loss(metrics['valid'])
 
             if self.scheduler is not None:
-                self.scheduler.step(valid_select_loss)
+                self.scheduler.step(combined_valid_loss)
 
-            combined_valid_loss = self.combine_loss(valid_lang_loss, valid_select_loss, valid_reference_loss)
             if combined_valid_loss < best_combined_valid_loss:
                 print(
                     "update best model: valid_lang_loss %.4f \t valid_select_loss %.4f \t valid_select_acc %.4f \t valid_ref_loss %.4f " %
-                    (valid_lang_loss, valid_select_loss, valid_select_acc, valid_reference_loss))
+                    (metrics['valid']['lang_loss'], metrics['valid']['select_loss'], metrics['valid']['select_accuracy'], metrics['valid']['ref_loss'])
+                )
                 best_combined_valid_loss = combined_valid_loss
                 best_model = copy.deepcopy(self.model)
                 best_model.flatten_parameters()
 
                 # utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'))
                 # utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'))
+
 
         return best_combined_valid_loss, best_model
 
@@ -344,6 +439,30 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         rev_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
         hid_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
         return inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables
+
+    def _ref_loss(self, ref_inpt, ref_tgt, ref_out, num_markables):
+        if ref_inpt is None or ref_out is None:
+            return None, 0, 0, 0, 0
+        ref_tgt = Variable(ref_tgt)
+        # max(this_num_markables) x batch_size x num_dots
+        ref_mask = torch.zeros_like(ref_tgt)
+        for i, nm in enumerate(num_markables):
+            ref_mask[i, :nm, :] = 1
+        ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
+        # print(ref_tgt.size())
+        ref_mask = torch.transpose(ref_mask, 0, 1).contiguous()
+        assert ref_tgt.size() == ref_out.size()
+        assert ref_tgt.size() == ref_mask.size()
+        # print('ref_out size: {}'.format(ref_out.size()))
+        # print('ref_tgt size: {}'.format(ref_tgt.size()))
+        ref_loss = (self.ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum()
+        ref_correct = (((ref_out > 0).long() == ref_tgt.long()) * ref_mask.byte()).sum().item()
+        ref_total = ref_mask.sum().item()
+        ref_gold_positive = ref_tgt.sum().item()
+        ref_pred_positive = ((ref_out > 0) * ref_mask.byte()).sum().item()
+
+        return ref_loss, ref_correct, ref_total, ref_gold_positive, ref_pred_positive
+
 
     def _forward(self, batch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
@@ -374,9 +493,10 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             bsz, num_dots, self.args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self
         )
 
-        outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
+        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,
-            selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs
+            selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs,
+            partner_ref_inpts=partner_ref_inpts,
         )
 
         sel_tgt = Variable(sel_tgt)
@@ -398,6 +518,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         ref_pred_positive = 0
         ref_losses = []
 
+        partner_ref_correct = 0
+        partner_ref_total = 0
+        partner_ref_gold_positive = 0
+        partner_ref_pred_positive = 0
+        partner_ref_losses = []
+
         attn_ref_true_positive = 0
         attn_ref_total = 0
         attn_ref_gold_positive = 0
@@ -407,30 +533,34 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         feed_attn_losses = []
 
         assert len(ref_inpts) == len(ref_tgts) == len(num_markables)
-        for ref_inpt, ref_out, ref_tgt, this_num_markables, this_ctx_attn_prob, this_feed_ctx_attn_prob, this_dots_mentioned, inpt, tgt in utils.safe_zip(
-                ref_inpts, ref_outs, ref_tgts, num_markables, ctx_attn_prob, feed_ctx_attn_prob, dots_mentioned, inpts, tgts
+
+        assert len(partner_ref_inpts) == len(partner_ref_tgts_our_view) == len(all_partner_num_markables)
+
+        # TODO: just index into the lists; the safety check isn't worth it
+        for ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt, this_num_markables, this_partner_num_markables, this_ctx_attn_prob, this_feed_ctx_attn_prob, this_dots_mentioned, inpt, tgt in utils.safe_zip(
+                ref_inpts, partner_ref_inpts, ref_outs_and_partner_ref_outs, ref_tgts, partner_ref_tgts_our_view, num_markables, all_partner_num_markables, ctx_attn_prob, feed_ctx_attn_prob, dots_mentioned, inpts, tgts
         ):
             if (this_num_markables == 0).all() or ref_tgt is None:
                 continue
             assert max(this_num_markables) == ref_tgt.size(1)
-            ref_tgt = Variable(ref_tgt)
-            # max(this_num_markables) x batch_size x num_dots
-            ref_mask = torch.zeros_like(ref_tgt)
-            for i, nm in enumerate(this_num_markables):
-                ref_mask[i, :nm, :] = 1
-            ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
-            # print(ref_tgt.size())
-            ref_mask = torch.transpose(ref_mask, 0, 1).contiguous()
-            assert ref_tgt.size() == ref_out.size()
-            assert ref_tgt.size() == ref_mask.size()
-            # print('ref_out size: {}'.format(ref_out.size()))
-            # print('ref_tgt size: {}'.format(ref_tgt.size()))
-            ref_loss = (self.ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum()
-            ref_correct += (((ref_out > 0).long() == ref_tgt.long()) * ref_mask.byte()).sum().item()
-            ref_total += ref_mask.sum().item()
-            ref_gold_positive += ref_tgt.sum().item()
-            ref_pred_positive += ((ref_out > 0) * ref_mask.byte()).sum().item()
-            ref_losses.append(ref_loss)
+            _ref_loss, _ref_correct, _ref_total, _ref_gold_positive, _ref_pred_positive = self._ref_loss(
+                ref_inpt, ref_tgt, ref_out, this_num_markables
+            )
+            ref_correct += _ref_correct
+            ref_total += _ref_total
+            ref_gold_positive += _ref_gold_positive
+            ref_pred_positive += _ref_pred_positive
+            ref_losses.append(_ref_loss)
+
+            _partner_ref_loss, _partner_ref_correct, _partner_ref_total, _partner_ref_gold_positive, _partner_ref_pred_positive = self._ref_loss(
+                partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables
+            )
+            partner_ref_correct += _partner_ref_correct
+            partner_ref_total += _partner_ref_total
+            partner_ref_gold_positive += _partner_ref_gold_positive
+            partner_ref_pred_positive += _partner_ref_pred_positive
+            if _partner_ref_loss is not None:
+                partner_ref_losses.append(_partner_ref_loss)
 
             if this_ctx_attn_prob is not None:
                 # this_ctx_attn_prob: N x batch x num_dots
@@ -458,14 +588,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                             # indices into the original tcap; i.e. dot indices
                             this_pred_dots = sorted_ix[t, batch_ix][attended[t-1, batch_ix]]
                             pred_dots.update(set(this_pred_dots.cpu().detach().numpy()))
-                        gold_pos = set(ref_tgt[markable_ix, batch_ix].nonzero().flatten().cpu().detach().numpy())
+                        gold_pos = set(ref_tgt[batch_ix, markable_ix].nonzero().flatten().cpu().detach().numpy())
                         attn_ref_true_positive += len(pred_dots & gold_pos)
                         attn_ref_gold_positive += len(gold_pos)
                         attn_ref_total += num_dots
                         attn_ref_pred_positive += len(pred_dots)
 
                         if self.args.word_attention_supervised:
-                            gold_dist = ref_tgt[markable_ix, batch_ix]
+                            gold_dist = ref_tgt[batch_ix, markable_ix]
                             gold_dist = gold_dist / gold_dist.sum()
                             # num_locations x num_dots
                             referent_attention = this_ctx_attn_prob[markable_start-1:markable_end,batch_ix]
@@ -514,6 +644,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                     feed_attn_losses.append(feed_attn_loss)
         ref_loss = sum(ref_losses) / ref_total
 
+        if partner_ref_total == 0 or (not partner_ref_losses):
+            assert partner_ref_total == 0 and (not partner_ref_losses)
+            partner_ref_loss = None
+        else:
+            partner_ref_loss = sum(partner_ref_losses) / partner_ref_total
+
         # print('sel_out.size(): {}'.format(sel_out.size()))
         # print('sel_tgt.size(): {}'.format(sel_tgt.size()))
 
@@ -548,5 +684,20 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         else:
             feed_attn_loss = None
 
-        return lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, \
-               sel_correct, sel_total, ref_gold_positive, attn_ref_stats
+        return ForwardRet(
+            lang_loss=lang_loss,
+            ref_loss=ref_loss,
+            ref_correct=ref_correct,
+            sel_loss=sel_loss,
+            word_attn_loss=word_attn_loss,
+            feed_attn_loss=feed_attn_loss,
+            sel_correct=sel_correct,
+            sel_total=sel_total,
+            ref_positive=ref_gold_positive,
+            ref_total=ref_total,
+            attn_ref_stats=attn_ref_stats,
+            partner_ref_loss=partner_ref_loss,
+            partner_ref_correct=partner_ref_correct,
+            partner_ref_positive=partner_ref_gold_positive,
+            partner_ref_total=partner_ref_total,
+        )

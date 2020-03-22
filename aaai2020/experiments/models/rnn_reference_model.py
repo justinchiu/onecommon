@@ -79,6 +79,7 @@ class RnnReferenceModel(nn.Module):
 
         parser.add_argument('--attention_type', choices=['softmax', 'sigmoid'], default='softmax')
 
+        # beliefs / dot-conditioning
         parser.add_argument('--no_word_attention',
                             action='store_true',
                             help="don't attend to the context in the word output layer")
@@ -95,13 +96,21 @@ class RnnReferenceModel(nn.Module):
                             action='store_true',
                             help='give an indicator feature for whether the given dot should be mentioned')
 
-        parser.add_argument('--selection_beliefs', choices=BELIEF_TYPES,
-                            default='none', help='selected: indicator on what you chose. partners: indicator on what the other person has')
+        parser.add_argument('--only_first_mention',
+                            action='store_true',
+                            help='when marking dots mentioned (either in mark_dots_mentioned, or in one of the oracle selection beliefs), only mark the first mention in the utterance')
 
-        parser.add_argument('--generation_beliefs', choices=BELIEF_TYPES,
-                            default='none', help='selected: indicator on what you chose. partners: indicator on what the other person has')
+        parser.add_argument('--selection_beliefs', choices=BELIEF_TYPES, nargs='*',
+                            default=[], help='selected: indicator on what you chose. partners: indicator on what the other person has')
 
-        parser.add_argument('--marks_in_word_prediction', action='store_true')
+        parser.add_argument('--generation_beliefs', choices=BELIEF_TYPES, nargs='*',
+                            default=[], help='selected: indicator on what you chose. partners: indicator on what the other person has')
+
+        parser.add_argument('--marks_in_word_prediction', action='store_true',
+                            help='in addition to marking context in attention, mark context in the word prediction layer')
+
+        # auxiliary models
+        parser.add_argument('--partner_reference_prediction', action='store_true')
 
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
@@ -171,8 +180,8 @@ class RnnReferenceModel(nn.Module):
             if vars(self.args).get('marks_in_word_prediction', False):
                 if args.mark_dots_mentioned:
                     h2o_input_dim += 1
-                if args.generation_beliefs != 'none':
-                    h2o_input_dim += 1
+                if len(args.generation_beliefs) > 0:
+                    h2o_input_dim += len(args.generation_beliefs)
 
         if args.hid2output == 'activation-final':
             self.hid2output = nn.Sequential(
@@ -187,27 +196,31 @@ class RnnReferenceModel(nn.Module):
         else:
             raise ValueError("invalid --hid2output {}".format(args.hid2output))
 
+        ref_attn_names = ['ref']
+        if args.partner_reference_prediction:
+            ref_attn_names.append('ref_partner')
+
         if args.share_attn:
             assert not args.separate_attn
             # TODO: get rid of layers here
             assert not args.mark_dots_mentioned
-            assert args.selection_beliefs == 'none'
-            assert args.generation_beliefs == 'none'
+            assert not args.selection_beliefs
+            assert not args.generation_beliefs
             self.attn = FeedForward(2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, 1, dropout_p = args.dropout)
             if self.args.feed_context_attend_separate:
                 self.feed_attn = FeedForward(2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, 1, dropout_p = args.dropout)
             else:
                 self.feed_attn = None
         elif args.separate_attn:
-            for attn_name in ['lang', 'sel', 'ref', 'feed']:
+            for attn_name in ['lang', 'sel', 'feed'] + ref_attn_names:
                 input_dim = args.nhid_lang + args.nembed_ctx
                 if args.mark_dots_mentioned and attn_name in ['lang', 'feed']:
                     # TODO: consider tiling the indicator feature across more dimensions
                     input_dim += 1
-                if args.selection_beliefs != 'none' and attn_name == 'sel':
-                    input_dim += 1
-                if args.generation_beliefs != 'none' and attn_name in ['lang', 'feed']:
-                    input_dim += 1
+                if args.selection_beliefs and attn_name == 'sel':
+                    input_dim += len(args.selection_beliefs)
+                if args.generation_beliefs and attn_name in ['lang', 'feed']:
+                    input_dim += len(args.generation_beliefs)
                 setattr(
                     self,
                     self._attention_name(attn_name),
@@ -215,14 +228,14 @@ class RnnReferenceModel(nn.Module):
                 )
         else:
             assert not args.mark_dots_mentioned
-            assert args.selection_beliefs == 'none'
-            assert args.generation_beliefs == 'none'
+            assert not args.selection_beliefs
+            assert not args.generation_beliefs
 
             self.attn = nn.Sequential(
                 nn.Linear(args.nhid_lang + args.nembed_ctx, args.nhid_sel),
                 nn.ReLU(),
                 nn.Dropout(args.dropout))
-            for attn_name in ['lang', 'sel', 'ref']:
+            for attn_name in ['lang', 'sel'] + ref_attn_names:
                 setattr(
                     self,
                     self._attention_name(attn_name),
@@ -296,7 +309,7 @@ class RnnReferenceModel(nn.Module):
         inpt_emb = self.dropout(inpt_emb)
         return inpt_emb
 
-    def reference_resolution(self, ctx_h, outs_emb, ref_inpt):
+    def reference_resolution(self, ctx_h, outs_emb, ref_inpt, for_self = True):
         if ref_inpt is None:
             return None
 
@@ -320,7 +333,11 @@ class RnnReferenceModel(nn.Module):
         ref_inpt = ref_inpt.unsqueeze(2).expand(-1, -1, num_dots, -1)
         ctx_h = ctx_h.unsqueeze(0).expand(ref_inpt.size(0), ref_inpt.size(1), ref_inpt.size(2), ctx_h.size(-1))
 
-        ref_logit = self._apply_attention('ref', torch.cat([ref_inpt, ctx_h], 3))
+        if vars(self.args).get('partner_reference_prediction', False):
+            attention_params_name = 'ref' if for_self else 'ref_partner'
+        else:
+            attention_params_name = 'ref'
+        ref_logit = self._apply_attention(attention_params_name, torch.cat([ref_inpt, ctx_h], 3))
         return ref_logit
 
     def selection(self, ctx_h, outs_emb, sel_idx, beliefs=None):
@@ -431,7 +448,7 @@ class RnnReferenceModel(nn.Module):
         return attn_prob
 
     def _forward(self, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False,
-                 dots_mentioned=None, selection_beliefs=None, generation_beliefs=None):
+                 dots_mentioned=None, selection_beliefs=None, generation_beliefs=None, partner_ref_inpt=None):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
         bsz = ctx_h.size(0)
@@ -476,7 +493,12 @@ class RnnReferenceModel(nn.Module):
         # compute referents output
         # print('ref_inpt.size(): {}'.format(ref_inpt.size()))
         # print('outs_emb.size(): {}'.format(outs_emb.size()))
-        ref_out = self.reference_resolution(ctx_h, lang_hs, ref_inpt)
+        ref_out = self.reference_resolution(ctx_h, lang_hs, ref_inpt, for_self=True)
+
+        if vars(self.args).get('partner_reference_prediction', False):
+            partner_ref_out = self.reference_resolution(ctx_h, lang_hs, partner_ref_inpt, for_self=False)
+        else:
+            partner_ref_out = None
 
         if compute_sel_out:
             # compute selection
@@ -485,17 +507,18 @@ class RnnReferenceModel(nn.Module):
         else:
             sel_out = None
 
-        return outs, ref_out, sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob
+        return outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob
 
-    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, selection_beliefs, generation_beliefs):
+    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, selection_beliefs, generation_beliefs, partner_ref_inpt):
         if selection_beliefs is not None:
             raise NotImplementedError("selection_belief for non-hierarchical model")
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
-        outs, ref_out, sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
+        outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
             ctx_h, inpt, ref_inpt, sel_idx, lens=lens, lang_h=None, compute_sel_out=True, pack=False,
-            dots_mentioned=dots_mentioned, selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs
+            dots_mentioned=dots_mentioned, selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs,
+            partner_ref_inpt=partner_ref_inpt,
         )
-        return outs, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob
+        return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob
 
     def _context_for_feeding(self, ctx_h, lang_hs, dots_mentioned, generation_beliefs):
         if self.args.feed_context_attend:
@@ -541,7 +564,6 @@ class RnnReferenceModel(nn.Module):
         else:
             feed_ctx_attn_prob = None
         if pack:
-            dialog_emb_before_pack = dialog_emb
             assert lens is not None
             with set_temporary_default_tensor_type(torch.FloatTensor):
                 dialog_emb = pack_padded_sequence(dialog_emb, lens.cpu(), enforce_sorted=False)
@@ -550,7 +572,6 @@ class RnnReferenceModel(nn.Module):
         if vars(self.args).get('untie_grus', False):
             # todo: implement this?
             raise NotImplementedError("untie_grus")
-            assert False
             # writer_lang_hs, writer_last_h = self.writer(dialog_emb)
 
         lang_hs, last_h = reader_lang_hs, reader_last_h
@@ -695,7 +716,18 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def forward(self, ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, selection_beliefs, generation_beliefs):
+    def forward(
+            self,
+            ctx,
+            inpts,
+            ref_inpts,
+            sel_idx,
+            lens,
+            dots_mentioned,
+            selection_beliefs,
+            generation_beliefs,
+            partner_ref_inpts
+    ):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
         # sel_idx is index into the last sentence in the dialogue
@@ -714,19 +746,23 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         if generation_beliefs is not None:
             assert len(generation_beliefs) == len(inpts)
 
+        if partner_ref_inpts is not None:
+            assert len(partner_ref_inpts) == len(inpts)
+
         assert len(inpts) == len(ref_inpts)
         for i in range(len(inpts)):
             inpt = inpts[i]
             ref_inpt = ref_inpts[i]
             is_last = i == len(inpts) - 1
             this_lens = lens[i]
-            outs, ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
+            outs, ref_out_and_partner_ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
                 ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
                 dots_mentioned=dots_mentioned[i], selection_beliefs=selection_beliefs if is_last else None,
-                generation_beliefs=generation_beliefs[i] if generation_beliefs is not None else None
+                generation_beliefs=generation_beliefs[i] if generation_beliefs is not None else None,
+                partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
             )
             all_outs.append(outs)
-            all_ref_outs.append(ref_out)
+            all_ref_outs.append(ref_out_and_partner_ref_out)
             all_ctx_attn_prob.append(ctx_attn_prob)
             all_feed_ctx_attn_prob.append(feed_ctx_attn_prob)
 
