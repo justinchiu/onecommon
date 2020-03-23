@@ -284,7 +284,7 @@ class RnnReferenceEngine(EngineBase):
 
         print("{} total_partner_ref_positive: {}".format(name, total_partner_ref_positive))
         print("{} total_partner_ref_correct/total_partner_ref: {}/{} {:.4f}".format(
-            name, total_partner_ref_correct, total_partner_ref, total_partner_ref_correct / total_partner_ref
+            name, total_partner_ref_correct, total_partner_ref, (total_partner_ref_correct / total_partner_ref) if total_partner_ref > 0 else 0
         ))
         print()
 
@@ -304,7 +304,7 @@ class RnnReferenceEngine(EngineBase):
             'ref_loss': total_ref_loss,
             'ref_accuracy': total_ref_correct / total_ref,
             'partner_ref_loss': total_partner_ref_loss,
-            'partner_ref_accuracy': total_partner_ref_correct / total_partner_ref,
+            'partner_ref_accuracy': (total_partner_ref_correct / total_partner_ref) if total_partner_ref > 0 else 0,
             'select_loss': total_select_loss,
             'select_accuracy': total_select_correct / total_select,
             'time': time_elapsed
