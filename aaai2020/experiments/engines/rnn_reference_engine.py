@@ -76,7 +76,8 @@ def _make_beliefs(
                     ]
                     if args.detach_beliefs:
                         mentions = [
-                            mention.detach() for mention in mentions
+                            mention.detach() if mention is not None else None
+                            for mention in mentions
                         ]
                 beliefs = torch.zeros(bsz, num_dots)
                 if timestep > 0:
