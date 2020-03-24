@@ -28,6 +28,7 @@ def unwrap(loss):
     else:
         return 0
 
+
 def make_dots_mentioned(ref_tgt, args):
     assert ref_tgt.dim() == 3
     if args.only_first_mention:
@@ -36,22 +37,24 @@ def make_dots_mentioned(ref_tgt, args):
         return ref_tgt.sum(1) > 0
 
 
-def _make_dots_mentioned_and_beliefs(
-        bsz, num_dots, args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self
+def make_dots_mentioned_multi(refs, args, bsz, num_dots):
+    dots_mentioned = []
+    for ref_tgt in refs:
+        if ref_tgt is None:
+            dots_mentioned.append(torch.zeros(bsz, num_dots).bool())
+            continue
+        dots_mentioned.append(make_dots_mentioned(ref_tgt, args))
+    return dots_mentioned
+
+
+def _make_beliefs(
+        bsz, num_dots, args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self,
+        partner_ref_outs,
+        timestep,
+        partner_dots_mentioned_our_view, # one per sentence
 ):
-    def make_dots_mentioned_multi(refs):
-        dots_mentioned = []
-        for ref_tgt in refs:
-            if ref_tgt is None:
-                dots_mentioned.append(torch.zeros(bsz, num_dots).bool())
-                continue
-            dots_mentioned.append(make_dots_mentioned(ref_tgt, args))
-        return dots_mentioned
 
-    dots_mentioned = make_dots_mentioned_multi(ref_tgts)
-    partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view)
-
-    def make_beliefs(beliefs_list, arg_name, timestep):
+    def make_beliefs(beliefs_list, arg_name):
         all_beliefs = []
         for beliefs_name in beliefs_list:
             if beliefs_name == 'selected':
@@ -63,14 +66,25 @@ def _make_dots_mentioned_and_beliefs(
                     p_rids = set(p_rids)
                     partner_has.append([a_rid in p_rids for a_rid in a_rids])
                 beliefs = torch.tensor(partner_has).float().unsqueeze(-1)
-            elif beliefs_name == 'last_partner_mentioned':
+            elif beliefs_name in ['last_partner_mentioned', 'last_partner_mentioned_predicted']:
+                if beliefs_name == 'last_partner_mentioned':
+                    mentions = partner_dots_mentioned_our_view
+                else:
+                    mentions = [
+                        out.sigmoid().max(0).values if out is not None else None
+                        for out in partner_ref_outs
+                    ]
+                    if args.detach_beliefs:
+                        mentions = [
+                            mention.detach() for mention in mentions
+                        ]
                 beliefs = torch.zeros(bsz, num_dots)
                 if timestep > 0:
                     ts = (torch.tensor([timestep] * bsz).long() - 1) - is_self[timestep-1].long()
                     for j, t_j in enumerate(ts):
                         if t_j >= 0:
-                            beliefs[j] = partner_dots_mentioned_our_view[t_j][j]
-                beliefs = beliefs.unsqueeze(-1)
+                            beliefs[j] = mentions[t_j][j]
+                beliefs = beliefs.float().unsqueeze(-1)
             elif beliefs_name == 'cumulative_partner_mentioned':
                 beliefs = torch.zeros(bsz, num_dots).bool()
                 for t in range(timestep):
@@ -88,21 +102,18 @@ def _make_dots_mentioned_and_beliefs(
             return None
 
     if hasattr(args, 'selection_beliefs'):
-        selection_beliefs = make_beliefs(args.selection_beliefs, 'selection_beliefs', len(inpts) - 1)
+        if timestep == len(inpts) - 1:
+            selection_beliefs = make_beliefs(args.selection_beliefs, 'selection_beliefs')
+        else:
+            selection_beliefs = None
     else:
         selection_beliefs = None
     if hasattr(args, 'generation_beliefs'):
-        generation_beliefs = [
-            make_beliefs(args.generation_beliefs, 'generation_beliefs', t)
-            for t in range(len(inpts))
-        ]
-        if any(b is None for b in generation_beliefs):
-            assert all(b is None for b in generation_beliefs)
-            generation_beliefs = None
+        generation_beliefs = make_beliefs(args.generation_beliefs, 'generation_beliefs')
     else:
         generation_beliefs = None
 
-    return dots_mentioned, selection_beliefs, generation_beliefs
+    return selection_beliefs, generation_beliefs
 
 class RnnReferenceEngine(EngineBase):
     @classmethod
@@ -490,13 +501,25 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         # else:
         #     generation_beliefs = None
 
-        dots_mentioned, selection_beliefs, generation_beliefs = _make_dots_mentioned_and_beliefs(
-            bsz, num_dots, self.args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self
-        )
+        last_partner_ref_out = None
+
+
+        dots_mentioned = make_dots_mentioned_multi(ref_tgts, self.args, bsz, num_dots)
+        partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, self.args, bsz, num_dots)
+
+        def belief_function(timestep, partner_ref_outs):
+            assert len(partner_ref_outs) == timestep
+            selection_beliefs, generation_beliefs = _make_beliefs(
+                bsz, num_dots, self.args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self,
+                partner_ref_outs,
+                timestep,
+                partner_dots_mentioned_our_view
+            )
+            return selection_beliefs, generation_beliefs
 
         outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,
-            selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs,
+            belief_function=belief_function,
             partner_ref_inpts=partner_ref_inpts,
         )
 

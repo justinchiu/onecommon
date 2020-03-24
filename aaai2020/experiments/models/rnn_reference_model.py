@@ -14,7 +14,12 @@ from utils import set_temporary_default_tensor_type
 
 BIG_NEG = -1e6
 
-BELIEF_TYPES = ['none', 'selected', 'partners', 'last_partner_mentioned', 'cumulative_partner_mentioned']
+BELIEF_TYPES = [
+    'none',
+    'selected', 'partners',
+    'last_partner_mentioned', 'cumulative_partner_mentioned',
+    'last_partner_mentioned_predicted'
+]
 
 class FeedForward(nn.Module):
     def __init__(self, n_hidden_layers, input_dim, hidden_dim, output_dim, dropout_p=None):
@@ -108,6 +113,9 @@ class RnnReferenceModel(nn.Module):
 
         parser.add_argument('--marks_in_word_prediction', action='store_true',
                             help='in addition to marking context in attention, mark context in the word prediction layer')
+
+        parser.add_argument('--detach_beliefs', action='store_true',
+                            help='don\'t backprop through the belief prediction network')
 
         # auxiliary models
         parser.add_argument('--partner_reference_prediction', action='store_true')
@@ -509,8 +517,13 @@ class RnnReferenceModel(nn.Module):
 
         return outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob
 
-    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, selection_beliefs, generation_beliefs, partner_ref_inpt):
+    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, belief_function, partner_ref_inpt):
+        # belief_function:
+        # timestep 0
+        selection_beliefs, generation_beliefs = belief_function(0, [])
         if selection_beliefs is not None:
+            raise NotImplementedError("selection_belief for non-hierarchical model")
+        if generation_beliefs is not None:
             raise NotImplementedError("selection_belief for non-hierarchical model")
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
         outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
@@ -724,8 +737,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             sel_idx,
             lens,
             dots_mentioned,
-            selection_beliefs,
-            generation_beliefs,
+            belief_function,
             partner_ref_inpts
     ):
         # inpts is a list, one item per sentence
@@ -743,11 +755,13 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         all_ctx_attn_prob = []
         all_feed_ctx_attn_prob = []
 
-        if generation_beliefs is not None:
-            assert len(generation_beliefs) == len(inpts)
+        # if generation_beliefs is not None:
+        #     assert len(generation_beliefs) == len(inpts)
+        #
+        # if partner_ref_inpts is not None:
+        #     assert len(partner_ref_inpts) == len(inpts)
 
-        if partner_ref_inpts is not None:
-            assert len(partner_ref_inpts) == len(inpts)
+        partner_ref_outs = []
 
         assert len(inpts) == len(ref_inpts)
         for i in range(len(inpts)):
@@ -755,16 +769,23 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             ref_inpt = ref_inpts[i]
             is_last = i == len(inpts) - 1
             this_lens = lens[i]
+            selection_beliefs, generation_beliefs = belief_function(i, partner_ref_outs)
             outs, ref_out_and_partner_ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
                 ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
-                dots_mentioned=dots_mentioned[i], selection_beliefs=selection_beliefs if is_last else None,
-                generation_beliefs=generation_beliefs[i] if generation_beliefs is not None else None,
+                dots_mentioned=dots_mentioned[i],
+                # selection_beliefs=selection_beliefs if is_last else None,
+                # generation_beliefs=generation_beliefs[i] if generation_beliefs is not None else None,
+                selection_beliefs=selection_beliefs,
+                generation_beliefs=generation_beliefs,
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
             )
             all_outs.append(outs)
             all_ref_outs.append(ref_out_and_partner_ref_out)
             all_ctx_attn_prob.append(ctx_attn_prob)
             all_feed_ctx_attn_prob.append(feed_ctx_attn_prob)
+
+            ref_out, partner_ref_out = ref_out_and_partner_ref_out
+            partner_ref_outs.append(partner_ref_out)
 
         assert sel_out is not None
 
