@@ -120,6 +120,8 @@ class RnnReferenceModel(nn.Module):
         # auxiliary models
         parser.add_argument('--partner_reference_prediction', action='store_true')
 
+        parser.add_argument('--next_mention_prediction', action='store_true')
+
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
 
@@ -207,6 +209,9 @@ class RnnReferenceModel(nn.Module):
         ref_attn_names = ['ref']
         if args.partner_reference_prediction:
             ref_attn_names.append('ref_partner')
+
+        if args.next_mention_prediction:
+            ref_attn_names.append('next_mention')
 
         if args.share_attn:
             assert not args.separate_attn
@@ -318,6 +323,7 @@ class RnnReferenceModel(nn.Module):
         return inpt_emb
 
     def reference_resolution(self, ctx_h, outs_emb, ref_inpt, for_self = True):
+        # ref_inpt: bsz x num_refs x 3
         if ref_inpt is None:
             return None
 
@@ -325,8 +331,12 @@ class RnnReferenceModel(nn.Module):
         num_dots = ctx_h.size(1)
 
         # reshape
+
+        # (3 * num_refs) x batch_size
         ref_inpt = torch.transpose(ref_inpt, 0, 2).contiguous().view(-1, bsz)
+        # (3 * num_refs) x batch_size x 1
         ref_inpt = ref_inpt.view(-1, bsz).unsqueeze(2)
+        # (3 * num_refs) x batch_size x hidden_dim
         ref_inpt = ref_inpt.expand(-1, -1, outs_emb.size(2))
 
         # gather indices
@@ -336,8 +346,10 @@ class RnnReferenceModel(nn.Module):
 
         # this mean pools embeddings for the referent's start and end, as well as the end of the sentence it occurs in
         # take mean
+        # num_refs x batch_size x hidden_dim
         ref_inpt = torch.mean(ref_inpt, 0)
 
+        # num_refs x batch_size x num_dots x hidden_dim
         ref_inpt = ref_inpt.unsqueeze(2).expand(-1, -1, num_dots, -1)
         ctx_h = ctx_h.unsqueeze(0).expand(ref_inpt.size(0), ref_inpt.size(1), ref_inpt.size(2), ctx_h.size(-1))
 
@@ -345,8 +357,32 @@ class RnnReferenceModel(nn.Module):
             attention_params_name = 'ref' if for_self else 'ref_partner'
         else:
             attention_params_name = 'ref'
-        ref_logit = self._apply_attention(attention_params_name, torch.cat([ref_inpt, ctx_h], 3))
+        ref_logit = self._apply_attention(attention_params_name, torch.cat([ref_inpt, ctx_h], -1))
         return ref_logit
+
+    def next_mention_prediction(self, ctx_h, outs_emb, lens):
+        bsz = ctx_h.size(0)
+        num_dots = ctx_h.size(1)
+
+        # 1 x batch_size x 1
+        lens = lens.unsqueeze(0).unsqueeze(2)
+        # 1 x batch_size x hidden_dim
+        lens = lens.expand(-1, -1, outs_emb.size(2))
+        states = torch.gather(outs_emb, 0, lens-1)
+
+        # batch_size x hidden_dim
+        states = states.squeeze(0)
+
+        # batch_size x num_dots x hidden_dim
+        states = states.unsqueeze(1).expand(-1, num_dots, -1)
+
+        # add a dummy time dimension for attention
+        # 1 x batch_size x num_dots x hidden_dim
+        ctx_h = ctx_h.unsqueeze(0)
+        states = states.unsqueeze(0)
+
+        next_logit = self._apply_attention('next_mention', torch.cat([states, ctx_h], -1))
+        return next_logit
 
     def selection(self, ctx_h, outs_emb, sel_idx, beliefs=None):
         # outs_emb: length x batch_size x dim
@@ -508,6 +544,13 @@ class RnnReferenceModel(nn.Module):
         else:
             partner_ref_out = None
 
+        if vars(self.args).get('next_mention_prediction', False):
+            assert lens is not None
+            next_mention_out = self.next_mention_prediction(ctx_h, lang_hs, lens)
+            assert next_mention_out is not None
+        else:
+            next_mention_out = None
+
         if compute_sel_out:
             # compute selection
             # print('sel_idx size: {}'.format(sel_idx.size()))
@@ -515,7 +558,7 @@ class RnnReferenceModel(nn.Module):
         else:
             sel_out = None
 
-        return outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob
+        return outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
 
     def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, belief_function, partner_ref_inpt):
         # belief_function:
@@ -526,12 +569,13 @@ class RnnReferenceModel(nn.Module):
         if generation_beliefs is not None:
             raise NotImplementedError("selection_belief for non-hierarchical model")
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
-        outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
+
+        outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
             ctx_h, inpt, ref_inpt, sel_idx, lens=lens, lang_h=None, compute_sel_out=True, pack=False,
             dots_mentioned=dots_mentioned, selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs,
             partner_ref_inpt=partner_ref_inpt,
         )
-        return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob
+        return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
 
     def _context_for_feeding(self, ctx_h, lang_hs, dots_mentioned, generation_beliefs):
         if self.args.feed_context_attend:
@@ -548,6 +592,15 @@ class RnnReferenceModel(nn.Module):
             feed_ctx_attn_prob = None
         return ctx_emb, feed_ctx_attn_prob
 
+    def _init_h(self, bsz):
+        if hasattr(self, 'reader_init_h'):
+            reader_lang_h = self.reader_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
+            writer_lang_h = self.writer_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
+        else:
+            reader_lang_h = self.init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
+            writer_lang_h = reader_lang_h
+        return reader_lang_h, writer_lang_h
+
     def _read(self, ctx_h, inpt, lang_h, lens=None, pack=False, dots_mentioned=None, generation_beliefs=None):
         # lang_h: num_layers * num_directions x batch x nhid_lang
         bsz = ctx_h.size(0)
@@ -556,13 +609,7 @@ class RnnReferenceModel(nn.Module):
 
         if lang_h is None:
             # lang_h = self._zero(1, bsz, self.args.nhid_lang)
-            if hasattr(self, 'reader_init_h'):
-                reader_lang_h = self.reader_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
-                writer_lang_h = self.writer_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
-            else:
-                reader_lang_h = self.init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
-                writer_lang_h = reader_lang_h
-
+            reader_lang_h, writer_lang_h = self._init_h(bsz)
         else:
             reader_lang_h, writer_lang_h = lang_h, lang_h
 
@@ -745,6 +792,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # sel_idx is index into the last sentence in the dialogue
 
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
+        bsz = ctx_h.size(0)
         lang_h = None
 
         all_outs = []
@@ -755,6 +803,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         all_ctx_attn_prob = []
         all_feed_ctx_attn_prob = []
 
+        all_next_mention_outs = []
+
         # if generation_beliefs is not None:
         #     assert len(generation_beliefs) == len(inpts)
         #
@@ -763,6 +813,12 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         partner_ref_outs = []
 
+        if vars(self.args).get('next_mention_prediction', False):
+            reader_init_h, _ = self._init_h(bsz)
+            all_next_mention_outs.append(
+                self.next_mention_prediction(ctx_h, reader_init_h, torch.full((bsz,), 1, device=ctx_h.device).long())
+            )
+
         assert len(inpts) == len(ref_inpts)
         for i in range(len(inpts)):
             inpt = inpts[i]
@@ -770,7 +826,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             is_last = i == len(inpts) - 1
             this_lens = lens[i]
             selection_beliefs, generation_beliefs = belief_function(i, partner_ref_outs)
-            outs, ref_out_and_partner_ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob = self._forward(
+            outs, ref_out_and_partner_ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
                 ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
                 dots_mentioned=dots_mentioned[i],
                 # selection_beliefs=selection_beliefs if is_last else None,
@@ -783,10 +839,11 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             all_ref_outs.append(ref_out_and_partner_ref_out)
             all_ctx_attn_prob.append(ctx_attn_prob)
             all_feed_ctx_attn_prob.append(feed_ctx_attn_prob)
+            all_next_mention_outs.append(next_mention_out)
 
             ref_out, partner_ref_out = ref_out_and_partner_ref_out
             partner_ref_outs.append(partner_ref_out)
 
         assert sel_out is not None
 
-        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob
+        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs

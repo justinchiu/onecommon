@@ -19,6 +19,8 @@ def add_loss_args(parser):
                        help='partner reference loss weight')
     group.add_argument('--sel_weight', type=float, default=1.0,
                         help='selection loss weight')
+    group.add_argument('--next_mention_weight', type=float, default=1.0,
+                       help='next mention loss weight')
     group.add_argument('--lang_only_self', action='store_true')
 
     # these args only make sense if --lang_only_self is True

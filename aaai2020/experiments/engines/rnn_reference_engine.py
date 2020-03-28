@@ -18,7 +18,8 @@ ForwardRet = namedtuple(
      'sel_correct', 'sel_total',
      'ref_positive', 'ref_total',
      'attn_ref_stats',
-     'partner_ref_loss', 'partner_ref_correct', 'partner_ref_positive', 'partner_ref_total'
+     'partner_ref_loss', 'partner_ref_correct', 'partner_ref_positive', 'partner_ref_total',
+     'next_mention_loss', 'next_mention_correct', 'next_mention_positive', 'next_mention_total',
      ],
 )
 
@@ -79,6 +80,10 @@ def _make_beliefs(
                             mention.detach() if mention is not None else None
                             for mention in mentions
                         ]
+                    mentions = [
+                        mention if mention is not None else torch.zeros(bsz, num_dots)
+                        for mention in mentions
+                    ]
                 beliefs = torch.zeros(bsz, num_dots)
                 if timestep > 0:
                     ts = (torch.tensor([timestep] * bsz).long() - 1) - is_self[timestep-1].long()
@@ -154,7 +159,7 @@ class RnnReferenceEngine(EngineBase):
         else:
             dots_mentioned = None
 
-        out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
+        out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self.model.forward(
             ctx, inpt, ref_inpt, sel_idx, lens=None, dots_mentioned=dots_mentioned,
             selection_beliefs=None, generation_beliefs=None
         )
@@ -198,6 +203,11 @@ class RnnReferenceEngine(EngineBase):
             partner_ref_correct=partner_ref_correct,
             partner_ref_positive=partner_ref_positive,
             partner_ref_total=partner_ref_total,
+            # TODO
+            next_mention_loss=None,
+            next_mention_correct=0,
+            next_mention_positive=0,
+            next_mention_total=0,
         )
 
 
@@ -229,6 +239,8 @@ class RnnReferenceEngine(EngineBase):
             loss += self.args.ref_weight * forward_ret.ref_loss
         if self.args.partner_ref_weight > 0 and forward_ret.partner_ref_loss is not None:
             loss += self.args.partner_ref_weight * forward_ret.partner_ref_loss
+        if self.args.next_mention_weight > 0 and forward_ret.next_mention_loss is not None:
+            loss += self.args.next_mention_weight * forward_ret.next_mention_loss
 
         if forward_ret.word_attn_loss is not None:
             loss = loss + forward_ret.word_attn_loss
@@ -259,6 +271,8 @@ class RnnReferenceEngine(EngineBase):
         total_ref_loss, total_ref, total_ref_correct, total_ref_positive = 0, 0, 0, 0
         total_partner_ref_loss, total_partner_ref, total_partner_ref_correct, total_partner_ref_positive = 0, 0, 0, 0
 
+        total_next_mention_loss, total_next_mention, total_next_mention_correct, total_next_mention_positive = 0, 0, 0, 0
+
         total_attn_ref_stats = {}
 
         total_word_attn_loss = 0
@@ -286,6 +300,11 @@ class RnnReferenceEngine(EngineBase):
             total_word_attn_loss += unwrap(forward_ret.word_attn_loss)
             total_feed_attn_loss += unwrap(forward_ret.feed_attn_loss)
 
+            total_next_mention_loss += unwrap(forward_ret.next_mention_loss)
+            total_next_mention_correct += forward_ret.next_mention_correct
+            total_next_mention += forward_ret.next_mention_total
+            total_next_mention_positive += forward_ret.next_mention_positive
+
             total_attn_ref_stats = utils.sum_dicts(total_attn_ref_stats, forward_ret.attn_ref_stats)
 
         print("{} total_ref_positive: {}".format(name, total_ref_positive))
@@ -309,6 +328,7 @@ class RnnReferenceEngine(EngineBase):
         total_select_loss /= len(dataset)
         total_ref_loss /= len(dataset)
         total_partner_ref_loss /= len(dataset)
+        total_next_mention_loss /= len(dataset)
         time_elapsed = time.time() - start_time
 
         metrics = {
@@ -317,6 +337,8 @@ class RnnReferenceEngine(EngineBase):
             'ref_accuracy': total_ref_correct / total_ref,
             'partner_ref_loss': total_partner_ref_loss,
             'partner_ref_accuracy': (total_partner_ref_correct / total_partner_ref) if total_partner_ref > 0 else 0,
+            'next_mention_loss': total_next_mention_loss,
+            'next_mention_accuracy': (total_next_mention_correct / total_next_mention) if total_next_mention > 0 else 0,
             'select_loss': total_select_loss,
             'select_accuracy': total_select_correct / total_select,
             'time': time_elapsed
@@ -356,6 +378,9 @@ class RnnReferenceEngine(EngineBase):
                 epoch, train_metrics['ref_loss'] * self.args.ref_weight, train_metrics['ref_accuracy']))
             print('epoch %03d \t train_partner_ref_loss(scaled) %.4f \t train_partner_ref_acc %.4f' % (
                 epoch, train_metrics['partner_ref_loss'] * self.args.partner_ref_weight, train_metrics['partner_ref_accuracy']))
+            print('epoch %03d \t train_next_mention_loss(scaled) %.4f \t train_next_mention_acc %.4f' % (
+                epoch, train_metrics['next_mention_loss'] * self.args.next_mention_weight, train_metrics['next_mention_accuracy']))
+
             print('epoch %03d \t valid_lang_loss %.4f \t valid_ppl %.4f' % (
                 epoch, valid_metrics['lang_loss'], np.exp(valid_metrics['lang_loss'])))
             print('epoch %03d \t valid_select_loss %.4f \t valid_select_acc %.4f' % (
@@ -364,6 +389,8 @@ class RnnReferenceEngine(EngineBase):
                 epoch, valid_metrics['ref_loss'], valid_metrics['ref_accuracy']))
             print('epoch %03d \t valid_partner_ref_loss %.4f \t valid_partner_ref_acc %.4f' % (
                 epoch, valid_metrics['partner_ref_loss'], valid_metrics['partner_ref_accuracy']))
+            print('epoch %03d \t valid_next_mention_loss %.4f \t valid_next_mention_acc %.4f' % (
+                epoch, valid_metrics['next_mention_loss'], valid_metrics['next_mention_accuracy']))
             print()
 
         metrics = {
@@ -518,7 +545,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             )
             return selection_beliefs, generation_beliefs
 
-        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = self.model.forward(
+        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,
             belief_function=belief_function,
             partner_ref_inpts=partner_ref_inpts,
@@ -709,6 +736,36 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         else:
             feed_attn_loss = None
 
+        next_mention_correct = 0
+        next_mention_total = 0
+        next_mention_gold_positive = 0
+        next_mention_pred_positive = 0
+        next_mention_losses = []
+
+        if self.args.next_mention_prediction:
+            assert len(dots_mentioned) + 1 == len(next_mention_outs)
+            for i in range(len(dots_mentioned)):
+                # supervise only for self, so pseudo_num_mentions = 1 iff is_self; 0 otherwise
+                pseudo_num_mentions = is_self[i].long()
+                gold_dots_mentioned = dots_mentioned[i].long().unsqueeze(1)
+                pred_dots_mentioned = next_mention_outs[i]
+
+                # hack; pass True for inpt because this method only uses it to ensure it's not null
+                _loss, _correct, _total, _gold_positive, _pred_positive = self._ref_loss(
+                    True, gold_dots_mentioned, pred_dots_mentioned, pseudo_num_mentions
+                )
+                next_mention_losses.append(_loss)
+                next_mention_correct += _correct
+                next_mention_total += _total
+                next_mention_gold_positive += _gold_positive
+                next_mention_pred_positive += _pred_positive
+
+        if next_mention_total == 0 or (not next_mention_losses):
+            assert next_mention_total == 0 and (not next_mention_losses)
+            next_mention_loss = None
+        else:
+            next_mention_loss = sum(next_mention_losses) / next_mention_total
+
         return ForwardRet(
             lang_loss=lang_loss,
             ref_loss=ref_loss,
@@ -725,4 +782,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             partner_ref_correct=partner_ref_correct,
             partner_ref_positive=partner_ref_gold_positive,
             partner_ref_total=partner_ref_total,
+            next_mention_loss=next_mention_loss,
+            next_mention_correct=next_mention_correct,
+            next_mention_positive=next_mention_gold_positive,
+            next_mention_total=next_mention_total,
         )
