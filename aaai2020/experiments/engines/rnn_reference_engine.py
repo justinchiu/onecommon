@@ -49,10 +49,11 @@ def make_dots_mentioned_multi(refs, args, bsz, num_dots):
 
 
 def _make_beliefs(
-        bsz, num_dots, args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self,
-        partner_ref_outs,
-        timestep,
-        partner_dots_mentioned_our_view, # one per sentence
+    bsz, num_dots, args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self,
+    partner_ref_outs,
+    timestep,
+    partner_dots_mentioned_our_view, # one per sentence
+    dots_mentioned, # one per sentence
 ):
 
     def make_beliefs(beliefs_list, arg_name):
@@ -96,6 +97,8 @@ def _make_beliefs(
                 for t in range(timestep):
                     beliefs |= partner_dots_mentioned_our_view[t]
                 beliefs = beliefs.float().unsqueeze(-1)
+            elif beliefs_name == 'this_mentioned':
+                beliefs = dots_mentioned[timestep].float().unsqueeze(-1)
             else:
                 raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
             all_beliefs.append(beliefs)
@@ -119,7 +122,12 @@ def _make_beliefs(
     else:
         generation_beliefs = None
 
-    return selection_beliefs, generation_beliefs
+    if hasattr(args, 'mention_beliefs'):
+        mention_beliefs = make_beliefs(args.mention_beliefs, 'mention_beliefs')
+    else:
+        mention_beliefs = None
+
+    return selection_beliefs, generation_beliefs, mention_beliefs
 
 class RnnReferenceEngine(EngineBase):
     @classmethod
@@ -531,19 +539,19 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         last_partner_ref_out = None
 
-
         dots_mentioned = make_dots_mentioned_multi(ref_tgts, self.args, bsz, num_dots)
         partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, self.args, bsz, num_dots)
 
         def belief_function(timestep, partner_ref_outs):
             assert len(partner_ref_outs) == timestep
-            selection_beliefs, generation_beliefs = _make_beliefs(
+            selection_beliefs, generation_beliefs, mention_beliefs = _make_beliefs(
                 bsz, num_dots, self.args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self,
                 partner_ref_outs,
                 timestep,
-                partner_dots_mentioned_our_view
+                partner_dots_mentioned_our_view,
+                dots_mentioned,
             )
-            return selection_beliefs, generation_beliefs
+            return selection_beliefs, generation_beliefs, mention_beliefs
 
         outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,

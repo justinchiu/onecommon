@@ -2,10 +2,10 @@ import argparse
 import matplotlib.pyplot as plt
 import pandas
 
-STATS = ['train_ppl', 'train_select_acc', 'train_ref_acc', 'valid_ppl', 'valid_select_acc', 'valid_ref_acc']
+STATS = ['train_ppl', 'train_select_acc', 'train_ref_acc', 'train_next_mention_acc', 'valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_next_mention_acc']
 
 #DEFAULT_STATS = ['valid_ppl']
-DEFAULT_STATS = ['valid_ppl', 'valid_select_acc', 'valid_ref_acc']
+DEFAULT_STATS = ['valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_next_mention_acc']
 
 def make_parser():
     parser = argparse.ArgumentParser()
