@@ -18,7 +18,8 @@ BELIEF_TYPES = [
     'none',
     'selected', 'partners',
     'last_partner_mentioned', 'cumulative_partner_mentioned',
-    'last_partner_mentioned_predicted'
+    'last_partner_mentioned_predicted',
+    'this_mentioned',
 ]
 
 class FeedForward(nn.Module):
@@ -121,6 +122,7 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--partner_reference_prediction', action='store_true')
 
         parser.add_argument('--next_mention_prediction', action='store_true')
+        parser.add_argument('--mention_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
 
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
@@ -213,12 +215,16 @@ class RnnReferenceModel(nn.Module):
         if args.next_mention_prediction:
             ref_attn_names.append('next_mention')
 
+        if args.mention_beliefs:
+            assert args.next_mention_prediction
+
         if args.share_attn:
             assert not args.separate_attn
             # TODO: get rid of layers here
             assert not args.mark_dots_mentioned
             assert not args.selection_beliefs
             assert not args.generation_beliefs
+            assert not args.mention_beliefs
             self.attn = FeedForward(2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, 1, dropout_p = args.dropout)
             if self.args.feed_context_attend_separate:
                 self.feed_attn = FeedForward(2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, 1, dropout_p = args.dropout)
@@ -234,6 +240,8 @@ class RnnReferenceModel(nn.Module):
                     input_dim += len(args.selection_beliefs)
                 if args.generation_beliefs and attn_name in ['lang', 'feed']:
                     input_dim += len(args.generation_beliefs)
+                if args.mention_beliefs and attn_name == 'next_mention':
+                    input_dim += len(args.mention_beliefs)
                 setattr(
                     self,
                     self._attention_name(attn_name),
@@ -360,9 +368,12 @@ class RnnReferenceModel(nn.Module):
         ref_logit = self._apply_attention(attention_params_name, torch.cat([ref_inpt, ctx_h], -1))
         return ref_logit
 
-    def next_mention_prediction(self, ctx_h, outs_emb, lens):
+    def next_mention_prediction(self, ctx_h, outs_emb, lens, mention_beliefs):
         bsz = ctx_h.size(0)
         num_dots = ctx_h.size(1)
+
+        if mention_beliefs is not None:
+            ctx_h = torch.cat((ctx_h, mention_beliefs), -1)
 
         # 1 x batch_size x 1
         lens = lens.unsqueeze(0).unsqueeze(2)
@@ -492,7 +503,8 @@ class RnnReferenceModel(nn.Module):
         return attn_prob
 
     def _forward(self, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False,
-                 dots_mentioned=None, selection_beliefs=None, generation_beliefs=None, partner_ref_inpt=None):
+                 dots_mentioned=None, selection_beliefs=None, generation_beliefs=None, partner_ref_inpt=None,
+                 mention_beliefs=None):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
         bsz = ctx_h.size(0)
@@ -546,7 +558,7 @@ class RnnReferenceModel(nn.Module):
 
         if vars(self.args).get('next_mention_prediction', False):
             assert lens is not None
-            next_mention_out = self.next_mention_prediction(ctx_h, lang_hs, lens)
+            next_mention_out = self.next_mention_prediction(ctx_h, lang_hs, lens, mention_beliefs)
             assert next_mention_out is not None
         else:
             next_mention_out = None
@@ -563,17 +575,19 @@ class RnnReferenceModel(nn.Module):
     def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, belief_function, partner_ref_inpt):
         # belief_function:
         # timestep 0
-        selection_beliefs, generation_beliefs = belief_function(0, [])
+        selection_beliefs, generation_beliefs, mention_beliefs = belief_function(0, [])
         if selection_beliefs is not None:
             raise NotImplementedError("selection_belief for non-hierarchical model")
         if generation_beliefs is not None:
             raise NotImplementedError("selection_belief for non-hierarchical model")
+        if mention_beliefs is not None:
+            raise NotImplementedError("mention_belief for non-hierarchical model")
         ctx_h = self.ctx_encoder(ctx.transpose(0,1))
 
         outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
             ctx_h, inpt, ref_inpt, sel_idx, lens=lens, lang_h=None, compute_sel_out=True, pack=False,
             dots_mentioned=dots_mentioned, selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs,
-            partner_ref_inpt=partner_ref_inpt,
+            partner_ref_inpt=partner_ref_inpt, mention_beliefs=mention_beliefs,
         )
         return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
 
@@ -815,8 +829,11 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         if vars(self.args).get('next_mention_prediction', False):
             reader_init_h, _ = self._init_h(bsz)
+            _, _, mention_beliefs = belief_function(0, partner_ref_outs)
             all_next_mention_outs.append(
-                self.next_mention_prediction(ctx_h, reader_init_h, torch.full((bsz,), 1, device=ctx_h.device).long())
+                self.next_mention_prediction(
+                    ctx_h, reader_init_h, torch.full((bsz,), 1, device=ctx_h.device).long(), mention_beliefs
+                )
             )
 
         assert len(inpts) == len(ref_inpts)
@@ -825,7 +842,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             ref_inpt = ref_inpts[i]
             is_last = i == len(inpts) - 1
             this_lens = lens[i]
-            selection_beliefs, generation_beliefs = belief_function(i, partner_ref_outs)
+            selection_beliefs, generation_beliefs, mention_beliefs = belief_function(i, partner_ref_outs)
             outs, ref_out_and_partner_ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
                 ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
                 dots_mentioned=dots_mentioned[i],
@@ -834,6 +851,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 selection_beliefs=selection_beliefs,
                 generation_beliefs=generation_beliefs,
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
+                mention_beliefs=mention_beliefs,
             )
             all_outs.append(outs)
             all_ref_outs.append(ref_out_and_partner_ref_out)

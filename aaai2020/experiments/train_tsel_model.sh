@@ -15,4 +15,5 @@ python train_reference.py \
 	--clip 0.5 \
 	--dropout 0.5 \
 	--unk_threshold 10 \
-	--repeat_train
+
+	#--repeat_train
