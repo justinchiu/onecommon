@@ -92,13 +92,27 @@ def _make_beliefs(
                         if t_j >= 0:
                             beliefs[j] = mentions[t_j][j]
                 beliefs = beliefs.float().unsqueeze(-1)
+            elif beliefs_name == 'this_partner_mentioned':
+                if timestep >= 0:
+                    beliefs = partner_dots_mentioned_our_view[timestep].float().unsqueeze(-1)
+                else:
+                    beliefs = torch.zeros_like(partner_dots_mentioned_our_view[0]).float().unsqueeze(-1)
             elif beliefs_name == 'cumulative_partner_mentioned':
                 beliefs = torch.zeros(bsz, num_dots).bool()
-                for t in range(timestep):
-                    beliefs |= partner_dots_mentioned_our_view[t]
+                if timestep >= 0:
+                    for t in range(timestep):
+                        beliefs |= partner_dots_mentioned_our_view[t]
                 beliefs = beliefs.float().unsqueeze(-1)
             elif beliefs_name == 'this_mentioned':
-                beliefs = dots_mentioned[timestep].float().unsqueeze(-1)
+                if timestep >= 0:
+                    beliefs = dots_mentioned[timestep].float().unsqueeze(-1)
+                else:
+                    beliefs = torch.zeros_like(dots_mentioned[0]).float().unsqueeze(-1)
+            elif beliefs_name == 'next_mentioned':
+                if timestep < len(dots_mentioned) - 1:
+                    beliefs = dots_mentioned[timestep+1].float().unsqueeze(-1)
+                else:
+                    beliefs = torch.zeros_like(dots_mentioned[0]).float().unsqueeze(-1)
             else:
                 raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
             all_beliefs.append(beliefs)
@@ -531,7 +545,6 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         # inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables, = self._append_pad(inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables)
 
-
         # if single_sent_generation_beliefs is not None:
         #     generation_beliefs = [single_sent_generation_beliefs] * len(inpts)
         # else:
@@ -543,7 +556,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, self.args, bsz, num_dots)
 
         def belief_function(timestep, partner_ref_outs):
-            assert len(partner_ref_outs) == timestep
+            if timestep >= 0:
+                assert len(partner_ref_outs) == timestep
             selection_beliefs, generation_beliefs, mention_beliefs = _make_beliefs(
                 bsz, num_dots, self.args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self,
                 partner_ref_outs,
@@ -756,12 +770,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 # supervise only for self, so pseudo_num_mentions = 1 iff is_self; 0 otherwise
                 pseudo_num_mentions = is_self[i].long()
                 gold_dots_mentioned = dots_mentioned[i].long().unsqueeze(1)
-                pred_dots_mentioned = next_mention_outs[i]
+                pred_dots_mentioned_logits = next_mention_outs[i]
 
                 # hack; pass True for inpt because this method only uses it to ensure it's not null
                 _loss, _correct, _total, _gold_positive, _pred_positive = self._ref_loss(
-                    True, gold_dots_mentioned, pred_dots_mentioned, pseudo_num_mentions
+                    True, gold_dots_mentioned, pred_dots_mentioned_logits, pseudo_num_mentions
                 )
+                # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
+                # print("{} / {}".format(_correct, _total))
                 next_mention_losses.append(_loss)
                 next_mention_correct += _correct
                 next_mention_total += _total

@@ -19,7 +19,8 @@ BELIEF_TYPES = [
     'selected', 'partners',
     'last_partner_mentioned', 'cumulative_partner_mentioned',
     'last_partner_mentioned_predicted',
-    'this_mentioned',
+    'this_mentioned', 'next_mentioned',
+    'this_partner_mentioned',
 ]
 
 class FeedForward(nn.Module):
@@ -373,7 +374,10 @@ class RnnReferenceModel(nn.Module):
         num_dots = ctx_h.size(1)
 
         if mention_beliefs is not None:
+            # TODO: delete these zeroings
+            # ctx_h = torch.zeros_like(ctx_h)
             ctx_h = torch.cat((ctx_h, mention_beliefs), -1)
+            # outs_emb = torch.zeros_like(outs_emb)
 
         # 1 x batch_size x 1
         lens = lens.unsqueeze(0).unsqueeze(2)
@@ -392,7 +396,10 @@ class RnnReferenceModel(nn.Module):
         ctx_h = ctx_h.unsqueeze(0)
         states = states.unsqueeze(0)
 
+
         next_logit = self._apply_attention('next_mention', torch.cat([states, ctx_h], -1))
+        # if mention_beliefs is not None and not ((next_logit.squeeze() > 0) == mention_beliefs.squeeze()).all():
+            # print("no match")
         return next_logit
 
     def selection(self, ctx_h, outs_emb, sel_idx, beliefs=None):
@@ -829,7 +836,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         if vars(self.args).get('next_mention_prediction', False):
             reader_init_h, _ = self._init_h(bsz)
-            _, _, mention_beliefs = belief_function(0, partner_ref_outs)
+            _, _, mention_beliefs = belief_function(-1, partner_ref_outs)
             all_next_mention_outs.append(
                 self.next_mention_prediction(
                     ctx_h, reader_init_h, torch.full((bsz,), 1, device=ctx_h.device).long(), mention_beliefs
@@ -853,6 +860,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
                 mention_beliefs=mention_beliefs,
             )
+            # print("i: {}\tmention_belief.sum(): {}\t(next_mention_out > 0).sum(): {}".format(i, mention_beliefs.sum(), (next_mention_out > 0).sum()))
             all_outs.append(outs)
             all_ref_outs.append(ref_out_and_partner_ref_out)
             all_ctx_attn_prob.append(ctx_attn_prob)
