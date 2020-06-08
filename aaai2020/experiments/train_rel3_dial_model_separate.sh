@@ -29,7 +29,8 @@ python -u train_reference.py \
 	--clip 0.5 \
 	--dropout 0.5 \
 	--unk_threshold 10 \
-        --separate_attn \
+  --separate_attn \
+  --cuda \
   $@ \
   | tee expts/${script_name}/${name}.out
 
