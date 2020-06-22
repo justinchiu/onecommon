@@ -108,11 +108,25 @@ def _make_beliefs(
                     beliefs = dots_mentioned[timestep].float().unsqueeze(-1)
                 else:
                     beliefs = torch.zeros_like(dots_mentioned[0]).float().unsqueeze(-1)
+            elif beliefs_name == 'last_mentioned':
+                beliefs = torch.zeros(bsz, num_dots)
+                if timestep > 0:
+                    ts = (torch.tensor([timestep] * bsz).long() - 1) - (1 - is_self[timestep-1].long())
+                    for j, t_j in enumerate(ts):
+                        if t_j >= 0:
+                            beliefs[j] = dots_mentioned[t_j][j]
+                beliefs = beliefs.float().unsqueeze(-1)
             elif beliefs_name == 'next_mentioned':
                 if timestep < len(dots_mentioned) - 1:
                     beliefs = dots_mentioned[timestep+1].float().unsqueeze(-1)
                 else:
                     beliefs = torch.zeros_like(dots_mentioned[0]).float().unsqueeze(-1)
+            elif beliefs_name == 'cumulative_mentioned':
+                beliefs = torch.zeros(bsz, num_dots).bool()
+                if timestep >= 0:
+                    for t in range(timestep):
+                        beliefs |= dots_mentioned[t]
+                beliefs = beliefs.float().unsqueeze(-1)
             else:
                 raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
             all_beliefs.append(beliefs)
@@ -415,7 +429,7 @@ class RnnReferenceEngine(EngineBase):
                     ['next_mention_loss', 'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall', 'next_mention_f1'],
                 ]
                 for line_metrics in quantities:
-                    print('epoch {:03d} '.format(epoch) + ' \t '.join(
+                    print('epoch {:03d} \t '.format(epoch) + ' \t '.join(
                         ('%s_%s {%s:.4f}' % (split_name, metric, metric)).format(**metrics)
                         for metric in line_metrics
                     ))

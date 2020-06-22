@@ -40,7 +40,7 @@ ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
         --mark_dots_mentioned
 
 ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
-        hierarchical_only-self_mbfix-this_next-mention_mask-pad_h2o-1 \
+        hierarchical_only-self_mbfix-this-partner-mentioned_next-mention_mask-pad_h2o-1 \
         --model_type hierarchical_rnn_reference_model \
         --max_epoch 30 \
         --lang_only_self \

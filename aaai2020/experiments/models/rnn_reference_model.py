@@ -17,10 +17,14 @@ BIG_NEG = -1e6
 BELIEF_TYPES = [
     'none',
     'selected', 'partners',
-    'last_partner_mentioned', 'cumulative_partner_mentioned',
-    'last_partner_mentioned_predicted',
-    'this_mentioned', 'next_mentioned',
+    'last_partner_mentioned',
+    'cumulative_partner_mentioned',
     'this_partner_mentioned',
+    'last_partner_mentioned_predicted',
+    'this_mentioned',
+    'cumulative_mentioned',
+    'last_mentioned',
+    'next_mentioned',
 ]
 
 class FeedForward(nn.Module):
