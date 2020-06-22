@@ -47,8 +47,19 @@ def load_model(file_name, map_location=None):
 def sum_dicts(d1, d2):
     ret = {}
     for key in set(d1.keys()) | set(d2.keys()):
-        v = d1.get(key, 0.0) + d2.get(key, 0.0)
-        ret[key] = v
+        v1 = d1.get(key, 0.0)
+        v2 = d2.get(key, 0.0)
+        # handle pytorch scalars
+        # TODO: just use pytorch everywhere?
+        if hasattr(v1, 'item'):
+            v1 = v1.item()
+        if hasattr(v2, 'item'):
+            v2 = v2.item()
+        if v1 is None:
+            v1 = 0
+        if v2 is None:
+            v2 = 0
+        ret[key] = v1 + v2
     return ret
 
 def safe_zip(*lists):

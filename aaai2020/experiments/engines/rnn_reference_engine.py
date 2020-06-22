@@ -15,11 +15,11 @@ ForwardRet = namedtuple(
     "ForwardRet",
     ['lang_loss', 'ref_loss', 'ref_correct', 'sel_loss',
      'word_attn_loss', 'feed_attn_loss',
-     'sel_correct', 'sel_total',
-     'ref_positive', 'ref_total',
-     'attn_ref_stats',
-     'partner_ref_loss', 'partner_ref_correct', 'partner_ref_positive', 'partner_ref_total',
-     'next_mention_loss', 'next_mention_correct', 'next_mention_positive', 'next_mention_total',
+     'sel_correct', 'sel_num_dots',
+     'ref_gold_positive', 'ref_pred_positive', 'ref_true_positive', 'ref_num_dots',
+     # 'attn_ref_stats',
+     'partner_ref_loss', 'partner_ref_correct', 'partner_ref_gold_positive', 'partner_ref_pred_positive', 'partner_ref_true_positive', 'partner_ref_num_dots',
+     'next_mention_loss', 'next_mention_correct', 'next_mention_gold_positive', 'next_mention_pred_positive', 'next_mention_true_positive', 'next_mention_num_dots',
      ],
 )
 
@@ -156,14 +156,18 @@ class RnnReferenceEngine(EngineBase):
             ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
             ref_loss = self.ref_crit(ref_out, ref_tgt)
             ref_correct = ((ref_out > 0).long() == ref_tgt.long()).sum().item()
-            ref_total = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
-            ref_positive = ref_tgt.sum().item()
+            ref_num_dots = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
+            ref_gold_positive = ref_tgt.sum().item()
+            ref_pred_positive = (ref_out > 0).sum().item()
+            ref_true_positive = ((ref_out > 0) & ref_tgt.byte()).sum().item()
         else:
             ref_loss = None
             ref_correct = 0
-            ref_total = 0
-            ref_positive = 0
-        return ref_loss, ref_correct, ref_total, ref_positive
+            ref_num_dots = 0
+            ref_gold_positive = 0
+            ref_pred_positive = 0
+            ref_true_positive = 0
+        return ref_loss, ref_correct, ref_num_dots, ref_gold_positive, ref_pred_positive, ref_true_positive
 
     def _forward(self, batch):
         assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
@@ -190,11 +194,11 @@ class RnnReferenceEngine(EngineBase):
         sel_tgt = Variable(sel_tgt)
         lang_loss = self.crit(out, tgt)
 
-        ref_loss, ref_correct, ref_total, ref_positive = self._ref_loss(
+        ref_loss, ref_correct, ref_num_dots, ref_gold_positive, ref_pred_positive, ref_true_positive = self._ref_loss(
             ref_inpt, ref_tgt, ref_out
         )
 
-        partner_ref_loss, partner_ref_correct, partner_ref_total, partner_ref_positive = self._ref_loss(
+        partner_ref_loss, partner_ref_correct, partner_ref_num_dots, partner_ref_gold_positive, partner_ref_pred_positive, partner_ref_true_positive = self._ref_loss(
             partner_ref_inpt, partner_ref_tgt_our_view, partner_ref_out
         )
 
@@ -203,7 +207,7 @@ class RnnReferenceEngine(EngineBase):
         sel_total = sel_out.size(0)
 
         # TODO
-        attn_ref_stats = {}
+        # attn_ref_stats = {}
 
         # TODO
         word_attn_loss = None
@@ -217,19 +221,25 @@ class RnnReferenceEngine(EngineBase):
             word_attn_loss=word_attn_loss,
             feed_attn_loss=feed_attn_loss,
             sel_correct=sel_correct,
-            sel_total=sel_total,
-            ref_positive=ref_positive,
-            ref_total=ref_total,
-            attn_ref_stats=attn_ref_stats,
+            sel_num_dots=sel_total,
+            ref_gold_positive=ref_gold_positive,
+            ref_pred_positive=ref_pred_positive,
+            ref_true_positive=ref_true_positive,
+            ref_num_dots=ref_num_dots,
+            # attn_ref_stats=attn_ref_stats,
             partner_ref_loss=partner_ref_loss,
             partner_ref_correct=partner_ref_correct,
-            partner_ref_positive=partner_ref_positive,
-            partner_ref_total=partner_ref_total,
+            partner_ref_gold_positive=partner_ref_gold_positive,
+            partner_ref_pred_positive=partner_ref_pred_positive,
+            partner_ref_true_positive=partner_ref_true_positive,
+            partner_ref_num_dots=partner_ref_num_dots,
             # TODO
             next_mention_loss=None,
             next_mention_correct=0,
-            next_mention_positive=0,
-            next_mention_total=0,
+            next_mention_gold_positive=0,
+            next_mention_pred_positive=0,
+            next_mention_true_positive=0,
+            next_mention_num_dots=0,
         )
 
 
@@ -286,86 +296,81 @@ class RnnReferenceEngine(EngineBase):
         with torch.no_grad():
             return self._forward(batch)
 
-    def _pass(self, dataset, batch_fn, name, use_tqdm):
-        total_lang_loss, total_select_loss, total_select, total_select_correct = 0, 0, 0, 0
+    def print_prediction_metrics(self, split_name, metric_dict, prefix):
+        # prefix: 'ref', 'partner_ref', or 'next_mention'
+        gold_positive = metric_dict['{}_gold_positive'.format(prefix)]
+        pred_positive = metric_dict['{}_pred_positive'.format(prefix)]
+        true_positive = metric_dict['{}_true_positive'.format(prefix)]
+        correct = metric_dict['{}_correct'.format(prefix)]
+        num_dots = metric_dict['{}_num_dots'.format(prefix)]
+        print("{} {} gold_positive: {}".format(split_name, prefix, gold_positive))
+        print("{} {} correct/num_dots: {}/{} {:.4f}".format(
+            split_name, prefix, correct, num_dots, correct / num_dots
+        ))
+        precision = true_positive / pred_positive if pred_positive > 0 else 0
+        recall = true_positive / gold_positive if gold_positive > 0 else 0
+        f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+        print("{} {} precision: {}/{} {:.4f}".format(
+            split_name, prefix, true_positive, pred_positive, precision,
+        ))
+        print("{} {} recall: {}/{} {:.4f}".format(
+            split_name, prefix, true_positive, gold_positive, recall,
+        ))
+        print("{} {} f1: {:.4f}".format(
+            split_name, prefix, f1,
+        ))
+        print()
+
+    def add_metrics(self, metric_dict_src, metric_dict_tgt, prefix):
+        gold_positive = metric_dict_src['{}_gold_positive'.format(prefix)]
+        pred_positive = metric_dict_src['{}_pred_positive'.format(prefix)]
+        true_positive = metric_dict_src['{}_true_positive'.format(prefix)]
+        correct = metric_dict_src['{}_correct'.format(prefix)]
+        num_dots = metric_dict_src['{}_num_dots'.format(prefix)]
+
+        precision = true_positive / pred_positive if pred_positive > 0 else 0
+        recall = true_positive / gold_positive if gold_positive > 0 else 0
+        f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+        metric_dict_tgt['{}_accuracy'.format(prefix)] = correct / num_dots if num_dots > 0 else 0
+        metric_dict_tgt['{}_precision'.format(prefix)] = precision
+        metric_dict_tgt['{}_recall'.format(prefix)] = recall
+        metric_dict_tgt['{}_f1'.format(prefix)] = f1
+
+    def _pass(self, dataset, batch_fn, split_name, use_tqdm):
         start_time = time.time()
 
-        total_ref_loss, total_ref, total_ref_correct, total_ref_positive = 0, 0, 0, 0
-        total_partner_ref_loss, total_partner_ref, total_partner_ref_correct, total_partner_ref_positive = 0, 0, 0, 0
-
-        total_next_mention_loss, total_next_mention, total_next_mention_correct, total_next_mention_positive = 0, 0, 0, 0
-
-        total_attn_ref_stats = {}
-
-        total_word_attn_loss = 0
-        total_feed_attn_loss = 0
+        metrics = {}
 
         for batch in tqdm.tqdm(dataset, ncols=80) if use_tqdm else dataset:
             # for batch in trainset:
             # lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
             forward_ret = batch_fn(batch)
-            total_lang_loss += forward_ret.lang_loss.item()
-            total_select_loss += forward_ret.sel_loss.item()
-            total_select_correct += forward_ret.sel_correct
-            total_select += forward_ret.sel_total
+            metrics = utils.sum_dicts(metrics, forward_ret._asdict())
 
-            total_ref_loss += unwrap(forward_ret.ref_loss)
-            total_ref_correct += forward_ret.ref_correct
-            total_ref += forward_ret.ref_total
-            total_ref_positive += forward_ret.ref_positive
+        self.print_prediction_metrics(split_name, metrics, "ref")
 
-            total_partner_ref_loss += unwrap(forward_ret.partner_ref_loss)
-            total_partner_ref_correct += forward_ret.partner_ref_correct
-            total_partner_ref += forward_ret.partner_ref_total
-            total_partner_ref_positive += forward_ret.partner_ref_positive
+        print("{} word_attn_loss: {:.4f}".format(split_name, metrics['word_attn_loss']))
+        print("{} feed_attn_loss: {:.4f}".format(split_name, metrics['feed_attn_loss']))
 
-            total_word_attn_loss += unwrap(forward_ret.word_attn_loss)
-            total_feed_attn_loss += unwrap(forward_ret.feed_attn_loss)
+        # pprint.pprint({'{}_{}'.format(name, k): v for k, v in total_attn_ref_stats.items()})
 
-            total_next_mention_loss += unwrap(forward_ret.next_mention_loss)
-            total_next_mention_correct += forward_ret.next_mention_correct
-            total_next_mention += forward_ret.next_mention_total
-            total_next_mention_positive += forward_ret.next_mention_positive
-
-            total_attn_ref_stats = utils.sum_dicts(total_attn_ref_stats, forward_ret.attn_ref_stats)
-
-        print("{} total_ref_positive: {}".format(name, total_ref_positive))
-        print("{} total_ref_correct/total_ref: {}/{} {:.4f}".format(
-            name, total_ref_correct, total_ref, total_ref_correct / total_ref
-        ))
-        print()
-
-        print("{} total_partner_ref_positive: {}".format(name, total_partner_ref_positive))
-        print("{} total_partner_ref_correct/total_partner_ref: {}/{} {:.4f}".format(
-            name, total_partner_ref_correct, total_partner_ref, (total_partner_ref_correct / total_partner_ref) if total_partner_ref > 0 else 0
-        ))
-        print()
-
-        print("{} word_attn_loss: {:.4f}".format(name, total_word_attn_loss))
-        print("{} feed_attn_loss: {:.4f}".format(name, total_feed_attn_loss))
-
-        pprint.pprint({'{}_{}'.format(name, k): v for k, v in total_attn_ref_stats.items()})
-
-        total_lang_loss /= len(dataset)
-        total_select_loss /= len(dataset)
-        total_ref_loss /= len(dataset)
-        total_partner_ref_loss /= len(dataset)
-        total_next_mention_loss /= len(dataset)
         time_elapsed = time.time() - start_time
 
-        metrics = {
-            'lang_loss': total_lang_loss,
-            'ref_loss': total_ref_loss,
-            'ref_accuracy': total_ref_correct / total_ref,
-            'partner_ref_loss': total_partner_ref_loss,
-            'partner_ref_accuracy': (total_partner_ref_correct / total_partner_ref) if total_partner_ref > 0 else 0,
-            'next_mention_loss': total_next_mention_loss,
-            'next_mention_accuracy': (total_next_mention_correct / total_next_mention) if total_next_mention > 0 else 0,
-            'select_loss': total_select_loss,
-            'select_accuracy': total_select_correct / total_select,
+        aggregate_metrics = {
+            'lang_loss': metrics['lang_loss'] / len(dataset),
+            'ref_loss': metrics['ref_loss'] / len(dataset),
+            'partner_ref_loss': metrics['partner_ref_loss'] / len(dataset),
+            'next_mention_loss': metrics['next_mention_loss'] / len(dataset),
+            'select_loss': metrics['sel_loss'] / len(dataset),
+            # do select_accuracy here b/c we won't need F1 for it
+            'select_accuracy': metrics['sel_correct'] / metrics['sel_num_dots'],
             'time': time_elapsed
         }
-        return metrics
+        self.add_metrics(metrics, aggregate_metrics, "ref")
+        self.add_metrics(metrics, aggregate_metrics, "partner_ref")
+        self.add_metrics(metrics, aggregate_metrics, "next_mention")
+        return aggregate_metrics
 
     def train_pass(self, trainset, trainset_stats):
         '''
@@ -392,27 +397,29 @@ class RnnReferenceEngine(EngineBase):
 
         if self.verbose:
             print('epoch %03d \t s/epoch %.2f \t lr %.2E' % (epoch, train_metrics['time'], lr))
-            print('epoch %03d \t train_lang_loss(scaled) %.4f \t train_ppl %.4f' % (
-                epoch, train_metrics['lang_loss'] * self.args.lang_weight, np.exp(train_metrics['lang_loss'])))
-            print('epoch %03d \t train_select_loss(scaled) %.4f \t train_select_acc %.4f' % (
-                epoch, train_metrics['select_loss'] * self.args.sel_weight, train_metrics['select_accuracy']))
-            print('epoch %03d \t train_ref_loss(scaled) %.4f \t train_ref_acc %.4f' % (
-                epoch, train_metrics['ref_loss'] * self.args.ref_weight, train_metrics['ref_accuracy']))
-            print('epoch %03d \t train_partner_ref_loss(scaled) %.4f \t train_partner_ref_acc %.4f' % (
-                epoch, train_metrics['partner_ref_loss'] * self.args.partner_ref_weight, train_metrics['partner_ref_accuracy']))
-            print('epoch %03d \t train_next_mention_loss(scaled) %.4f \t train_next_mention_acc %.4f' % (
-                epoch, train_metrics['next_mention_loss'] * self.args.next_mention_weight, train_metrics['next_mention_accuracy']))
 
-            print('epoch %03d \t valid_lang_loss %.4f \t valid_ppl %.4f' % (
-                epoch, valid_metrics['lang_loss'], np.exp(valid_metrics['lang_loss'])))
-            print('epoch %03d \t valid_select_loss %.4f \t valid_select_acc %.4f' % (
-                epoch, valid_metrics['select_loss'], valid_metrics['select_accuracy']))
-            print('epoch %03d \t valid_ref_loss %.4f \t valid_ref_acc %.4f' % (
-                epoch, valid_metrics['ref_loss'], valid_metrics['ref_accuracy']))
-            print('epoch %03d \t valid_partner_ref_loss %.4f \t valid_partner_ref_acc %.4f' % (
-                epoch, valid_metrics['partner_ref_loss'], valid_metrics['partner_ref_accuracy']))
-            print('epoch %03d \t valid_next_mention_loss %.4f \t valid_next_mention_acc %.4f' % (
-                epoch, valid_metrics['next_mention_loss'], valid_metrics['next_mention_accuracy']))
+            for split_name, metrics in [('train', train_metrics), ('valid', valid_metrics)]:
+                metrics = metrics.copy()
+                metrics['ppl'] = np.exp(metrics['lang_loss'])
+                metrics['lang_loss'] *= self.args.lang_weight
+                metrics['select_loss'] *= self.args.sel_weight
+                metrics['ref_loss'] *= self.args.ref_weight
+                metrics['partner_ref_loss'] *= self.args.partner_ref_weight
+                metrics['next_mention_loss'] *= self.args.next_mention_weight
+
+                quantities = [
+                    ['lang_loss', 'ppl'],
+                    ['select_loss', 'select_accuracy'],
+                    ['ref_loss', 'ref_accuracy', 'ref_precision', 'ref_recall', 'ref_f1'],
+                    ['partner_ref_loss', 'partner_ref_accuracy', 'partner_ref_precision', 'partner_ref_recall', 'partner_ref_f1'],
+                    ['next_mention_loss', 'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall', 'next_mention_f1'],
+                ]
+                for line_metrics in quantities:
+                    print('epoch {:03d} '.format(epoch) + ' \t '.join(
+                        ('%s_%s {%s:.4f}' % (split_name, metric, metric)).format(**metrics)
+                        for metric in line_metrics
+                    ))
+
             print()
 
         metrics = {
@@ -504,7 +511,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
     def _ref_loss(self, ref_inpt, ref_tgt, ref_out, num_markables):
         if ref_inpt is None or ref_out is None:
-            return None, 0, 0, 0, 0
+            return None, 0, 0, 0, 0, 0
         ref_tgt = Variable(ref_tgt)
         # max(this_num_markables) x batch_size x num_dots
         ref_mask = torch.zeros_like(ref_tgt)
@@ -522,8 +529,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         ref_total = ref_mask.sum().item()
         ref_gold_positive = ref_tgt.sum().item()
         ref_pred_positive = ((ref_out > 0) * ref_mask.byte()).sum().item()
+        ref_true_positive = ((ref_out > 0) & ref_tgt.bool()).sum().item()
 
-        return ref_loss, ref_correct, ref_total, ref_gold_positive, ref_pred_positive
+        assert ref_pred_positive >= ref_true_positive
+        assert ref_gold_positive >= ref_true_positive
+
+        return ref_loss, ref_correct, ref_total, ref_gold_positive, ref_pred_positive, ref_true_positive
 
 
     def _forward(self, batch):
@@ -590,12 +601,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         ref_total = 0
         ref_gold_positive = 0
         ref_pred_positive = 0
+        ref_true_positive = 0
         ref_losses = []
 
         partner_ref_correct = 0
-        partner_ref_total = 0
+        partner_ref_num_dots = 0
         partner_ref_gold_positive = 0
         partner_ref_pred_positive = 0
+        partner_ref_true_positive = 0
         partner_ref_losses = []
 
         attn_ref_true_positive = 0
@@ -617,22 +630,24 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             if (this_num_markables == 0).all() or ref_tgt is None:
                 continue
             assert max(this_num_markables) == ref_tgt.size(1)
-            _ref_loss, _ref_correct, _ref_total, _ref_gold_positive, _ref_pred_positive = self._ref_loss(
+            _ref_loss, _ref_correct, _ref_total, _ref_gold_positive, _ref_pred_positive, _ref_true_positive = self._ref_loss(
                 ref_inpt, ref_tgt, ref_out, this_num_markables
             )
             ref_correct += _ref_correct
             ref_total += _ref_total
             ref_gold_positive += _ref_gold_positive
             ref_pred_positive += _ref_pred_positive
+            ref_true_positive += _ref_true_positive
             ref_losses.append(_ref_loss)
 
-            _partner_ref_loss, _partner_ref_correct, _partner_ref_total, _partner_ref_gold_positive, _partner_ref_pred_positive = self._ref_loss(
+            _partner_ref_loss, _partner_ref_correct, _partner_ref_total, _partner_ref_gold_positive, _partner_ref_pred_positive, _partner_ref_true_positive = self._ref_loss(
                 partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables
             )
             partner_ref_correct += _partner_ref_correct
-            partner_ref_total += _partner_ref_total
+            partner_ref_num_dots += _partner_ref_total
             partner_ref_gold_positive += _partner_ref_gold_positive
             partner_ref_pred_positive += _partner_ref_pred_positive
+            partner_ref_true_positive += _partner_ref_true_positive
             if _partner_ref_loss is not None:
                 partner_ref_losses.append(_partner_ref_loss)
 
@@ -718,11 +733,11 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                     feed_attn_losses.append(feed_attn_loss)
         ref_loss = sum(ref_losses) / ref_total
 
-        if partner_ref_total == 0 or (not partner_ref_losses):
-            assert partner_ref_total == 0 and (not partner_ref_losses)
+        if partner_ref_num_dots == 0 or (not partner_ref_losses):
+            assert partner_ref_num_dots == 0 and (not partner_ref_losses)
             partner_ref_loss = None
         else:
-            partner_ref_loss = sum(partner_ref_losses) / partner_ref_total
+            partner_ref_loss = sum(partner_ref_losses) / partner_ref_num_dots
 
         # print('sel_out.size(): {}'.format(sel_out.size()))
         # print('sel_tgt.size(): {}'.format(sel_tgt.size()))
@@ -741,12 +756,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         # print("attn_ref_true_positive: {}".format(attn_ref_true_positive))
         # print("attn_ref_total: {}".format(ref_total))
 
-        attn_ref_stats = {
-            'gold_positive': attn_ref_gold_positive,
-            'pred_positive': attn_ref_pred_positive,
-            'true_positive': attn_ref_true_positive,
-            'total': attn_ref_total,
-        }
+        # attn_ref_stats = {
+        #     'gold_positive': attn_ref_gold_positive,
+        #     'pred_positive': attn_ref_pred_positive,
+        #     'true_positive': attn_ref_true_positive,
+        #     'total': attn_ref_total,
+        # }
 
         if word_attn_losses:
             word_attn_loss = sum(word_attn_losses) / len(word_attn_losses)
@@ -759,9 +774,10 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             feed_attn_loss = None
 
         next_mention_correct = 0
-        next_mention_total = 0
+        next_mention_num_dots = 0
         next_mention_gold_positive = 0
         next_mention_pred_positive = 0
+        next_mention_true_positive = 0
         next_mention_losses = []
 
         if self.args.next_mention_prediction:
@@ -773,22 +789,23 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 pred_dots_mentioned_logits = next_mention_outs[i]
 
                 # hack; pass True for inpt because this method only uses it to ensure it's not null
-                _loss, _correct, _total, _gold_positive, _pred_positive = self._ref_loss(
+                _loss, _correct, _total, _gold_positive, _pred_positive, _true_positive = self._ref_loss(
                     True, gold_dots_mentioned, pred_dots_mentioned_logits, pseudo_num_mentions
                 )
                 # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
                 # print("{} / {}".format(_correct, _total))
                 next_mention_losses.append(_loss)
                 next_mention_correct += _correct
-                next_mention_total += _total
+                next_mention_num_dots += _total
                 next_mention_gold_positive += _gold_positive
                 next_mention_pred_positive += _pred_positive
+                next_mention_true_positive += _true_positive
 
-        if next_mention_total == 0 or (not next_mention_losses):
-            assert next_mention_total == 0 and (not next_mention_losses)
+        if next_mention_num_dots == 0 or (not next_mention_losses):
+            assert next_mention_num_dots == 0 and (not next_mention_losses)
             next_mention_loss = None
         else:
-            next_mention_loss = sum(next_mention_losses) / next_mention_total
+            next_mention_loss = sum(next_mention_losses) / next_mention_num_dots
 
         return ForwardRet(
             lang_loss=lang_loss,
@@ -798,16 +815,22 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             word_attn_loss=word_attn_loss,
             feed_attn_loss=feed_attn_loss,
             sel_correct=sel_correct,
-            sel_total=sel_total,
-            ref_positive=ref_gold_positive,
-            ref_total=ref_total,
-            attn_ref_stats=attn_ref_stats,
+            sel_num_dots=sel_total,
+            ref_gold_positive=ref_gold_positive,
+            ref_pred_positive=ref_pred_positive,
+            ref_true_positive=ref_true_positive,
+            ref_num_dots=ref_total,
+            # attn_ref_stats=attn_ref_stats,
             partner_ref_loss=partner_ref_loss,
             partner_ref_correct=partner_ref_correct,
-            partner_ref_positive=partner_ref_gold_positive,
-            partner_ref_total=partner_ref_total,
+            partner_ref_gold_positive=partner_ref_gold_positive,
+            partner_ref_pred_positive=partner_ref_pred_positive,
+            partner_ref_true_positive=partner_ref_true_positive,
+            partner_ref_num_dots=partner_ref_num_dots,
             next_mention_loss=next_mention_loss,
             next_mention_correct=next_mention_correct,
-            next_mention_positive=next_mention_gold_positive,
-            next_mention_total=next_mention_total,
+            next_mention_gold_positive=next_mention_gold_positive,
+            next_mention_pred_positive=next_mention_pred_positive,
+            next_mention_true_positive=next_mention_true_positive,
+            next_mention_num_dots=next_mention_num_dots,
         )
