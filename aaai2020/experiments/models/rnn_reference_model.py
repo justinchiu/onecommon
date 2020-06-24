@@ -732,9 +732,7 @@ class RnnReferenceModel(nn.Module):
         if mention_beliefs is not None:
             raise NotImplementedError("mention_belief for non-hierarchical model")
         ctx_h = self.ctx_encoder(ctx)
-        _, _, ctx_differences = pairwise_differences(
-            ctx, num_ent=self.num_ent, dim_ent=4, symmetric=True, relation_include=[]
-        )
+        ctx_differences = self.ctx_differences(ctx)
 
         outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
             ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=lens, lang_h=None, compute_sel_out=True, pack=False,
@@ -944,6 +942,12 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
+    def ctx_differences(self, ctx):
+        _, _, ctx_differences = pairwise_differences(
+            ctx, num_ent=self.num_ent, dim_ent=4, symmetric=True, relation_include=[]
+        )
+        return ctx_differences
+
     def forward(
             self,
             ctx,
@@ -960,9 +964,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # sel_idx is index into the last sentence in the dialogue
 
         ctx_h = self.ctx_encoder(ctx)
-        _, _, ctx_differences = pairwise_differences(
-            ctx, num_ent=self.num_ent, dim_ent=4, symmetric=True, relation_include=[]
-        )
+        ctx_differences = self.ctx_differences(ctx)
+
         bsz = ctx_h.size(0)
         lang_h = None
 

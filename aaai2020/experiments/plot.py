@@ -2,7 +2,7 @@ import argparse
 import matplotlib.pyplot as plt
 import pandas
 
-STATS = ['train_ppl', 'train_select_acc', 'train_ref_acc', 'train_ref_f1', 'train_next_mention_acc', 'train_next_mention_f1', 'valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_next_mention_acc', 'valid_next_mention_f1']
+STATS = ['train_ppl', 'train_select_acc', 'train_ref_acc', 'train_ref_f1', 'train_next_mention_acc', 'train_next_mention_f1', 'valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_partner_ref_acc', 'valid_partner_ref_f1', 'valid_next_mention_acc', 'valid_next_mention_f1']
 
 #DEFAULT_STATS = ['valid_ppl']
 DEFAULT_STATS = ['valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_next_mention_acc', 'valid_next_mention_f1']

@@ -17,6 +17,8 @@ from collections import Counter
 
 from nltk.parse import CoreNLPParser, CoreNLPDependencyParser
 
+from models import RnnReferenceModel
+from models.ctx_encoder import pairwise_differences
 
 
 class Agent(object):
@@ -43,7 +45,7 @@ class Agent(object):
 class RnnAgent(Agent):
     def __init__(self, model, args, name='Alice', train=False):
         super(RnnAgent, self).__init__()
-        self.model = model
+        self.model: RnnReferenceModel = model
         self.args = args
         self.name = name
         self.human = False
@@ -73,8 +75,9 @@ class RnnAgent(Agent):
         self.sents = []
         self.words = []
         self.context = context
-        self.ctx = torch.Tensor([float(x) for x in context]).float().unsqueeze(1)
-        self.ctx_h = self.model.ctx_encoder(Variable(self.ctx))
+        self.ctx = torch.Tensor([float(x) for x in context]).float().unsqueeze(0) # add batch size of 1
+        self.ctx_h = self.model.ctx_encoder(self.ctx)
+        self.ctx_differences = self.model.ctx_differences(self.ctx)
         # self.lang_h = self.model.init_h.unsqueeze(0) # get batch size of 1
         # TODO: writer_lang_h
         self.lang_h = self.model.reader_init_h.unsqueeze(0) # get batch size of 1
@@ -86,7 +89,7 @@ class RnnAgent(Agent):
     def read(self, inpt, dots_mentioned=None):
         self.sents.append(Variable(self._encode(['THEM:'] + inpt, self.model.word_dict)))
         inpt = self._encode(inpt, self.model.word_dict)
-        lang_hs, lang_h = self.model.read(self.ctx_h, Variable(inpt), self.lang_h.unsqueeze(0), dots_mentioned=dots_mentioned)
+        lang_hs, lang_h = self.model.read(self.ctx_differences, self.ctx_h, Variable(inpt), self.lang_h.unsqueeze(0), dots_mentioned=dots_mentioned)
         self.lang_h = lang_h.squeeze(0)
         self.lang_hs.append(lang_hs.squeeze(1))
         self.words.append(self.model.word2var('THEM:').unsqueeze(0))
@@ -96,7 +99,7 @@ class RnnAgent(Agent):
     def write(self, max_words=100, force_words=None, start_token='YOU:', dots_mentioned=None, temperature_override=None):
         temperature = temperature_override if temperature_override is not None else self.args.temperature
         outs, logprobs, self.lang_h, lang_hs, extra = self.model.write(
-            self.ctx, self.ctx_h, self.lang_h,
+            self.ctx_differences, self.ctx_h, self.lang_h,
             max_words, temperature,
             start_token=start_token,
             force_words=force_words,
@@ -153,7 +156,7 @@ class RnnAgent(Agent):
     def _choose(self, sample=False):
         outs_emb = torch.cat(self.lang_hs).unsqueeze(1)
         sel_idx = torch.Tensor(1).fill_(torch.cat(self.lang_hs).size(0) - 1).long()
-        choice_logit = self.model.selection(self.ctx_h, outs_emb, sel_idx)
+        choice_logit = self.model.selection(self.ctx_differences, self.ctx_h, outs_emb, sel_idx)
 
         prob = F.softmax(choice_logit, dim=1)
         if sample:
