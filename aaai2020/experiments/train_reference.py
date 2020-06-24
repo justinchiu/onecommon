@@ -33,6 +33,7 @@ def main():
     parser = argparse.ArgumentParser(description='training script for reference resolution')
     parser.add_argument('--data', type=str, default='data/onecommon',
         help='location of the data corpus')
+    parser.add_argument('--max_instances_per_split', type=int)
     parser.add_argument('--model_type', type=str, default='rnn_reference_model',
         help='type of model to use', choices=models.get_model_names())
     parser.add_argument('--ctx_encoder_type', type=str, default='mlp_encoder',
@@ -84,11 +85,14 @@ def main():
         domain = get_domain(args.domain)
         model_ty = models.get_model_type(args.model_type)
 
-        corpus = model_ty.corpus_ty(domain, args.data,
-                                    train='train_reference_{}.txt'.format(seed),
-                                    valid='valid_reference_{}.txt'.format(seed),
-                                    test='test_reference_{}.txt'.format(seed),
-            freq_cutoff=args.unk_threshold, verbose=True)
+        corpus = model_ty.corpus_ty(
+            domain, args.data,
+            train='train_reference_{}.txt'.format(seed),
+            valid='valid_reference_{}.txt'.format(seed),
+            test='test_reference_{}.txt'.format(seed),
+            freq_cutoff=args.unk_threshold, verbose=True,
+            max_instances_per_split=args.max_instances_per_split
+        )
 
         model = model_ty(corpus.word_dict, args)
         if args.cuda:

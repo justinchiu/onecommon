@@ -60,7 +60,8 @@ class ReferenceCorpus(object):
     """
 
     def __init__(self, domain, path, freq_cutoff=2, train='train_reference.txt',
-                 valid='valid_reference.txt', test='test_reference.txt', verbose=False, word_dict=None):
+                 valid='valid_reference.txt', test='test_reference.txt', verbose=False, word_dict=None,
+                 max_instances_per_split=None):
         self.verbose = verbose
         if word_dict is None:
             self.word_dict = Dictionary.from_file(
@@ -68,17 +69,19 @@ class ReferenceCorpus(object):
         else:
             self.word_dict = word_dict
 
-        self.train = self.tokenize(os.path.join(path, train)) if train else []
-        self.valid = self.tokenize(os.path.join(path, valid)) if valid else []
-        self.test = self.tokenize(os.path.join(path, test)) if test else []
+        self.train = self.tokenize(os.path.join(path, train), max_instances_per_split) if train else []
+        self.valid = self.tokenize(os.path.join(path, valid), max_instances_per_split) if valid else []
+        self.test = self.tokenize(os.path.join(path, test), max_instances_per_split) if test else []
 
         # find out the output length from the train dataset
         self.output_length = max([len(x[1]) for x in self.train])
 
-    def tokenize(self, file_name):
+    def tokenize(self, file_name, max_instances_per_split=None):
         """Tokenizes the file and produces a dataset."""
         lines = read_lines(file_name)
         random.shuffle(lines)
+        if max_instances_per_split is not None:
+            lines = lines[:max_instances_per_split]
 
         unk = self.word_dict.get_idx('<unk>')
         dataset, total, unks = [], 0, 0

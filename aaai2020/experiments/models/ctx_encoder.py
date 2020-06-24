@@ -14,6 +14,60 @@ import torch.nn.functional as F
 
 from models.utils import *
 
+def pairwise_differences(ctx, num_ent, dim_ent,
+                         relation_include=['i_position', 'i_appearance', 'j_position', 'j_appearance'],
+                         relation_include_angle=False,
+                         symmetric=False
+                         ):
+    ents = ctx.view(ctx.size(0), num_ent, dim_ent)
+
+    position, appearance = torch.split(ents, (2,2), dim=-1)
+
+    rel_pairs = []
+
+    for i in range(num_ent):
+        # rel_pairs = []
+        for j in range(num_ent):
+            if i == j:
+                continue
+            if symmetric and i > j:
+                continue
+            dist = torch.sqrt((ents[:,i,0] - ents[:,j,0])**2 + (ents[:,i,1] - ents[:,j,1])**2)
+
+            to_cat = []
+            if 'i_position' in relation_include:
+                to_cat.append(position[:,i])
+            if 'i_appearance' in relation_include:
+                to_cat.append(appearance[:,i])
+            if 'j_position' in relation_include:
+                to_cat.append(position[:,j])
+            if 'j_appearance' in relation_include:
+                to_cat.append(appearance[:,j])
+            property_diff = ents[:,i,:] - ents[:,j,:]
+            if symmetric:
+                property_diff = torch.abs(property_diff)
+            to_cat.extend([property_diff, dist.unsqueeze(1)])
+
+            if relation_include_angle:
+                if symmetric:
+                    raise NotImplementedError("symmetric relation encoding that includes angles is not implemented")
+                diff = position[:,i] - position[:,j]
+                diff_x, diff_y = torch.split(diff, (1,1), dim=-1)
+                rad_1 = torch.atan2(diff_x, diff_y) / math.pi
+                rad_2 = torch.atan2(diff_y, diff_x) / math.pi
+                to_cat.append(rad_1)
+                to_cat.append(rad_2)
+
+            rel_pairs.append((torch.cat(to_cat, 1).unsqueeze(1)))
+        # ent_rel_pairs.append(torch.cat(rel_pairs, 1).unsqueeze(1))
+    ent_rel_pairs_t = torch.cat(rel_pairs, 1)
+    if not symmetric:
+        assert len(rel_pairs) == num_ent * (num_ent - 1)
+        ent_rel_pairs_t = ent_rel_pairs_t.view(ent_rel_pairs_t.size(0), num_ent, num_ent-1, ent_rel_pairs_t.size(-1))
+    else:
+        assert len(rel_pairs) == num_ent * (num_ent - 1) // 2
+    return position, appearance, ent_rel_pairs_t
+
 class AttentionContextEncoder(nn.Module):
     @classmethod
     def add_args(cls, parser):
@@ -43,8 +97,7 @@ class AttentionContextEncoder(nn.Module):
         init_cont([self.property_encoder, self.relation_encoder], args.init_range)
 
     def forward(self, ctx):
-        ctx_t = ctx.transpose(0, 1)
-        ents = ctx_t.view(ctx_t.size(0), self.num_ent, self.dim_ent)
+        ents = ctx.view(ctx.size(0), self.num_ent, self.dim_ent)
         prop_emb = self.property_encoder(ents)
         ent_rel_pairs = []
         for i in range(self.num_ent):
@@ -89,8 +142,7 @@ class RelationalAttentionContextEncoder(nn.Module):
         init_cont([self.property_encoder, self.relation_encoder], args.init_range)
 
     def forward(self, ctx):
-        ctx_t = ctx.transpose(0, 1)
-        ents = ctx_t.view(ctx_t.size(0), self.num_ent, self.dim_ent)
+        ents = ctx.view(ctx.size(0), self.num_ent, self.dim_ent)
         # only embed color and size
         prop_emb = self.property_encoder(ents[:,:,2:])
         ent_rel_pairs = []
@@ -169,8 +221,7 @@ class RelationalAttentionContextEncoder2(nn.Module):
         init_cont([self.property_encoder, self.relation_encoder], args.init_range)
 
     def forward(self, ctx):
-        ctx_t = ctx.transpose(0, 1)
-        ents = ctx_t.view(ctx_t.size(0), self.num_ent, self.dim_ent)
+        ents = ctx.view(ctx.size(0), self.num_ent, self.dim_ent)
         ent_rel_pairs = []
         for i in range(self.num_ent):
             rel_pairs = []
@@ -232,8 +283,7 @@ class RelationContextEncoder(nn.Module):
         init_cont([self.relation_encoder, self.fc1], args.init_range)
 
     def forward(self, ctx):
-        ctx_t = ctx.transpose(0, 1)
-        ents = ctx_t.view(ctx_t.size(0), self.num_ent, self.dim_ent)
+        ents = ctx.view(ctx.size(0), self.num_ent, self.dim_ent)
 
         rel_pairs = []
         for i in range(self.num_ent):
@@ -266,8 +316,7 @@ class MlpContextEncoder(nn.Module):
         init_cont([self.fc1, self.fc2], args.init_range)
 
     def forward(self, ctx):
-        ctx_t = ctx.transpose(0, 1)
-        out = self.fc1(ctx_t)
+        out = self.fc1(ctx)
         out = self.tanh(out)
         out = self.dropout(out)
         out = self.fc2(out)
@@ -336,41 +385,10 @@ class RelationalAttentionContextEncoder3(nn.Module):
         init_cont([self.property_encoder, self.relation_encoder], args.init_range)
 
     def forward(self, ctx):
-        ctx_t = ctx.transpose(0, 1)
-        ents = ctx_t.view(ctx_t.size(0), self.num_ent, self.dim_ent)
-        ent_rel_pairs = []
-
-        position, appearance = torch.split(ents, (2,2), dim=-1)
-
-        for i in range(self.num_ent):
-            rel_pairs = []
-            for j in range(self.num_ent):
-                if i == j:
-                    continue
-                dist = torch.sqrt((ents[:,i,0] - ents[:,j,0])**2 + (ents[:,i,1] - ents[:,j,1])**2)
-
-                to_cat = []
-                if 'i_position' in self.args.relation_include:
-                    to_cat.append(position[:,i])
-                if 'i_appearance' in self.args.relation_include:
-                    to_cat.append(appearance[:,i])
-                if 'j_position' in self.args.relation_include:
-                    to_cat.append(position[:,j])
-                if 'j_appearance' in self.args.relation_include:
-                    to_cat.append(appearance[:,j])
-                to_cat.extend([ents[:,i,:] - ents[:,j,:], dist.unsqueeze(1)])
-
-                if hasattr(self, 'args') and self.args.relation_include_angle:
-                    diff = position[:,i] - position[:,j]
-                    diff_x, diff_y = torch.split(diff, (1,1), dim=-1)
-                    rad_1 = torch.atan2(diff_x, diff_y) / math.pi
-                    rad_2 = torch.atan2(diff_y, diff_x) / math.pi
-                    to_cat.append(rad_1)
-                    to_cat.append(rad_2)
-
-                rel_pairs.append((torch.cat(to_cat, 1).unsqueeze(1)))
-            ent_rel_pairs.append(torch.cat(rel_pairs, 1).unsqueeze(1))
-        ent_rel_pairs = torch.cat(ent_rel_pairs, 1)
+        relation_include_angle = hasattr(self, 'args') and self.args.relation_include_angle
+        position, appearance, ent_rel_pairs = pairwise_differences(
+            ctx, self.num_ent, self.dim_ent, self.args.relation_include, relation_include_angle, symmetric=False
+        )
         rel_emb = self.relation_encoder(ent_rel_pairs)
 
         if self.relation_pooling == 'mean':

@@ -2,10 +2,10 @@ import argparse
 import matplotlib.pyplot as plt
 import pandas
 
-STATS = ['train_ppl', 'train_select_acc', 'train_ref_acc', 'train_next_mention_acc', 'valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_next_mention_acc']
+STATS = ['train_ppl', 'train_select_acc', 'train_ref_acc', 'train_ref_f1', 'train_next_mention_acc', 'train_next_mention_f1', 'valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_next_mention_acc', 'valid_next_mention_f1']
 
 #DEFAULT_STATS = ['valid_ppl']
-DEFAULT_STATS = ['valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_next_mention_acc']
+DEFAULT_STATS = ['valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_next_mention_acc', 'valid_next_mention_f1']
 
 def make_parser():
     parser = argparse.ArgumentParser()
@@ -22,14 +22,28 @@ def parse(log_file):
                     continue
                 epoch = None
                 for item in line.split('\t'):
-                    key, value = item.split()
-                    if key == 'epoch':
-                        epoch = int(value)
-                        if epoch not in stats_by_epoch:
-                            stats_by_epoch[epoch] = {}
-                    else:
-                        assert epoch is not None
-                        stats_by_epoch[epoch][key] = float(value)
+                    try:
+                        key, value = item.split()
+                        if key == 'epoch':
+                            epoch = int(value)
+                            if epoch not in stats_by_epoch:
+                                stats_by_epoch[epoch] = {}
+                        else:
+                            assert epoch is not None
+                            stats_by_epoch[epoch][key] = float(value)
+                    except:
+                        tokens = item.split()
+                        if tokens[0] == 'epoch':
+                            epoch = int(tokens[1])
+                            if epoch not in stats_by_epoch:
+                                stats_by_epoch[epoch] = {}
+                            tokens = tokens[2:]
+                            if not tokens:
+                                continue
+                        key, value = tokens
+                    key = key.replace("accuracy", "acc")
+                    assert epoch is not None
+                    stats_by_epoch[epoch][key] = float(value)
     except UnicodeDecodeError as e:
         print(e)
         return None

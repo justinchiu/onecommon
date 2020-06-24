@@ -96,7 +96,7 @@ class RnnAgent(Agent):
     def write(self, max_words=100, force_words=None, start_token='YOU:', dots_mentioned=None, temperature_override=None):
         temperature = temperature_override if temperature_override is not None else self.args.temperature
         outs, logprobs, self.lang_h, lang_hs, extra = self.model.write(
-            self.ctx_h, self.lang_h,
+            self.ctx, self.ctx_h, self.lang_h,
             max_words, temperature,
             start_token=start_token,
             force_words=force_words,
