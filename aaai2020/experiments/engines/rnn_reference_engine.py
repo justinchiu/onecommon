@@ -3,6 +3,7 @@ import copy
 import pprint
 import time
 
+import math
 import numpy as np
 import torch
 import tqdm
@@ -502,6 +503,30 @@ class RnnReferenceEngine(EngineBase):
 
         return best_combined_valid_loss, best_model
 
+def bit_to_int_array(bit_array, base=2):
+    int_array = torch.zeros(bit_array.size()[:-1]).to(bit_array.device).long()
+    N = bit_array.size(-1)
+    for ix in range(N):
+        int_array *= base
+        int_array += bit_array[...,ix]
+    return int_array
+
+def int_to_bit_array(int_array, num_bits=None, base=2):
+    assert int_array.dtype in [torch.int16, torch.int32, torch.int64]
+    assert (int_array >= 0).all()
+    if num_bits is None:
+        num_bits = (int_array.max().float().log() / math.log(base)).floor().long().item() + 1
+    int_array_flat = int_array.view(-1)
+    N = int_array_flat.size(0)
+    ix = torch.arange(N)
+    bits = torch.zeros(N, num_bits).to(int_array.device).long()
+    remainder = int_array_flat
+    for i in range(num_bits):
+        bits[ix,num_bits-i-1] = remainder % base
+        remainder = remainder / base
+    assert (remainder == 0).all()
+    bits = bits.view((int_array.size()) + (num_bits,))
+    return bits
 
 class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     @classmethod
@@ -534,16 +559,45 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
         # print(ref_tgt.size())
         ref_mask = torch.transpose(ref_mask, 0, 1).contiguous()
-        assert ref_tgt.size() == ref_out.size()
-        assert ref_tgt.size() == ref_mask.size()
-        # print('ref_out size: {}'.format(ref_out.size()))
-        # print('ref_tgt size: {}'.format(ref_tgt.size()))
-        ref_loss = (self.ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum()
-        ref_correct = (((ref_out > 0).long() == ref_tgt.long()) * ref_mask.byte()).sum().item()
+        if self.args.structured_attention_marginalize:
+            assert ref_tgt.size() == ref_out.size()
+            assert ref_tgt.size() == ref_mask.size()
+            # print('ref_out size: {}'.format(ref_out.size()))
+            # print('ref_tgt size: {}'.format(ref_tgt.size()))
+            ref_loss = (self.ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum()
+            ref_pred = (ref_out > 0).long()
+        else:
+            ref_mask_instance_level = (ref_mask.sum(-1) > 0).float()
+            num_dots = ref_tgt.size(-1)
+            # check that there are 7 dots
+            # assert num_dots == 7
+            # a, b, c, d, e, f, g = (ref_tgt.select(-1, ix).flatten() for ix in range(7))
+            # # ref_out either is N x batch x 2 x 2 x ... (where there are num_dots 2s) or batch x 2 x 2 ...
+            # assert ref_out.dim() in (num_dots + 2, num_dots + 1)
+            #
+            # # N x batch
+            #
+            # if ref_out.dim() == num_dots + 2:
+            #     ref_out = ref_out.view(*((-1,) + (2,) * num_dots))
+            #     N_bsz = ref_out.size(0)
+            #     ref_loss = -(ref_out[torch.arange(N_bsz), a, b, c, d, e, f, g] * ref_mask_instance_level.view(-1)).sum()
+
+            ref_tgt_reshape = ref_tgt.view(-1, num_dots)
+            ref_out_reshape = ref_out.view(-1, 2**num_dots)
+            N_bsz = ref_tgt_reshape.size(0)
+            assert N_bsz == ref_out_reshape.size(0)
+
+            tgt_indices = bit_to_int_array(ref_tgt_reshape.long())
+            assert tgt_indices.max().item() <= 2**num_dots
+
+            ref_loss = -(ref_out_reshape[torch.arange(N_bsz), tgt_indices] * ref_mask_instance_level.view(-1)).sum()
+            ref_pred = int_to_bit_array(ref_out_reshape.argmax(-1), num_bits=num_dots).view_as(ref_tgt)
+
+        ref_correct = ((ref_pred == ref_tgt.long()) * ref_mask.byte()).sum().item()
         ref_total = ref_mask.sum().item()
         ref_gold_positive = ref_tgt.sum().item()
-        ref_pred_positive = ((ref_out > 0) * ref_mask.byte()).sum().item()
-        ref_true_positive = ((ref_out > 0) & ref_tgt.bool()).sum().item()
+        ref_pred_positive = (ref_pred * ref_mask.byte()).sum().item()
+        ref_true_positive = (ref_pred & ref_tgt.bool()).sum().item()
 
         assert ref_pred_positive >= ref_true_positive
         assert ref_gold_positive >= ref_true_positive

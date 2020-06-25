@@ -12,6 +12,8 @@ from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 from utils import set_temporary_default_tensor_type
 
+from collections import defaultdict
+
 import string
 
 import pyro.ops.contract
@@ -72,6 +74,9 @@ class StructuredAttentionLayer(nn.Module):
     def add_args(cls, parser):
         parser.add_argument('--structured_attention_hidden_dim', type=int, default=64)
         parser.add_argument('--structured_attention_dropout', type=float, default=0.2)
+        parser.add_argument('--structured_attention_marginalize', dest='structured_attention_marginalize', action='store_true')
+        parser.add_argument('--structured_attention_no_marginalize', dest='structured_attention_marginalize', action='store_false')
+        parser.set_defaults(structured_attention_marginalize=True)
 
     def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p):
         super().__init__()
@@ -104,7 +109,10 @@ class StructuredAttentionLayer(nn.Module):
                     continue
                 binary_factor_names.append(batch_name + var_names[i] + var_names[j])
 
-        output_factor_names = ','.join('{}{}'.format(batch_name, v) for v in var_names)
+        if self.args.structured_attention_marginalize:
+            output_factor_names = ','.join('{}{}'.format(batch_name, v) for v in var_names)
+        else:
+            output_factor_names = '{}{}'.format(batch_name, ''.join(var_names))
 
         return '{}->{}'.format(','.join(unary_factor_names+binary_factor_names), output_factor_names)
 
@@ -152,29 +160,37 @@ class StructuredAttentionLayer(nn.Module):
         # transpose the batch and dot-pair dimension so that we can unpack along dot-pairs
         binary_factors = binary_potentials.transpose(0,1)
 
-        # bsz x num_ent x 2
-        unnormed_marginals = torch.stack(pyro.ops.contract.einsum(
+        outputs = pyro.ops.contract.einsum(
             self.contraction_string,
             *unary_factors,
             *binary_factors,
             modulo_total=True,
             backend='pyro.ops.einsum.torch_log',
-        ), dim=1)
+        )
 
-        log_marginals = unnormed_marginals.log_softmax(dim=-1)
+        if self.args.structured_attention_marginalize:
+            # bsz x num_ent x 2
+            unnormed_marginals = torch.stack(outputs, dim=1)
+            log_marginals = unnormed_marginals.log_softmax(dim=-1)
 
-        # go from log probs for positive and negative to log odds
-        assert log_marginals.size(-1) == 2
-        logits = log_marginals.select(dim=-1,index=1) - log_marginals.select(dim=-1,index=0)
+            # go from log probs for positive and negative to log odds
+            assert log_marginals.size(-1) == 2
+            log_probs = log_marginals.select(dim=-1,index=1) - log_marginals.select(dim=-1,index=0)
 
-        assert logits.size() == (bsz*N, self.num_ent)
+            assert log_probs.size() == (bsz*N, self.num_ent)
 
-        logits = logits.view(N, bsz, self.num_ent)
+            log_probs = log_probs.view(N, bsz, self.num_ent)
+        else:
+            (full_logits,) = outputs
+            log_probs = full_logits.reshape(N, bsz, -1).log_softmax(dim=-1)
+            assert log_probs.size() == (N, bsz, 2**self.num_ent)
+            log_probs = log_probs.view((N, bsz) + (2,) * self.num_ent)
+
         if expanded:
             assert N == 1
-            logits = logits.squeeze(0)
+            log_probs = log_probs.squeeze(0)
 
-        return logits
+        return log_probs
 
 class RnnReferenceModel(nn.Module):
     corpus_ty = corpora.reference.ReferenceCorpus
@@ -356,9 +372,17 @@ class RnnReferenceModel(nn.Module):
             assert args.next_mention_prediction
 
         if args.structured_attention:
-            attention_constructor = StructuredAttentionLayer
+            assert not args.share_attn
+            attention_constructors = {
+                'ref': StructuredAttentionLayer,
+                'ref_partner': StructuredAttentionLayer,
+                'next_mention': StructuredAttentionLayer,
+                'sel': AttentionLayer,
+                'lang': AttentionLayer, # todo: consider structured attention with sigmoids here
+                'feed': AttentionLayer,
+            }
         else:
-            attention_constructor = AttentionLayer
+            attention_constructors = defaultdict(lambda: AttentionLayer)
 
         if args.share_attn:
             assert not args.separate_attn
@@ -367,9 +391,9 @@ class RnnReferenceModel(nn.Module):
             assert not args.selection_beliefs
             assert not args.generation_beliefs
             assert not args.mention_beliefs
-            self.attn = attention_constructor(args, 2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, dropout_p=args.dropout)
+            self.attn = AttentionLayer(args, 2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, dropout_p=args.dropout)
             if self.args.feed_context_attend_separate:
-                self.feed_attn = attention_constructor(args, 2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, dropout_p=args.dropout)
+                self.feed_attn = AttentionLayer(args, 2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, dropout_p=args.dropout)
             else:
                 self.feed_attn = None
         elif args.separate_attn:
@@ -387,7 +411,7 @@ class RnnReferenceModel(nn.Module):
                 setattr(
                     self,
                     self._attention_name(attn_name),
-                    attention_constructor(args, 2, input_dim, args.nhid_attn, dropout_p=args.dropout)
+                    attention_constructors[attn_name](args, 2, input_dim, args.nhid_attn, dropout_p=args.dropout)
                 )
         else:
             assert not args.mark_dots_mentioned
@@ -402,11 +426,11 @@ class RnnReferenceModel(nn.Module):
                 setattr(
                     self,
                     self._attention_name(attn_name),
-                    attention_constructor(args, 1, args.nhid_sel, args.nhid_sel, dropout_p=args.dropout)
+                    attention_constructors[attn_name](args, 1, args.nhid_sel, args.nhid_sel, dropout_p=args.dropout)
                 )
             if self.args.feed_context_attend_separate:
                 # TODO: why separate hidden dim for this?
-                self.feed_attn = attention_constructor(args, 1, args.nhid_sel, args.nhid_attn, dropout_p=args.dropout)
+                self.feed_attn = attention_constructors['feed'](args, 1, args.nhid_sel, args.nhid_attn, dropout_p=args.dropout)
             else:
                 self.feed_attn = None
 
