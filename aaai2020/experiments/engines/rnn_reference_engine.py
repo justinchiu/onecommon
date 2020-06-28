@@ -9,8 +9,12 @@ import torch
 import tqdm
 from torch.autograd import Variable
 
+from typing import List
+
 import utils
 from engines import EngineBase
+
+from engines.beliefs import BeliefConstructor
 
 ForwardRet = namedtuple(
     "ForwardRet",
@@ -48,116 +52,6 @@ def make_dots_mentioned_multi(refs, args, bsz, num_dots):
         dots_mentioned.append(make_dots_mentioned(ref_tgt, args))
     return dots_mentioned
 
-
-def _make_beliefs(
-    bsz, num_dots, args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self,
-    partner_ref_outs,
-    timestep,
-    partner_dots_mentioned_our_view, # one per sentence
-    dots_mentioned, # one per sentence
-):
-
-    def make_beliefs(beliefs_list, arg_name):
-        all_beliefs = []
-        for beliefs_name in beliefs_list:
-            if beliefs_name == 'selected':
-                # bsz x num_dots x 1, one-hot if that dot is the one selected
-                beliefs = torch.zeros(sel_tgt.size(0), num_dots).scatter(1, sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
-            elif beliefs_name == 'partners':
-                partner_has = []
-                for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(real_ids, partner_real_ids)):
-                    p_rids = set(p_rids)
-                    partner_has.append([a_rid in p_rids for a_rid in a_rids])
-                beliefs = torch.tensor(partner_has).float().unsqueeze(-1)
-            elif beliefs_name in ['last_partner_mentioned', 'last_partner_mentioned_predicted']:
-                if beliefs_name == 'last_partner_mentioned':
-                    mentions = partner_dots_mentioned_our_view
-                else:
-                    mentions = [
-                        out.sigmoid().max(0).values if out is not None else None
-                        for out in partner_ref_outs
-                    ]
-                    if args.detach_beliefs:
-                        mentions = [
-                            mention.detach() if mention is not None else None
-                            for mention in mentions
-                        ]
-                    mentions = [
-                        mention if mention is not None else torch.zeros(bsz, num_dots)
-                        for mention in mentions
-                    ]
-                beliefs = torch.zeros(bsz, num_dots)
-                if timestep > 0:
-                    ts = (torch.tensor([timestep] * bsz).long() - 1) - is_self[timestep-1].long()
-                    for j, t_j in enumerate(ts):
-                        if t_j >= 0:
-                            beliefs[j] = mentions[t_j][j]
-                beliefs = beliefs.float().unsqueeze(-1)
-            elif beliefs_name == 'this_partner_mentioned':
-                if timestep >= 0:
-                    beliefs = partner_dots_mentioned_our_view[timestep].float().unsqueeze(-1)
-                else:
-                    beliefs = torch.zeros_like(partner_dots_mentioned_our_view[0]).float().unsqueeze(-1)
-            elif beliefs_name == 'cumulative_partner_mentioned':
-                beliefs = torch.zeros(bsz, num_dots).bool()
-                if timestep >= 0:
-                    for t in range(timestep):
-                        beliefs |= partner_dots_mentioned_our_view[t]
-                beliefs = beliefs.float().unsqueeze(-1)
-            elif beliefs_name == 'this_mentioned':
-                if timestep >= 0:
-                    beliefs = dots_mentioned[timestep].float().unsqueeze(-1)
-                else:
-                    beliefs = torch.zeros_like(dots_mentioned[0]).float().unsqueeze(-1)
-            elif beliefs_name == 'last_mentioned':
-                beliefs = torch.zeros(bsz, num_dots)
-                if timestep > 0:
-                    ts = (torch.tensor([timestep] * bsz).long() - 1) - (1 - is_self[timestep-1].long())
-                    for j, t_j in enumerate(ts):
-                        if t_j >= 0:
-                            beliefs[j] = dots_mentioned[t_j][j]
-                beliefs = beliefs.float().unsqueeze(-1)
-            elif beliefs_name == 'next_mentioned':
-                if timestep < len(dots_mentioned) - 1:
-                    beliefs = dots_mentioned[timestep+1].float().unsqueeze(-1)
-                else:
-                    beliefs = torch.zeros_like(dots_mentioned[0]).float().unsqueeze(-1)
-            elif beliefs_name == 'cumulative_mentioned':
-                beliefs = torch.zeros(bsz, num_dots).bool()
-                if timestep >= 0:
-                    for t in range(timestep):
-                        beliefs |= dots_mentioned[t]
-                beliefs = beliefs.float().unsqueeze(-1)
-            else:
-                raise ValueError('invalid --{} {}'.format(arg_name, beliefs_name))
-            all_beliefs.append(beliefs)
-        if all_beliefs:
-            if len(all_beliefs) > 1:
-                return torch.cat(all_beliefs, dim=-1)
-            else:
-                return all_beliefs[0]
-        else:
-            return None
-
-    if hasattr(args, 'selection_beliefs'):
-        if timestep == len(inpts) - 1:
-            selection_beliefs = make_beliefs(args.selection_beliefs, 'selection_beliefs')
-        else:
-            selection_beliefs = None
-    else:
-        selection_beliefs = None
-    if hasattr(args, 'generation_beliefs'):
-        generation_beliefs = make_beliefs(args.generation_beliefs, 'generation_beliefs')
-    else:
-        generation_beliefs = None
-
-    if hasattr(args, 'mention_beliefs'):
-        mention_beliefs = make_beliefs(args.mention_beliefs, 'mention_beliefs')
-    else:
-        mention_beliefs = None
-
-    return selection_beliefs, generation_beliefs, mention_beliefs
-
 class RnnReferenceEngine(EngineBase):
     @classmethod
     def add_args(cls, parser):
@@ -166,15 +60,19 @@ class RnnReferenceEngine(EngineBase):
         super(RnnReferenceEngine, self).__init__(model, args, verbose)
 
     def _ref_loss(self, ref_inpt, ref_tgt, ref_out):
+
+        ref_out_logits, ref_out_full = ref_out
+        assert ref_out_full is None
+
         if ref_inpt is not None:
             ref_tgt = Variable(ref_tgt)
             ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
-            ref_loss = self.ref_crit(ref_out, ref_tgt)
-            ref_correct = ((ref_out > 0).long() == ref_tgt.long()).sum().item()
+            ref_loss = self.ref_crit(ref_out_logits, ref_tgt)
+            ref_correct = ((ref_out_logits > 0).long() == ref_tgt.long()).sum().item()
             ref_num_dots = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
             ref_gold_positive = ref_tgt.sum().item()
-            ref_pred_positive = (ref_out > 0).sum().item()
-            ref_true_positive = ((ref_out > 0) & ref_tgt.byte()).sum().item()
+            ref_pred_positive = (ref_out_logits > 0).sum().item()
+            ref_true_positive = ((ref_out_logits > 0) & ref_tgt.byte()).sum().item()
         else:
             ref_loss = None
             ref_correct = 0
@@ -559,13 +457,16 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
         # print(ref_tgt.size())
         ref_mask = torch.transpose(ref_mask, 0, 1).contiguous()
+        ref_out_logits, ref_out_full = ref_out
+        del ref_out
+
         if self.args.structured_attention_marginalize:
-            assert ref_tgt.size() == ref_out.size()
+            assert ref_tgt.size() == ref_out_logits.size()
             assert ref_tgt.size() == ref_mask.size()
             # print('ref_out size: {}'.format(ref_out.size()))
             # print('ref_tgt size: {}'.format(ref_tgt.size()))
-            ref_loss = (self.ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum()
-            ref_pred = (ref_out > 0).long()
+            ref_loss = (self.ref_crit_no_reduce(ref_out_logits, ref_tgt) * ref_mask.float()).sum()
+            ref_pred = (ref_out_logits > 0).long()
         else:
             ref_mask_instance_level = (ref_mask.sum(-1) > 0).float()
             num_dots = ref_tgt.size(-1)
@@ -583,7 +484,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             #     ref_loss = -(ref_out[torch.arange(N_bsz), a, b, c, d, e, f, g] * ref_mask_instance_level.view(-1)).sum()
 
             ref_tgt_reshape = ref_tgt.view(-1, num_dots)
-            ref_out_reshape = ref_out.view(-1, 2**num_dots)
+            ref_out_reshape = ref_out_full.view(-1, 2**num_dots)
             N_bsz = ref_tgt_reshape.size(0)
             assert N_bsz == ref_out_reshape.size(0)
 
@@ -634,21 +535,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         dots_mentioned = make_dots_mentioned_multi(ref_tgts, self.args, bsz, num_dots)
         partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, self.args, bsz, num_dots)
 
-        def belief_function(timestep, partner_ref_outs):
-            if timestep >= 0:
-                assert len(partner_ref_outs) == timestep
-            selection_beliefs, generation_beliefs, mention_beliefs = _make_beliefs(
-                bsz, num_dots, self.args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self,
-                partner_ref_outs,
-                timestep,
-                partner_dots_mentioned_our_view,
-                dots_mentioned,
-            )
-            return selection_beliefs, generation_beliefs, mention_beliefs
+        belief_constructor = BeliefConstructor(
+            self.args, bsz, num_dots, inpts, ref_tgts, partner_ref_tgts_our_view,
+            real_ids, partner_real_ids, sel_tgt, is_self, partner_dots_mentioned_our_view, dots_mentioned
+        )
 
         outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,
-            belief_function=belief_function,
+            belief_constructor=belief_constructor,
             partner_ref_inpts=partner_ref_inpts,
         )
 
@@ -810,9 +704,13 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         # print('sel_out.size(): {}'.format(sel_out.size()))
         # print('sel_tgt.size(): {}'.format(sel_tgt.size()))
 
-        sel_loss = self.sel_crit(sel_out, sel_tgt)
-        sel_correct = (sel_out.max(dim=1)[1] == sel_tgt).sum().item()
-        sel_total = sel_out.size(0)
+        # sel_out contains the output of AttentionLayer: marginal_logits and full_log_probs, but since this is an AttentionLayer, full_log_probs is None
+        # sel_out[1] should be None because we're not using a
+        sel_logits, _ = sel_out
+
+        sel_loss = self.sel_crit(sel_logits, sel_tgt)
+        sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()
+        sel_total = sel_logits.size(0)
 
         # print("ref_gold_positive: {}".format(ref_gold_positive))
         # print("ref_pred_positive: {}".format(ref_pred_positive))
