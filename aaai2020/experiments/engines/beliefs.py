@@ -76,6 +76,8 @@ class BeliefConstructor(_BeliefConstructor):
                     beliefs = beliefs.unsqueeze(-1)
                     if self.args.detach_beliefs:
                         beliefs = beliefs.detach()
+                else:
+                    beliefs = torch.zeros(self.bsz, self.num_dots, 1).float()
             elif beliefs_name == 'cumulative_partner_mentioned':
                 beliefs = torch.zeros(self.bsz, self.num_dots).bool()
                 if timestep >= 0:

@@ -745,7 +745,6 @@ class RnnReferenceModel(nn.Module):
         selection_beliefs = belief_constructor.make_beliefs("selection_beliefs", 0, [])
         generation_beliefs = belief_constructor.make_beliefs("generation_beliefs", 0, [])
         mention_beliefs = belief_constructor.make_beliefs("mention_beliefs", 0, [])
-
         if selection_beliefs is not None:
             raise NotImplementedError("selection_belief for non-hierarchical model")
         if generation_beliefs is not None:
@@ -758,8 +757,8 @@ class RnnReferenceModel(nn.Module):
 
         outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
             ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=lens, lang_h=None, compute_sel_out=True, pack=False,
-            dots_mentioned=dots_mentioned, selection_beliefs=selection_beliefs, generation_beliefs=generation_beliefs,
-            partner_ref_inpt=partner_ref_inpt, mention_beliefs=mention_beliefs,
+            dots_mentioned=dots_mentioned, belief_constructor=belief_constructor,
+            partner_ref_inpt=partner_ref_inpt, timestep=0, partner_ref_outs=[],
         )
         return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
 
