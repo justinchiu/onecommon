@@ -5,6 +5,8 @@ from collections import namedtuple
 import numpy as np
 import torch
 
+import tqdm
+
 from corpora.reference import ReferenceCorpus, ReferenceRaw, process_referents
 
 ReferenceSentenceInstance = namedtuple(
@@ -117,6 +119,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
         }
 
         i = 0
+        pbar = tqdm.tqdm(total=len(dataset), ncols=80)
         while i < len(dataset):
             dial_len = len(dataset[i][1])
             # markable_length = len(dataset[i][2])
@@ -145,6 +148,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 partner_refs.append(dataset[i].partner_referent_idxs)
                 partner_refs_our_view.append(dataset[i].partner_referent_our_view_idxs)
                 i += 1
+                pbar.update(1)
 
             inpts, lens, tgts = [], [], []
             ref_inpts, ref_tgts, all_num_markables = [], [], []
@@ -229,8 +233,10 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             # dialog data (seq_len, bsz)
             # data = torch.Tensor(dials).long().transpose(0, 1).contiguous()
 
-            rev_idxs = self._make_reverse_idxs(inpts, lens)
-            hid_idxs = self._make_hidden_idxs(lens)
+            # rev_idxs = self._make_reverse_idxs(inpts, lens)
+            # hid_idxs = self._make_hidden_idxs(lens)
+            rev_idxs = None
+            hid_idxs = None
 
             # construct tensor for selection target
             sel_tgt = torch.Tensor(sels).long()
@@ -253,6 +259,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 lens, rev_idxs, hid_idxs, all_num_markables, is_self,
                 partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables
             ))
+
+        pbar.close()
 
         if shuffle:
             random.shuffle(batches)

@@ -37,14 +37,14 @@ class BeliefConstructor(_BeliefConstructor):
                 if beliefs_name == 'last_partner_mentioned':
                     mentions = self.partner_dots_mentioned_our_view
                 else:
-                    if partner_ref_outs and partner_ref_outs[0] is None:
-                        raise Exception("must pass --partner_reference_prediction with --this_partner_mentioned_predicted")
+                    # if partner_ref_outs and partner_ref_outs[0] is None:
+                    #     raise Exception("must pass --partner_reference_prediction with --this_partner_mentioned_predicted")
                     mentions = [
                         # out.sigmoid().max(0).values if out is not None else None
                         # take the max probability over the dot mentions
                         # out_logits: num_mentions x bsz x num_dots
-                        out_logits.sigmoid().max(0).values
-                        for out_logits, _ in partner_ref_outs
+                        out[0].sigmoid().max(0).values if out is not None else None
+                        for out in partner_ref_outs
                     ]
                     if self.args.detach_beliefs:
                         mentions = [
@@ -68,9 +68,9 @@ class BeliefConstructor(_BeliefConstructor):
                 else:
                     beliefs = torch.zeros_like(self.partner_dots_mentioned_our_view[0]).float().unsqueeze(-1)
             elif beliefs_name == 'this_partner_mentioned_predicted':
-                if timestep >= 0:
-                    if partner_ref_outs[timestep] is None:
-                        raise Exception("must pass --partner_reference_prediction with --this_partner_mentioned_predicted")
+                if timestep >= 0 and partner_ref_outs[timestep] is not None:
+                    # if partner_ref_outs[timestep] is None:
+                    #     raise Exception("must pass --partner_reference_prediction with --this_partner_mentioned_predicted")
                     ref_logits, ref_full = partner_ref_outs[timestep]
                     beliefs = ref_logits.sigmoid().max(0).values
                     beliefs = beliefs.unsqueeze(-1)

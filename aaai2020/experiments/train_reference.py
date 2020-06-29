@@ -21,6 +21,8 @@ def add_loss_args(parser):
                         help='selection loss weight')
     group.add_argument('--next_mention_weight', type=float, default=1.0,
                        help='next mention loss weight')
+    group.add_argument('--next_mention_start_epoch', type=int,
+                       help='only supervise next mention in this epoch onward (to allow pretraining)')
     group.add_argument('--lang_only_self', action='store_true')
 
     # these args only make sense if --lang_only_self is True

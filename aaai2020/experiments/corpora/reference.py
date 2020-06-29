@@ -2,6 +2,7 @@ import copy
 import os
 import random
 from collections import namedtuple
+import tqdm
 
 import numpy as np
 import torch
@@ -86,6 +87,7 @@ class ReferenceCorpus(object):
         unk = self.word_dict.get_idx('<unk>')
         dataset, total, unks = [], 0, 0
         for line in lines:
+        # for line in tqdm.tqdm(lines, ncols=80):
             tokens = line.split()
             input_vals = [float(val) for val in get_tag(tokens, 'input')]
             word_idxs = self.word_dict.w2i(get_tag(tokens, 'dialogue'))
@@ -136,6 +138,7 @@ class ReferenceCorpus(object):
         }
 
         i = 0
+        pbar = tqdm.tqdm(total=len(dataset), ncols=80)
         while i < len(dataset):
             markable_length = len(dataset[i][2])
 
@@ -162,6 +165,7 @@ class ReferenceCorpus(object):
                 partner_refs.append(dataset[i].partner_referent_idxs)
                 partner_refs_our_view.append(dataset[i].partner_referent_our_view_idxs)
                 i += 1
+                pbar.update(1)
 
             # the longest dialogue in the batch
             max_len = max([len(dial) for dial in dials])
@@ -208,6 +212,7 @@ class ReferenceCorpus(object):
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs, lens,
                 partner_ref_inpt, partner_ref_our_view_tgt, partner_num_markables_by_sent,
             ))
+        pbar.close()
 
         if shuffle:
             random.shuffle(batches)
