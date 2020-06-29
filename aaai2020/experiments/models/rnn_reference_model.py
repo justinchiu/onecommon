@@ -17,6 +17,8 @@ from collections import defaultdict
 
 import string
 
+from typing import Union
+
 import pyro.ops.contract
 
 BIG_NEG = -1e6
@@ -495,6 +497,12 @@ class RnnReferenceModel(nn.Module):
         inpt_emb = self.dropout(inpt_emb)
         return inpt_emb
 
+    def ctx_differences(self, ctx):
+        _, _, ctx_differences = pairwise_differences(
+            ctx, num_ent=self.num_ent, dim_ent=4, symmetric=True, relation_include=[]
+        )
+        return ctx_differences
+
     def reference_resolution(self, ctx_differences, ctx_h, outs_emb, ref_inpt, for_self = True):
         # ref_inpt: bsz x num_refs x 3
         if ref_inpt is None:
@@ -669,7 +677,7 @@ class RnnReferenceModel(nn.Module):
         return attn_prob
 
     def _forward(self, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False,
-                 dots_mentioned=None, belief_constructor: BeliefConstructor=None, partner_ref_inpt=None,
+                 dots_mentioned=None, belief_constructor: Union[BeliefConstructor, None]=None, partner_ref_inpt=None,
                  timestep=0, partner_ref_outs=None):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
@@ -677,7 +685,10 @@ class RnnReferenceModel(nn.Module):
         seq_len = inpt.size(0)
 
         # print('inpt size: {}'.format(inpt.size()))
-        generation_beliefs = belief_constructor.make_beliefs('generation_beliefs', timestep, partner_ref_outs)
+        if belief_constructor is not None:
+            generation_beliefs = belief_constructor.make_beliefs('generation_beliefs', timestep, partner_ref_outs)
+        else:
+            generation_beliefs = None
         lang_hs, last_h, feed_ctx_attn_prob = self._read(
             ctx_differences, ctx_h, inpt, lang_h=lang_h, lens=lens, pack=pack, dots_mentioned=dots_mentioned,
             generation_beliefs=generation_beliefs,
@@ -724,7 +735,10 @@ class RnnReferenceModel(nn.Module):
 
         if vars(self.args).get('next_mention_prediction', False):
             assert lens is not None
-            mention_beliefs = belief_constructor.make_beliefs('mention_beliefs', timestep, partner_ref_outs + [partner_ref_out])
+            if belief_constructor is not None:
+                mention_beliefs = belief_constructor.make_beliefs('mention_beliefs', timestep, partner_ref_outs + [partner_ref_out])
+            else:
+                mention_beliefs = None
             next_mention_out = self.next_mention_prediction(ctx_differences, ctx_h, lang_hs, lens, mention_beliefs)
             assert next_mention_out is not None
         else:
@@ -733,24 +747,29 @@ class RnnReferenceModel(nn.Module):
         if compute_sel_out:
             # compute selection
             # print('sel_idx size: {}'.format(sel_idx.size()))
-            selection_beliefs = belief_constructor.make_beliefs('selection_beliefs', timestep, partner_ref_outs + [partner_ref_out])
+            if belief_constructor is not None:
+                selection_beliefs = belief_constructor.make_beliefs('selection_beliefs', timestep, partner_ref_outs + [partner_ref_out])
+            else:
+                selection_beliefs = None
             sel_out = self.selection(ctx_differences, ctx_h, lang_hs, sel_idx, beliefs=selection_beliefs)
         else:
             sel_out = None
         return outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
 
-    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned, belief_constructor: BeliefConstructor, partner_ref_inpt):
+    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned,
+                belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt):
         # belief_function:
         # timestep 0
-        selection_beliefs = belief_constructor.make_beliefs("selection_beliefs", 0, [])
-        generation_beliefs = belief_constructor.make_beliefs("generation_beliefs", 0, [])
-        mention_beliefs = belief_constructor.make_beliefs("mention_beliefs", 0, [])
-        if selection_beliefs is not None:
-            raise NotImplementedError("selection_belief for non-hierarchical model")
-        if generation_beliefs is not None:
-            raise NotImplementedError("selection_belief for non-hierarchical model")
-        if mention_beliefs is not None:
-            raise NotImplementedError("mention_belief for non-hierarchical model")
+        if belief_constructor is not None:
+            selection_beliefs = belief_constructor.make_beliefs("selection_beliefs", 0, [])
+            generation_beliefs = belief_constructor.make_beliefs("generation_beliefs", 0, [])
+            mention_beliefs = belief_constructor.make_beliefs("mention_beliefs", 0, [])
+            if selection_beliefs is not None:
+                raise NotImplementedError("selection_belief for non-hierarchical model")
+            if generation_beliefs is not None:
+                raise NotImplementedError("selection_belief for non-hierarchical model")
+            if mention_beliefs is not None:
+                raise NotImplementedError("mention_belief for non-hierarchical model")
 
         ctx_h = self.ctx_encoder(ctx)
         ctx_differences = self.ctx_differences(ctx)
@@ -963,12 +982,6 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def ctx_differences(self, ctx):
-        _, _, ctx_differences = pairwise_differences(
-            ctx, num_ent=self.num_ent, dim_ent=4, symmetric=True, relation_include=[]
-        )
-        return ctx_differences
-
     def forward(
             self,
             ctx,
@@ -977,7 +990,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             sel_idx,
             lens,
             dots_mentioned,
-            belief_constructor: BeliefConstructor,
+            belief_constructor: Union[BeliefConstructor, None],
             partner_ref_inpts
     ):
         # inpts is a list, one item per sentence

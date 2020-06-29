@@ -168,13 +168,13 @@ class EngineBase(object):
     def get_model(self):
         return self.model
 
-    def train_batch(self, batch):
+    def train_batch(self, batch, epoch):
         pass
 
-    def valid_batch(self, batch):
+    def valid_batch(self, batch, epoch):
         pass
 
-    def train_pass(self, trainset, trainset_stats):
+    def train_pass(self, trainset, trainset_stats, epoch):
         '''
         basic implementation of one training pass
         '''
@@ -184,7 +184,7 @@ class EngineBase(object):
         start_time = time.time()
 
         for batch in trainset:
-            lang_loss, select_loss, num_correct, num_select = self.train_batch(batch)
+            lang_loss, select_loss, num_correct, num_select = self.train_batch(batch, epoch)
             total_lang_loss += lang_loss
             total_select_loss += select_loss
             total_num_correct += num_correct
@@ -195,7 +195,7 @@ class EngineBase(object):
         time_elapsed = time.time() - start_time
         return total_lang_loss, total_select_loss, total_num_correct / total_num_select, time_elapsed
 
-    def valid_pass(self, validset, validset_stats):
+    def valid_pass(self, validset, validset_stats, epoch):
         '''
         basic implementation of one validation pass
         '''
@@ -203,7 +203,7 @@ class EngineBase(object):
 
         total_lang_loss, total_select_loss, total_num_correct, total_num_select = 0, 0, 0, 0
         for batch in validset:
-            lang_loss, select_loss, num_correct, num_select = self.valid_batch(batch)
+            lang_loss, select_loss, num_correct, num_select = self.valid_batch(batch, epoch)
             total_lang_loss += lang_loss
             total_select_loss += select_loss
             total_num_correct += num_correct
@@ -217,9 +217,12 @@ class EngineBase(object):
         trainset, trainset_stats = traindata
         validset, validset_stats = validdata
 
-        train_lang_loss, train_select_loss, train_select_accuracy, train_time = self.train_pass(trainset,
-                                                                                                trainset_stats)
-        valid_lang_loss, valid_select_loss, valid_select_accuracy = self.valid_pass(validset, validset_stats)
+        train_lang_loss, train_select_loss, train_select_accuracy, train_time = self.train_pass(
+            trainset, trainset_stats, epoch
+        )
+        valid_lang_loss, valid_select_loss, valid_select_accuracy = self.valid_pass(
+            validset, validset_stats, epoch
+        )
 
         if self.verbose:
             print('epoch %03d \t s/epoch %.2f \t lr %.2E' % (epoch, train_time, lr))
