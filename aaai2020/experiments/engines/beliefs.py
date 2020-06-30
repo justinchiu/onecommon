@@ -1,15 +1,60 @@
-import utils
-import torch
 from collections import namedtuple
+
+import torch
+
+import utils
+
+BELIEF_TYPES = [
+    'none',
+    'selected', 'partners',
+    'last_partner_mentioned',
+    'cumulative_partner_mentioned',
+    'this_partner_mentioned',
+    'this_partner_mentioned_predicted',
+    'this_partner_mentioned_noised',
+    'last_partner_mentioned_predicted',
+    'this_mentioned',
+    'cumulative_mentioned',
+    'last_mentioned',
+    'next_mentioned',
+]
 
 _BeliefConstructor = namedtuple('_BeliefConstructor', [
     'args',
-    'bsz', 'num_dots', 'inpts', 'ref_tgts', 'partner_ref_tgts_our_view', 'real_ids', 'partner_real_ids', 'sel_tgt', 'is_self',
+    'bsz', 'num_dots', 'inpts', 'ref_tgts', 'partner_ref_tgts_our_view', 'real_ids', 'partner_real_ids', 'sel_tgt',
+    'is_self',
     'partner_dots_mentioned_our_view',
     'dots_mentioned',
 ])
 
+def noise_beliefs(zero_one_tensor, pos_to_neg_prob, neg_to_pos_prob, num_samples=1):
+    # for every entry with a 0, have a neg_to_pos_prob chance of drawing a 1; for every entry with a 1, have a pos_to_neg_prob chance of drawing a zero
+    draw_probs = torch.where(zero_one_tensor == 1.0,
+                             torch.tensor(1 - pos_to_neg_prob),
+                             torch.tensor(neg_to_pos_prob))
+    dist = torch.distributions.Bernoulli(draw_probs)
+    if num_samples > 1:
+        return dist.sample((num_samples,))
+    else:
+        return dist.sample()
+
+
 class BeliefConstructor(_BeliefConstructor):
+    @staticmethod
+    def add_belief_args(parser):
+        parser.add_argument('--selection_beliefs', choices=BELIEF_TYPES, nargs='*',
+                            default=[],
+                            help='selected: indicator on what you chose. partners: indicator on what the other person has')
+
+        parser.add_argument('--generation_beliefs', choices=BELIEF_TYPES, nargs='*',
+                            default=[],
+                            help='selected: indicator on what you chose. partners: indicator on what the other person has')
+
+        parser.add_argument('--mention_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
+
+        parser.add_argument('--belief_noise_pos_to_neg_probability', type=float, default=0.0)
+        parser.add_argument('--belief_noise_neg_to_pos_probability', type=float, default=0.0)
+
     def make_beliefs(self, belief_type, timestep, partner_ref_outs):
         assert belief_type in ['selection_beliefs', 'generation_beliefs', 'mention_beliefs']
 
@@ -26,7 +71,8 @@ class BeliefConstructor(_BeliefConstructor):
         for beliefs_name in beliefs_names:
             if beliefs_name == 'selected':
                 # bsz x num_dots x 1, one-hot if that dot is the one selected
-                beliefs = torch.zeros(self.sel_tgt.size(0), self.num_dots).scatter(1, self.sel_tgt.unsqueeze(1), 1).unsqueeze(-1)
+                beliefs = torch.zeros(self.sel_tgt.size(0), self.num_dots).scatter(1, self.sel_tgt.unsqueeze(1),
+                                                                                   1).unsqueeze(-1)
             elif beliefs_name == 'partners':
                 partner_has = []
                 for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(self.real_ids, self.partner_real_ids)):
@@ -57,16 +103,20 @@ class BeliefConstructor(_BeliefConstructor):
                     ]
                 beliefs = torch.zeros(self.bsz, self.num_dots)
                 if timestep > 0:
-                    ts = (torch.tensor([timestep] * self.bsz).long() - 1) - self.is_self[timestep-1].long()
+                    ts = (torch.tensor([timestep] * self.bsz).long() - 1) - self.is_self[timestep - 1].long()
                     for j, t_j in enumerate(ts):
                         if t_j >= 0:
                             beliefs[j] = mentions[t_j][j]
                 beliefs = beliefs.float().unsqueeze(-1)
-            elif beliefs_name == 'this_partner_mentioned':
+            elif beliefs_name in ['this_partner_mentioned', 'this_partner_mentioned_noised']:
                 if timestep >= 0:
                     beliefs = self.partner_dots_mentioned_our_view[timestep].float().unsqueeze(-1)
                 else:
                     beliefs = torch.zeros_like(self.partner_dots_mentioned_our_view[0]).float().unsqueeze(-1)
+                if beliefs_name == 'this_partner_mentioned_noised':
+                    beliefs = noise_beliefs(beliefs,
+                                            self.args.belief_noise_pos_to_neg_probability,
+                                            self.args.belief_noise_neg_to_pos_probability)
             elif beliefs_name == 'this_partner_mentioned_predicted':
                 if timestep >= 0 and partner_ref_outs[timestep] is not None:
                     # if partner_ref_outs[timestep] is None:
@@ -92,14 +142,14 @@ class BeliefConstructor(_BeliefConstructor):
             elif beliefs_name == 'last_mentioned':
                 beliefs = torch.zeros(self.bsz, self.num_dots)
                 if timestep > 0:
-                    ts = (torch.tensor([timestep] * self.bsz).long() - 1) - (1 - self.is_self[timestep-1].long())
+                    ts = (torch.tensor([timestep] * self.bsz).long() - 1) - (1 - self.is_self[timestep - 1].long())
                     for j, t_j in enumerate(ts):
                         if t_j >= 0:
                             beliefs[j] = self.dots_mentioned[t_j][j]
                 beliefs = beliefs.float().unsqueeze(-1)
             elif beliefs_name == 'next_mentioned':
                 if timestep < len(self.dots_mentioned) - 1:
-                    beliefs = self.dots_mentioned[timestep+1].float().unsqueeze(-1)
+                    beliefs = self.dots_mentioned[timestep + 1].float().unsqueeze(-1)
                 else:
                     beliefs = torch.zeros_like(self.dots_mentioned[0]).float().unsqueeze(-1)
             elif beliefs_name == 'cumulative_mentioned':
@@ -119,23 +169,3 @@ class BeliefConstructor(_BeliefConstructor):
                 return all_beliefs[0]
         else:
             return None
-    #
-    # if hasattr(args, 'selection_beliefs'):
-    #     if timestep == len(inpts) - 1:
-    #         selection_beliefs = make_beliefs(args.selection_beliefs, 'selection_beliefs')
-    #     else:
-    #         selection_beliefs = None
-    # else:
-    #     selection_beliefs = None
-    # if hasattr(args, 'generation_beliefs'):
-    #     generation_beliefs = make_beliefs(args.generation_beliefs, 'generation_beliefs')
-    # else:
-    #     generation_beliefs = None
-    #
-    # if hasattr(args, 'mention_beliefs'):
-    #     mention_beliefs = make_beliefs(args.mention_beliefs, 'mention_beliefs')
-    # else:
-    #     mention_beliefs = None
-    #
-    # return selection_beliefs, generation_beliefs, mention_beliefs
-    #

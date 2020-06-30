@@ -1,41 +1,22 @@
-import torch.nn.init
-
-import corpora.reference
-import corpora.reference_sentence
-from corpora import data
-import models
-from domain import get_domain
-from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
-from engines.beliefs import BeliefConstructor
-from models.ctx_encoder import *
-
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
-
-from utils import set_temporary_default_tensor_type
-
-from collections import defaultdict
-
 import string
-
+from collections import defaultdict
 from typing import Union
 
 import pyro.ops.contract
+import torch.nn.init
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+
+import corpora.reference
+import corpora.reference_sentence
+import models
+from corpora import data
+from domain import get_domain
+from engines.beliefs import BeliefConstructor, BELIEF_TYPES
+from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
+from models.ctx_encoder import *
+from utils import set_temporary_default_tensor_type
 
 BIG_NEG = -1e6
-
-BELIEF_TYPES = [
-    'none',
-    'selected', 'partners',
-    'last_partner_mentioned',
-    'cumulative_partner_mentioned',
-    'this_partner_mentioned',
-    'this_partner_mentioned_predicted',
-    'last_partner_mentioned_predicted',
-    'this_mentioned',
-    'cumulative_mentioned',
-    'last_mentioned',
-    'next_mentioned',
-]
 
 class FeedForward(nn.Module):
     def __init__(self, n_hidden_layers, input_dim, hidden_dim, output_dim, dropout_p=None):
@@ -257,12 +238,6 @@ class RnnReferenceModel(nn.Module):
                             action='store_true',
                             help='when marking dots mentioned (either in mark_dots_mentioned, or in one of the oracle selection beliefs), only mark the first mention in the utterance')
 
-        parser.add_argument('--selection_beliefs', choices=BELIEF_TYPES, nargs='*',
-                            default=[], help='selected: indicator on what you chose. partners: indicator on what the other person has')
-
-        parser.add_argument('--generation_beliefs', choices=BELIEF_TYPES, nargs='*',
-                            default=[], help='selected: indicator on what you chose. partners: indicator on what the other person has')
-
         parser.add_argument('--marks_in_word_prediction', action='store_true',
                             help='in addition to marking context in attention, mark context in the word prediction layer')
 
@@ -273,10 +248,11 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--partner_reference_prediction', action='store_true')
 
         parser.add_argument('--next_mention_prediction', action='store_true')
-        parser.add_argument('--mention_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
 
         AttentionLayer.add_args(parser)
         StructuredAttentionLayer.add_args(parser)
+
+        BeliefConstructor.add_belief_args(parser)
 
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
