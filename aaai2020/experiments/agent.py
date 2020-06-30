@@ -128,12 +128,15 @@ class RnnAgent(Agent):
         outs = outs.narrow(0, 1, outs.size(0) - 1)
         return self._decode(outs, self.model.word_dict)
 
-    def predict_referents(self, ref_inpt):
+    def predict_referents(self, ref_inpt, ref_beliefs):
+        # TODO: pass ref_beliefs
         if len(ref_inpt) == 0:
             ref_inpt = None
         else:
             ref_inpt = torch.Tensor(ref_inpt).long().unsqueeze(0)
-        ref_out = self.model.reference_resolution(self.ctx_h, torch.cat(self.lang_hs, 0).unsqueeze(1), ref_inpt)
+        ref_out = self.model.reference_resolution(
+            self.ctx_h, torch.cat(self.lang_hs, 0).unsqueeze(1), ref_inpt, ref_beliefs=ref_beliefs
+        )
         if ref_out is not None:
             return ref_out.squeeze(1)
         else:

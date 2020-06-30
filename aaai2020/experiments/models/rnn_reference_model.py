@@ -385,6 +385,10 @@ class RnnReferenceModel(nn.Module):
                     input_dim += len(args.generation_beliefs)
                 if args.mention_beliefs and attn_name == 'next_mention':
                     input_dim += len(args.mention_beliefs)
+                if args.ref_beliefs and attn_name == 'ref':
+                    input_dim += len(args.ref_beliefs)
+                if args.partner_ref_beliefs and attn_name == 'ref_partner':
+                    input_dim += len(args.partner_ref_beliefs)
                 setattr(
                     self,
                     self._attention_name(attn_name),
@@ -479,13 +483,16 @@ class RnnReferenceModel(nn.Module):
         )
         return ctx_differences
 
-    def reference_resolution(self, ctx_differences, ctx_h, outs_emb, ref_inpt, for_self = True):
+    def reference_resolution(self, ctx_differences, ctx_h, outs_emb, ref_inpt, for_self=True, ref_beliefs=None):
         # ref_inpt: bsz x num_refs x 3
         if ref_inpt is None:
             return None
 
         bsz = ctx_h.size(0)
         num_dots = ctx_h.size(1)
+
+        if ref_beliefs is not None:
+            ctx_h = torch.cat((ctx_h, ref_beliefs), -1)
 
         # reshape
 
@@ -654,7 +661,7 @@ class RnnReferenceModel(nn.Module):
 
     def _forward(self, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False,
                  dots_mentioned=None, belief_constructor: Union[BeliefConstructor, None]=None, partner_ref_inpt=None,
-                 timestep=0, partner_ref_outs=None):
+                 timestep=0, partner_ref_outs=None, ref_outs=None):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
         bsz = ctx_h.size(0)
@@ -662,7 +669,7 @@ class RnnReferenceModel(nn.Module):
 
         # print('inpt size: {}'.format(inpt.size()))
         if belief_constructor is not None:
-            generation_beliefs = belief_constructor.make_beliefs('generation_beliefs', timestep, partner_ref_outs)
+            generation_beliefs = belief_constructor.make_beliefs('generation_beliefs', timestep, partner_ref_outs, ref_outs)
         else:
             generation_beliefs = None
         lang_hs, last_h, feed_ctx_attn_prob = self._read(
@@ -699,23 +706,38 @@ class RnnReferenceModel(nn.Module):
         outs = F.linear(outs, self.word_embed.weight)
         outs = outs.view(-1, outs.size(2))
 
+        if belief_constructor is not None:
+            ref_beliefs = belief_constructor.make_beliefs('ref_beliefs', timestep, partner_ref_outs, ref_outs)
+            partner_ref_beliefs = belief_constructor.make_beliefs('partner_ref_beliefs', timestep, partner_ref_outs, ref_outs)
+        else:
+            ref_beliefs = None
+            partner_ref_beliefs = None
+
         # compute referents output
         # print('ref_inpt.size(): {}'.format(ref_inpt.size()))
         # print('outs_emb.size(): {}'.format(outs_emb.size()))
-        ref_out = self.reference_resolution(ctx_differences, ctx_h, lang_hs, ref_inpt, for_self=True)
+        ref_out = self.reference_resolution(
+            ctx_differences, ctx_h, lang_hs, ref_inpt, for_self=True, ref_beliefs=ref_beliefs
+        )
 
         if vars(self.args).get('partner_reference_prediction', False):
-            partner_ref_out = self.reference_resolution(ctx_differences, ctx_h, lang_hs, partner_ref_inpt, for_self=False)
+            partner_ref_out = self.reference_resolution(
+                ctx_differences, ctx_h, lang_hs, partner_ref_inpt, for_self=False, ref_beliefs=partner_ref_beliefs
+            )
         else:
             partner_ref_out = None
 
         if vars(self.args).get('next_mention_prediction', False):
             assert lens is not None
             if belief_constructor is not None:
-                mention_beliefs = belief_constructor.make_beliefs('mention_beliefs', timestep, partner_ref_outs + [partner_ref_out])
+                mention_beliefs = belief_constructor.make_beliefs(
+                    'mention_beliefs', timestep, partner_ref_outs + [partner_ref_out], ref_outs + [ref_out]
+                )
             else:
                 mention_beliefs = None
-            next_mention_out = self.next_mention_prediction(ctx_differences, ctx_h, lang_hs, lens, mention_beliefs)
+            next_mention_out = self.next_mention_prediction(
+                ctx_differences, ctx_h, lang_hs, lens, mention_beliefs
+            )
             assert next_mention_out is not None
         else:
             next_mention_out = None
@@ -724,7 +746,9 @@ class RnnReferenceModel(nn.Module):
             # compute selection
             # print('sel_idx size: {}'.format(sel_idx.size()))
             if belief_constructor is not None:
-                selection_beliefs = belief_constructor.make_beliefs('selection_beliefs', timestep, partner_ref_outs + [partner_ref_out])
+                selection_beliefs = belief_constructor.make_beliefs(
+                    'selection_beliefs', timestep, partner_ref_outs + [partner_ref_out], ref_outs + [ref_out]
+                )
             else:
                 selection_beliefs = None
             sel_out = self.selection(ctx_differences, ctx_h, lang_hs, sel_idx, beliefs=selection_beliefs)
@@ -996,10 +1020,11 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         #     assert len(partner_ref_inpts) == len(inpts)
 
         partner_ref_outs = []
+        ref_outs = []
 
         if vars(self.args).get('next_mention_prediction', False):
             reader_init_h, _ = self._init_h(bsz)
-            mention_beliefs = belief_constructor.make_beliefs('mention_beliefs', -1, partner_ref_outs)
+            mention_beliefs = belief_constructor.make_beliefs('mention_beliefs', -1, partner_ref_outs, ref_outs)
             all_next_mention_outs.append(
                 self.next_mention_prediction(
                     ctx_differences, ctx_h, reader_init_h, torch.full((bsz,), 1.0, device=ctx_h.device).long(), mention_beliefs
@@ -1021,6 +1046,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 timestep=i,
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
                 partner_ref_outs=partner_ref_outs,
+                ref_outs=ref_outs,
             )
             # print("i: {}\tmention_belief.sum(): {}\t(next_mention_out > 0).sum(): {}".format(i, mention_beliefs.sum(), (next_mention_out > 0).sum()))
             all_outs.append(outs)
@@ -1030,6 +1056,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             all_next_mention_outs.append(next_mention_out)
 
             ref_out, partner_ref_out = ref_out_and_partner_ref_out
+            ref_outs.append(ref_out)
             partner_ref_outs.append(partner_ref_out)
 
         assert sel_out is not None

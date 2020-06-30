@@ -14,6 +14,8 @@ BELIEF_TYPES = [
     'this_partner_mentioned_noised',
     'last_partner_mentioned_predicted',
     'this_mentioned',
+    'this_mentioned_predicted',
+    'last_mentioned_predicted',
     'cumulative_mentioned',
     'last_mentioned',
     'next_mentioned',
@@ -51,21 +53,27 @@ class BeliefConstructor(_BeliefConstructor):
                             help='selected: indicator on what you chose. partners: indicator on what the other person has')
 
         parser.add_argument('--mention_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
+        parser.add_argument('--ref_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
+        parser.add_argument('--partner_ref_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
 
         parser.add_argument('--belief_noise_pos_to_neg_probability', type=float, default=0.0)
         parser.add_argument('--belief_noise_neg_to_pos_probability', type=float, default=0.0)
 
-    def make_beliefs(self, belief_type, timestep, partner_ref_outs):
-        assert belief_type in ['selection_beliefs', 'generation_beliefs', 'mention_beliefs']
+    def make_beliefs(self, belief_type, timestep, partner_ref_outs, ref_outs):
+        assert belief_type in [
+            'selection_beliefs', 'generation_beliefs', 'mention_beliefs', 'ref_beliefs', 'partner_ref_beliefs'
+        ]
 
         beliefs_names = vars(self.args)[belief_type]
 
         if timestep >= 0:
-            if belief_type in ['generation_beliefs']:
+            if belief_type in ['generation_beliefs', 'ref_beliefs', 'partner_ref_beliefs']:
                 assert len(partner_ref_outs) == timestep
+                assert len(ref_outs) == timestep
             else:
                 assert belief_type in ['mention_beliefs', 'selection_beliefs']
                 assert len(partner_ref_outs) == timestep + 1
+                assert len(ref_outs) == timestep + 1
 
         all_beliefs = []
         for beliefs_name in beliefs_names:
@@ -139,13 +147,20 @@ class BeliefConstructor(_BeliefConstructor):
                     beliefs = self.dots_mentioned[timestep].float().unsqueeze(-1)
                 else:
                     beliefs = torch.zeros_like(self.dots_mentioned[0]).float().unsqueeze(-1)
-            elif beliefs_name == 'last_mentioned':
+            elif beliefs_name in ['last_mentioned', 'last_mentioned_predicted']:
+                if beliefs_name == 'last_mentioned':
+                    mentions = self.dots_mentioned
+                else:
+                    assert beliefs_name == 'last_mentioned_predicted'
+                    mentions = [logits.sigmoid().max(0).values for logits in ref_outs]
+                    if self.args.detach_beliefs:
+                        mentions = [m.detach() for m in mentions]
                 beliefs = torch.zeros(self.bsz, self.num_dots)
                 if timestep > 0:
                     ts = (torch.tensor([timestep] * self.bsz).long() - 1) - (1 - self.is_self[timestep - 1].long())
                     for j, t_j in enumerate(ts):
                         if t_j >= 0:
-                            beliefs[j] = self.dots_mentioned[t_j][j]
+                            beliefs[j] = mentions[t_j][j]
                 beliefs = beliefs.float().unsqueeze(-1)
             elif beliefs_name == 'next_mentioned':
                 if timestep < len(self.dots_mentioned) - 1:
@@ -159,7 +174,7 @@ class BeliefConstructor(_BeliefConstructor):
                         beliefs |= self.dots_mentioned[t]
                 beliefs = beliefs.float().unsqueeze(-1)
             else:
-                raise ValueError('invalid --{} {}'.format(self.arg_name, beliefs_name))
+                raise ValueError('invalid --{} {}'.format(belief_type, beliefs_name))
             all_beliefs.append(beliefs)
 
         if all_beliefs:
