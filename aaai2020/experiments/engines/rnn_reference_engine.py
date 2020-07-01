@@ -18,7 +18,7 @@ from engines.beliefs import BeliefConstructor
 
 ForwardRet = namedtuple(
     "ForwardRet",
-    ['lang_loss', 'ref_loss', 'ref_correct', 'sel_loss',
+    ['lang_loss', 'unnormalized_lang_loss', 'num_words', 'ref_loss', 'ref_correct', 'sel_loss',
      'word_attn_loss', 'feed_attn_loss',
      'sel_correct', 'sel_num_dots',
      'ref_gold_positive', 'ref_pred_positive', 'ref_true_positive', 'ref_num_dots', 'ref_em_num', 'ref_em_denom',
@@ -140,6 +140,8 @@ class RnnReferenceEngine(EngineBase):
 
         return ForwardRet(
             lang_loss=lang_loss,
+            unnormalized_lang_loss=0,
+            num_words=1,
             ref_loss=ref_loss,
             ref_correct=ref_correct,
             sel_loss=sel_loss,
@@ -274,7 +276,8 @@ class RnnReferenceEngine(EngineBase):
             'select_loss': metrics['sel_loss'] / len(dataset),
             # do select_accuracy here b/c we won't need F1 for it
             'select_accuracy': metrics['sel_correct'] / metrics['sel_num_dots'],
-            'time': time_elapsed
+            'time': time_elapsed,
+            'correct_ppl': np.exp(metrics['unnormalized_lang_loss'] / metrics['num_words']),
         }
         self.add_metrics(metrics, aggregate_metrics, "ref")
         self.add_metrics(metrics, aggregate_metrics, "partner_ref")
@@ -307,7 +310,7 @@ class RnnReferenceEngine(EngineBase):
 
             for split_name, metrics in [('train', train_metrics), ('valid', valid_metrics)]:
                 metrics = metrics.copy()
-                metrics['ppl'] = np.exp(metrics['lang_loss'])
+                metrics['ppl(avg exp lang_loss)'] = np.exp(metrics['lang_loss'])
                 metrics['lang_loss'] *= self.args.lang_weight
                 metrics['select_loss'] *= self.args.sel_weight
                 metrics['ref_loss'] *= self.args.ref_weight
@@ -315,7 +318,7 @@ class RnnReferenceEngine(EngineBase):
                 metrics['next_mention_loss'] *= self.args.next_mention_weight
 
                 quantities = [
-                    ['lang_loss', 'ppl'],
+                    ['lang_loss', 'ppl(avg exp lang_loss)', 'correct_ppl'],
                     ['select_loss', 'select_accuracy'],
                     ['ref_loss', 'ref_accuracy', 'ref_precision', 'ref_recall', 'ref_f1', 'ref_em'],
                     ['partner_ref_loss', 'partner_ref_accuracy', 'partner_ref_precision', 'partner_ref_recall',
@@ -566,7 +569,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         sel_tgt = Variable(sel_tgt)
         lang_losses = []
-        assert len(inpts) == len(tgts) == len(outs)
+        assert len(inpts) == len(tgts) == len(outs) == len(lens)
         for i, (out, tgt) in enumerate(zip(outs, tgts)):
             # T x bsz
             loss = self.crit_no_reduce(out, tgt).view(-1, bsz)
@@ -575,7 +578,15 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 loss = loss * (is_self[i].unsqueeze(0).expand_as(loss))
             lang_losses.append(loss.sum())
         total_lens = sum(l.sum() for l in lens)
-        lang_loss = sum(lang_losses) / total_lens
+
+        # w1 w2 w3 ... <eos> YOU:
+        # or
+        # w1 w2 w3 ... <eos> THEM:
+        # subtract 2 to remove <eos> and YOU/THEM:
+        total_lens_no_eos = sum((l - 2).sum().item() for l in lens)
+
+        unnormed_lang_loss = sum(lang_losses)
+        lang_loss = unnormed_lang_loss / total_lens
 
         ref_correct = 0
         ref_total = 0
@@ -812,6 +823,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         return ForwardRet(
             lang_loss=lang_loss,
+            unnormalized_lang_loss=unnormed_lang_loss.item(),
+            num_words=total_lens_no_eos,
             ref_loss=ref_loss,
             ref_correct=ref_correct,
             sel_loss=sel_loss,

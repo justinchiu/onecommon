@@ -761,9 +761,9 @@ class RnnReferenceModel(nn.Module):
         # belief_function:
         # timestep 0
         if belief_constructor is not None:
-            selection_beliefs = belief_constructor.make_beliefs("selection_beliefs", 0, [])
-            generation_beliefs = belief_constructor.make_beliefs("generation_beliefs", 0, [])
-            mention_beliefs = belief_constructor.make_beliefs("mention_beliefs", 0, [])
+            selection_beliefs = belief_constructor.make_beliefs("selection_beliefs", 0, [], [])
+            generation_beliefs = belief_constructor.make_beliefs("generation_beliefs", 0, [], [])
+            mention_beliefs = belief_constructor.make_beliefs("mention_beliefs", 0, [], [])
             if selection_beliefs is not None:
                 raise NotImplementedError("selection_belief for non-hierarchical model")
             if generation_beliefs is not None:
@@ -844,11 +844,15 @@ class RnnReferenceModel(nn.Module):
             lang_hs, _ = pad_packed_sequence(lang_hs, total_length=seq_len)
         return lang_hs, last_h, feed_ctx_attn_prob
 
-    def read(self, ctx_differences, ctx_h, inpt, lang_h, prefix_token='THEM:', dots_mentioned=None):
+    def read(self, ctx_differences, ctx_h, inpt, lang_h, prefix_token='THEM:', dots_mentioned=None, generation_beliefs=None):
         # Add a 'THEM:' token to the start of the message
         prefix = self.word2var(prefix_token).unsqueeze(0)
         inpt = torch.cat([prefix, inpt])
-        lang_hs, lang_h, feed_ctx_attn_prob = self._read(ctx_differences, ctx_h, inpt, lang_h, lens=None, pack=False, dots_mentioned=dots_mentioned)
+        lang_hs, lang_h, feed_ctx_attn_prob = self._read(
+            ctx_differences, ctx_h, inpt, lang_h, lens=None, pack=False, dots_mentioned=dots_mentioned,
+            generation_beliefs=generation_beliefs,
+
+        )
         return lang_hs, lang_h
 
     def word2var(self, word):
@@ -920,7 +924,7 @@ class RnnReferenceModel(nn.Module):
                 ctx_attn_probs.append(ctx_attn_prob)
                 # lang_prob = dot_attention2.expand_as(ctx_h)
                 # ctx_h_lang = torch.sum(torch.mul(ctx_h, dot_attention2.expand_as(ctx_h)), 1)
-                ctx_h_lang = torch.einsum("bnd,bn->bd", (ctx_h,ctx_attn_prob))
+                ctx_h_lang = torch.einsum("bnd,bn->bd", (ctx_h, ctx_attn_prob))
                 out_emb = self.hid2output(torch.cat([lang_h, ctx_h_lang], 1))
             out = F.linear(out_emb, self.word_embed.weight)
 

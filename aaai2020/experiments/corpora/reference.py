@@ -70,6 +70,9 @@ class ReferenceCorpus(object):
         else:
             self.word_dict = word_dict
 
+        print("freq cutoff: {}".format(freq_cutoff))
+        print("vocab size: {}".format(len(self.word_dict)))
+
         self.train = self.tokenize(os.path.join(path, train), max_instances_per_split) if train else []
         self.valid = self.tokenize(os.path.join(path, valid), max_instances_per_split) if valid else []
         self.test = self.tokenize(os.path.join(path, test), max_instances_per_split) if test else []
