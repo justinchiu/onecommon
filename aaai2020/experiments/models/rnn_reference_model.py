@@ -77,7 +77,7 @@ class StructuredAttentionLayer(nn.Module):
             dropout_p=args.structured_attention_dropout,
         )
 
-        self.contraction_string = self.build_contraction_string(self.num_ent)
+        # self.contraction_string = self.build_contraction_string(self.num_ent)
 
     def build_contraction_string(self, num_ent):
         var_names = string.ascii_lowercase[:num_ent]
@@ -103,6 +103,8 @@ class StructuredAttentionLayer(nn.Module):
 
     def forward(self, input, ctx_differences):
         # max instances per batch (aka N) x batch_size x num_dots x hidden_dim
+        contraction_string = self.build_contraction_string(self.num_ent)
+
         if input.dim() == 3:
             input = input.unsqueeze(0)
             expanded = True
@@ -145,7 +147,7 @@ class StructuredAttentionLayer(nn.Module):
         binary_factors = binary_potentials.transpose(0,1)
 
         outputs = pyro.ops.contract.einsum(
-            self.contraction_string,
+            contraction_string,
             *unary_factors,
             *binary_factors,
             modulo_total=True,
@@ -153,6 +155,8 @@ class StructuredAttentionLayer(nn.Module):
         )
         joint_logits = outputs[0]
         marginal_logits = outputs[1:]
+
+        assert len(marginal_logits) == self.num_ent
 
         # bsz x num_ent x 2
         marginal_logits = torch.stack(marginal_logits, dim=1)
@@ -1028,7 +1032,10 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         if vars(self.args).get('next_mention_prediction', False):
             reader_init_h, _ = self._init_h(bsz)
-            mention_beliefs = belief_constructor.make_beliefs('mention_beliefs', -1, partner_ref_outs, ref_outs)
+            if belief_constructor is None:
+                mention_beliefs = None
+            else:
+                mention_beliefs = belief_constructor.make_beliefs('mention_beliefs', -1, partner_ref_outs, ref_outs)
             all_next_mention_outs.append(
                 self.next_mention_prediction(
                     ctx_differences, ctx_h, reader_init_h, torch.full((bsz,), 1.0, device=ctx_h.device).long(), mention_beliefs
@@ -1043,7 +1050,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             this_lens = lens[i]
             outs, ref_out_and_partner_ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
                 ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
-                dots_mentioned=dots_mentioned[i],
+                dots_mentioned=dots_mentioned[i] if dots_mentioned is not None else None,
                 # selection_beliefs=selection_beliefs if is_last else None,
                 # generation_beliefs=generation_beliefs[i] if generation_beliefs is not None else None,
                 belief_constructor=belief_constructor,

@@ -29,16 +29,18 @@ def backward_hook(grad):
 
 MODEL_DIR = 'serialized_models'
 
-def save_model(model, file_name):
+def save_model(model, file_name, prefix_dir=MODEL_DIR):
     """Serializes model to a file."""
     if file_name != '':
-        with open(os.path.join(MODEL_DIR, file_name), 'wb') as f:
+        out_file = os.path.join(prefix_dir, file_name) if prefix_dir is not None else file_name
+        with open(out_file, 'wb') as f:
             torch.save(model, f)
 
 
-def load_model(file_name, map_location=None):
+def load_model(file_name, map_location=None, prefix_dir=MODEL_DIR):
     """Reads model from a file."""
-    with open(os.path.join(MODEL_DIR, file_name), 'rb') as f:
+    out_file = os.path.join(prefix_dir, file_name) if prefix_dir is not None else file_name
+    with open(out_file, 'rb') as f:
         if map_location is not None:
             return torch.load(f, map_location=map_location)
         else:

@@ -10,14 +10,14 @@ from collections import Counter, defaultdict
 import pprint
 import sys
 
+import tqdm
+
 import numpy as np
 import torch
 from torch.autograd import Variable
 import torch.nn as nn
 
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
-
-from engines.rnn_reference_engine import _make_dots_mentioned_and_beliefs
 
 from corpora import data
 from corpora.reference import ReferenceCorpus
@@ -28,6 +28,9 @@ from domain import get_domain
 
 import matplotlib.pyplot as plt
 import seaborn as sns
+
+from engines.beliefs import BeliefConstructor
+from engines.rnn_reference_engine import make_dots_mentioned_multi, ReferenceLoss
 
 sns.set(font_scale=1.15)
 
@@ -60,10 +63,15 @@ def main():
     parser = argparse.ArgumentParser(description='testing script for reference resolution')
     parser.add_argument('--data', type=str, default='data/onecommon',
         help='location of the data corpus')
+    parser.add_argument('--max_instances_per_split', type=int)
+
     parser.add_argument('--unk_threshold', type=int, default=10,
         help='minimum word frequency to be in dictionary')
-    parser.add_argument('--model_file', type=str, required=True,
-        help='pretrained model file')
+    parser.add_argument('--model_dir', type=str,
+        help='directory containing {seed}_best.th')
+    parser.add_argument('--model_file', type=str,
+                        help='full model file (should end with _{seed}_best.th) \
+                        [for backward compatibility with non-directory-based saving]')
     parser.add_argument('--seed', type=int, default=1,
         help='random seed')
     parser.add_argument('--bsz', type=int, default=16,
@@ -82,6 +90,8 @@ def main():
                         help='temperature')
     parser.add_argument('--repeat_test', action='store_true', default=False,
         help='repeat training n times')
+
+    parser.add_argument('--eval_split', choices=['dev', 'test'], default='dev')
 
     # for error analysis
     parser.add_argument('--transcript_file', type=str, default='final_transcripts.json',
@@ -114,21 +124,26 @@ def main():
         # current support
         args.bsz = 1
 
+    assert args.model_dir or args.model_file
+    assert not (args.model_dir and args.model_file), f"can't pass both args.model_dir and args.model_file; {args.model_dir}, {args.model_file}"
+
     if args.repeat_test:
+        assert args.model_dir
         seeds = list(range(10))
     else:
+        assert args.model_file
+        assert args.model_file.endswith(f"_{args.seed}_best.th")
         seeds = [args.seed]
 
     repeat_results = defaultdict(list)
 
     model_referent_annotation = {}
 
+    num_dots = 7
+
     for seed in seeds:
         device_id = utils.use_cuda(args.cuda)
         utils.set_seed(args.seed)
-
-        def model_filename_fn(name, extension):
-            return '{}_{}_{}.{}'.format(args.model_file, seed, name, extension)
 
         domain = get_domain(args.domain)
         if args.cuda:
@@ -136,8 +151,16 @@ def main():
         else:
             device = torch.device("cpu")
 
+        if args.model_dir:
+            model_filename = os.path.join(
+                args.model_dir,
+                f'{seed}_{name}.{extension}',
+            )
+        else:
+            model_filename = args.model_file
+
         try:
-            model = utils.load_model(model_filename_fn('best', 'th'), map_location=device)
+            model = utils.load_model(model_filename, map_location=device, prefix_dir=None)
         except FileNotFoundError as e:
             print(e)
             continue
@@ -146,8 +169,14 @@ def main():
             model.cuda()
         model.eval()
 
-        corpus = model.corpus_ty(domain, args.data, train='train_reference_{}.txt'.format(seed), valid='valid_reference_{}.txt'.format(seed), test='test_reference_{}.txt'.format(seed), #test='selfplay_reference_{}.txt'.format(seed),
-            freq_cutoff=args.unk_threshold, verbose=True)
+        corpus = model.corpus_ty(
+            domain, args.data,
+            train='train_reference_{}.txt'.format(seed),
+            valid='valid_reference_{}.txt'.format(seed),
+            test='test_reference_{}.txt'.format(seed), #test='selfplay_reference_{}.txt'.format(seed),
+            freq_cutoff=args.unk_threshold, verbose=True,
+            max_instances_per_split=args.max_instances_per_split
+        )
 
         with open(os.path.join(args.data, args.transcript_file), "r") as f:
             dialog_corpus = json.load(f)
@@ -164,7 +193,10 @@ def main():
         ref_crit = nn.BCEWithLogitsLoss()
         ref_crit_no_reduce = nn.BCEWithLogitsLoss(reduction='none')
 
-        testset, testset_stats = corpus.test_dataset(args.bsz)
+        if args.eval_split == 'dev':
+            testset, testset_stats = corpus.valid_dataset(args.bsz)
+        else:
+            testset, testset_stats = corpus.test_dataset(args.bsz)
         test_lang_loss, test_select_loss, test_reference_loss, test_select_correct, test_select_total, test_reference_correct, test_reference_total = 0, 0, 0, 0, 0, 0, 0
 
         """
@@ -199,7 +231,9 @@ def main():
 
         bleu_scores = []
 
-        for batch in testset:
+        reference_loss = ReferenceLoss(model.args)
+
+        for batch in tqdm.tqdm(testset, ncols=80):
             if isinstance(corpus, ReferenceSentenceCorpus):
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, \
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, \
@@ -236,18 +270,21 @@ def main():
             if isinstance(corpus, ReferenceSentenceCorpus):
                 # don't cheat!
                 if args.allow_belief_cheating:
-                    # TODO: cut this out
-                    num_dots = 7
-                    dots_mentioned, selection_beliefs, generation_beliefs = _make_dots_mentioned_and_beliefs(
-                        bsz, num_dots, args, inpts, ref_tgts, partner_ref_tgts_our_view, real_ids, partner_real_ids, sel_tgt, is_self
+                    dots_mentioned = make_dots_mentioned_multi(ref_tgts, model.args, bsz, num_dots)
+                    partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, model.args, bsz, num_dots)
+
+                    belief_constructor = BeliefConstructor(
+                        model.args,
+                        bsz, num_dots, inpts, ref_tgts, partner_ref_tgts_our_view,
+                        real_ids, partner_real_ids, sel_tgt, is_self, partner_dots_mentioned_our_view, dots_mentioned
                     )
                 else:
-                    dots_mentioned = [None] * len(inpts)
-                    selection_beliefs = None
-                    generation_beliefs = None
-                outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
-                    ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, selection_beliefs, generation_beliefs
-
+                    dots_mentioned = None
+                    belief_constructor = None
+                outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs = model.forward(
+                    ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, belief_constructor,
+                    # partner_ref_inpt is used in training if partner reference prediction is supervised
+                    partner_ref_inpts=None
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
@@ -255,8 +292,10 @@ def main():
                 dots_mentioned = None
                 selection_beliefs = None
                 generation_beliefs = None
-                out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob = model.forward(
-                    ctx, inpts[0], ref_inpts[0], sel_idx, lens[0], dots_mentioned, selection_beliefs, generation_beliefs
+                out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = model.forward(
+                    ctx, inpts[0], ref_inpts[0], sel_idx, lens[0], dots_mentioned, belief_constructor,
+                    # partner_ref_inpt is used in training if partner reference prediction is supervised
+                    partner_ref_inpt=None
                 )
                 outs, ref_outs = [out], [ref_out]
             else:
@@ -324,7 +363,7 @@ def main():
                     assert not remaining_markables
                 markables_by_sentence_by_batch.append(markables_by_sentence)
 
-            for sentence_ix, (inpt, out, tgt, ref_inpt, ref_out, ref_tgt) in enumerate(
+            for sentence_ix, (inpt, out, tgt, ref_inpt, (ref_out, partner_ref_out), ref_tgt) in enumerate(
                 utils.safe_zip(inpts, outs, tgts, ref_inpts, ref_outs, ref_tgts)
             ):
                 sentence_num_markables = num_markables_by_sentence[sentence_ix]
@@ -338,20 +377,10 @@ def main():
                 lang_loss = lang_loss.sum()
 
                 if ref_inpt is not None:
-                    ref_tgt = Variable(ref_tgt)
-                    ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
-                    ref_mask = torch.zeros_like(ref_tgt)
-                    for i, nm in enumerate(sentence_num_markables):
-                        ref_mask[:nm, i, :] = 1
+                    ref_loss, ref_predictions, ref_correct, ref_total, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_exact_match_num, ref_exact_match_denom = \
+                    reference_loss.forward(ref_inpt, ref_tgt, ref_out, sentence_num_markables)
 
-                    ref_loss = (ref_crit_no_reduce(ref_out, ref_tgt) * ref_mask.float()).sum()
-                    ref_correct = (((ref_out > 0).long() == ref_tgt.long()) * ref_mask.byte()).sum().item()
-                    ref_total = ref_mask.sum().item()
-                    # ref_loss = ref_crit(ref_out, ref_tgt)
-                    # t = Variable(torch.FloatTensor([0])) # threshold
-                    ref_results = ((ref_out > 0).long() == ref_tgt.long()) * ref_mask
-                    # ref_correct = ((ref_out > 0).long() == ref_tgt.long()).sum().item()
-                    # ref_total = ref_tgt.size(0) * ref_tgt.size(1) * ref_tgt.size(2)
+                    ref_tgt = ref_tgt.transpose(0,1).contiguous()
 
                     # compute more details of reference resolution
                     for j in range(bsz): # batch idx
@@ -361,16 +390,16 @@ def main():
 
                         # add chat level details if not exists
                         if chat_id not in reference_correct:
-                            reference_correct[chat_id] = ref_results[:,j,:].sum().item()
+                            reference_correct[chat_id] = ref_correct
                         if chat_id not in reference_total:
-                            reference_total[chat_id] = ref_mask[:,j,:].sum() #ref_results[:,j,:].size(0) * ref_results[:,j,:].size(1)
+                            reference_total[chat_id] = ref_total
                         if chat_id not in model_referent_annotation:
                             model_referent_annotation[chat_id] = {}
 
                         for i in range(this_num_markables): # markable idx
                             # fixed a typo (?) here that was autobroadcasting, but it shouldn't affect correctness
-                            correct_result = ((ref_out > 0).long() == ref_tgt.long())[i,j].sum().item()
-                            exact_match_result = torch.equal((ref_out > 0).long()[i][j], ref_tgt.long()[i][j])
+                            correct_result = (ref_predictions.long() == ref_tgt.long())[i,j].sum().item()
+                            exact_match_result = torch.equal(ref_predictions.long()[i][j], ref_tgt.long()[i][j])
 
                             """
                                 Add information to variables
@@ -406,7 +435,7 @@ def main():
                                 model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'] = []
                                 model_referent_annotation[chat_id][markables[i]['markable_id']]['ambiguous'] = False
                                 model_referent_annotation[chat_id][markables[i]['markable_id']]['unidentifiable'] = False
-                                for ent, is_referent in zip(chat['scenario']['kbs'][agents[j]], (ref_out > 0).long()[i][j].tolist()):
+                                for ent, is_referent in zip(chat['scenario']['kbs'][agents[j]], ref_predictions.long()[i][j].tolist()):
                                     if is_referent:
                                         model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'].append("agent_{}_{}".format(agents[j], ent['id']))
                 else:
@@ -422,12 +451,14 @@ def main():
 
                 # END loop over sentences
 
-            sel_loss = sel_crit(sel_out, sel_tgt)
-            sel_correct = (sel_out.max(dim=1)[1] == sel_tgt).sum().item()
-            sel_total = sel_out.size(0)
+            sel_logits, _ = sel_out
+
+            sel_loss = sel_crit(sel_logits, sel_tgt)
+            sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()
+            sel_total = sel_logits.size(0)
             for i in range(sel_tgt.size(0)): # batch idx
                 chat_id = chat_ids[i]
-                sel_resuts = (sel_out.max(dim=1)[1] == sel_tgt)
+                sel_resuts = (sel_logits.max(dim=1)[1] == sel_tgt)
                 if sel_resuts[i]:
                     select_correct[chat_id] = 1
                 else:
@@ -474,14 +505,14 @@ def main():
         test_select_loss /= len(testset)
         test_select_accuracy = test_select_correct / test_select_total
         test_reference_accuracy = test_reference_correct / test_reference_total
-        print('test_reference_correct {} ; test_reference_total {}'.format(test_reference_correct, test_reference_total))
-        print('test%s %.8f | test%s %.8f' % (lang_loss_name, test_lang_loss, lang_ppl_name, np.exp(test_lang_loss)))
-        print('testselectloss %.8f | testselectaccuracy %.6f' % (test_select_loss, test_select_accuracy))
-        print('testreferenceloss %.8f | testreferenceaccuracy %.6f' % (test_reference_loss, test_reference_accuracy))
+        print('eval_reference_correct {} ; eval_reference_total {}'.format(test_reference_correct, test_reference_total))
+        print('eval%s %.8f | eval%s %.8f' % (lang_loss_name, test_lang_loss, lang_ppl_name, np.exp(test_lang_loss)))
+        print('evalselectloss %.8f | evalselectaccuracy %.6f' % (test_select_loss, test_select_accuracy))
+        print('evalreferenceloss %.8f | evalreferenceaccuracy %.6f' % (test_reference_loss, test_reference_accuracy))
         print('reference_exact_match %.6f' % (exact_match / total_num_markables))
         for k in sorted(num_markables_counter.keys()):
             print('{}: {:.4f} {:.4f} (out of {})'.format(k, num_markables_correct[k] / (num_markables_counter[k] * 7), exact_match_counter[k] / num_markables_counter[k], num_markables_counter[k]))
-        print('test anaphora: {} (out of {})'.format(correct_anaphora / total_anaphora, total_anaphora))
+        print('eval anaphora: {} (out of {})'.format(correct_anaphora / total_anaphora, total_anaphora))
 
         if args.bleu_n > 0:
             print('average bleu score {}'.format(np.mean(bleu_scores)))
@@ -504,11 +535,11 @@ def main():
         print("reference selection correlation: {}".format(np.corrcoef(reference_score, selection_score)))
 
         # keep track of results for this run
-        repeat_results["test_lang_loss"].append(test_lang_loss)
-        repeat_results["test_select_loss"].append(test_select_loss)
-        repeat_results["test_select_accuracy"].append(test_select_accuracy)
-        repeat_results["test_reference_loss"].append(test_reference_loss)
-        repeat_results["test_reference_accuracy"].append(test_reference_accuracy)
+        repeat_results["eval_lang_loss"].append(test_lang_loss)
+        repeat_results["eval_select_loss"].append(test_select_loss)
+        repeat_results["eval_select_accuracy"].append(test_select_accuracy)
+        repeat_results["eval_reference_loss"].append(test_reference_loss)
+        repeat_results["eval_reference_accuracy"].append(test_reference_accuracy)
         repeat_results["correlation_score"].append(np.corrcoef(reference_score, selection_score)[0][1])
         repeat_results["num_markables_counter"].append(copy.copy(num_markables_counter))
         repeat_results["exact_match_counter"].append(copy.copy(exact_match_counter))
@@ -528,16 +559,16 @@ def main():
         lang_ppl_name = 'perplexity'
 
     print("=================================\n\n")
-    print("number of models averaged: {}".format(len(repeat_results['test_lang_loss'])))
-    print("repeat test lang %s %.8f" % (lang_loss_name, np.mean(repeat_results["test_lang_loss"])))
-    print("repeat test select loss %.8f" % np.mean(repeat_results["test_select_loss"]))
-    print("repeat test select accuracy %.8f ( %.8f )" % (np.mean(repeat_results["test_select_accuracy"]), np.std(repeat_results["test_select_accuracy"])))
-    print("repeat test reference loss %.8f" % np.mean(repeat_results["test_reference_loss"]))
-    print("repeat test reference accuracy %.8f ( %.8f )" % (np.mean(repeat_results["test_reference_accuracy"]), np.std(repeat_results["test_reference_accuracy"])))
+    print("number of models averaged: {}".format(len(repeat_results['eval_lang_loss'])))
+    print("repeat eval lang %s %.8f" % (lang_loss_name, np.mean(repeat_results["eval_lang_loss"])))
+    print("repeat eval select loss %.8f" % np.mean(repeat_results["eval_select_loss"]))
+    print("repeat eval select accuracy %.8f ( %.8f )" % (np.mean(repeat_results["eval_select_accuracy"]), np.std(repeat_results["eval_select_accuracy"])))
+    print("repeat eval reference loss %.8f" % np.mean(repeat_results["eval_reference_loss"]))
+    print("repeat eval reference accuracy %.8f ( %.8f )" % (np.mean(repeat_results["eval_reference_accuracy"]), np.std(repeat_results["eval_reference_accuracy"])))
     print("repeat correlation score %.8f ( %.8f )" % (np.mean(repeat_results["correlation_score"]), np.std(repeat_results["correlation_score"])))
     print("repeat correlation score %.8f ( %.8f )" % (np.mean(repeat_results["correlation_score"]), np.std(repeat_results["correlation_score"])))
     print("repeat reference exact match %.8f ( %.8f )" % (np.mean(repeat_results["reference_exact_match"]), np.std(repeat_results["reference_exact_match"])))
-    print("repeat test %s %.8f ( %.8f )" % (lang_ppl_name, np.mean(repeat_results["test_perplexity"]), np.std(repeat_results["test_perplexity"])))
+    print("repeat eval %s %.8f ( %.8f )" % (lang_ppl_name, np.mean(repeat_results["eval_perplexity"]), np.std(repeat_results["eval_perplexity"])))
 
     for k in sorted(num_markables_counter.keys()):
         print("repeat accuracy and exact match:")

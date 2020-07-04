@@ -1,6 +1,7 @@
 import argparse
 import pprint
 import sys
+import os
 
 import models
 import utils
@@ -49,8 +50,8 @@ def main():
         help='random seed')
     parser.add_argument('--cuda', action='store_true', default=False,
         help='use CUDA')
-    parser.add_argument('--model_file', type=str,  default='tmp.th',
-        help='path to save the final model')
+    parser.add_argument('--model_path', type=str,  default='default', help='name to use in model saving')
+    parser.add_argument('--output_dir', type=str, default='')
     parser.add_argument('--domain', type=str, default='one_common',
         help='domain for the dialogue')
     parser.add_argument('--tensorboard_log', action='store_true', default=False,
@@ -59,6 +60,7 @@ def main():
         help='repeat training n times')
     parser.add_argument('--corpus_type', choices=['full', 'uncorrelated', 'success_only'], default='full',
         help='type of training corpus to use')
+
 
 
     engines.add_training_args(parser)
@@ -76,10 +78,17 @@ def main():
     else:
         seeds = [1]
 
+    model_output_dir = os.path.join(args.output_dir, args.model_path)
+
     for seed in seeds:
 
+        os.makedirs(model_output_dir, exist_ok=True)
+
         def model_filename_fn(name, extension):
-            return '{}_{}_{}.{}'.format(args.model_file, seed, name, extension)
+            return os.path.join(
+                model_output_dir,
+                f'{seed}_{name}.{extension}',
+            )
 
         utils.use_cuda(args.cuda)
         utils.set_seed(args.seed)
@@ -106,8 +115,12 @@ def main():
         elif args.optimizer == 'rmsprop':
             best_valid_loss, best_model = engine.train_scheduled(corpus, model_filename_fn)
 
-        utils.save_model(best_model.cpu(), model_filename_fn('best', 'th'))
-        utils.save_model(best_model.cpu().state_dict(), model_filename_fn('best', 'stdict'))
+        utils.save_model(best_model.cpu(), model_filename_fn('best', 'th'), prefix_dir=None)
+        utils.save_model(best_model.cpu().state_dict(), model_filename_fn('best', 'stdict'), prefix_dir=None)
+
+        model.flatten_parameters()
+        utils.save_model(model.cpu(), model_filename_fn(f'ep-{args.max_epoch}', 'th'), prefix_dir=None)
+        utils.save_model(model.cpu().state_dict(), model_filename_fn(f'ep-{args.max_epoch}', 'stdict'), prefix_dir=None)
 
 
 if __name__ == '__main__':

@@ -8,6 +8,7 @@ import numpy as np
 import torch
 import tqdm
 from torch.autograd import Variable
+from torch import nn
 
 from typing import List
 
@@ -81,6 +82,7 @@ class RnnReferenceEngine(EngineBase):
             ref_em_denom = ref_tgt.size(0) * ref_tgt.size(1)
         else:
             ref_loss = None
+            ref_pred = None
             ref_correct = 0
             ref_num_dots = 0
             ref_gold_positive = 0
@@ -88,7 +90,7 @@ class RnnReferenceEngine(EngineBase):
             ref_true_positive = 0
             ref_em_num = 0
             ref_em_denom = 0
-        return ref_loss, ref_correct, ref_num_dots, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_em_num, ref_em_denom
+        return ref_loss, ref_pred, ref_correct, ref_num_dots, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_em_num, ref_em_denom
 
     def _forward(self, batch):
         assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
@@ -116,11 +118,11 @@ class RnnReferenceEngine(EngineBase):
         sel_tgt = Variable(sel_tgt)
         lang_loss = self.crit(out, tgt)
 
-        ref_loss, ref_correct, ref_num_dots, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_em_num, ref_em_denom = self._ref_loss(
+        ref_loss, ref_predictions, ref_correct, ref_num_dots, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_em_num, ref_em_denom = self._ref_loss(
             ref_inpt, ref_tgt, ref_out
         )
 
-        partner_ref_loss, partner_ref_correct, partner_ref_num_dots, partner_ref_gold_positive, partner_ref_pred_positive, partner_ref_true_positive, partner_ref_em_num, partner_ref_em_denom = self._ref_loss(
+        partner_ref_loss, partner_ref_predictions, partner_ref_correct, partner_ref_num_dots, partner_ref_gold_positive, partner_ref_pred_positive, partner_ref_true_positive, partner_ref_em_num, partner_ref_em_denom = self._ref_loss(
             partner_ref_inpt, partner_ref_tgt_our_view, partner_ref_out
         )
 
@@ -365,7 +367,8 @@ class RnnReferenceEngine(EngineBase):
         return metrics['lang_loss'] * self.args.lang_weight \
                + metrics['select_loss'] * self.args.sel_weight \
                + metrics['ref_loss'] * self.args.ref_weight \
-               + metrics['partner_ref_loss'] * self.args.partner_ref_weight
+               + metrics['partner_ref_loss'] * self.args.partner_ref_weight \
+               + metrics['next_mention_loss'] * self.args.next_mention_weight
 
     def train(self, corpus, model_filename_fn):
         best_model, best_combined_valid_loss = copy.deepcopy(self.model), 1e100
@@ -398,8 +401,8 @@ class RnnReferenceEngine(EngineBase):
                 best_model = copy.deepcopy(self.model)
                 best_model.flatten_parameters()
 
-                # utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'))
-                # utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'))
+                # utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'), prefix_dir=None)
+                # utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'), prefix_dir=None)
 
         return best_combined_valid_loss, best_model
 
@@ -431,27 +434,12 @@ def int_to_bit_array(int_array, num_bits=None, base=2):
     return bits
 
 
-class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
-    @classmethod
-    def add_args(cls, parser):
-        # don't need to call super because its arguments will already be registered by engines.add_engine_args
-        pass
+class ReferenceLoss(object):
+    def __init__(self, args):
+        self.args = args
+        self.crit = nn.BCEWithLogitsLoss(reduction='none')
 
-    def _append_pad(self, inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables):
-        # FAIR's e2e code had this because it was used in the latent clustering pre-training objective; we shouldn't need it
-        bsz = inpts[0].size(1)
-        pad = torch.Tensor(bsz).fill_(self.model.word_dict.get_idx('<pad>')).long()
-        inpts.append(Variable(pad.unsqueeze(0)))
-        ref_inpts.append(None)
-        ref_tgts.append(None)
-        num_markables.append(Variable(torch.zeros(bsz).long()))
-        tgts.append(Variable(pad))
-        lens.append(torch.Tensor(bsz).cpu().fill_(0).long())
-        rev_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
-        hid_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
-        return inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables
-
-    def _ref_loss(self, ref_inpt, ref_tgt, ref_out, num_markables):
+    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables):
         if ref_inpt is None or ref_out is None:
             return None, 0, 0, 0, 0, 0, 0, 0
         ref_tgt = Variable(ref_tgt)
@@ -480,7 +468,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             assert ref_tgt.size() == ref_mask.size()
             # print('ref_out size: {}'.format(ref_out.size()))
             # print('ref_tgt size: {}'.format(ref_tgt.size()))
-            ref_loss = (self.ref_crit_no_reduce(ref_out_logits, ref_tgt) * ref_mask.float()).sum()
+            ref_loss = (self.crit(ref_out_logits, ref_tgt) * ref_mask.float()).sum()
             ref_pred = (ref_out_logits > 0).long()
 
             ref_pred_ix = bit_to_int_array(ref_pred.long())
@@ -525,7 +513,34 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         assert ref_pred_positive >= ref_true_positive
         assert ref_gold_positive >= ref_true_positive
 
-        return ref_loss, ref_correct, ref_total, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_exact_match_num, ref_exact_match_denom
+        return ref_loss, ref_pred, ref_correct, ref_total, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_exact_match_num, ref_exact_match_denom
+
+
+class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
+    @classmethod
+    def add_args(cls, parser):
+        # don't need to call super because its arguments will already be registered by engines.add_engine_args
+        pass
+
+    def __init__(self, model, args, verbose=False):
+        super(HierarchicalRnnReferenceEngine, self).__init__(model, args, verbose=verbose)
+        self.ref_loss = ReferenceLoss(args)
+        # TODO: make this less hacky, have all classes use ReferenceLoss?
+        del self.ref_crit_no_reduce
+
+    def _append_pad(self, inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables):
+        # FAIR's e2e code had this because it was used in the latent clustering pre-training objective; we shouldn't need it
+        bsz = inpts[0].size(1)
+        pad = torch.Tensor(bsz).fill_(self.model.word_dict.get_idx('<pad>')).long()
+        inpts.append(Variable(pad.unsqueeze(0)))
+        ref_inpts.append(None)
+        ref_tgts.append(None)
+        num_markables.append(Variable(torch.zeros(bsz).long()))
+        tgts.append(Variable(pad))
+        lens.append(torch.Tensor(bsz).cpu().fill_(0).long())
+        rev_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
+        hid_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
+        return inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables
 
     def _forward(self, batch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
