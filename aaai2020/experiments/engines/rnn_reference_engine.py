@@ -19,15 +19,18 @@ from engines.beliefs import BeliefConstructor
 
 ForwardRet = namedtuple(
     "ForwardRet",
-    ['lang_loss', 'unnormalized_lang_loss', 'num_words', 'ref_loss', 'ref_correct', 'sel_loss',
+    ['lang_loss', 'unnormalized_lang_loss',
      'word_attn_loss', 'feed_attn_loss',
-     'sel_correct', 'sel_num_dots',
-     'ref_gold_positive', 'ref_pred_positive', 'ref_true_positive', 'ref_num_dots', 'ref_em_num', 'ref_em_denom',
+     'num_words',
+     'ref_loss', 'ref_stats',
+     'sel_loss', 'sel_correct', 'sel_num_dots',
+     # 'ref_gold_positive', 'ref_pred_positive', 'ref_true_positive', 'ref_num_dots', 'ref_em_num', 'ref_em_denom',
      # 'attn_ref_stats',
-     'partner_ref_loss', 'partner_ref_correct', 'partner_ref_gold_positive', 'partner_ref_pred_positive',
-     'partner_ref_true_positive', 'partner_ref_num_dots', 'partner_ref_em_num', 'partner_ref_em_denom',
-     'next_mention_loss', 'next_mention_correct', 'next_mention_gold_positive', 'next_mention_pred_positive',
-     'next_mention_true_positive', 'next_mention_num_dots', 'next_mention_em_num', 'next_mention_em_denom',
+     'partner_ref_loss', 'partner_ref_stats',
+     # 'partner_ref_correct', 'partner_ref_gold_positive', 'partner_ref_pred_positive', 'partner_ref_true_positive', 'partner_ref_num_dots', 'partner_ref_em_num', 'partner_ref_em_denom',
+     'next_mention_loss', 'next_mention_stats',
+     # 'next_mention_correct', 'next_mention_gold_positive', 'next_mention_pred_positive',
+     # 'next_mention_true_positive', 'next_mention_num_dots', 'next_mention_em_num', 'next_mention_em_denom',
      ],
 )
 
@@ -90,7 +93,16 @@ class RnnReferenceEngine(EngineBase):
             ref_true_positive = 0
             ref_em_num = 0
             ref_em_denom = 0
-        return ref_loss, ref_pred, ref_correct, ref_num_dots, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_em_num, ref_em_denom
+        stats = {
+            'correct': ref_correct,
+            'num_dots': ref_num_dots,
+            'gold_positive': ref_gold_positive,
+            'pred_positive': ref_pred_positive,
+            'true_positive': ref_true_positive,
+            'exact_match_num': ref_em_num,
+            'exact_match_denom': ref_em_denom,
+        }
+        return ref_loss, ref_pred, stats
 
     def _forward(self, batch):
         assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
@@ -118,11 +130,11 @@ class RnnReferenceEngine(EngineBase):
         sel_tgt = Variable(sel_tgt)
         lang_loss = self.crit(out, tgt)
 
-        ref_loss, ref_predictions, ref_correct, ref_num_dots, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_em_num, ref_em_denom = self._ref_loss(
+        ref_loss, ref_predictions, ref_stats = self._ref_loss(
             ref_inpt, ref_tgt, ref_out
         )
 
-        partner_ref_loss, partner_ref_predictions, partner_ref_correct, partner_ref_num_dots, partner_ref_gold_positive, partner_ref_pred_positive, partner_ref_true_positive, partner_ref_em_num, partner_ref_em_denom = self._ref_loss(
+        partner_ref_loss, partner_ref_predictions, partner_ref_stats = self._ref_loss(
             partner_ref_inpt, partner_ref_tgt_our_view, partner_ref_out
         )
 
@@ -143,38 +155,19 @@ class RnnReferenceEngine(EngineBase):
         return ForwardRet(
             lang_loss=lang_loss,
             unnormalized_lang_loss=0,
-            num_words=1,
-            ref_loss=ref_loss,
-            ref_correct=ref_correct,
-            sel_loss=sel_loss,
             word_attn_loss=word_attn_loss,
             feed_attn_loss=feed_attn_loss,
+            num_words=1,
+            ref_loss=ref_loss,
+            ref_stats=ref_stats,
+            sel_loss=sel_loss,
             sel_correct=sel_correct,
             sel_num_dots=sel_total,
-            ref_gold_positive=ref_gold_positive,
-            ref_pred_positive=ref_pred_positive,
-            ref_true_positive=ref_true_positive,
-            ref_num_dots=ref_num_dots,
-            ref_em_num=ref_em_num,
-            ref_em_denom=ref_em_denom,
-            # attn_ref_stats=attn_ref_stats,
             partner_ref_loss=partner_ref_loss,
-            partner_ref_correct=partner_ref_correct,
-            partner_ref_gold_positive=partner_ref_gold_positive,
-            partner_ref_pred_positive=partner_ref_pred_positive,
-            partner_ref_true_positive=partner_ref_true_positive,
-            partner_ref_num_dots=partner_ref_num_dots,
-            partner_ref_em_num=partner_ref_em_num,
-            partner_ref_em_denom=partner_ref_em_denom,
+            partner_ref_stats=partner_ref_stats,
             # TODO
             next_mention_loss=None,
-            next_mention_correct=0,
-            next_mention_gold_positive=0,
-            next_mention_pred_positive=0,
-            next_mention_true_positive=0,
-            next_mention_num_dots=0,
-            next_mention_em_num=0,
-            next_mention_em_denom=0,
+            next_mention_stats={},
         )
 
     def train_batch(self, batch, epoch):
@@ -238,8 +231,8 @@ class RnnReferenceEngine(EngineBase):
         correct = metric_dict_src['{}_correct'.format(prefix)]
         num_dots = metric_dict_src['{}_num_dots'.format(prefix)]
 
-        em_num = metric_dict_src['{}_em_num'.format(prefix)]
-        em_denom = metric_dict_src['{}_em_denom'.format(prefix)]
+        em_num = metric_dict_src['{}_exact_match_num'.format(prefix)]
+        em_denom = metric_dict_src['{}_exact_match_denom'.format(prefix)]
 
         precision = true_positive / pred_positive if pred_positive > 0 else 0
         recall = true_positive / gold_positive if gold_positive > 0 else 0
@@ -250,7 +243,7 @@ class RnnReferenceEngine(EngineBase):
         metric_dict_tgt['{}_recall'.format(prefix)] = recall
         metric_dict_tgt['{}_f1'.format(prefix)] = f1
 
-        metric_dict_tgt['{}_em'.format(prefix)] = em_num / em_denom if em_denom > 0 else 0
+        metric_dict_tgt['{}_exact_match'.format(prefix)] = em_num / em_denom if em_denom > 0 else 0
 
     def _pass(self, dataset, batch_fn, split_name, use_tqdm, epoch):
         start_time = time.time()
@@ -261,7 +254,17 @@ class RnnReferenceEngine(EngineBase):
             # for batch in trainset:
             # lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
             forward_ret = batch_fn(batch, epoch)
-            metrics = utils.sum_dicts(metrics, forward_ret._asdict())
+            batch_metrics = {}
+            for key, value in forward_ret._asdict().items():
+                if key.endswith("_stats"):
+                    assert isinstance(value, dict)
+                    prefix = key[:-len("_stats")]
+                    for sub_k, sub_v in value.items():
+                        batch_metrics[f'{prefix}_{sub_k}'] = sub_v
+                else:
+                    assert not isinstance(value, dict)
+                    batch_metrics[key] = value
+            metrics = utils.sum_dicts(metrics, batch_metrics)
 
         print("{} word_attn_loss: {:.4f}".format(split_name, metrics['word_attn_loss']))
         print("{} feed_attn_loss: {:.4f}".format(split_name, metrics['feed_attn_loss']))
@@ -276,7 +279,7 @@ class RnnReferenceEngine(EngineBase):
             'partner_ref_loss': metrics['partner_ref_loss'] / len(dataset),
             'next_mention_loss': metrics['next_mention_loss'] / len(dataset),
             'select_loss': metrics['sel_loss'] / len(dataset),
-            # do select_accuracy here b/c we won't need F1 for it
+            # do select_accuracy here b/c we won't call add_metrics on select
             'select_accuracy': metrics['sel_correct'] / metrics['sel_num_dots'],
             'time': time_elapsed,
             'correct_ppl': np.exp(metrics['unnormalized_lang_loss'] / metrics['num_words']),
@@ -322,11 +325,11 @@ class RnnReferenceEngine(EngineBase):
                 quantities = [
                     ['lang_loss', 'ppl(avg exp lang_loss)', 'correct_ppl'],
                     ['select_loss', 'select_accuracy'],
-                    ['ref_loss', 'ref_accuracy', 'ref_precision', 'ref_recall', 'ref_f1', 'ref_em'],
+                    ['ref_loss', 'ref_accuracy', 'ref_precision', 'ref_recall', 'ref_f1', 'ref_exact_match'],
                     ['partner_ref_loss', 'partner_ref_accuracy', 'partner_ref_precision', 'partner_ref_recall',
-                     'partner_ref_f1', 'partner_ref_em'],
+                     'partner_ref_f1', 'partner_ref_exact_match'],
                     ['next_mention_loss', 'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall',
-                     'next_mention_f1', 'next_mention_em'],
+                     'next_mention_f1', 'next_mention_exact_match'],
                 ]
                 for line_metrics in quantities:
                     print('epoch {:03d} \t '.format(epoch) + ' \t '.join(
@@ -391,11 +394,8 @@ class RnnReferenceEngine(EngineBase):
 
             if combined_valid_loss < best_combined_valid_loss:
                 print(
-                    "update best model: valid_lang_loss %.4f \t valid_select_loss %.4f \t valid_select_acc %.4f \t valid_ref_loss %.4f " %
-                    (
-                        metrics['valid']['lang_loss'], metrics['valid']['select_loss'],
-                        metrics['valid']['select_accuracy'],
-                        metrics['valid']['ref_loss'])
+                    f"update best model -- valid combined: {combined_valid_loss:.4f}\t" +
+                    '\t'.join(f'{name} {metrics["valid"][name]:.4f}' for name in ['lang_loss', 'select_loss', 'select_accuracy', 'ref_loss', 'partner_ref_loss', 'next_mention_loss'])
                 )
                 best_combined_valid_loss = combined_valid_loss
                 best_model = copy.deepcopy(self.model)
@@ -439,9 +439,20 @@ class ReferenceLoss(object):
         self.args = args
         self.crit = nn.BCEWithLogitsLoss(reduction='none')
 
+    def empty_stats(self):
+        return {
+            'correct': 0,
+            'num_dots': 0,
+            'gold_positive': 0,
+            'pred_positive': 0,
+            'true_positive': 0,
+            'exact_match_num': 0,
+            'exact_match_denom': 0,
+        }
+
     def forward(self, ref_inpt, ref_tgt, ref_out, num_markables):
         if ref_inpt is None or ref_out is None:
-            return None, 0, 0, 0, 0, 0, 0, 0
+            return None, None, self.empty_stats()
         ref_tgt = Variable(ref_tgt)
         ref_mask = torch.zeros_like(ref_tgt)
         for i, nm in enumerate(num_markables):
@@ -474,26 +485,12 @@ class ReferenceLoss(object):
             ref_pred_ix = bit_to_int_array(ref_pred.long())
 
         else:
-            # check that there are 7 dots
-            # assert num_dots == 7
-            # a, b, c, d, e, f, g = (ref_tgt.select(-1, ix).flatten() for ix in range(7))
-            # # ref_out either is N x batch x 2 x 2 x ... (where there are num_dots 2s) or batch x 2 x 2 ...
-            # assert ref_out.dim() in (num_dots + 2, num_dots + 1)
-            #
-            # # N x batch
-            #
-            # if ref_out.dim() == num_dots + 2:
-            #     ref_out = ref_out.view(*((-1,) + (2,) * num_dots))
-            #     N_bsz = ref_out.size(0)
-            #     ref_loss = -(ref_out[torch.arange(N_bsz), a, b, c, d, e, f, g] * ref_mask_instance_level.view(-1)).sum()
-
             ref_tgt_reshape = ref_tgt.view(-1, num_dots)
             ref_out_reshape = ref_out_full.view(-1, 2 ** num_dots)
             N_bsz = ref_tgt_reshape.size(0)
             assert N_bsz == ref_out_reshape.size(0)
 
-            ref_loss = -(
-                ref_out_reshape[torch.arange(N_bsz), ref_tgt_ix.view(-1)] * ref_mask_instance_level.view(-1)).sum()
+            ref_loss = -(ref_out_reshape[torch.arange(N_bsz), ref_tgt_ix.view(-1)] * ref_mask_instance_level.view(-1)).sum()
             # N x bsz
             ref_pred_ix = ref_out_reshape.argmax(-1).view(N, bsz)
             # N x bsz x num_dots
@@ -502,18 +499,20 @@ class ReferenceLoss(object):
         # N x bsz
         ref_exact_matches = ((ref_tgt_ix == ref_pred_ix) & ref_mask_instance_level.bool())
 
-        ref_correct = ((ref_pred == ref_tgt.long()) * ref_mask.byte()).sum().item()
-        ref_total = ref_mask.sum().item()
-        ref_gold_positive = ref_tgt.sum().item()
-        ref_pred_positive = (ref_pred * ref_mask.byte()).sum().item()
-        ref_true_positive = (ref_pred & ref_tgt.bool()).sum().item()
-        ref_exact_match_num = ref_exact_matches.sum().float().item()
-        ref_exact_match_denom = ref_mask_instance_level.sum().float().item()
+        stats = {
+            'correct': ((ref_pred == ref_tgt.long()) * ref_mask.byte()).sum().item(),
+            'num_dots': ref_mask.sum().item(),
+            'gold_positive': ref_tgt.sum().item(),
+            'pred_positive': (ref_pred * ref_mask.byte()).sum().item(),
+            'true_positive': (ref_pred & ref_tgt.bool()).sum().item(),
+            'exact_match_num': ref_exact_matches.sum().float().item(),
+            'exact_match_denom': ref_mask_instance_level.sum().float().item(),
+        }
 
-        assert ref_pred_positive >= ref_true_positive
-        assert ref_gold_positive >= ref_true_positive
+        assert stats['pred_positive'] >= stats['true_positive']
+        assert stats['gold_positive'] >= stats['true_positive']
 
-        return ref_loss, ref_pred, ref_correct, ref_total, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_exact_match_num, ref_exact_match_denom
+        return ref_loss, ref_pred, stats
 
 
 class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
@@ -541,6 +540,9 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         rev_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
         hid_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
         return inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables
+
+    def _ref_loss(self, *args):
+        return self.ref_loss.forward(*args)
 
     def _forward(self, batch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
@@ -603,23 +605,13 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         unnormed_lang_loss = sum(lang_losses)
         lang_loss = unnormed_lang_loss / total_lens
 
-        ref_correct = 0
-        ref_total = 0
-        ref_gold_positive = 0
-        ref_pred_positive = 0
-        ref_true_positive = 0
-        ref_em_num = 0
-        ref_em_denom = 0
         ref_losses = []
+        # other keys and values will be added
+        ref_stats = {'num_dots': 0}
 
-        partner_ref_correct = 0
-        partner_ref_num_dots = 0
-        partner_ref_gold_positive = 0
-        partner_ref_pred_positive = 0
-        partner_ref_true_positive = 0
-        partner_ref_em_num = 0
-        partner_ref_em_denom = 0
         partner_ref_losses = []
+        # other keys and values will be added
+        partner_ref_stats = {'num_dots': 0}
 
         attn_ref_true_positive = 0
         attn_ref_total = 0
@@ -642,28 +634,16 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             if (this_num_markables == 0).all() or ref_tgt is None:
                 continue
             assert max(this_num_markables) == ref_tgt.size(1)
-            _ref_loss, _ref_correct, _ref_total, _ref_gold_positive, _ref_pred_positive, _ref_true_positive, _ref_em_num, _ref_em_denom = self._ref_loss(
+            _ref_loss, _ref_pred, _ref_stats = self._ref_loss(
                 ref_inpt, ref_tgt, ref_out, this_num_markables
             )
-            ref_correct += _ref_correct
-            ref_total += _ref_total
-            ref_gold_positive += _ref_gold_positive
-            ref_pred_positive += _ref_pred_positive
-            ref_true_positive += _ref_true_positive
-            ref_em_num += _ref_em_num
-            ref_em_denom += _ref_em_denom
             ref_losses.append(_ref_loss)
+            ref_stats = utils.sum_dicts(ref_stats, _ref_stats)
 
-            _partner_ref_loss, _partner_ref_correct, _partner_ref_total, _partner_ref_gold_positive, _partner_ref_pred_positive, _partner_ref_true_positive, _partner_ref_em_num, _partner_ref_em_denom = self._ref_loss(
+            _partner_ref_loss, _partner_ref_pred, _partner_ref_stats = self._ref_loss(
                 partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables
             )
-            partner_ref_correct += _partner_ref_correct
-            partner_ref_num_dots += _partner_ref_total
-            partner_ref_gold_positive += _partner_ref_gold_positive
-            partner_ref_pred_positive += _partner_ref_pred_positive
-            partner_ref_true_positive += _partner_ref_true_positive
-            partner_ref_em_num += _partner_ref_em_num
-            partner_ref_em_denom += _partner_ref_em_denom
+            partner_ref_stats = utils.sum_dicts(partner_ref_stats, _partner_ref_stats)
             if _partner_ref_loss is not None:
                 partner_ref_losses.append(_partner_ref_loss)
 
@@ -752,41 +732,24 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                     ))
                 else:
                     feed_attn_losses.append(feed_attn_loss)
-        ref_loss = sum(ref_losses) / ref_total
+        ref_loss = sum(ref_losses) / ref_stats['num_dots']
 
-        if partner_ref_num_dots == 0 or (not partner_ref_losses):
-            assert partner_ref_num_dots == 0 and (not partner_ref_losses)
+        if partner_ref_stats['num_dots'] == 0 or (not partner_ref_losses):
+            assert partner_ref_stats['num_dots'] == 0 and (not partner_ref_losses)
             partner_ref_loss = None
         else:
-            partner_ref_loss = sum(partner_ref_losses) / partner_ref_num_dots
+            partner_ref_loss = sum(partner_ref_losses) / partner_ref_stats['num_dots']
 
         # print('sel_out.size(): {}'.format(sel_out.size()))
         # print('sel_tgt.size(): {}'.format(sel_tgt.size()))
 
         # sel_out contains the output of AttentionLayer: marginal_logits and full_log_probs, but since this is an AttentionLayer, full_log_probs is None
-        # sel_out[1] should be None because we're not using a
+        # sel_out[1] should be None because we're not using a structured attention layer
         sel_logits, _ = sel_out
 
         sel_loss = self.sel_crit(sel_logits, sel_tgt)
         sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()
         sel_total = sel_logits.size(0)
-
-        # print("ref_gold_positive: {}".format(ref_gold_positive))
-        # print("ref_pred_positive: {}".format(ref_pred_positive))
-        # print("ref_correct: {}".format(ref_correct))
-        # print("ref_total: {}".format(ref_total))
-        #
-        # print("attn_ref_gold_positive: {}".format(attn_ref_gold_positive))
-        # print("attn_ref_pred_positive: {}".format(attn_ref_pred_positive))
-        # print("attn_ref_true_positive: {}".format(attn_ref_true_positive))
-        # print("attn_ref_total: {}".format(ref_total))
-
-        # attn_ref_stats = {
-        #     'gold_positive': attn_ref_gold_positive,
-        #     'pred_positive': attn_ref_pred_positive,
-        #     'true_positive': attn_ref_true_positive,
-        #     'total': attn_ref_total,
-        # }
 
         if word_attn_losses:
             word_attn_loss = sum(word_attn_losses) / len(word_attn_losses)
@@ -798,14 +761,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         else:
             feed_attn_loss = None
 
-        next_mention_correct = 0
-        next_mention_num_dots = 0
-        next_mention_gold_positive = 0
-        next_mention_pred_positive = 0
-        next_mention_true_positive = 0
-        next_mention_em_num = 0
-        next_mention_em_denom = 0
         next_mention_losses = []
+        next_mention_stats = {'num_dots': 0}
 
         if self.args.next_mention_prediction:
             assert len(dots_mentioned) + 1 == len(next_mention_outs)
@@ -816,58 +773,33 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 pred_dots_mentioned_logits = next_mention_outs[i]
 
                 # hack; pass True for inpt because this method only uses it to ensure it's not null
-                _loss, _correct, _total, _gold_positive, _pred_positive, _true_positive, _em_num, _em_denom = self._ref_loss(
+                _loss, _pred, _stats = self._ref_loss(
                     True, gold_dots_mentioned, pred_dots_mentioned_logits, pseudo_num_mentions
                 )
+                next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
                 # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
                 # print("{} / {}".format(_correct, _total))
                 next_mention_losses.append(_loss)
-                next_mention_correct += _correct
-                next_mention_num_dots += _total
-                next_mention_gold_positive += _gold_positive
-                next_mention_pred_positive += _pred_positive
-                next_mention_true_positive += _true_positive
-                next_mention_em_num += _em_num
-                next_mention_em_denom += _em_denom
 
-        if next_mention_num_dots == 0 or (not next_mention_losses):
-            assert next_mention_num_dots == 0 and (not next_mention_losses)
+        if next_mention_stats['num_dots'] == 0 or (not next_mention_losses):
+            assert next_mention_stats['num_dots'] == 0 and (not next_mention_losses)
             next_mention_loss = None
         else:
-            next_mention_loss = sum(next_mention_losses) / next_mention_num_dots
+            next_mention_loss = sum(next_mention_losses) / next_mention_stats['num_dots']
 
         return ForwardRet(
             lang_loss=lang_loss,
             unnormalized_lang_loss=unnormed_lang_loss.item(),
             num_words=total_lens_no_eos,
             ref_loss=ref_loss,
-            ref_correct=ref_correct,
             sel_loss=sel_loss,
             word_attn_loss=word_attn_loss,
             feed_attn_loss=feed_attn_loss,
             sel_correct=sel_correct,
             sel_num_dots=sel_total,
-            ref_gold_positive=ref_gold_positive,
-            ref_pred_positive=ref_pred_positive,
-            ref_true_positive=ref_true_positive,
-            ref_num_dots=ref_total,
-            ref_em_num=ref_em_num,
-            ref_em_denom=ref_em_denom,
-            # attn_ref_stats=attn_ref_stats,
+            ref_stats=ref_stats,
             partner_ref_loss=partner_ref_loss,
-            partner_ref_correct=partner_ref_correct,
-            partner_ref_gold_positive=partner_ref_gold_positive,
-            partner_ref_pred_positive=partner_ref_pred_positive,
-            partner_ref_true_positive=partner_ref_true_positive,
-            partner_ref_num_dots=partner_ref_num_dots,
-            partner_ref_em_num=partner_ref_em_num,
-            partner_ref_em_denom=partner_ref_em_denom,
+            partner_ref_stats=partner_ref_stats,
             next_mention_loss=next_mention_loss,
-            next_mention_correct=next_mention_correct,
-            next_mention_gold_positive=next_mention_gold_positive,
-            next_mention_pred_positive=next_mention_pred_positive,
-            next_mention_true_positive=next_mention_true_positive,
-            next_mention_num_dots=next_mention_num_dots,
-            next_mention_em_num=next_mention_em_num,
-            next_mention_em_denom=next_mention_em_denom,
+            next_mention_stats=next_mention_stats,
         )
