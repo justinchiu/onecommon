@@ -6,6 +6,7 @@ import argparse
 import copy
 import json
 import os
+import re
 from collections import Counter, defaultdict
 import pprint
 import sys
@@ -30,7 +31,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from engines.beliefs import BeliefConstructor
-from engines.rnn_reference_engine import make_dots_mentioned_multi, ReferenceLoss
+from engines.rnn_reference_engine import make_dots_mentioned_multi, ReferencePredictor, PragmaticReferencePredictor
 
 sns.set(font_scale=1.15)
 
@@ -68,9 +69,9 @@ def main():
     parser.add_argument('--unk_threshold', type=int, default=10,
         help='minimum word frequency to be in dictionary')
     parser.add_argument('--model_dir', type=str,
-        help='directory containing {seed}_best.th')
+        help='directory containing {split}_best.th')
     parser.add_argument('--model_file', type=str,
-                        help='full model file (should end with _{seed}_best.th) \
+                        help='full model file (should end with {split}_best.th or {split}_ep-*.th) \
                         [for backward compatibility with non-directory-based saving]')
     parser.add_argument('--seed', type=int, default=1,
         help='random seed')
@@ -113,7 +114,10 @@ def main():
         help='pass dots_mentioned and selection_beliefs and generation_beliefs'
     )
 
-    args = parser.parse_args()
+    parser.add_argument(
+        '--reference_prediction', choices=['l0', 'l1'], default='l0'
+    )
+    PragmaticReferencePredictor.add_args(parser)
 
     utils.dump_git_status(sys.stdout)
     print(' '.join(sys.argv))
@@ -129,11 +133,15 @@ def main():
 
     if args.repeat_test:
         assert args.model_dir
-        seeds = list(range(10))
+        splits = list(range(10))
     else:
         assert args.model_file
-        assert args.model_file.endswith(f"_{args.seed}_best.th")
-        seeds = [args.seed]
+        # assert args.model_file.endswith(f"{args.seed}_best.th") or args.model_file.endswith(f"{args.seed}_latest.th")
+        # check that this model has a split number that matches the dataset
+        split = 1
+        splits = [1]
+        match = re.compile(r".*{}_(best|ep-\d+).th$".format(split)).match(args.model_file)
+        assert match is not None, args.model_file
 
     repeat_results = defaultdict(list)
 
@@ -141,7 +149,7 @@ def main():
 
     num_dots = 7
 
-    for seed in seeds:
+    for split in splits:
         device_id = utils.use_cuda(args.cuda)
         utils.set_seed(args.seed)
 
@@ -154,7 +162,7 @@ def main():
         if args.model_dir:
             model_filename = os.path.join(
                 args.model_dir,
-                f'{seed}_{name}.{extension}',
+                f'{split}_{name}.{extension}',
             )
         else:
             model_filename = args.model_file
@@ -171,9 +179,9 @@ def main():
 
         corpus = model.corpus_ty(
             domain, args.data,
-            train='train_reference_{}.txt'.format(seed),
-            valid='valid_reference_{}.txt'.format(seed),
-            test='test_reference_{}.txt'.format(seed), #test='selfplay_reference_{}.txt'.format(seed),
+            train='train_reference_{}.txt'.format(split),
+            valid='valid_reference_{}.txt'.format(split),
+            test='test_reference_{}.txt'.format(split), #test='selfplay_reference_{}.txt'.format(seed),
             freq_cutoff=args.unk_threshold, verbose=True,
             max_instances_per_split=args.max_instances_per_split
         )
@@ -231,7 +239,14 @@ def main():
 
         bleu_scores = []
 
-        reference_loss = ReferenceLoss(model.args)
+        merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(model.args)))
+
+        if args.reference_prediction == 'l1':
+            reference_predictor = PragmaticReferencePredictor(merged_args)
+        elif args.reference_prediction == 'l0':
+            reference_predictor = ReferencePredictor(merged_args)
+        else:
+            raise ValueError(f"invalid --reference_prediction {args.reference_prediction}")
 
         for batch in tqdm.tqdm(testset, ncols=80):
             if isinstance(corpus, ReferenceSentenceCorpus):
@@ -377,8 +392,15 @@ def main():
                 lang_loss = lang_loss.sum()
 
                 if ref_inpt is not None:
-                    ref_loss, ref_predictions, ref_correct, ref_total, ref_gold_positive, ref_pred_positive, ref_true_positive, ref_exact_match_num, ref_exact_match_denom = \
-                    reference_loss.forward(ref_inpt, ref_tgt, ref_out, sentence_num_markables)
+                    if args.reference_prediction == 'l1':
+                        scoring_function = lambda candidates: torch.zeros_like(candidates).select(dim=-1, index=0)
+                        ref_loss, ref_predictions, ref_stats = reference_predictor.forward(
+                            ref_inpt, ref_tgt, ref_out, sentence_num_markables, scoring_function
+                        )
+                    else:
+                        ref_loss, ref_predictions, ref_stats = reference_predictor.forward(
+                            ref_inpt, ref_tgt, ref_out, sentence_num_markables
+                        )
 
                     ref_tgt = ref_tgt.transpose(0,1).contiguous()
 
@@ -390,9 +412,9 @@ def main():
 
                         # add chat level details if not exists
                         if chat_id not in reference_correct:
-                            reference_correct[chat_id] = ref_correct
+                            reference_correct[chat_id] = ref_stats['correct']
                         if chat_id not in reference_total:
-                            reference_total[chat_id] = ref_total
+                            reference_total[chat_id] = ref_stats['num_dots']
                         if chat_id not in model_referent_annotation:
                             model_referent_annotation[chat_id] = {}
 
@@ -440,14 +462,12 @@ def main():
                                         model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'].append("agent_{}_{}".format(agents[j], ent['id']))
                 else:
                     ref_loss = None
-                    ref_correct = 0
-                    ref_total = 0
 
                 test_lang_loss += lang_loss.item()
                 if ref_loss:
                     test_reference_loss += ref_loss.item()
-                test_reference_correct += ref_correct
-                test_reference_total += ref_total
+                test_reference_correct += ref_stats['correct']
+                test_reference_total += ref_stats['num_dots']
 
                 # END loop over sentences
 
@@ -528,7 +548,7 @@ def main():
         #ax = sns.scatterplot(x=reference_score, y=selection_score, size=0, legend=False)
         sns.regplot(x=reference_score, y=selection_score)
         #plt.axes().set_aspect('equal', 'datalim')
-        plt.savefig('reference_selection_{}.png'.format(seed), dpi=300)
+        plt.savefig('reference_selection_{}.png'.format(split), dpi=300)
         plt.clf()
         reference_score = np.array(reference_score)
         selection_score = np.array(selection_score)
@@ -576,13 +596,13 @@ def main():
         exact_match = []
         exact_match_rate = []
         num_markables_correct = []
-        for seed in range(len(seeds)):
-            if seed >= len(repeat_results["num_markables_counter"]):
+        for split in range(len(splits)):
+            if split >= len(repeat_results["num_markables_counter"]):
                 continue
-            num_markables.append(repeat_results["num_markables_counter"][seed][k])
-            exact_match.append(repeat_results["exact_match_counter"][seed][k])
-            exact_match_rate.append(repeat_results["exact_match_counter"][seed][k] / repeat_results["num_markables_counter"][seed][k])
-            num_markables_correct.append(repeat_results["num_markables_correct"][seed][k] / (repeat_results["num_markables_counter"][seed][k] * 7))
+            num_markables.append(repeat_results["num_markables_counter"][split][k])
+            exact_match.append(repeat_results["exact_match_counter"][split][k])
+            exact_match_rate.append(repeat_results["exact_match_counter"][split][k] / repeat_results["num_markables_counter"][split][k])
+            num_markables_correct.append(repeat_results["num_markables_correct"][split][k] / (repeat_results["num_markables_counter"][split][k] * 7))
         print('{}: {:.5f} (std {}) {:.5f} (std {}) (count {})'.format(k, np.mean(num_markables_correct), np.std(num_markables_correct), np.mean(exact_match_rate), np.std(exact_match_rate), np.mean(num_markables)))
 
     dump_json(model_referent_annotation, "model_referent_annotation.json")

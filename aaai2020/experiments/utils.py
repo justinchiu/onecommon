@@ -20,6 +20,8 @@ import subprocess
 
 from contextlib import contextmanager
 
+from collections import defaultdict
+
 
 def backward_hook(grad):
     """Hook for backward pass."""
@@ -47,7 +49,7 @@ def load_model(file_name, map_location=None, prefix_dir=MODEL_DIR):
             return torch.load(f)
 
 def sum_dicts(d1, d2):
-    ret = {}
+    ret = defaultdict(lambda: 0.0)
     for key in set(d1.keys()) | set(d2.keys()):
         v1 = d1.get(key, 0.0)
         v2 = d2.get(key, 0.0)
@@ -63,6 +65,20 @@ def sum_dicts(d1, d2):
             v2 = 0
         ret[key] = v1 + v2
     return ret
+
+def merge_dicts(d1, d2):
+    # d1 has priority
+    merged = {}
+    for k in set(d1.keys()) | set(d2.keys()):
+        if k in d1:
+            v = d1[k]
+            if k in d2:
+                if d2[k] != v:
+                    print(f"overwriting key {k} with value {d2[k]} with value {v}")
+            merged[k] = v
+        elif k in d2:
+            merged[k] = d2[k]
+    return merged
 
 def safe_zip(*lists):
     for l in lists[1:]:

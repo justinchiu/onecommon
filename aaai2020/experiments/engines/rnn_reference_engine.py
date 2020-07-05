@@ -1,14 +1,18 @@
+import string
 from collections import namedtuple
 import copy
 import pprint
 import time
 
+import pyro
 import math
 import numpy as np
 import torch
 import tqdm
 from torch.autograd import Variable
 from torch import nn
+
+from collections import defaultdict
 
 from typing import List
 
@@ -434,7 +438,7 @@ def int_to_bit_array(int_array, num_bits=None, base=2):
     return bits
 
 
-class ReferenceLoss(object):
+class ReferencePredictor(object):
     def __init__(self, args):
         self.args = args
         self.crit = nn.BCEWithLogitsLoss(reduction='none')
@@ -450,9 +454,40 @@ class ReferenceLoss(object):
             'exact_match_denom': 0,
         }
 
-    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables):
-        if ref_inpt is None or ref_out is None:
-            return None, None, self.empty_stats()
+    def compute_stats(self, ref_mask, ref_tgt, ref_tgt_ix=None, ref_pred=None, ref_pred_ix=None):
+        assert ref_pred is not None or ref_pred_ix is not None
+
+        num_dots = ref_tgt.size(-1)
+        if ref_tgt_ix is None:
+            ref_tgt_ix = bit_to_int_array(ref_tgt.long())
+        assert ref_tgt_ix.max().item() <= 2 ** num_dots
+
+        if ref_pred is None:
+            ref_pred = int_to_bit_array(ref_pred_ix, num_bits=num_dots)
+
+        if ref_pred_ix is None:
+            ref_pred_ix = bit_to_int_array(ref_pred.long())
+
+        ref_mask_instance_level = (ref_mask.sum(-1) > 0).float()
+
+        # N x bsz
+        ref_exact_matches = ((ref_tgt_ix == ref_pred_ix) & ref_mask_instance_level.bool())
+
+        stats = {
+            'correct': ((ref_pred == ref_tgt.long()) * ref_mask.byte()).sum().item(),
+            'num_dots': ref_mask.sum().item(),
+            'gold_positive': ref_tgt.sum().item(),
+            'pred_positive': (ref_pred * ref_mask.byte()).sum().item(),
+            'true_positive': (ref_pred & ref_tgt.bool()).sum().item(),
+            'exact_match_num': ref_exact_matches.sum().float().item(),
+            'exact_match_denom': ref_mask_instance_level.sum().float().item(),
+        }
+
+        assert stats['pred_positive'] >= stats['true_positive']
+        assert stats['gold_positive'] >= stats['true_positive']
+        return stats
+
+    def preprocess(self, ref_tgt, num_markables):
         ref_tgt = Variable(ref_tgt)
         ref_mask = torch.zeros_like(ref_tgt)
         for i, nm in enumerate(num_markables):
@@ -462,6 +497,14 @@ class ReferenceLoss(object):
         ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
         # print(ref_tgt.size())
         ref_mask = torch.transpose(ref_mask, 0, 1).contiguous()
+        return ref_tgt, ref_mask
+
+    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables):
+        if ref_inpt is None or ref_out is None:
+            return None, None, self.empty_stats()
+
+        ref_tgt, ref_mask = self.preprocess(ref_tgt, num_markables)
+
         ref_out_logits, ref_out_full = ref_out
         del ref_out
 
@@ -496,22 +539,118 @@ class ReferenceLoss(object):
             # N x bsz x num_dots
             ref_pred = int_to_bit_array(ref_pred_ix, num_bits=num_dots)
 
-        # N x bsz
-        ref_exact_matches = ((ref_tgt_ix == ref_pred_ix) & ref_mask_instance_level.bool())
+        stats = self.compute_stats(ref_mask, ref_tgt, ref_tgt_ix, ref_pred, ref_pred_ix)
 
-        stats = {
-            'correct': ((ref_pred == ref_tgt.long()) * ref_mask.byte()).sum().item(),
-            'num_dots': ref_mask.sum().item(),
-            'gold_positive': ref_tgt.sum().item(),
-            'pred_positive': (ref_pred * ref_mask.byte()).sum().item(),
-            'true_positive': (ref_pred & ref_tgt.bool()).sum().item(),
-            'exact_match_num': ref_exact_matches.sum().float().item(),
-            'exact_match_denom': ref_mask_instance_level.sum().float().item(),
-        }
+        return ref_loss, ref_pred, stats
 
-        assert stats['pred_positive'] >= stats['true_positive']
-        assert stats['gold_positive'] >= stats['true_positive']
 
+class PragmaticReferencePredictor(ReferencePredictor):
+    @staticmethod
+    def add_args(parser):
+        parser.add_argument('--l1_sample', action='store_true', help='l1 listener should sample (otherwise top-k)')
+        parser.add_argument('--l1_candidates', type=int, default=10, help='number of dot configurations for l1 to consider')
+        parser.add_argument('--l1_speaker_weight', type=float, default=1.0, help='(1 - lambda) * l0_log_prob + (lambda) * s0_log_prob')
+
+    def __init__(self, args):
+        super().__init__(args)
+        self._logit_to_full_einsum_str = None
+
+    def logit_to_full_einsum_str(self, logits):
+        if self._logit_to_full_einsum_str is not None:
+            return self._logit_to_full_einsum_str
+
+        mentions, bsz, num_ent = logits.size()
+        var_names = string.ascii_lowercase[:num_ent]
+        batch_name = 'z'
+        mention_name = 'y'
+        assert batch_name not in var_names
+        assert mention_name not in var_names
+
+        self._logit_to_full_einsum_str = '{}->{}'.format(
+            ','.join('{}{}{}'.format(mention_name, batch_name, var_name) for var_name in var_names),
+            '{}{}{}'.format(mention_name, batch_name, ''.join(var_names))
+        )
+        return self._logit_to_full_einsum_str
+
+    def logits_to_full(self, logits):
+        num_ent = logits.size(-1)
+        einsum_str = self.logit_to_full_einsum_str(logits)
+
+        # mentions x bsz x num_ent x 2
+        stack_logits = torch.stack((logits, -logits), dim=-1)
+        assert stack_logits.dim() == 4
+
+        # num_ent arrays, each of size mentions x bsz x 2
+        factored_logits = (l.squeeze(-2) for l in stack_logits.split(1, dim=-2))
+
+        outputs = pyro.ops.contract.einsum(
+            einsum_str,
+            *factored_logits,
+            modulo_total=True,
+            backend='pyro.ops.einsum.torch_log',
+        )
+        assert len(outputs) == 1
+        output = outputs[0]
+        assert output.dim() == 2 + num_ent
+        return output
+
+    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, scoring_function):
+        k = self.args.l1_candidates
+        if ref_inpt is None or ref_out is None:
+            return None, None, self.empty_stats()
+
+        ref_tgt, ref_mask = self.preprocess(ref_tgt, num_markables)
+
+        ref_out_logits, ref_out_full = ref_out
+        # TODO: consider using a DP
+        if ref_out_full is None:
+            ref_out_full = self.logits_to_full(ref_out_logits).contiguous()
+
+        num_ent = ref_tgt.size(-1)
+        # num_mentions x bsz x
+        assert ref_out_full.dim() == 2 + num_ent
+
+        N, bsz, *_ = ref_out_full.size()
+
+        ref_out_full_reshape = ref_out_full.view(N, bsz, -1)
+        l0_log_probs = ref_out_full_reshape.log_softmax(dim=-1)
+
+        if self.args.l1_sample:
+            # sample without replacement
+            scores = torch.distributions.Gumbel(l0_log_probs, scale=1.0).sample()
+        else:
+            scores = l0_log_probs
+        tk = scores.topk(k=k, dim=-1)
+
+        # (N*bsz) x k
+        # l0_scores = tk.values
+        candidate_indices = tk.indices
+
+        # N x bsz x k
+        candidate_l0_scores = l0_log_probs.gather(-1, candidate_indices)
+
+        # (N*bsz) x k x 7
+        candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_ent)
+        candidate_dots = candidate_dots.view(N, bsz, k, num_ent)
+
+        # N x bsz x k
+        candidate_s0_scores = scoring_function(candidate_dots)
+        assert candidate_s0_scores.size() == candidate_l0_scores.size()
+
+        lmbd = self.args.l1_speaker_weight
+        # N x bsz x k
+        joint_scores = (1 - lmbd) * candidate_l0_scores + lmbd * candidate_s0_scores
+
+        # N x bsz with values [0..k-1]
+        chosen = joint_scores.argmax(-1)
+
+        chosen_indices = candidate_indices.gather(-1, chosen.unsqueeze(-1)).squeeze(-1)
+
+        # convert indices to bits
+        ref_pred = int_to_bit_array(chosen_indices, num_bits=num_ent)
+
+        stats = self.compute_stats(ref_mask, ref_tgt, ref_pred=ref_pred)
+        ref_loss = 0.0
         return ref_loss, ref_pred, stats
 
 
@@ -523,7 +662,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
     def __init__(self, model, args, verbose=False):
         super(HierarchicalRnnReferenceEngine, self).__init__(model, args, verbose=verbose)
-        self.ref_loss = ReferenceLoss(args)
+        self.ref_loss = ReferencePredictor(args)
         # TODO: make this less hacky, have all classes use ReferenceLoss?
         del self.ref_crit_no_reduce
 
@@ -607,11 +746,13 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         ref_losses = []
         # other keys and values will be added
-        ref_stats = {'num_dots': 0}
+        # ref_stats = {'num_dots': 0}
+        ref_stats = defaultdict(lambda: 0.0)
 
         partner_ref_losses = []
         # other keys and values will be added
-        partner_ref_stats = {'num_dots': 0}
+        # partner_ref_stats = {'num_dots': 0}
+        partner_ref_stats = defaultdict(lambda: 0.0)
 
         attn_ref_true_positive = 0
         attn_ref_total = 0
@@ -762,7 +903,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             feed_attn_loss = None
 
         next_mention_losses = []
-        next_mention_stats = {'num_dots': 0}
+        next_mention_stats = defaultdict(lambda: 0.0)
+        # next_mention_stats = {'num_dots': 0}
 
         if self.args.next_mention_prediction:
             assert len(dots_mentioned) + 1 == len(next_mention_outs)
