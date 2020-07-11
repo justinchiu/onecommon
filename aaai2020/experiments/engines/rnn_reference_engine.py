@@ -529,7 +529,7 @@ class ReferencePredictor(object):
 
         else:
             ref_tgt_reshape = ref_tgt.view(-1, num_dots)
-            ref_out_reshape = ref_out_full.view(-1, 2 ** num_dots)
+            ref_out_reshape = ref_out_full.view(-1, 2**num_dots)
             N_bsz = ref_tgt_reshape.size(0)
             assert N_bsz == ref_out_reshape.size(0)
 
@@ -577,7 +577,7 @@ class PragmaticReferencePredictor(ReferencePredictor):
         einsum_str = self.logit_to_full_einsum_str(logits)
 
         # mentions x bsz x num_ent x 2
-        stack_logits = torch.stack((logits, -logits), dim=-1)
+        stack_logits = torch.stack((-logits, logits), dim=-1)
         assert stack_logits.dim() == 4
 
         # num_ent arrays, each of size mentions x bsz x 2
@@ -599,20 +599,20 @@ class PragmaticReferencePredictor(ReferencePredictor):
         if ref_inpt is None or ref_out is None:
             return None, None, self.empty_stats()
 
-        ref_tgt, ref_mask = self.preprocess(ref_tgt, num_markables)
+        ref_tgt_p, ref_mask = self.preprocess(ref_tgt, num_markables)
 
         ref_out_logits, ref_out_full = ref_out
         # TODO: consider using a DP
         if ref_out_full is None:
             ref_out_full = self.logits_to_full(ref_out_logits).contiguous()
 
-        num_ent = ref_tgt.size(-1)
+        num_ent = ref_tgt_p.size(-1)
         # num_mentions x bsz x
         assert ref_out_full.dim() == 2 + num_ent
 
         N, bsz, *_ = ref_out_full.size()
 
-        ref_out_full_reshape = ref_out_full.view(N, bsz, -1)
+        ref_out_full_reshape = ref_out_full.view(N, bsz, 2**num_ent)
         l0_log_probs = ref_out_full_reshape.log_softmax(dim=-1)
 
         if self.args.l1_sample:
@@ -649,7 +649,11 @@ class PragmaticReferencePredictor(ReferencePredictor):
         # convert indices to bits
         ref_pred = int_to_bit_array(chosen_indices, num_bits=num_ent)
 
-        stats = self.compute_stats(ref_mask, ref_tgt, ref_pred=ref_pred)
+        if self.args.l1_candidates == 1 and self.args.l1_speaker_weight == 0.0:
+            ref_pred_l0 = super().forward(ref_inpt, ref_tgt, ref_out, num_markables)[1]
+            assert (ref_pred == ref_pred_l0).all()
+
+        stats = self.compute_stats(ref_mask, ref_tgt_p, ref_pred=ref_pred)
         ref_loss = 0.0
         return ref_loss, ref_pred, stats
 
