@@ -63,6 +63,40 @@ def make_dots_mentioned_multi(refs, args, bsz, num_dots):
         dots_mentioned.append(make_dots_mentioned(ref_tgt, args))
     return dots_mentioned
 
+def add_metrics(metric_dict_src, metric_dict_tgt, prefix):
+    gold_positive = metric_dict_src['{}_gold_positive'.format(prefix)]
+    pred_positive = metric_dict_src['{}_pred_positive'.format(prefix)]
+    true_positive = metric_dict_src['{}_true_positive'.format(prefix)]
+    correct = metric_dict_src['{}_correct'.format(prefix)]
+    num_dots = metric_dict_src['{}_num_dots'.format(prefix)]
+
+    em_num = metric_dict_src['{}_exact_match_num'.format(prefix)]
+    em_denom = metric_dict_src['{}_exact_match_denom'.format(prefix)]
+
+    precision = true_positive / pred_positive if pred_positive > 0 else 0
+    recall = true_positive / gold_positive if gold_positive > 0 else 0
+    f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+    metric_dict_tgt['{}_accuracy'.format(prefix)] = correct / num_dots if num_dots > 0 else 0
+    metric_dict_tgt['{}_precision'.format(prefix)] = precision
+    metric_dict_tgt['{}_recall'.format(prefix)] = recall
+    metric_dict_tgt['{}_f1'.format(prefix)] = f1
+
+    metric_dict_tgt['{}_exact_match'.format(prefix)] = em_num / em_denom if em_denom > 0 else 0
+
+def flatten_metrics(metrics):
+    flattened = {}
+    for key, value in metrics.items():
+        if key.endswith("_stats"):
+            assert isinstance(value, dict)
+            prefix = key[:-len("_stats")]
+            for sub_k, sub_v in value.items():
+                flattened[f'{prefix}_{sub_k}'] = sub_v
+        else:
+            assert not isinstance(value, dict)
+            flattened[key] = value
+    return flattened
+
 
 class RnnReferenceEngine(EngineBase):
     @classmethod
@@ -228,27 +262,6 @@ class RnnReferenceEngine(EngineBase):
         with torch.no_grad():
             return self._forward(batch)
 
-    def add_metrics(self, metric_dict_src, metric_dict_tgt, prefix):
-        gold_positive = metric_dict_src['{}_gold_positive'.format(prefix)]
-        pred_positive = metric_dict_src['{}_pred_positive'.format(prefix)]
-        true_positive = metric_dict_src['{}_true_positive'.format(prefix)]
-        correct = metric_dict_src['{}_correct'.format(prefix)]
-        num_dots = metric_dict_src['{}_num_dots'.format(prefix)]
-
-        em_num = metric_dict_src['{}_exact_match_num'.format(prefix)]
-        em_denom = metric_dict_src['{}_exact_match_denom'.format(prefix)]
-
-        precision = true_positive / pred_positive if pred_positive > 0 else 0
-        recall = true_positive / gold_positive if gold_positive > 0 else 0
-        f1 = (2 * precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
-        metric_dict_tgt['{}_accuracy'.format(prefix)] = correct / num_dots if num_dots > 0 else 0
-        metric_dict_tgt['{}_precision'.format(prefix)] = precision
-        metric_dict_tgt['{}_recall'.format(prefix)] = recall
-        metric_dict_tgt['{}_f1'.format(prefix)] = f1
-
-        metric_dict_tgt['{}_exact_match'.format(prefix)] = em_num / em_denom if em_denom > 0 else 0
-
     def _pass(self, dataset, batch_fn, split_name, use_tqdm, epoch):
         start_time = time.time()
 
@@ -258,16 +271,7 @@ class RnnReferenceEngine(EngineBase):
             # for batch in trainset:
             # lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
             forward_ret = batch_fn(batch, epoch)
-            batch_metrics = {}
-            for key, value in forward_ret._asdict().items():
-                if key.endswith("_stats"):
-                    assert isinstance(value, dict)
-                    prefix = key[:-len("_stats")]
-                    for sub_k, sub_v in value.items():
-                        batch_metrics[f'{prefix}_{sub_k}'] = sub_v
-                else:
-                    assert not isinstance(value, dict)
-                    batch_metrics[key] = value
+            batch_metrics = flatten_metrics(forward_ret._asdict().items())
             metrics = utils.sum_dicts(metrics, batch_metrics)
 
         print("{} word_attn_loss: {:.4f}".format(split_name, metrics['word_attn_loss']))
@@ -288,9 +292,9 @@ class RnnReferenceEngine(EngineBase):
             'time': time_elapsed,
             'correct_ppl': np.exp(metrics['unnormalized_lang_loss'] / metrics['num_words']),
         }
-        self.add_metrics(metrics, aggregate_metrics, "ref")
-        self.add_metrics(metrics, aggregate_metrics, "partner_ref")
-        self.add_metrics(metrics, aggregate_metrics, "next_mention")
+        add_metrics(metrics, aggregate_metrics, "ref")
+        add_metrics(metrics, aggregate_metrics, "partner_ref")
+        add_metrics(metrics, aggregate_metrics, "next_mention")
         return aggregate_metrics
 
     def train_pass(self, trainset, trainset_stats, epoch):

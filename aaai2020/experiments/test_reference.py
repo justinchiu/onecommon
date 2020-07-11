@@ -32,6 +32,7 @@ import seaborn as sns
 
 from engines.beliefs import BeliefConstructor
 from engines.rnn_reference_engine import make_dots_mentioned_multi, ReferencePredictor, PragmaticReferencePredictor
+from engines.rnn_reference_engine import add_metrics, flatten_metrics
 
 sns.set(font_scale=1.15)
 
@@ -248,6 +249,8 @@ def main():
         else:
             raise ValueError(f"invalid --reference_prediction {args.reference_prediction}")
 
+        ref_stats = defaultdict(lambda: 0.0)
+
         for batch in tqdm.tqdm(testset, ncols=80):
             if isinstance(corpus, ReferenceSentenceCorpus):
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, \
@@ -401,13 +404,15 @@ def main():
                             belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],
                             timestep=sentence_ix, partner_ref_outs=partner_ref_outs, ref_outs=my_ref_outs
                         )
-                        ref_loss, ref_predictions, ref_stats = reference_predictor.forward(
+                        ref_loss, ref_predictions, _ref_stats = reference_predictor.forward(
                             ref_inpt, ref_tgt, ref_out, sentence_num_markables, scoring_function
                         )
                     else:
-                        ref_loss, ref_predictions, ref_stats = reference_predictor.forward(
+                        ref_loss, ref_predictions, _ref_stats = reference_predictor.forward(
                             ref_inpt, ref_tgt, ref_out, sentence_num_markables
                         )
+
+                    ref_stats = utils.sum_dicts(ref_stats, _ref_stats)
 
                     ref_tgt = ref_tgt.transpose(0,1).contiguous()
 
@@ -419,9 +424,9 @@ def main():
 
                         # add chat level details if not exists
                         if chat_id not in reference_correct:
-                            reference_correct[chat_id] = ref_stats['correct']
+                            reference_correct[chat_id] = _ref_stats['correct']
                         if chat_id not in reference_total:
-                            reference_total[chat_id] = ref_stats['num_dots']
+                            reference_total[chat_id] = _ref_stats['num_dots']
                         if chat_id not in model_referent_annotation:
                             model_referent_annotation[chat_id] = {}
 
@@ -467,14 +472,16 @@ def main():
                                 for ent, is_referent in zip(chat['scenario']['kbs'][agents[j]], ref_predictions.long()[i][j].tolist()):
                                     if is_referent:
                                         model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'].append("agent_{}_{}".format(agents[j], ent['id']))
+
+                    # moved these here to fix a bug; previously some batches were getting double-counted if the batch afterward had no referents
+                    test_reference_correct += _ref_stats['correct']
+                    test_reference_total += _ref_stats['num_dots']
                 else:
                     ref_loss = None
 
                 test_lang_loss += lang_loss.item()
                 if ref_loss:
                     test_reference_loss += ref_loss.item()
-                test_reference_correct += ref_stats['correct']
-                test_reference_total += ref_stats['num_dots']
 
                 # END loop over sentences
 
@@ -517,6 +524,14 @@ def main():
                         break
 
                     idx += 1
+
+        metrics = {}
+        add_metrics(
+            flatten_metrics({'ref_stats': ref_stats}),
+            metrics,
+            'ref'
+        )
+        pprint.pprint(metrics)
 
         # Main results:
         # Dividing by the number of words in the input, not the tokens modeled,
