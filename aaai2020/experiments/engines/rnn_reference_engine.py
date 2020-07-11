@@ -124,7 +124,7 @@ class RnnReferenceEngine(EngineBase):
         else:
             dots_mentioned = None
 
-        out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = \
+        out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, lang_h = \
             self.model.forward(
                 ctx, inpt, ref_inpt, sel_idx, lens=None, dots_mentioned=dots_mentioned,
                 belief_constructor=None, partner_ref_inpt=partner_ref_inpt,
@@ -717,7 +717,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             real_ids, partner_real_ids, sel_tgt, is_self, partner_dots_mentioned_our_view, dots_mentioned
         )
 
-        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs = self.model.forward(
+        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, lang_h, ctx_h, ctx_differences = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,
             belief_constructor=belief_constructor,
             partner_ref_inpts=partner_ref_inpts,
@@ -767,10 +767,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         assert len(partner_ref_inpts) == len(partner_ref_tgts_our_view) == len(all_partner_num_markables)
 
         # TODO: just index into the lists; the safety check isn't worth it
-        for ref_inpt, partner_ref_inpt, (ref_out,
-                                         partner_ref_out), ref_tgt, partner_ref_tgt, this_num_markables, this_partner_num_markables, this_ctx_attn_prob, this_feed_ctx_attn_prob, this_dots_mentioned, inpt, tgt in utils.safe_zip(
+        for ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt,\
+            this_num_markables,this_partner_num_markables, this_ctx_attn_prob, this_feed_ctx_attn_prob, \
+            this_dots_mentioned, inpt, tgt in utils.safe_zip(
             ref_inpts, partner_ref_inpts, ref_outs_and_partner_ref_outs, ref_tgts, partner_ref_tgts_our_view,
-            num_markables, all_partner_num_markables, ctx_attn_prob, feed_ctx_attn_prob, dots_mentioned, inpts, tgts
+            num_markables, all_partner_num_markables, ctx_attn_prob, feed_ctx_attn_prob,
+            dots_mentioned, inpts, tgts
         ):
             if (this_num_markables == 0).all() or ref_tgt is None:
                 continue

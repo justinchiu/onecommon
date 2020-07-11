@@ -296,7 +296,7 @@ def main():
                 else:
                     dots_mentioned = None
                     belief_constructor = None
-                outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs = model.forward(
+                outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, lang_hs, ctx_h, ctx_differences = model.forward(
                     ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, belief_constructor,
                     # partner_ref_inpt is used in training if partner reference prediction is supervised
                     partner_ref_inpts=None
@@ -307,7 +307,7 @@ def main():
                 dots_mentioned = None
                 selection_beliefs = None
                 generation_beliefs = None
-                out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = model.forward(
+                out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, lang_h, ctx_h, ctx_differences = model.forward(
                     ctx, inpts[0], ref_inpts[0], sel_idx, lens[0], dots_mentioned, belief_constructor,
                     # partner_ref_inpt is used in training if partner reference prediction is supervised
                     partner_ref_inpt=None
@@ -378,6 +378,8 @@ def main():
                     assert not remaining_markables
                 markables_by_sentence_by_batch.append(markables_by_sentence)
 
+            my_ref_outs, partner_ref_outs = zip(*ref_outs)
+
             for sentence_ix, (inpt, out, tgt, ref_inpt, (ref_out, partner_ref_out), ref_tgt) in enumerate(
                 utils.safe_zip(inpts, outs, tgts, ref_inpts, ref_outs, ref_tgts)
             ):
@@ -393,7 +395,12 @@ def main():
 
                 if ref_inpt is not None:
                     if args.reference_prediction == 'l1':
-                        scoring_function = lambda candidates: torch.zeros_like(candidates).select(dim=-1, index=0)
+                        scoring_function = model.make_ref_scoring_function(
+                            ctx_differences, ctx_h, inpt, tgt, ref_inpt,
+                            lens[sentence_ix], lang_hs[sentence_ix],
+                            belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],
+                            timestep=sentence_ix, partner_ref_outs=partner_ref_outs, ref_outs=my_ref_outs
+                        )
                         ref_loss, ref_predictions, ref_stats = reference_predictor.forward(
                             ref_inpt, ref_tgt, ref_out, sentence_num_markables, scoring_function
                         )

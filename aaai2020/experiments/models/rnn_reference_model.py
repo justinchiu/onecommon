@@ -11,6 +11,7 @@ import corpora.reference_sentence
 import models
 from corpora import data
 from domain import get_domain
+from engines import Criterion
 from engines.beliefs import BeliefConstructor, BELIEF_TYPES
 from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
 from models.ctx_encoder import *
@@ -663,6 +664,96 @@ class RnnReferenceModel(nn.Module):
 
         return attn_prob
 
+    def make_ref_scoring_function(
+        self, ctx_differences, ctx_h, inpt, tgt, ref_inpt, lens, lang_h, belief_constructor=None,
+        partner_ref_inpt=None, timestep=0, partner_ref_outs=None, ref_outs=None
+    ):
+        # sel_idx isn't needed b/c we'll pass compute_sel_idx = False
+        crit_no_reduce = Criterion(self.word_dict, bad_toks=['<pad>'], reduction='none')
+
+        def score_refs(candidate_dots_mentioned):
+            # candidate_dots_mentioned: num_mentions x batch_size x num_candidates x num_dots
+            num_mentions, bsz, num_candidates, num_dots = candidate_dots_mentioned.size()
+            T = inpt.size(0)
+
+            def comb(tensor, batch_dim):
+                    # combine batch and candidate dims
+                    new_dims = tensor.size()[:batch_dim] + (tensor.size(batch_dim) * tensor.size(batch_dim+1),) + tensor.size()[batch_dim+2:]
+                    return tensor.view(new_dims)
+
+            def tile(tensor, batch_dim=0):
+                if tensor is None:
+                    return None
+                assert tensor.size(batch_dim) == bsz
+                # add candidate dimension at batch_dim+1, then combine it with the batch dim
+                return comb(
+                    torch.repeat_interleave(tensor.unsqueeze(batch_dim+1), repeats=num_candidates, dim=batch_dim+1),
+                    batch_dim
+                )
+
+            def uncomb(tensor, batch_dim=0):
+                new_dims = tensor.size[:batch_dim] + (bsz, num_candidates) + tensor.size[batch_dim+1:]
+                return tensor.view(new_dims)
+
+            ctx_differences_t = tile(ctx_differences)
+            ctx_h_t = tile(ctx_h)
+            inpt_t = tile(inpt, batch_dim=1)
+            tgt_t = tile(tgt.view(T, bsz), batch_dim=1).flatten()
+            ref_inpt_t = tile(ref_inpt)
+            lens_t = tile(lens)
+            lang_h_t = tile(lang_h, batch_dim=1)
+            partner_ref_inpt_t = tile(partner_ref_inpt)
+            # marginal and full distributions
+            ref_outs_t = [(tile(t[0], batch_dim=1), tile(t[1], batch_dim=1))
+                          if t is not None else None
+                          for t in ref_outs]
+            if partner_ref_outs is not None:
+                partner_ref_outs_t = [(tile(t[0], batch_dim=1), tile(t[1], batch_dim=1))
+                                      if t is not None else t
+                                      for t in partner_ref_outs]
+            else:
+                partner_ref_outs_t = None
+
+            # mention_scores = torch.zeros(candidate_dots_mentioned.size()[:-1])
+            s0_probs_per_mention = []
+            if self.args.only_first_mention:
+                raise NotImplementedError("only_first_mention for ref scoring isn't implemented yet")
+
+            # bsz x num_candidates x num_dots
+            first_candidate_sums = candidate_dots_mentioned[:,:,0].sum(0).unsqueeze(1).expand(bsz, num_candidates, num_dots)
+            # TODO: do search over joint mention configurations using the scores
+            for mention_ix in range(num_mentions):
+                # bsz x num_candidates x num_dots
+                all_candidates_this_mention = candidate_dots_mentioned[mention_ix]
+
+                this_first_candidates = candidate_dots_mentioned[mention_ix, :, 0].unsqueeze(1).expand_as(first_candidate_sums)
+
+                # we want to compute this_mentions[b,c] = \sum_{mention} candidate_dots_mentioned[mention,b,(c if mention == mention_ix else 0)]
+                # = [\sum_{mention} candidate_dots_mentioned[mention,b,0]] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
+                # = first_candidate_sums[b] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
+                # = first_candidate_sums[b] - this_first_candidates[b] + candidate_dots_mentioned[mention_ix, b, c]
+
+                # bsz x num_candidates x num_dots
+                this_mentions = (first_candidate_sums - this_first_candidates + all_candidates_this_mention) > 0
+                assert torch.all((this_mentions.float() - candidate_dots_mentioned[mention_ix].float()) >= 0)
+                this_mentions_t = comb(this_mentions, batch_dim=0)
+
+                outs, *_ = self._forward(
+                    ctx_differences_t, ctx_h_t, inpt_t, ref_inpt_t, sel_idx=None, lens=lens_t, lang_h=lang_h_t,
+                    compute_sel_out=False, pack=True, dots_mentioned=this_mentions_t,
+                    belief_constructor=belief_constructor, timestep=timestep, partner_ref_inpt=partner_ref_inpt_t,
+                    partner_ref_outs=partner_ref_outs_t[:timestep] if partner_ref_outs_t is not None else None,
+                    ref_outs=ref_outs_t[:timestep] if ref_outs_t is not None else None,
+                )
+                log_probs = -crit_no_reduce(outs, tgt_t).view(T, bsz, num_candidates).sum(0)
+                s0_probs_per_mention.append(log_probs)
+
+            # num_mentions x bsz x num_candidates
+            s0_probs = torch.stack(s0_probs_per_mention, dim=0)
+            return s0_probs
+
+        return score_refs
+
     def _forward(self, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False,
                  dots_mentioned=None, belief_constructor: Union[BeliefConstructor, None]=None, partner_ref_inpt=None,
                  timestep=0, partner_ref_outs=None, ref_outs=None):
@@ -778,18 +869,21 @@ class RnnReferenceModel(nn.Module):
         ctx_h = self.ctx_encoder(ctx)
         ctx_differences = self.ctx_differences(ctx)
 
+        lang_h = None
+
         outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
-            ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=lens, lang_h=None, compute_sel_out=True, pack=False,
+            ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=lens, lang_h=lang_h, compute_sel_out=True, pack=False,
             dots_mentioned=dots_mentioned, belief_constructor=belief_constructor,
             partner_ref_inpt=partner_ref_inpt, timestep=0, partner_ref_outs=[],
         )
-        return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
+        return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, lang_h, ctx_h, ctx_differences
 
     def _context_for_feeding(self, ctx_differences, ctx_h, lang_hs, dots_mentioned, generation_beliefs):
         if self.args.feed_context_attend:
             # bsz x num_dots
             feed_ctx_attn_prob = self._language_conditioned_dot_attention(
-                ctx_differences, ctx_h, lang_hs, use_feed_attn=True, dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
+                ctx_differences, ctx_h, lang_hs,
+                use_feed_attn=True, dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
             ).squeeze(0).squeeze(-1)
             # bsz x num_dots x nembed_ctx
             ctx_emb = self.feed_ctx_layer(ctx_h)
@@ -1021,6 +1115,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         all_next_mention_outs = []
 
+        all_lang_h = [lang_h]
+
         # if generation_beliefs is not None:
         #     assert len(generation_beliefs) == len(inpts)
         #
@@ -1065,6 +1161,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             all_ctx_attn_prob.append(ctx_attn_prob)
             all_feed_ctx_attn_prob.append(feed_ctx_attn_prob)
             all_next_mention_outs.append(next_mention_out)
+            all_lang_h.append(lang_h)
 
             ref_out, partner_ref_out = ref_out_and_partner_ref_out
             ref_outs.append(ref_out)
@@ -1072,4 +1169,4 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         assert sel_out is not None
 
-        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs
+        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, all_lang_h, ctx_h, ctx_differences
