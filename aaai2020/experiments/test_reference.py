@@ -205,6 +205,7 @@ def main():
         if args.eval_split == 'dev':
             testset, testset_stats = corpus.valid_dataset(args.bsz)
         else:
+            assert args.eval_split == 'test'
             testset, testset_stats = corpus.test_dataset(args.bsz)
         test_lang_loss, test_select_loss, test_reference_loss, test_select_correct, test_select_total, test_reference_correct, test_reference_total = 0, 0, 0, 0, 0, 0, 0
 
@@ -600,32 +601,36 @@ def main():
         lang_loss_name = 'loss'
         lang_ppl_name = 'perplexity'
 
-    print("=================================\n\n")
-    print("number of models averaged: {}".format(len(repeat_results['eval_lang_loss'])))
-    print("repeat eval lang %s %.8f" % (lang_loss_name, np.mean(repeat_results["eval_lang_loss"])))
-    print("repeat eval select loss %.8f" % np.mean(repeat_results["eval_select_loss"]))
-    print("repeat eval select accuracy %.8f ( %.8f )" % (np.mean(repeat_results["eval_select_accuracy"]), np.std(repeat_results["eval_select_accuracy"])))
-    print("repeat eval reference loss %.8f" % np.mean(repeat_results["eval_reference_loss"]))
-    print("repeat eval reference accuracy %.8f ( %.8f )" % (np.mean(repeat_results["eval_reference_accuracy"]), np.std(repeat_results["eval_reference_accuracy"])))
-    print("repeat correlation score %.8f ( %.8f )" % (np.mean(repeat_results["correlation_score"]), np.std(repeat_results["correlation_score"])))
-    print("repeat correlation score %.8f ( %.8f )" % (np.mean(repeat_results["correlation_score"]), np.std(repeat_results["correlation_score"])))
-    print("repeat reference exact match %.8f ( %.8f )" % (np.mean(repeat_results["reference_exact_match"]), np.std(repeat_results["reference_exact_match"])))
-    print("repeat eval %s %.8f ( %.8f )" % (lang_ppl_name, np.mean(repeat_results["eval_perplexity"]), np.std(repeat_results["eval_perplexity"])))
+    number_models_averaged = len(repeat_results['eval_lang_loss'])
 
-    for k in sorted(num_markables_counter.keys()):
-        print("repeat accuracy and exact match:")
-        num_markables = []
-        exact_match = []
-        exact_match_rate = []
-        num_markables_correct = []
-        for split in range(len(splits)):
-            if split >= len(repeat_results["num_markables_counter"]):
-                continue
-            num_markables.append(repeat_results["num_markables_counter"][split][k])
-            exact_match.append(repeat_results["exact_match_counter"][split][k])
-            exact_match_rate.append(repeat_results["exact_match_counter"][split][k] / repeat_results["num_markables_counter"][split][k])
-            num_markables_correct.append(repeat_results["num_markables_correct"][split][k] / (repeat_results["num_markables_counter"][split][k] * 7))
-        print('{}: {:.5f} (std {}) {:.5f} (std {}) (count {})'.format(k, np.mean(num_markables_correct), np.std(num_markables_correct), np.mean(exact_match_rate), np.std(exact_match_rate), np.mean(num_markables)))
+    if number_models_averaged > 1:
+
+        print("=================================\n\n")
+        print("number of models averaged: {}".format(number_models_averaged))
+        print("repeat eval lang %s %.8f" % (lang_loss_name, np.mean(repeat_results["eval_lang_loss"])))
+        print("repeat eval select loss %.8f" % np.mean(repeat_results["eval_select_loss"]))
+        print("repeat eval select accuracy %.8f ( %.8f )" % (np.mean(repeat_results["eval_select_accuracy"]), np.std(repeat_results["eval_select_accuracy"])))
+        print("repeat eval reference loss %.8f" % np.mean(repeat_results["eval_reference_loss"]))
+        print("repeat eval reference accuracy %.8f ( %.8f )" % (np.mean(repeat_results["eval_reference_accuracy"]), np.std(repeat_results["eval_reference_accuracy"])))
+        print("repeat correlation score %.8f ( %.8f )" % (np.mean(repeat_results["correlation_score"]), np.std(repeat_results["correlation_score"])))
+        print("repeat correlation score %.8f ( %.8f )" % (np.mean(repeat_results["correlation_score"]), np.std(repeat_results["correlation_score"])))
+        print("repeat reference exact match %.8f ( %.8f )" % (np.mean(repeat_results["reference_exact_match"]), np.std(repeat_results["reference_exact_match"])))
+        print("repeat eval %s %.8f ( %.8f )" % (lang_ppl_name, np.mean(repeat_results["eval_perplexity"]), np.std(repeat_results["eval_perplexity"])))
+
+        for k in sorted(num_markables_counter.keys()):
+            print("repeat accuracy and exact match:")
+            num_markables = []
+            exact_match = []
+            exact_match_rate = []
+            num_markables_correct = []
+            for split in range(len(splits)):
+                if split >= len(repeat_results["num_markables_counter"]):
+                    continue
+                num_markables.append(repeat_results["num_markables_counter"][split][k])
+                exact_match.append(repeat_results["exact_match_counter"][split][k])
+                exact_match_rate.append(repeat_results["exact_match_counter"][split][k] / repeat_results["num_markables_counter"][split][k])
+                num_markables_correct.append(repeat_results["num_markables_correct"][split][k] / (repeat_results["num_markables_counter"][split][k] * 7))
+            print('{}: {:.5f} (std {}) {:.5f} (std {}) (count {})'.format(k, np.mean(num_markables_correct), np.std(num_markables_correct), np.mean(exact_match_rate), np.std(exact_match_rate), np.mean(num_markables)))
 
     dump_json(model_referent_annotation, "model_referent_annotation.json")
 
