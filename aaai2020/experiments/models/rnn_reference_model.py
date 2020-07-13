@@ -95,7 +95,6 @@ class StructuredAttentionLayer(nn.Module):
                     continue
                 binary_factor_names.append(batch_name + var_names[i] + var_names[j])
 
-
         marginals = ','.join('{}{}'.format(batch_name, v) for v in var_names)
         joint = '{}{}'.format(batch_name, ''.join(var_names))
         output_factor_names = '{},{}'.format(joint,marginals)

@@ -271,7 +271,7 @@ class RnnReferenceEngine(EngineBase):
             # for batch in trainset:
             # lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
             forward_ret = batch_fn(batch, epoch)
-            batch_metrics = flatten_metrics(forward_ret._asdict().items())
+            batch_metrics = flatten_metrics(forward_ret._asdict())
             metrics = utils.sum_dicts(metrics, batch_metrics)
 
         print("{} word_attn_loss: {:.4f}".format(split_name, metrics['word_attn_loss']))
