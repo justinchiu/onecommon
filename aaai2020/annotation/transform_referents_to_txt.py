@@ -114,6 +114,28 @@ def create_dialogue(text, agent):
 
 	return ['<dialogue>'] + dialogue_tokens + ['</dialogue>']
 
+def create_disagreements(markables, referent_annotation, agent, f1_threshold=1.0):
+	disag_for_own_refs = []
+	disag_for_partner_refs = []
+
+	for markable in markables:
+		markable_id = markable["markable_id"]
+		if markable_id in referent_annotation:
+			is_self = markable["speaker"] == agent
+			ref_annotation = referent_annotation[markable_id]
+			if "unidentifiable" in referent_annotation[markable_id] and referent_annotation[markable_id]["unidentifiable"]:
+				continue
+			if "avg_pairwise_f1" in ref_annotation:
+				disagreed = ref_annotation["avg_pairwise_f1"] < f1_threshold
+			else:
+				disagreed = False
+			if is_self:
+				disag_for_own_refs.append(1 if disagreed else 0)
+			else:
+				disag_for_partner_refs.append(1 if disagreed else 0)
+	return ['<referent_disagreements>'] + list(map(str, disag_for_own_refs)) + ['</referent_disagreements>'] +\
+			['<partner_referent_disagreements>'] + list(map(str, disag_for_partner_refs)) + ['</partner_referent_disagreements>']
+
 def create_referents(text, markables, referent_annotation, kb_by_agent, agent):
 
 	referent_tokens = []
@@ -309,5 +331,6 @@ if __name__ == "__main__":
 					tokens += create_scenario_id(chat['scenario']['uuid'])
 					tokens += create_agent(agent)
 					tokens += create_chat_id(chat['uuid'])
+					tokens += create_disagreements(markable_annotation[chat_id]["markables"], aggregated_referent_annotation[chat_id], agent)
 					#tokens += create_markables(markable_annotation[chat_id]["markables"])
 					out.write(" ".join(tokens) + "\n")

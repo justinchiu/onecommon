@@ -6,7 +6,7 @@ import pickle
 import re
 import sys
 import traceback
-from collections import Counter, defaultdict
+from collections import Counter, defaultdict, namedtuple
 import glob
 import itertools
 
@@ -57,6 +57,19 @@ def is_annotatable_markable(markable):
         return False
     else:
         return True
+
+
+def f1(set1, set2):
+	if not set1 or not set2:
+		return 0
+	true_positives = len(set1 & set2)
+	precision = true_positives / len(set1)
+	recall = true_positives / len(set2)
+	if precision + recall != 0:
+		return (2 * precision * recall) / (precision + recall)
+	else:
+		return 0
+
 
 class Tags:
 	@classmethod
@@ -965,6 +978,8 @@ def referent_agreement(args, dialogue_corpus):
 
 	exact_match_rate = {}
 
+	avg_pairwise_f1s = []
+
 	for dialogue in dialogue_corpus:
 		chat_id = dialogue["uuid"]
 		if not chat_id in markable_annotation:
@@ -977,56 +992,25 @@ def referent_agreement(args, dialogue_corpus):
 		mturk_workers = [x for x in list(referent_annotation[chat_id].keys()) if x.startswith("MT_")]
 		if len(mturk_workers) < 3:
 			continue
-
-		agent_0_kb, agent_1_kb = dialogue["scenario"]["kbs"]
-		agent_0_ents = ["agent_0_{}".format(x['id']) for x in agent_0_kb]
-		agent_1_ents = ["agent_1_{}".format(x['id']) for x in agent_1_kb]
-
-		num_judgement = 0
-		num_exact_match = 0
+		dialogue_exact_match = 0
+		dialogue_num_markables = 0
 		for markable in markables["markables"]:
-			markable_id = markable["markable_id"]
-			speaker = markable["speaker"]
-			candidate_ents = agent_0_ents if speaker == 0 else agent_1_ents
-
-			if is_annotatable_markable(markable):
-				total_markables += 1
-
-				for ent in candidate_ents:
-					is_referent = 0
-					is_not_referent = 0
-					for annotator in mturk_workers:
-						if ent in referent_annotation[chat_id][annotator][markable_id]["referents"]:
-							is_referent += 1
-						else:
-							is_not_referent += 1
-					num_pairwise_entlevel_agreement += is_referent * (is_referent - 1) / 2
-					num_pairwise_entlevel_agreement += is_not_referent * (is_not_referent - 1) / 2
-					total_is_referent += is_referent
-					total_is_not_referent += is_not_referent
-
-				total_pairwise_entlevel_judgements += (len(mturk_workers) * (len(mturk_workers) - 1) / 2) * len(candidate_ents)
-				total_pairwise_judgements += (len(mturk_workers) * (len(mturk_workers) - 1) / 2)
-				total_judgements += len(mturk_workers)
-
-				exact_match = True
-				for a, b in itertools.combinations(mturk_workers, 2):
-					a_set = set(referent_annotation[chat_id][a][markable_id]['referents'])
-					b_set = set(referent_annotation[chat_id][b][markable_id]['referents'])
-					if a_set == b_set:
-						exact_match_counter[len(a_set)] += 1
-						exact_match_counter[len(b_set)] += 1
-						num_pairwise_exact_match += 1
-					else:
-						exact_match = False
-					num_referents_counter[len(a_set)] += 1
-					num_referents_counter[len(b_set)] += 1
-
-				if exact_match:
-					total_exact_match += 1
-					num_exact_match += 1
-				num_judgement += 1
-		exact_match_rate[chat_id] = 1.0 * num_exact_match / num_judgement
+			agreement_stats = markable_agreement_stats(
+				dialogue, markable, referent_annotation[chat_id], mturk_workers, exact_match_counter, num_referents_counter
+			)
+			total_judgements += agreement_stats.num_judgement
+			total_exact_match += agreement_stats.num_exact_match
+			total_markables += agreement_stats.num_markables
+			num_pairwise_entlevel_agreement += agreement_stats.num_pairwise_entlevel_agreement
+			total_pairwise_entlevel_judgements += agreement_stats.num_pairwise_entlevel_judgements
+			total_is_referent += agreement_stats.num_is_referent
+			total_is_not_referent += agreement_stats.num_is_not_referent
+			total_pairwise_judgements += agreement_stats.num_pairwise_judgements
+			num_pairwise_exact_match += agreement_stats.num_pairwise_exact_match
+			dialogue_exact_match += agreement_stats.num_exact_match
+			dialogue_num_markables += agreement_stats.num_markables
+			avg_pairwise_f1s.append(agreement_stats.avg_pairwise_f1)
+		exact_match_rate[chat_id] = 1.0 * dialogue_exact_match / dialogue_num_markables
 
 	observed_agreement = 1.0 * num_pairwise_entlevel_agreement / total_pairwise_entlevel_judgements
 
@@ -1050,6 +1034,10 @@ def referent_agreement(args, dialogue_corpus):
 	exact_match_rate = list(exact_match_rate.values())
 	sns.distplot(exact_match_rate, kde=False, rug=False)
 	plt.savefig('exact_match_rate.png', dpi=300)
+
+	#sns.distplot(avg_pairwise_f1s, kde=False, rug=False)
+	sns.distplot(avg_pairwise_f1s, kde=True)
+	plt.savefig('avg_pairwise_f1s.png', dpi=300)
 
 	""" Next, compute agreement with the admin"""
 	print("=" * 7)
@@ -1112,6 +1100,9 @@ def referent_agreement(args, dialogue_corpus):
 
 				is_referent = 0
 				is_not_referent = 0
+
+				# TODO: ent should be declared somewhere, figure out what's going on here
+				return
 
 				if ent in referent_annotation[chat_id]["admin"][markable_id]["referents"]:
 					is_referent += 1
@@ -1209,6 +1200,81 @@ def referent_agreement(args, dialogue_corpus):
 	for num_referents in aggregated_num_referents_counter.keys():
 		print('{}: {:.4f} (% judgements: {})'.format(num_referents, aggregated_exact_match_counter[num_referents] / aggregated_num_referents_counter[num_referents], 100.0 * aggregated_num_referents_counter[num_referents] / sum(aggregated_num_referents_counter.values())))
 
+DialogueAgreementStats = namedtuple("DialogueAgreementStats", [
+	"num_judgement", "num_exact_match", "num_markables", "num_pairwise_entlevel_agreement", "num_pairwise_entlevel_judgements", "num_is_referent", "num_is_not_referent", "num_pairwise_judgements", "num_pairwise_exact_match", "avg_pairwise_f1"
+])
+
+def markable_agreement_stats(dialogue, markable, ref_annotation, mturk_workers, exact_match_counter=None, num_referents_counter=None):
+	agent_0_kb, agent_1_kb = dialogue["scenario"]["kbs"]
+	agent_0_ents = ["agent_0_{}".format(x['id']) for x in agent_0_kb]
+	agent_1_ents = ["agent_1_{}".format(x['id']) for x in agent_1_kb]
+
+	num_judgement = 0
+	num_exact_match = 0
+	num_markables = 0
+	num_pairwise_entlevel_agreement = 0
+	num_pairwise_entlevel_judgements = 0
+	num_is_referent = 0
+	num_is_not_referent = 0
+	num_pairwise_judgements = 0
+	num_pairwise_exact_match = 0
+
+	markable_id = markable["markable_id"]
+	speaker = markable["speaker"]
+	candidate_ents = agent_0_ents if speaker == 0 else agent_1_ents
+
+	pair_f1s = []
+	if is_annotatable_markable(markable):
+		num_markables += 1
+
+		for ent in candidate_ents:
+			is_referent = 0
+			is_not_referent = 0
+			for annotator in mturk_workers:
+				if ent in ref_annotation[annotator][markable_id]["referents"]:
+					is_referent += 1
+				else:
+					is_not_referent += 1
+			num_pairwise_entlevel_agreement += is_referent * (is_referent - 1) / 2
+			num_pairwise_entlevel_agreement += is_not_referent * (is_not_referent - 1) / 2
+			num_is_referent += is_referent
+			num_is_not_referent += is_not_referent
+
+		num_pairwise_entlevel_judgements += (len(mturk_workers) * (len(mturk_workers) - 1) / 2) * len(candidate_ents)
+		num_pairwise_judgements += (len(mturk_workers) * (len(mturk_workers) - 1) / 2)
+		num_judgement += len(mturk_workers)
+
+		exact_match = True
+		for a, b in itertools.combinations(mturk_workers, 2):
+			a_set = set(ref_annotation[a][markable_id]['referents'])
+			b_set = set(ref_annotation[b][markable_id]['referents'])
+			if a_set == b_set:
+				if exact_match_counter is not None:
+					exact_match_counter[len(a_set)] += 1
+					exact_match_counter[len(b_set)] += 1
+				num_pairwise_exact_match += 1
+			else:
+				exact_match = False
+			pair_f1s.append(f1(a_set, b_set))
+			if num_referents_counter is not None:
+				num_referents_counter[len(a_set)] += 1
+				num_referents_counter[len(b_set)] += 1
+
+		if exact_match:
+			num_exact_match += 1
+	return DialogueAgreementStats(
+		num_judgement=num_judgement,
+		num_exact_match=num_exact_match,
+		num_markables=num_markables,
+		num_pairwise_entlevel_agreement=num_pairwise_entlevel_agreement,
+		num_pairwise_entlevel_judgements=num_pairwise_entlevel_judgements,
+		num_is_referent=num_is_referent,
+		num_is_not_referent=num_is_not_referent,
+		num_pairwise_judgements=num_pairwise_judgements,
+		num_pairwise_exact_match=num_pairwise_exact_match,
+		avg_pairwise_f1=np.mean(pair_f1s) if pair_f1s else 0
+	)
+
 def referent_aggregation(args, dialogue_corpus):
 	markable_annotation = read_json("markable_annotation.json")
 	referent_annotation = read_json("referent_annotation.json")
@@ -1241,7 +1307,9 @@ def referent_aggregation(args, dialogue_corpus):
 		agent_0_ents = ["agent_0_{}".format(x['id']) for x in agent_0_kb]
 		agent_1_ents = ["agent_1_{}".format(x['id']) for x in agent_1_kb]
 
+
 		for markable in markables["markables"]:
+			agreement_stats = markable_agreement_stats(dialogue, markable, referent_annotation[chat_id], mturk_workers)
 			markable_id = markable["markable_id"]
 			speaker = markable["speaker"]
 			candidate_ents = agent_0_ents if speaker == 0 else agent_1_ents
@@ -1280,6 +1348,10 @@ def referent_aggregation(args, dialogue_corpus):
 					aggregated_referent_annotation[chat_id][markable_id]["unidentifiable"] = True
 				else:
 					aggregated_referent_annotation[chat_id][markable_id]["unidentifiable"] = False
+
+				aggregated_referent_annotation[chat_id][markable_id]["pairwise_entlevel_agreement"] = (int(agreement_stats.num_pairwise_entlevel_agreement), int(agreement_stats.num_pairwise_entlevel_judgements))
+				aggregated_referent_annotation[chat_id][markable_id]["pairwise_exact_match"] = (int(agreement_stats.num_pairwise_exact_match), int(agreement_stats.num_pairwise_judgements))
+				aggregated_referent_annotation[chat_id][markable_id]["avg_pairwise_f1"] = agreement_stats.avg_pairwise_f1
 
 	total = 0
 	ambiguous = 0
