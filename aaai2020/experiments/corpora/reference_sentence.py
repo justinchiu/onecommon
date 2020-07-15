@@ -13,7 +13,8 @@ ReferenceSentenceInstance = namedtuple(
     "ReferenceSentenceInstance",
     "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids \
     agents chat_ids sel_idxs lens rev_idxs hid_idxs num_markables is_self \
-    partner_ref_inpt partner_ref_tgt_our_view partner_num_markables".split()
+    partner_ref_inpt partner_ref_tgt_our_view partner_num_markables \
+    referent_disagreements partner_referent_disagreements".split()
 )
 
 
@@ -128,6 +129,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
 
             partner_refs, partner_refs_our_view = [], []
 
+            ref_disagreements, partner_ref_disagreements = [], []
+
             for _ in range(bsz):
                 # if i >= len(dataset) or len(dataset[i][1]) != dial_len or len(dataset[i][2]) != markable_length:
                 if i >= len(dataset) or len(dataset[i][1]) != dial_len:
@@ -147,6 +150,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 sel_idxs.append(len(dataset[i][1][-1]) - 1)
                 partner_refs.append(dataset[i].partner_referent_idxs)
                 partner_refs_our_view.append(dataset[i].partner_referent_our_view_idxs)
+                ref_disagreements.append(dataset[i].referent_disagreements)
+                partner_ref_disagreements.append(dataset[i].partner_referent_disagreements)
                 i += 1
                 pbar.update(1)
 
@@ -257,7 +262,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt,
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs,
                 lens, rev_idxs, hid_idxs, all_num_markables, is_self,
-                partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables
+                partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables,
+                ref_disagreements, partner_ref_disagreements
             ))
 
         pbar.close()

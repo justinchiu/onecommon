@@ -8,6 +8,7 @@ BELIEF_TYPES = [
     'none',
     'selected', 'partners',
     'last_partner_mentioned',
+    't-2_partner_mentioned',
     'cumulative_partner_mentioned',
     'this_partner_mentioned',
     'this_partner_mentioned_predicted',
@@ -18,6 +19,7 @@ BELIEF_TYPES = [
     'last_mentioned_predicted',
     'cumulative_mentioned',
     'last_mentioned',
+    't-2_mentioned',
     'next_mentioned',
 ]
 
@@ -47,14 +49,19 @@ class BeliefConstructor(_BeliefConstructor):
         parser.add_argument('--selection_beliefs', choices=BELIEF_TYPES, nargs='*',
                             default=[],
                             help='selected: indicator on what you chose. partners: indicator on what the other person has')
+        # parser.add_argument('--selection_beliefs_patterns', nargs='*')
 
         parser.add_argument('--generation_beliefs', choices=BELIEF_TYPES, nargs='*',
                             default=[],
                             help='selected: indicator on what you chose. partners: indicator on what the other person has')
+        # parser.add_argument('--generation_beliefs_patterns', nargs='*')
 
         parser.add_argument('--mention_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
+        # parser.add_argument('--mention_beliefs_patterns', nargs='*')
         parser.add_argument('--ref_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
+        # parser.add_argument('--ref_beliefs_patterns', nargs='*')
         parser.add_argument('--partner_ref_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
+        # parser.add_argument('--partner_beliefs_patterns', nargs='*')
 
         parser.add_argument('--belief_noise_pos_to_neg_probability', type=float, default=0.0)
         parser.add_argument('--belief_noise_neg_to_pos_probability', type=float, default=0.0)
@@ -80,102 +87,89 @@ class BeliefConstructor(_BeliefConstructor):
             if beliefs_name == 'selected':
                 # bsz x num_dots x 1, one-hot if that dot is the one selected
                 beliefs = torch.zeros(self.sel_tgt.size(0), self.num_dots).scatter(1, self.sel_tgt.unsqueeze(1),
-                                                                                   1).unsqueeze(-1)
+                                                                                   1)
             elif beliefs_name == 'partners':
                 partner_has = []
                 for batch_ix, (a_rids, p_rids) in enumerate(utils.safe_zip(self.real_ids, self.partner_real_ids)):
                     p_rids = set(p_rids)
                     partner_has.append([a_rid in p_rids for a_rid in a_rids])
-                beliefs = torch.tensor(partner_has).float().unsqueeze(-1)
-            elif beliefs_name in ['last_partner_mentioned', 'last_partner_mentioned_predicted']:
-                if beliefs_name == 'last_partner_mentioned':
-                    mentions = self.partner_dots_mentioned_our_view
-                else:
-                    # if partner_ref_outs and partner_ref_outs[0] is None:
-                    #     raise Exception("must pass --partner_reference_prediction with --this_partner_mentioned_predicted")
-                    mentions = [
-                        # out.sigmoid().max(0).values if out is not None else None
-                        # take the max probability over the dot mentions
-                        # out_logits: num_mentions x bsz x num_dots
-                        out[0].sigmoid().max(0).values if out is not None else None
-                        for out in partner_ref_outs
-                    ]
-                    if self.args.detach_beliefs:
-                        mentions = [
-                            mention.detach() if mention is not None else None
-                            for mention in mentions
-                        ]
-                    mentions = [
-                        mention if mention is not None else torch.zeros(self.bsz, self.num_dots)
-                        for mention in mentions
-                    ]
-                beliefs = torch.zeros(self.bsz, self.num_dots)
-                if timestep > 0:
-                    ts = (torch.tensor([timestep] * self.bsz).long() - 1) - self.is_self[timestep - 1].long()
-                    for j, t_j in enumerate(ts):
-                        if t_j >= 0:
-                            beliefs[j] = mentions[t_j][j]
-                beliefs = beliefs.float().unsqueeze(-1)
-            elif beliefs_name in ['this_partner_mentioned', 'this_partner_mentioned_noised']:
-                if timestep >= 0:
-                    beliefs = self.partner_dots_mentioned_our_view[timestep].float().unsqueeze(-1)
-                else:
-                    beliefs = torch.zeros_like(self.partner_dots_mentioned_our_view[0]).float().unsqueeze(-1)
-                if beliefs_name == 'this_partner_mentioned_noised':
-                    beliefs = noise_beliefs(beliefs,
-                                            self.args.belief_noise_pos_to_neg_probability,
-                                            self.args.belief_noise_neg_to_pos_probability)
-            elif beliefs_name == 'this_partner_mentioned_predicted':
-                if timestep >= 0 and partner_ref_outs[timestep] is not None:
-                    # if partner_ref_outs[timestep] is None:
-                    #     raise Exception("must pass --partner_reference_prediction with --this_partner_mentioned_predicted")
-                    ref_logits, ref_full = partner_ref_outs[timestep]
-                    beliefs = ref_logits.sigmoid().max(0).values
-                    beliefs = beliefs.unsqueeze(-1)
-                    if self.args.detach_beliefs:
-                        beliefs = beliefs.detach()
-                else:
-                    beliefs = torch.zeros(self.bsz, self.num_dots, 1).float()
-            elif beliefs_name == 'cumulative_partner_mentioned':
-                beliefs = torch.zeros(self.bsz, self.num_dots).bool()
-                if timestep >= 0:
-                    for t in range(timestep):
-                        beliefs |= self.partner_dots_mentioned_our_view[t]
-                beliefs = beliefs.float().unsqueeze(-1)
-            elif beliefs_name == 'this_mentioned':
-                if timestep >= 0:
-                    beliefs = self.dots_mentioned[timestep].float().unsqueeze(-1)
-                else:
-                    beliefs = torch.zeros_like(self.dots_mentioned[0]).float().unsqueeze(-1)
-            elif beliefs_name in ['last_mentioned', 'last_mentioned_predicted']:
-                if beliefs_name == 'last_mentioned':
-                    mentions = self.dots_mentioned
-                else:
-                    assert beliefs_name == 'last_mentioned_predicted'
-                    mentions = [logits.sigmoid().max(0).values for logits in ref_outs]
-                    if self.args.detach_beliefs:
-                        mentions = [m.detach() for m in mentions]
-                beliefs = torch.zeros(self.bsz, self.num_dots)
-                if timestep > 0:
-                    ts = (torch.tensor([timestep] * self.bsz).long() - 1) - (1 - self.is_self[timestep - 1].long())
-                    for j, t_j in enumerate(ts):
-                        if t_j >= 0:
-                            beliefs[j] = mentions[t_j][j]
-                beliefs = beliefs.float().unsqueeze(-1)
-            elif beliefs_name == 'next_mentioned':
-                if timestep < len(self.dots_mentioned) - 1:
-                    beliefs = self.dots_mentioned[timestep + 1].float().unsqueeze(-1)
-                else:
-                    beliefs = torch.zeros_like(self.dots_mentioned[0]).float().unsqueeze(-1)
-            elif beliefs_name == 'cumulative_mentioned':
-                beliefs = torch.zeros(self.bsz, self.num_dots).bool()
-                if timestep >= 0:
-                    for t in range(timestep):
-                        beliefs |= self.dots_mentioned[t]
-                beliefs = beliefs.float().unsqueeze(-1)
+                beliefs = torch.tensor(partner_has)
             else:
-                raise ValueError('invalid --{} {}'.format(belief_type, beliefs_name))
-            all_beliefs.append(beliefs)
+                tokens = beliefs_name.split('_')
+                timestep_to_use_name = tokens[0] # e.g.
+                assert timestep_to_use_name in ['next', 'this', 'last', 't-2', 'cumulative']
+                belief_to_use = '_'.join(tokens[1:])
+                assert belief_to_use in [
+                    'mentioned', 'mentioned_predicted', 'mentioned_noised',
+                    'partner_mentioned', 'partner_mentioned_predicted', 'partner_mentioned_noised'
+                ]
+                if belief_to_use in ['mentioned', 'mentioned_noised']:
+                    mentions = self.dots_mentioned
+                    if belief_to_use == 'mention_noised':
+                        mentions = [noise_beliefs(m, self.args.belief_noise_pos_to_neg_probability,
+                                                  self.args.belief_noise_neg_to_pos_probability)
+                                    if m is not None else None
+                                    for m in mentions]
+                elif belief_to_use == 'mentioned_predicted':
+                    # TODO: unpack ref_outs to deal with structured outputs
+                    mentions = [out[0].sigmoid().max(0).values
+                                if out is not None else None
+                                for out in ref_outs]
+                    if self.args.detach_beliefs:
+                        mentions = [m.detach() if m is not None else None for m in mentions]
+                elif belief_to_use in ['partner_mentioned', 'partner_mentioned_noised']:
+                    mentions = self.partner_dots_mentioned_our_view
+                    if belief_to_use == 'partner_mentioned_noised':
+                        mentions = [noise_beliefs(m, self.args.belief_noise_pos_to_neg_probability,
+                                                  self.args.belief_noise_neg_to_pos_probability)
+                                    if m is not None else None
+                                    for m in mentions]
+                else:
+                    assert belief_to_use == 'partner_mentioned_predicted'
+                    # TODO: use full mention logits if available rather than marginalized logits
+                    mentions = [out[0].sigmoid().max(0).values
+                                if out is not None else None
+                                for out in partner_ref_outs]
+                    if self.args.detach_beliefs:
+                        mentions = [m.detach() if m is not None else None for m in mentions]
+                if timestep_to_use_name == 'cumulative':
+                    beliefs = torch.zeros(self.bsz, self.num_dots).bool()
+                    if timestep >= 0:
+                        for t in range(timestep):
+                            if mentions[t] is not None:
+                                beliefs |= mentions[t]
+                elif timestep_to_use_name == 'this':
+                    if timestep >= 0 and mentions[timestep] is not None:
+                        beliefs = mentions[timestep]
+                    else:
+                        beliefs = torch.zeros(self.bsz, self.num_dots)
+                else:
+                    if timestep_to_use_name == 'next':
+                        direction = +1
+                        offset = 1
+                    elif timestep_to_use_name == 'last':
+                        direction = -1
+                        offset = 1
+                    elif timestep_to_use_name == 't-2':
+                        direction = -1
+                        offset = 2
+
+                    timestep_to_use = timestep+direction*offset
+                    if timestep_to_use < 0 or timestep_to_use >= len(self.is_self):
+                        beliefs = torch.zeros(self.bsz, self.num_dots)
+                    else:
+                        ts = torch.full((self.bsz,), timestep_to_use).long()
+                        is_self = self.is_self[timestep_to_use]
+                        shift = is_self if belief_to_use.startswith('partner') else (~is_self)
+
+                        ts = ts + direction*shift.long()
+
+                        beliefs = torch.zeros(self.bsz, self.num_dots)
+                        for ix, t in enumerate(ts):
+                            if 0 <= t < len(mentions) and mentions[t] is not None:
+                                beliefs[ix] = mentions[t][ix]
+
+            all_beliefs.append(beliefs.float().unsqueeze(-1))
 
         if all_beliefs:
             if len(all_beliefs) > 1:

@@ -14,7 +14,7 @@ from corpora.data import Dictionary, read_lines, get_tag
 
 ReferenceRaw = namedtuple(
     "ReferenceRaw",
-    "input_vals word_idxs referent_idxs output_idx scenario_id real_ids partner_real_ids agent chat_id partner_referent_idxs partner_referent_our_view_idxs".split()
+    "input_vals word_idxs referent_idxs output_idx scenario_id real_ids partner_real_ids agent chat_id partner_referent_idxs partner_referent_our_view_idxs referent_disagreements partner_referent_disagreements".split()
 )
 
 
@@ -103,9 +103,11 @@ class ReferenceCorpus(object):
             partner_real_ids = get_tag(tokens, 'partner_real_ids')
             agent = int(get_tag(tokens, 'agent')[0])
             chat_id = get_tag(tokens, 'chat_id')[0]
+            ref_disagreement = list(map(int, get_tag(tokens, 'referent_disagreements')))
+            partner_ref_disagreement = list(map(int, get_tag(tokens, 'partner_referent_disagreements')))
             dataset.append(ReferenceRaw(
                 input_vals, word_idxs, referent_idxs, output_idx, scenario_id, real_ids, partner_real_ids, agent, chat_id,
-                partner_referent_idxs, partner_referent_our_view_idxs,
+                partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement
             ))
             # compute statistics
             total += len(word_idxs)

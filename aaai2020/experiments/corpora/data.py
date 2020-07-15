@@ -148,7 +148,9 @@ class WordCorpus(object):
             scenario_id = get_tag(tokens, 'scenario_id')[0]
             real_ids = get_tag(tokens, 'real_ids')
             agent = int(get_tag(tokens, 'agent')[0])
-            dataset.append((input_vals, word_idxs, output_idx, scenario_id, real_ids, agent))
+            ref_disagreement = list(map(int, get_tag(tokens, 'referent_disagreements')))
+            partner_ref_disagreement = list(map(int, get_tag(tokens, 'partner_referent_disagreements')))
+            dataset.append((input_vals, word_idxs, output_idx, scenario_id, real_ids, agent, ref_disagreement, partner_ref_disagreement))
             # compute statistics
             total += len(word_idxs)
             unks += np.count_nonzero([idx == unk for idx in word_idxs])
