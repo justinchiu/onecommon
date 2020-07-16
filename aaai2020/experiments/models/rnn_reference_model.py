@@ -52,6 +52,8 @@ class RnnReferenceModel(nn.Module):
 
         parser.add_argument('--structured_attention', action='store_true')
         parser.add_argument('--structured_temporal_attention', action='store_true')
+        parser.add_argument('--structured_temporal_attention_transitions', choices=['none', 'dot_id'], default='dot_id')
+        parser.add_argument('--structured_temporal_attention_training', choices=['likelihood', 'max_margin'], default='likelihood')
 
         parser.add_argument('--selection_attention', action='store_true')
         parser.add_argument('--feed_context', action='store_true')
@@ -478,7 +480,7 @@ class RnnReferenceModel(nn.Module):
         ctx_h_expand = ctx_h_marked.unsqueeze(0).expand(seq_len, -1, -1, -1)
 
         # seq_len x batch_size x num_dots
-        attn_logit, _ = self._apply_attention(
+        attn_logit, _, _ = self._apply_attention(
             'feed' if use_feed_attn else 'lang',
             torch.cat([lang_h_expand, ctx_h_expand], 3),
             ctx_differences,

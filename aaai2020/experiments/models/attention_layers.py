@@ -42,7 +42,7 @@ class AttentionLayer(nn.Module):
 
     def forward(self, input, ctx_differences, num_markables):
         # takes ctx_differences and num_markables as an argument for compatibility with StructuredAttentionLayer
-        return self.feedforward(input).squeeze(-1), None
+        return self.feedforward(input).squeeze(-1), None, None
 
 
 class StructuredAttentionLayer(nn.Module):
@@ -91,7 +91,7 @@ class StructuredAttentionLayer(nn.Module):
 
         return '{}->{}'.format(','.join(unary_factor_names+binary_factor_names), output_factor_names)
 
-    def forward(self, input, ctx_differences, num_markables):
+    def forward(self, input, ctx_differences, num_markables, normalize_joint=True):
         # takes num_markables as an argument for compatibility with StructuredTemporalAttentionLayer
         # max instances per batch (aka N) x batch_size x num_dots x hidden_dim
         contraction_string = self.build_contraction_string(self.num_ent)
@@ -158,7 +158,10 @@ class StructuredAttentionLayer(nn.Module):
         assert marginal_log_probs.size() == (bsz*N, self.num_ent)
         marginal_log_probs = marginal_log_probs.view(N, bsz, self.num_ent)
 
-        joint_log_probs = joint_logits.reshape(N, bsz, -1).log_softmax(dim=-1)
+
+        joint_log_probs = joint_logits.reshape(N, bsz, -1)
+        if normalize_joint:
+            joint_log_probs = joint_log_probs.log_softmax(dim=-1)
         assert joint_log_probs.size() == (N, bsz, 2**self.num_ent)
         joint_log_probs = joint_log_probs.view((N, bsz) + (2,) * self.num_ent)
 
@@ -167,13 +170,16 @@ class StructuredAttentionLayer(nn.Module):
             joint_log_probs = joint_log_probs.squeeze(0)
             marginal_log_probs = marginal_log_probs.squeeze(0)
 
-        return marginal_log_probs, joint_log_probs
+        return marginal_log_probs, joint_log_probs, None
 
 
 class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
     def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p):
         super().__init__(args, n_hidden_layers, input_dim, hidden_dim, dropout_p)
-        self.transition_params = nn.Parameter(torch.zeros(3))
+        if args.structured_temporal_attention_transitions == 'dot_id':
+            self.transition_params = nn.Parameter(torch.zeros(3))
+        elif args.structured_temporal_attention_transitions == 'none':
+            self.transition_params = nn.Parameter(torch.zeros(3), requires_grad=False)
 
     def build_temporal_contraction_string(self, num_ent):
         assert num_ent * 2 < len(string.ascii_lowercase)
@@ -194,24 +200,26 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
 
     def forward(self, input, ctx_differences, num_markables):
         from torch_struct import LinearChainCRF
-        marginal_log_probs, joint_log_probs = super().forward(input, ctx_differences, num_markables)
-        N, bsz, *dot_dims = joint_log_probs.size()
+        marginal_log_probs, joint_logits, _ = super().forward(input, ctx_differences, num_markables, normalize_joint=False)
+        N, bsz, *dot_dims = joint_logits.size()
         assert N == num_markables.max()
         assert num_markables.dim() == 1 and num_markables.size(0) == bsz
 
+        joint_log_probs = joint_logits.view(N, bsz, -1).contiguous().log_softmax(-1).view_as(joint_logits)
+
         if N <= 1:
             # TODO: fix this hack so that we have a consistent return semantics
-            return marginal_log_probs, joint_log_probs
+            return marginal_log_probs, joint_log_probs, None
 
         num_dots = len(dot_dims)
         exp_num_dots = 2**num_dots
         # batch x num_markables x exp_num_dots
-        emission_potentials = joint_log_probs.view(N, bsz, exp_num_dots).transpose(0, 1)
+        emission_potentials = joint_logits.view(N, bsz, exp_num_dots).transpose(0, 1)
 
         transition_potentials = self.make_transitions(bsz, num_dots)
         edge_potentials = self.make_potentials(transition_potentials, emission_potentials)
         dist = LinearChainCRF(edge_potentials, lengths=num_markables)
-        return dist
+        return marginal_log_probs, joint_log_probs, dist
 
     def make_transitions(self, batch_size, num_dots):
         # 1(batch size) x 1(num pairs) x 3

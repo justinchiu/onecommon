@@ -508,7 +508,7 @@ class ReferencePredictor(object):
         return ref_tgt, ref_mask
 
     def _forward_non_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask):
-        ref_out_logits, ref_out_full = ref_out
+        ref_out_logits, ref_out_full, _ = ref_out
         del ref_out
 
         N, bsz, num_dots = ref_tgt.size()
@@ -537,23 +537,72 @@ class ReferencePredictor(object):
             ref_pred = int_to_bit_array(ref_pred_ix, num_bits=num_dots)
         return ref_loss, ref_pred, ref_pred_ix
 
-    def _forward_temporal(self, ref_out, ref_tgt, ref_tgt_ix, num_markables):
+    def _forward_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables):
         from torch_struct import LinearChainCRF
-        assert isinstance(ref_out, LinearChainCRF)
+
+        marginal_log_probs, joint_log_probs, temporal_dist = ref_out
+        assert isinstance(temporal_dist, LinearChainCRF)
 
         num_dots = ref_tgt.size(-1)
         # bsz x N x 2**num_dots x 2**num_dots
         ref_tgt_ix_transpose = ref_tgt_ix.transpose(0,1)
-        gold_parts = LinearChainCRF.struct.to_parts(
-            ref_tgt_ix.transpose(0,1), 2**num_dots, lengths=num_markables
-        )
-        log_likelihood = ref_out.log_prob(gold_parts).sum()
-        ref_loss = -log_likelihood
-        ref_pred_ix_transpose, exp_num_dots = LinearChainCRF.struct.from_parts(ref_out.argmax)
+        bsz, N, *_ = ref_tgt_ix_transpose.size()
+
+        ref_loss = 0
+        ref_pred = torch.zeros(N, bsz, num_dots).long()
+        ref_pred_ix = torch.zeros(N, bsz).long()
+
+        has_multiple = num_markables > 1
+
+        # collect for single markables
+        if (~has_multiple).any():
+            ref_loss_single, ref_pred_single, ref_pred_ix_single = self._forward_non_temporal(
+                (marginal_log_probs[:,~has_multiple], joint_log_probs[:,~has_multiple], None),
+                ref_tgt[:,~has_multiple], ref_tgt_ix[:,~has_multiple],
+                ref_mask[:,~has_multiple]
+            )
+            ref_loss += ref_loss_single
+            ref_pred[:,~has_multiple] = ref_pred_single
+            ref_pred_ix[:,~has_multiple] = ref_pred_ix_single
+
+
+        ref_pred_ix_transpose_multi, exp_num_dots = LinearChainCRF.struct.from_parts(temporal_dist.argmax)
         assert exp_num_dots == 2**num_dots
+
+        # aggregate with single timestep info
         # N x bsz
-        ref_pred_ix = ref_pred_ix_transpose.transpose(0,1).contiguous()
-        ref_pred = int_to_bit_array(ref_pred_ix, num_bits=num_dots)
+        ref_pred_ix[:,has_multiple] = ref_pred_ix_transpose_multi.transpose(0,1).contiguous()[:,has_multiple]
+        ref_pred[:,has_multiple] = int_to_bit_array(ref_pred_ix[:,has_multiple], num_bits=num_dots)
+
+        gold_parts = LinearChainCRF.struct.to_parts(
+            ref_tgt_ix_transpose, 2**num_dots, lengths=num_markables
+        )
+        if self.args.structured_temporal_attention_training == 'likelihood':
+            log_likelihoods = temporal_dist.log_prob(gold_parts)
+            losses = -log_likelihoods
+        elif self.args.structured_temporal_attention_training == 'max_margin':
+            def score(parts):
+                # an unnormalized version of https://github.com/harvardnlp/pytorch-struct/blob/b6816a4d436136c6711fe2617995b556d5d4d300/torch_struct/distributions.py#L50
+                d = parts.dim()
+                batch_dims = range(d - len(temporal_dist.event_shape))
+                return temporal_dist._struct().score(
+                    temporal_dist.log_potentials,
+                    parts.type_as(temporal_dist.log_potentials),
+                    batch_dims=batch_dims,
+                )
+            gold_scores = score(gold_parts)
+            pred_scores = score(temporal_dist.argmax)
+            # hinge loss with a structured margin
+            errors = (ref_mask * (ref_pred != ref_tgt)).sum(0).sum(-1)
+            losses = torch.max((pred_scores - gold_scores + errors), torch.zeros_like(gold_scores))
+            # print(f"gold_scores: {gold_scores}")
+            # print(f"pred_scores: {pred_scores}")
+            # print(f"losses: {losses}")
+        else:
+            raise NotImplementedError("--structured_temporal_attention_training={}".format(self.args.structured_temporal_attention_training))
+
+        ref_loss_multi = (losses * has_multiple).sum()
+        ref_loss += ref_loss_multi
         return ref_loss, ref_pred, ref_pred_ix
 
     def forward(self, ref_inpt, ref_tgt, ref_out, num_markables):
@@ -569,10 +618,10 @@ class ReferencePredictor(object):
         ref_tgt_ix = bit_to_int_array(ref_tgt.long())
         assert ref_tgt_ix.max().item() <= 2 ** num_dots
 
-        if isinstance(ref_out, tuple):
+        if ref_out[2] is None:
             ref_loss, ref_pred, ref_pred_ix = self._forward_non_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask)
         else:
-            ref_loss, ref_pred, ref_pred_ix = self._forward_temporal(ref_out, ref_tgt, ref_tgt_ix, num_markables)
+            ref_loss, ref_pred, ref_pred_ix = self._forward_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables)
 
         stats = self.compute_stats(ref_mask, ref_tgt, ref_tgt_ix, ref_pred, ref_pred_ix)
 
@@ -929,7 +978,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         # sel_out contains the output of AttentionLayer: marginal_logits and full_log_probs, but since this is an AttentionLayer, full_log_probs is None
         # sel_out[1] should be None because we're not using a structured attention layer
-        sel_logits, _ = sel_out
+        sel_logits, _, _ = sel_out
 
         sel_loss = self.sel_crit(sel_logits, sel_tgt)
         sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()
