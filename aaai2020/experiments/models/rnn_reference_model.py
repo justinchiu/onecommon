@@ -1,8 +1,6 @@
-import string
 from collections import defaultdict
 from typing import Union
 
-import pyro.ops.contract
 import torch.nn.init
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
@@ -12,171 +10,15 @@ import models
 from corpora import data
 from domain import get_domain
 from engines import Criterion
-from engines.beliefs import BeliefConstructor, BELIEF_TYPES
+from engines.beliefs import BeliefConstructor
 from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
+from models.attention_layers import FeedForward, AttentionLayer, StructuredAttentionLayer, \
+    StructuredTemporalAttentionLayer
 from models.ctx_encoder import *
 from utils import set_temporary_default_tensor_type
 
 BIG_NEG = -1e6
 
-class FeedForward(nn.Module):
-    def __init__(self, n_hidden_layers, input_dim, hidden_dim, output_dim, dropout_p=None):
-        super(FeedForward, self).__init__()
-        self.input_dim = input_dim
-        self.output_dim = output_dim
-        self.dropout_p = dropout_p
-        self.hidden_dim = hidden_dim
-        layers = []
-        for ix in range(n_hidden_layers + 1):
-            this_in = input_dim if ix == 0 else hidden_dim
-            is_last = ix == n_hidden_layers
-            this_out = output_dim if is_last else hidden_dim
-            layers.append(nn.Linear(this_in, this_out))
-            if not is_last:
-                layers.append(nn.ReLU())
-                if dropout_p is not None:
-                    layers.append(nn.Dropout(dropout_p))
-        self.layers = nn.Sequential(*layers)
-
-    def forward(self, input):
-        return self.layers(input)
-
-class AttentionLayer(nn.Module):
-    @classmethod
-    def add_args(cls, parser):
-        pass
-
-    def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p):
-        super().__init__()
-        self.args = args
-        self.feedforward = FeedForward(n_hidden_layers, input_dim, hidden_dim, output_dim=1, dropout_p=dropout_p)
-
-    def forward(self, input, ctx_differences):
-        # takes ctx_differences as an argument for compatibility with StructuredAttentionLayer
-        return self.feedforward(input), None
-
-class StructuredAttentionLayer(nn.Module):
-    @classmethod
-    def add_args(cls, parser):
-        parser.add_argument('--structured_attention_hidden_dim', type=int, default=64)
-        parser.add_argument('--structured_attention_dropout', type=float, default=0.2)
-        parser.add_argument('--structured_attention_marginalize', dest='structured_attention_marginalize', action='store_true')
-        parser.add_argument('--structured_attention_no_marginalize', dest='structured_attention_marginalize', action='store_false')
-        parser.set_defaults(structured_attention_marginalize=True)
-
-    def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p):
-        super().__init__()
-        self.args = args
-        self.feedforward = FeedForward(n_hidden_layers, input_dim, hidden_dim, output_dim=2, dropout_p=dropout_p)
-        self.relation_dim = 4 + 1 # +1 for distance
-
-        self.num_ent = 7
-
-        self.relation_encoder = FeedForward(
-            n_hidden_layers=1, input_dim=self.relation_dim, hidden_dim=args.structured_attention_hidden_dim,
-            output_dim=3,
-            dropout_p=args.structured_attention_dropout,
-        )
-
-        # self.contraction_string = self.build_contraction_string(self.num_ent)
-
-    def build_contraction_string(self, num_ent):
-        var_names = string.ascii_lowercase[:num_ent]
-        batch_name = 'z'
-        assert batch_name not in var_names
-
-        unary_factor_names = []
-        binary_factor_names = []
-
-        for i in range(num_ent):
-            unary_factor_names.append(batch_name + var_names[i])
-            for j in range(num_ent):
-                if i >= j:
-                    continue
-                binary_factor_names.append(batch_name + var_names[i] + var_names[j])
-
-        marginals = ','.join('{}{}'.format(batch_name, v) for v in var_names)
-        joint = '{}{}'.format(batch_name, ''.join(var_names))
-        output_factor_names = '{},{}'.format(joint,marginals)
-
-        return '{}->{}'.format(','.join(unary_factor_names+binary_factor_names), output_factor_names)
-
-    def forward(self, input, ctx_differences):
-        # max instances per batch (aka N) x batch_size x num_dots x hidden_dim
-        contraction_string = self.build_contraction_string(self.num_ent)
-
-        if input.dim() == 3:
-            input = input.unsqueeze(0)
-            expanded = True
-        else:
-            assert input.dim() == 4
-            expanded = False
-
-        N = input.size(0)
-        bsz = input.size(1)
-        unary_potentials = self.feedforward(input)
-        assert bsz == ctx_differences.size(0)
-
-        # ctx_differences: batch_size x (7*6/2=21) x relation_dim
-        # batch_size x 21 x 3
-        binary_potentials = self.relation_encoder(ctx_differences)
-
-        assert bsz == binary_potentials.size(0)
-        num_pairs = binary_potentials.size(1)
-        assert binary_potentials.size(2) == 3
-
-        # flatten time and batch
-        unary_potentials = unary_potentials.view(N*bsz, unary_potentials.size(2), unary_potentials.size(3))
-
-        # get a symmetric edge potential matrix
-        # [a, b, c] -> [[a, b], [b, c]]
-        # bsz x num_pairs x 4
-        binary_potentials = torch.einsum(
-            "brx,yx->bry",
-            binary_potentials,
-            torch.FloatTensor([[1,0,0],[0,1,0],[0,1,0],[0,0,1]]).to(binary_potentials.device)
-        )
-        # add a fake time dimension
-        binary_potentials = binary_potentials.unsqueeze(0).repeat_interleave(N, dim=0)
-        # flatten time and batch and reshape the last dimension (size 4)  to a 2x2
-        binary_potentials = binary_potentials.view(N*bsz, num_pairs, 2, 2)
-
-        # transpose the batch and dot dimension so that we can unpack along dots
-        unary_factors = unary_potentials.transpose(0,1)
-        # transpose the batch and dot-pair dimension so that we can unpack along dot-pairs
-        binary_factors = binary_potentials.transpose(0,1)
-
-        outputs = pyro.ops.contract.einsum(
-            contraction_string,
-            *unary_factors,
-            *binary_factors,
-            modulo_total=True,
-            backend='pyro.ops.einsum.torch_log',
-        )
-        joint_logits = outputs[0]
-        marginal_logits = outputs[1:]
-
-        assert len(marginal_logits) == self.num_ent
-
-        # bsz x num_ent x 2
-        marginal_logits = torch.stack(marginal_logits, dim=1)
-        log_marginals = marginal_logits.log_softmax(dim=-1)
-        # go from log probs for positive and negative to log odds
-        assert log_marginals.size(-1) == 2
-        marginal_log_probs = log_marginals.select(dim=-1,index=1) - log_marginals.select(dim=-1,index=0)
-        assert marginal_log_probs.size() == (bsz*N, self.num_ent)
-        marginal_log_probs = marginal_log_probs.view(N, bsz, self.num_ent)
-
-        joint_log_probs = joint_logits.reshape(N, bsz, -1).log_softmax(dim=-1)
-        assert joint_log_probs.size() == (N, bsz, 2**self.num_ent)
-        joint_log_probs = joint_log_probs.view((N, bsz) + (2,) * self.num_ent)
-
-        if expanded:
-            assert N == 1
-            joint_log_probs = joint_log_probs.squeeze(0)
-            marginal_log_probs = marginal_log_probs.squeeze(0)
-
-        return marginal_log_probs, joint_log_probs
 
 class RnnReferenceModel(nn.Module):
     corpus_ty = corpora.reference.ReferenceCorpus
@@ -209,6 +51,7 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--hid2output', choices=['activation-final', '1-hidden-layer', '2-hidden-layer'], default='activation-final')
 
         parser.add_argument('--structured_attention', action='store_true')
+        parser.add_argument('--structured_temporal_attention', action='store_true')
 
         parser.add_argument('--selection_attention', action='store_true')
         parser.add_argument('--feed_context', action='store_true')
@@ -352,11 +195,11 @@ class RnnReferenceModel(nn.Module):
         if args.mention_beliefs:
             assert args.next_mention_prediction
 
-        if args.structured_attention:
+        if args.structured_attention or args.structured_temporal_attention:
             assert not args.share_attn
             attention_constructors = {
-                'ref': StructuredAttentionLayer,
-                'ref_partner': StructuredAttentionLayer,
+                'ref': StructuredTemporalAttentionLayer if args.structured_temporal_attention else StructuredAttentionLayer,
+                'ref_partner': StructuredTemporalAttentionLayer if args.structured_temporal_attention else StructuredAttentionLayer,
                 'next_mention': StructuredAttentionLayer,
                 'sel': AttentionLayer,
                 'lang': AttentionLayer, # todo: consider structured attention with sigmoids here
@@ -456,16 +299,15 @@ class RnnReferenceModel(nn.Module):
     def _attention_name(self, name):
         return '{}_attn'.format(name)
 
-    def _apply_attention(self, name, input, ctx_differences):
+    def _apply_attention(self, name, input, ctx_differences, num_markables):
         if self.args.share_attn:
-            marginal_logits, joint_log_probs = self.attn(input, ctx_differences)
+            return self.attn(input, ctx_differences, num_markables)
         elif self.args.separate_attn:
             attn_module = getattr(self, self._attention_name(name))
-            marginal_logits, joint_log_probs = attn_module(input, ctx_differences)
+            return attn_module(input, ctx_differences, num_markables)
         else:
             attn_module = getattr(self, self._attention_name(name))
-            marginal_logits, joint_log_probs = attn_module(self.attn_prefix(input), ctx_differences)
-        return marginal_logits.squeeze(-1), joint_log_probs.squeeze(-1) if joint_log_probs is not None else None
+            return attn_module(self.attn_prefix(input), ctx_differences, num_markables)
 
     def _zero(self, *sizes):
         h = torch.Tensor(*sizes).fill_(0)
@@ -487,7 +329,7 @@ class RnnReferenceModel(nn.Module):
         )
         return ctx_differences
 
-    def reference_resolution(self, ctx_differences, ctx_h, outs_emb, ref_inpt, for_self=True, ref_beliefs=None):
+    def reference_resolution(self, ctx_differences, ctx_h, outs_emb, ref_inpt, num_markables, for_self=True, ref_beliefs=None):
         # ref_inpt: bsz x num_refs x 3
         if ref_inpt is None:
             return None
@@ -525,7 +367,8 @@ class RnnReferenceModel(nn.Module):
             attention_params_name = 'ref' if for_self else 'ref_partner'
         else:
             attention_params_name = 'ref'
-        return self._apply_attention(attention_params_name, torch.cat([ref_inpt, ctx_h], -1), ctx_differences)
+        outs = self._apply_attention(attention_params_name, torch.cat([ref_inpt, ctx_h], -1), ctx_differences, num_markables)
+        return outs
 
     def next_mention_prediction(self, ctx_differences, ctx_h, outs_emb, lens, mention_beliefs):
         bsz = ctx_h.size(0)
@@ -554,7 +397,9 @@ class RnnReferenceModel(nn.Module):
         ctx_h = ctx_h.unsqueeze(0)
         states = states.unsqueeze(0)
 
-        return self._apply_attention('next_mention', torch.cat([states, ctx_h], -1), ctx_differences)
+        num_markables = torch.full((bsz,), 1).long()
+
+        return self._apply_attention('next_mention', torch.cat([states, ctx_h], -1), ctx_differences, num_markables)
 
     def selection(self, ctx_differences, ctx_h, outs_emb, sel_idx, beliefs=None):
         # outs_emb: length x batch_size x dim
@@ -585,7 +430,8 @@ class RnnReferenceModel(nn.Module):
         to_cat = [sel_inpt, ctx_h]
         if beliefs is not None:
             to_cat.append(beliefs)
-        return self._apply_attention('sel', torch.cat(to_cat, 2), ctx_differences)
+        # TODO: pass something for num_markables for consistency; right now it relies on selection not using StructuredTemporalAttention
+        return self._apply_attention('sel', torch.cat(to_cat, 2), ctx_differences, num_markables=None)
 
     def _language_conditioned_dot_attention(self, ctx_differences, ctx_h, lang_hs, use_feed_attn, dots_mentioned, generation_beliefs):
         # lang_hs: seq_len x batch_size x hidden
@@ -635,7 +481,8 @@ class RnnReferenceModel(nn.Module):
         attn_logit, _ = self._apply_attention(
             'feed' if use_feed_attn else 'lang',
             torch.cat([lang_h_expand, ctx_h_expand], 3),
-            ctx_differences
+            ctx_differences,
+            num_markables=None,
         )
 
         if constrain_attention:
@@ -664,7 +511,9 @@ class RnnReferenceModel(nn.Module):
         return attn_prob
 
     def make_ref_scoring_function(
-        self, ctx_differences, ctx_h, inpt, tgt, ref_inpt, lens, lang_h, belief_constructor=None,
+        self, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
+        num_markables, partner_num_markables,
+        lens, lang_h, belief_constructor=None,
         partner_ref_inpt=None, timestep=0, partner_ref_outs=None, ref_outs=None
     ):
         # sel_idx isn't needed b/c we'll pass compute_sel_idx = False
@@ -738,7 +587,10 @@ class RnnReferenceModel(nn.Module):
                 this_mentions_t = comb(this_mentions, batch_dim=0)
 
                 outs, *_ = self._forward(
-                    ctx_differences_t, ctx_h_t, inpt_t, ref_inpt_t, sel_idx=None, lens=lens_t, lang_h=lang_h_t,
+                    ctx_differences_t, ctx_h_t, inpt_t, ref_inpt_t, sel_idx=None,
+                    num_markables=num_markables,
+                    partner_num_markables=partner_num_markables,
+                    lens=lens_t, lang_h=lang_h_t,
                     compute_sel_out=False, pack=True, dots_mentioned=this_mentions_t,
                     belief_constructor=belief_constructor, timestep=timestep, partner_ref_inpt=partner_ref_inpt_t,
                     partner_ref_outs=partner_ref_outs_t[:timestep] if partner_ref_outs_t is not None else None,
@@ -753,8 +605,9 @@ class RnnReferenceModel(nn.Module):
 
         return score_refs
 
-    def _forward(self, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=None, lang_h=None, compute_sel_out=False, pack=False,
-                 dots_mentioned=None, belief_constructor: Union[BeliefConstructor, None]=None, partner_ref_inpt=None,
+    def _forward(self, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables,
+                 lens=None, lang_h=None, compute_sel_out=False, pack=False, dots_mentioned=None,
+                 belief_constructor: Union[BeliefConstructor, None]=None, partner_ref_inpt=None,
                  timestep=0, partner_ref_outs=None, ref_outs=None):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
@@ -811,12 +664,14 @@ class RnnReferenceModel(nn.Module):
         # print('ref_inpt.size(): {}'.format(ref_inpt.size()))
         # print('outs_emb.size(): {}'.format(outs_emb.size()))
         ref_out = self.reference_resolution(
-            ctx_differences, ctx_h, lang_hs, ref_inpt, for_self=True, ref_beliefs=ref_beliefs
+            ctx_differences, ctx_h, lang_hs, ref_inpt, for_self=True, ref_beliefs=ref_beliefs,
+            num_markables=num_markables,
         )
 
         if vars(self.args).get('partner_reference_prediction', False):
             partner_ref_out = self.reference_resolution(
-                ctx_differences, ctx_h, lang_hs, partner_ref_inpt, for_self=False, ref_beliefs=partner_ref_beliefs
+                ctx_differences, ctx_h, lang_hs, partner_ref_inpt, for_self=False, ref_beliefs=partner_ref_beliefs,
+                num_markables=partner_num_markables,
             )
         else:
             partner_ref_out = None
@@ -850,7 +705,7 @@ class RnnReferenceModel(nn.Module):
             sel_out = None
         return outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
 
-    def forward(self, ctx, inpt, ref_inpt, sel_idx, lens, dots_mentioned,
+    def forward(self, ctx, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables, lens, dots_mentioned,
                 belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt):
         # belief_function:
         # timestep 0
@@ -871,7 +726,9 @@ class RnnReferenceModel(nn.Module):
         lang_h = None
 
         outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
-            ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=lens, lang_h=lang_h, compute_sel_out=True, pack=False,
+            ctx_differences, ctx_h, inpt, ref_inpt, sel_idx,
+            num_markables, partner_num_markables,
+            lens=lens, lang_h=lang_h, compute_sel_out=True, pack=False,
             dots_mentioned=dots_mentioned, belief_constructor=belief_constructor,
             partner_ref_inpt=partner_ref_inpt, timestep=0, partner_ref_outs=[],
         )
@@ -1014,7 +871,7 @@ class RnnReferenceModel(nn.Module):
                 # add a time dimension to lang_h
                 ctx_attn_prob = self._language_conditioned_dot_attention(
                     ctx_differences, ctx_h, lang_h.unsqueeze(0), use_feed_attn=False, dots_mentioned=dots_mentioned,
-                    generation_beliefs=generation_beliefs
+                    generation_beliefs=generation_beliefs,
                 )
                 # remove the time dimension
                 ctx_attn_prob = ctx_attn_prob.squeeze(0)
@@ -1083,17 +940,18 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def forward(
-            self,
-            ctx,
-            inpts,
-            ref_inpts,
-            sel_idx,
-            lens,
-            dots_mentioned,
-            belief_constructor: Union[BeliefConstructor, None],
-            partner_ref_inpts
-    ):
+    def forward(self,
+                ctx,
+                inpts,
+                ref_inpts,
+                sel_idx,
+                num_markables,
+                partner_num_markables,
+                lens,
+                dots_mentioned,
+                belief_constructor: Union[BeliefConstructor, None],
+                partner_ref_inpts
+                ):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
         # sel_idx is index into the last sentence in the dialogue
@@ -1144,7 +1002,10 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             is_last = i == len(inpts) - 1
             this_lens = lens[i]
             outs, ref_out_and_partner_ref_out, sel_out, lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
-                ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
+                ctx_differences, ctx_h, inpt, ref_inpt, sel_idx,
+                num_markables=num_markables[i],
+                partner_num_markables=partner_num_markables[i],
+                lens=this_lens, lang_h=lang_h, compute_sel_out=is_last, pack=True,
                 dots_mentioned=dots_mentioned[i] if dots_mentioned is not None else None,
                 # selection_beliefs=selection_beliefs if is_last else None,
                 # generation_beliefs=generation_beliefs[i] if generation_beliefs is not None else None,

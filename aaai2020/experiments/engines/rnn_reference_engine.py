@@ -150,6 +150,7 @@ class RnnReferenceEngine(EngineBase):
 
         ctx = Variable(ctx)
         inpt = Variable(inpt)
+        bsz = ctx.size(0)
         if ref_inpt is not None:
             ref_inpt = Variable(ref_inpt)
 
@@ -160,7 +161,10 @@ class RnnReferenceEngine(EngineBase):
 
         out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, lang_h = \
             self.model.forward(
-                ctx, inpt, ref_inpt, sel_idx, lens=None, dots_mentioned=dots_mentioned,
+                ctx, inpt, ref_inpt, sel_idx,
+                num_markables=None, # todo: fix this to be a vector of (bsz,) with constant value determined by the size of ref_tgt
+                partner_num_markables=partner_num_markables,
+                lens=None, dots_mentioned=dots_mentioned,
                 belief_constructor=None, partner_ref_inpt=partner_ref_inpt,
             )
 
@@ -503,23 +507,12 @@ class ReferencePredictor(object):
         ref_mask = torch.transpose(ref_mask, 0, 1).contiguous()
         return ref_tgt, ref_mask
 
-    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables):
-        if ref_inpt is None or ref_out is None:
-            return None, None, self.empty_stats()
-
-        ref_tgt, ref_mask = self.preprocess(ref_tgt, num_markables)
-
+    def _forward_non_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask):
         ref_out_logits, ref_out_full = ref_out
         del ref_out
 
-        ref_mask_instance_level = (ref_mask.sum(-1) > 0).float()
-
-        # N: max(this_num_markables)
         N, bsz, num_dots = ref_tgt.size()
-
-        # N x bsz
-        ref_tgt_ix = bit_to_int_array(ref_tgt.long())
-        assert ref_tgt_ix.max().item() <= 2 ** num_dots
+        ref_mask_instance_level = (ref_mask.sum(-1) > 0).float()
 
         if self.args.structured_attention_marginalize:
             assert ref_tgt.size() == ref_out_logits.size()
@@ -542,6 +535,44 @@ class ReferencePredictor(object):
             ref_pred_ix = ref_out_reshape.argmax(-1).view(N, bsz)
             # N x bsz x num_dots
             ref_pred = int_to_bit_array(ref_pred_ix, num_bits=num_dots)
+        return ref_loss, ref_pred, ref_pred_ix
+
+    def _forward_temporal(self, ref_out, ref_tgt, ref_tgt_ix, num_markables):
+        from torch_struct import LinearChainCRF
+        assert isinstance(ref_out, LinearChainCRF)
+
+        num_dots = ref_tgt.size(-1)
+        # bsz x N x 2**num_dots x 2**num_dots
+        ref_tgt_ix_transpose = ref_tgt_ix.transpose(0,1)
+        gold_parts = LinearChainCRF.struct.to_parts(
+            ref_tgt_ix.transpose(0,1), 2**num_dots, lengths=num_markables
+        )
+        log_likelihood = ref_out.log_prob(gold_parts).sum()
+        ref_loss = -log_likelihood
+        ref_pred_ix_transpose, exp_num_dots = LinearChainCRF.struct.from_parts(ref_out.argmax)
+        assert exp_num_dots == 2**num_dots
+        # N x bsz
+        ref_pred_ix = ref_pred_ix_transpose.transpose(0,1).contiguous()
+        ref_pred = int_to_bit_array(ref_pred_ix, num_bits=num_dots)
+        return ref_loss, ref_pred, ref_pred_ix
+
+    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables):
+        if ref_inpt is None or ref_out is None:
+            return None, None, self.empty_stats()
+
+        ref_tgt, ref_mask = self.preprocess(ref_tgt, num_markables)
+
+        # N: max(this_num_markables)
+        N, bsz, num_dots = ref_tgt.size()
+
+        # N x bsz
+        ref_tgt_ix = bit_to_int_array(ref_tgt.long())
+        assert ref_tgt_ix.max().item() <= 2 ** num_dots
+
+        if isinstance(ref_out, tuple):
+            ref_loss, ref_pred, ref_pred_ix = self._forward_non_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask)
+        else:
+            ref_loss, ref_pred, ref_pred_ix = self._forward_temporal(ref_out, ref_tgt, ref_tgt_ix, num_markables)
 
         stats = self.compute_stats(ref_mask, ref_tgt, ref_tgt_ix, ref_pred, ref_pred_ix)
 
@@ -726,7 +757,9 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         )
 
         outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, lang_h, ctx_h, ctx_differences = self.model.forward(
-            ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned,
+            ctx, inpts, ref_inpts, sel_idx,
+            num_markables, all_partner_num_markables,
+            lens, dots_mentioned,
             belief_constructor=belief_constructor,
             partner_ref_inpts=partner_ref_inpts,
         )
