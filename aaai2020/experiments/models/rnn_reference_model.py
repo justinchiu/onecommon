@@ -48,12 +48,18 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--separate_attn', action='store_true', default=False,
                             help="don't share the first layer of the attention module")
 
-        parser.add_argument('--hid2output', choices=['activation-final', '1-hidden-layer', '2-hidden-layer'], default='activation-final')
+        parser.add_argument('--hid2output',
+                            choices=['activation-final', '1-hidden-layer', '2-hidden-layer'],
+                            default='activation-final')
 
         parser.add_argument('--structured_attention', action='store_true')
         parser.add_argument('--structured_temporal_attention', action='store_true')
-        parser.add_argument('--structured_temporal_attention_transitions', choices=['none', 'dot_id'], default='dot_id')
-        parser.add_argument('--structured_temporal_attention_training', choices=['likelihood', 'max_margin'], default='likelihood')
+        parser.add_argument('--structured_temporal_attention_transitions',
+                            choices=['none', 'dot_id', 'relational'],
+                            default='dot_id')
+        parser.add_argument('--structured_temporal_attention_training',
+                            choices=['likelihood', 'max_margin'],
+                            default='likelihood')
 
         parser.add_argument('--selection_attention', action='store_true')
         parser.add_argument('--feed_context', action='store_true')

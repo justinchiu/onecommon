@@ -177,9 +177,20 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
     def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p):
         super().__init__(args, n_hidden_layers, input_dim, hidden_dim, dropout_p)
         if args.structured_temporal_attention_transitions == 'dot_id':
-            self.transition_params = nn.Parameter(torch.zeros(3))
+            self.self_transition_params = nn.Parameter(torch.zeros(3))
+            # TODO: consider just fixing this to zeros
+            self.other_transition_params = nn.Parameter(torch.zeros(3))
         elif args.structured_temporal_attention_transitions == 'none':
             self.transition_params = nn.Parameter(torch.zeros(3), requires_grad=False)
+        elif args.structured_temporal_attention_transitions == 'relational':
+            self.self_transition_params = nn.Parameter(torch.zeros(3))
+            self.relation_encoder = FeedForward(
+                n_hidden_layers=1, input_dim=self.relation_dim, hidden_dim=args.structured_attention_hidden_dim,
+                output_dim=3,
+                dropout_p=args.structured_attention_dropout,
+            )
+        else:
+            raise NotImplementedError(f"--structured_temporal_attention_transitions={args.structured_temporal_attention_transitions}")
 
     def build_temporal_contraction_string(self, num_ent):
         assert num_ent * 2 < len(string.ascii_lowercase)
@@ -216,14 +227,38 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         # batch x num_markables x exp_num_dots
         emission_potentials = joint_logits.view(N, bsz, exp_num_dots).transpose(0, 1)
 
-        transition_potentials = self.make_transitions(bsz, num_dots)
+        transition_potentials = self.make_transitions(bsz, num_dots, ctx_differences)
         edge_potentials = self.make_potentials(transition_potentials, emission_potentials)
         dist = LinearChainCRF(edge_potentials, lengths=num_markables)
         return marginal_log_probs, joint_log_probs, dist
 
-    def make_transitions(self, batch_size, num_dots):
+    def make_transitions(self, batch_size, num_dots, ctx_differences):
         # 1(batch size) x 1(num pairs) x 3
-        transition_params = self.transition_params.unsqueeze(0).unsqueeze(1)
+        if self.args.structured_temporal_attention_transitions == 'none':
+            transition_params = self.transition_params.unsqueeze(0).unsqueeze(1)
+        elif self.args.structured_temporal_attention_transitions == 'dot_id':
+            transition_params = [
+                (self.self_transition_params if i == j else self.other_transition_params)
+                for i in range(num_dots)
+                for j in range(num_dots)
+            ]
+            transition_params = torch.stack(transition_params, 0).unsqueeze(0)
+        elif self.args.structured_temporal_attention_transitions == 'relational':
+            transition_params = torch.zeros(batch_size, num_dots*num_dots, 3)
+            rel_encoded = self.relation_encoder(ctx_differences)
+            def get_index(i, j):
+                return i * num_dots + j
+            ix = 0
+            for i in range(num_dots):
+                transition_params[:,get_index(i,i)] = self.self_transition_params
+                for j in range(i+1, num_dots):
+                    transition_params[:,get_index(i,j)] = rel_encoded[:,ix]
+                    transition_params[:,get_index(j,i)] = rel_encoded[:,ix]
+                    ix += 1
+            assert ix == rel_encoded.size(1)
+        else:
+            raise NotImplementedError(self.args.structured_temporal_attention_transitions)
+
         # get a symmetric edge potential matrix
         # [a, b, c] -> [[a, b], [b, c]]
         num_potentials = num_dots * num_dots
@@ -234,8 +269,8 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         binary_potentials = torch.einsum(
             "brx,yx->bry",
             transition_params,
-            torch.FloatTensor([[1,0,0],[0,1,0],[0,1,0],[0,0,1]]).to(self.transition_params.device)
-        ).view(1, 1, 2, 2).expand(batch_size, num_potentials, 2, 2)
+            torch.FloatTensor([[1,0,0],[0,1,0],[0,1,0],[0,0,1]]).to(transition_params.device)
+        ).view(transition_params.size(0), transition_params.size(1), 2, 2).expand(batch_size, num_potentials, 2, 2)
 
         # transpose the batch and dot-pair dimension so that we can unpack along dot-pairs
         binary_factors = binary_potentials.transpose(0,1)
