@@ -522,7 +522,8 @@ class RnnReferenceModel(nn.Module):
         self, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
         num_markables, partner_num_markables,
         lens, lang_h, belief_constructor=None,
-        partner_ref_inpt=None, timestep=0, partner_ref_outs=None, ref_outs=None
+        partner_ref_inpt=None, timestep=0, partner_ref_outs=None, ref_outs=None,
+        temporally_structured_candidates=False,
     ):
         # sel_idx isn't needed b/c we'll pass compute_sel_idx = False
         crit_no_reduce = Criterion(self.word_dict, bad_toks=['<pad>'], reduction='none')
@@ -559,6 +560,8 @@ class RnnReferenceModel(nn.Module):
             lens_t = tile(lens)
             lang_h_t = tile(lang_h, batch_dim=1)
             partner_ref_inpt_t = tile(partner_ref_inpt)
+            num_markables_t = tile(num_markables)
+            partner_num_markables_t = tile(partner_num_markables)
             # marginal and full distributions
             ref_outs_t = [(tile(t[0], batch_dim=1), tile(t[1], batch_dim=1))
                           if t is not None else None
@@ -576,28 +579,30 @@ class RnnReferenceModel(nn.Module):
                 raise NotImplementedError("only_first_mention for ref scoring isn't implemented yet")
 
             # bsz x num_candidates x num_dots
-            first_candidate_sums = candidate_dots_mentioned[:,:,0].sum(0).unsqueeze(1).expand(bsz, num_candidates, num_dots)
+            if not temporally_structured_candidates:
+                first_candidate_sums = candidate_dots_mentioned[:,:,0].sum(0).unsqueeze(1).expand(bsz, num_candidates, num_dots)
             # TODO: do search over joint mention configurations using the scores
             for mention_ix in range(num_mentions):
                 # bsz x num_candidates x num_dots
-                all_candidates_this_mention = candidate_dots_mentioned[mention_ix]
+                if temporally_structured_candidates:
+                    this_mentions = (candidate_dots_mentioned.sum(0) > 0)
+                else:
+                    # we want to compute this_mentions[b,c] = \sum_{mention} candidate_dots_mentioned[mention,b,(c if mention == mention_ix else 0)]
+                    # = [\sum_{mention} candidate_dots_mentioned[mention,b,0]] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
+                    # = first_candidate_sums[b] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
+                    # = first_candidate_sums[b] - this_first_candidates[b] + candidate_dots_mentioned[mention_ix, b, c]
+                    all_candidates_this_mention = candidate_dots_mentioned[mention_ix]
+                    this_first_candidates = candidate_dots_mentioned[mention_ix, :, 0].unsqueeze(1).expand_as(first_candidate_sums)
+                    # bsz x num_candidates x num_dots
+                    this_mentions = (first_candidate_sums - this_first_candidates + all_candidates_this_mention) > 0
+                    assert torch.all((this_mentions.float() - candidate_dots_mentioned[mention_ix].float()) >= 0)
 
-                this_first_candidates = candidate_dots_mentioned[mention_ix, :, 0].unsqueeze(1).expand_as(first_candidate_sums)
-
-                # we want to compute this_mentions[b,c] = \sum_{mention} candidate_dots_mentioned[mention,b,(c if mention == mention_ix else 0)]
-                # = [\sum_{mention} candidate_dots_mentioned[mention,b,0]] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
-                # = first_candidate_sums[b] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
-                # = first_candidate_sums[b] - this_first_candidates[b] + candidate_dots_mentioned[mention_ix, b, c]
-
-                # bsz x num_candidates x num_dots
-                this_mentions = (first_candidate_sums - this_first_candidates + all_candidates_this_mention) > 0
-                assert torch.all((this_mentions.float() - candidate_dots_mentioned[mention_ix].float()) >= 0)
                 this_mentions_t = comb(this_mentions, batch_dim=0)
 
                 outs, *_ = self._forward(
                     ctx_differences_t, ctx_h_t, inpt_t, ref_inpt_t, sel_idx=None,
-                    num_markables=num_markables,
-                    partner_num_markables=partner_num_markables,
+                    num_markables=num_markables_t,
+                    partner_num_markables=partner_num_markables_t,
                     lens=lens_t, lang_h=lang_h_t,
                     compute_sel_out=False, pack=True, dots_mentioned=this_mentions_t,
                     belief_constructor=belief_constructor, timestep=timestep, partner_ref_inpt=partner_ref_inpt_t,

@@ -4,17 +4,15 @@ import copy
 import pprint
 import time
 
-import pyro
 import math
 import numpy as np
+import pyro
 import torch
 import tqdm
-from torch.autograd import Variable
 from torch import nn
+from torch.autograd import Variable
 
 from collections import defaultdict
-
-from typing import List
 
 import utils
 from engines import EngineBase
@@ -446,6 +444,7 @@ def int_to_bit_array(int_array, num_bits=None, base=2):
     return bits
 
 
+
 class ReferencePredictor(object):
     def __init__(self, args):
         self.args = args
@@ -538,10 +537,10 @@ class ReferencePredictor(object):
         return ref_loss, ref_pred, ref_pred_ix
 
     def _forward_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables):
-        from torch_struct import LinearChainCRF
+        from torch_struct import LinearChainNoScanCRF
 
         marginal_log_probs, joint_log_probs, temporal_dist = ref_out
-        assert isinstance(temporal_dist, LinearChainCRF)
+        assert isinstance(temporal_dist, LinearChainNoScanCRF)
 
         num_dots = ref_tgt.size(-1)
         # bsz x N x 2**num_dots x 2**num_dots
@@ -566,7 +565,7 @@ class ReferencePredictor(object):
             ref_pred_ix[:,~has_multiple] = ref_pred_ix_single
 
 
-        ref_pred_ix_transpose_multi, exp_num_dots = LinearChainCRF.struct.from_parts(temporal_dist.argmax)
+        ref_pred_ix_transpose_multi, exp_num_dots = LinearChainNoScanCRF.struct.from_parts(temporal_dist.argmax)
         assert exp_num_dots == 2**num_dots
 
         # aggregate with single timestep info
@@ -574,24 +573,15 @@ class ReferencePredictor(object):
         ref_pred_ix[:,has_multiple] = ref_pred_ix_transpose_multi.transpose(0,1).contiguous()[:,has_multiple]
         ref_pred[:,has_multiple] = int_to_bit_array(ref_pred_ix[:,has_multiple], num_bits=num_dots)
 
-        gold_parts = LinearChainCRF.struct.to_parts(
+        gold_parts = LinearChainNoScanCRF.struct.to_parts(
             ref_tgt_ix_transpose, 2**num_dots, lengths=num_markables
         )
         if self.args.structured_temporal_attention_training == 'likelihood':
             log_likelihoods = temporal_dist.log_prob(gold_parts)
             losses = -log_likelihoods
         elif self.args.structured_temporal_attention_training == 'max_margin':
-            def score(parts):
-                # an unnormalized version of https://github.com/harvardnlp/pytorch-struct/blob/b6816a4d436136c6711fe2617995b556d5d4d300/torch_struct/distributions.py#L50
-                d = parts.dim()
-                batch_dims = range(d - len(temporal_dist.event_shape))
-                return temporal_dist._struct().score(
-                    temporal_dist.log_potentials,
-                    parts.type_as(temporal_dist.log_potentials),
-                    batch_dims=batch_dims,
-                )
-            gold_scores = score(gold_parts)
-            pred_scores = score(temporal_dist.argmax)
+            gold_scores = temporal_dist.score(gold_parts)
+            pred_scores = temporal_dist.score(temporal_dist.argmax)
             # hinge loss with a structured margin
             errors = (ref_mask * (ref_pred != ref_tgt)).sum(0).sum(-1)
             losses = torch.max((pred_scores - gold_scores + errors), torch.zeros_like(gold_scores))
@@ -685,16 +675,47 @@ class PragmaticReferencePredictor(ReferencePredictor):
 
         ref_tgt_p, ref_mask = self.preprocess(ref_tgt, num_markables)
 
-        ref_out_logits, ref_out_full = ref_out
-        # TODO: consider using a DP
+        ref_out_logits, ref_out_full, ref_dist = ref_out
+
+        N, bsz, num_dots = ref_out_logits.size()
+
+        candidate_l0_scores = torch.zeros(N, bsz, k).to(ref_inpt.device)
+        candidate_indices = torch.zeros(N, bsz, k).long().to(ref_inpt.device)
+
+        if ref_dist is not None:
+            assert not self.args.l1_sample
+
+            use_temporal = num_markables > 1
+
+            # k x bsz x N-1 x C x C
+            candidate_edges = ref_dist.topk(k)
+            # (k*bsz) x N
+            candidates, C = ref_dist.struct.from_parts(candidate_edges.view((-1,) + candidate_edges.size()[2:]))
+            assert C == 2**num_dots
+            candidates = candidates.view(k, bsz, N)
+            # N x bsz x k
+            candidate_indices_multi = candidates.transpose(0,2)
+            candidate_indices[:,use_temporal] = candidate_indices_multi[:,use_temporal]
+
+            # k x bsz
+            candidate_l0_scores_multi = ref_dist.log_prob(candidate_edges)
+            # bsz x k
+            candidate_l0_scores_multi = candidate_l0_scores_multi.transpose(0,1)
+            # tile across mention dimension
+            # N x bsz x k
+            candidate_l0_scores_multi = candidate_l0_scores_multi.unsqueeze(0).repeat_interleave(N, dim=0)
+            candidate_l0_scores[:,use_temporal] = candidate_l0_scores_multi[:,use_temporal]
+
+        else:
+            use_temporal = torch.zeros_like(num_markables).bool()
+
+        ## get scores and candidates for batch items where use_temporal == False
         if ref_out_full is None:
             ref_out_full = self.logits_to_full(ref_out_logits).contiguous()
 
         num_ent = ref_tgt_p.size(-1)
         # num_mentions x bsz x
         assert ref_out_full.dim() == 2 + num_ent
-
-        N, bsz, *_ = ref_out_full.size()
 
         ref_out_full_reshape = ref_out_full.view(N, bsz, 2**num_ent)
         l0_log_probs = ref_out_full_reshape.log_softmax(dim=-1)
@@ -706,12 +727,17 @@ class PragmaticReferencePredictor(ReferencePredictor):
             scores = l0_log_probs
         tk = scores.topk(k=k, dim=-1)
 
-        # (N*bsz) x k
+        # N x bsz x k
         # l0_scores = tk.values
-        candidate_indices = tk.indices
+        candidate_indices_single = tk.indices
+        candidate_l0_scores_single = l0_log_probs.gather(-1, candidate_indices_single)
+
+        candidate_indices[:,~use_temporal] = candidate_indices_single[:,~use_temporal]
 
         # N x bsz x k
-        candidate_l0_scores = l0_log_probs.gather(-1, candidate_indices)
+        candidate_l0_scores[:,~use_temporal] = candidate_l0_scores_single[:,~use_temporal]
+
+        ## now that candidate_indices and candidate_l0_scores are created, rescore them
 
         # (N*bsz) x k x 7
         candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_ent)

@@ -256,7 +256,7 @@ def main():
             if isinstance(corpus, ReferenceSentenceCorpus):
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, \
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, \
-                lens, _, _, num_markables_by_sentence, is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables = batch
+                lens, _, _, num_markables_by_sentence, is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables, ref_disagreements, partner_ref_disagreements  = batch
                 bsz = ctx.size(0)
                 multi_sentence = True
             elif isinstance(corpus, ReferenceCorpus):
@@ -301,7 +301,9 @@ def main():
                     dots_mentioned = None
                     belief_constructor = None
                 outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, lang_hs, ctx_h, ctx_differences = model.forward(
-                    ctx, inpts, ref_inpts, sel_idx, lens, dots_mentioned, belief_constructor,
+                    ctx, inpts, ref_inpts, sel_idx,
+                    num_markables_by_sentence, partner_num_markables,
+                    lens, dots_mentioned, belief_constructor,
                     # partner_ref_inpt is used in training if partner reference prediction is supervised
                     partner_ref_inpts=None
                 )
@@ -312,7 +314,9 @@ def main():
                 selection_beliefs = None
                 generation_beliefs = None
                 out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, lang_h, ctx_h, ctx_differences = model.forward(
-                    ctx, inpts[0], ref_inpts[0], sel_idx, lens[0], dots_mentioned, belief_constructor,
+                    ctx, inpts[0], ref_inpts[0], sel_idx,
+                    num_markables_by_sentence[0], partner_num_markables[0],
+                    lens[0], dots_mentioned, belief_constructor,
                     # partner_ref_inpt is used in training if partner reference prediction is supervised
                     partner_ref_inpt=None
                 )
@@ -404,7 +408,8 @@ def main():
                             num_markables_by_sentence[sentence_ix], partner_num_markables[sentence_ix],
                             lens[sentence_ix], lang_hs[sentence_ix],
                             belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],
-                            timestep=sentence_ix, partner_ref_outs=partner_ref_outs, ref_outs=my_ref_outs
+                            timestep=sentence_ix, partner_ref_outs=partner_ref_outs, ref_outs=my_ref_outs,
+                            temporally_structured_candidates=model.args.structured_temporal_attention,
                         )
                         ref_loss, ref_predictions, _ref_stats = reference_predictor.forward(
                             ref_inpt, ref_tgt, ref_out, sentence_num_markables, scoring_function
@@ -487,7 +492,7 @@ def main():
 
                 # END loop over sentences
 
-            sel_logits, _ = sel_out
+            sel_logits, _, _ = sel_out
 
             sel_loss = sel_crit(sel_logits, sel_tgt)
             sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()

@@ -210,7 +210,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         return '{}->{}'.format(','.join(binary_factor_names), output_factor_name)
 
     def forward(self, input, ctx_differences, num_markables):
-        from torch_struct import LinearChainCRF
+        from torch_struct import LinearChainNoScanCRF
         marginal_log_probs, joint_logits, _ = super().forward(input, ctx_differences, num_markables, normalize_joint=False)
         N, bsz, *dot_dims = joint_logits.size()
         assert N == num_markables.max()
@@ -229,7 +229,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
 
         transition_potentials = self.make_transitions(bsz, num_dots, ctx_differences)
         edge_potentials = self.make_potentials(transition_potentials, emission_potentials)
-        dist = LinearChainCRF(edge_potentials, lengths=num_markables)
+        dist = LinearChainNoScanCRF(edge_potentials, lengths=num_markables)
         return marginal_log_probs, joint_log_probs, dist
 
     def make_transitions(self, batch_size, num_dots, ctx_differences):
