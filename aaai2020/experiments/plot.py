@@ -2,10 +2,19 @@ import argparse
 import matplotlib.pyplot as plt
 import pandas
 
-STATS = ['train_ppl', 'train_select_acc', 'train_ref_acc', 'train_ref_f1', 'train_next_mention_acc', 'train_next_mention_f1', 'valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_partner_ref_acc', 'valid_partner_ref_f1', 'valid_next_mention_acc', 'valid_next_mention_f1']
+STATS = [
+    '{}_{}'.format(split, stat)
+    for split in ['train', 'valid']
+    for stat in ['ppl', 
+                 'select_acc', 
+                 'ref_acc', 'ref_f1', 'ref_exact_match', 
+                 'partner_ref_acc', 'partner_ref_f1', 'partner_ref_exact_match',
+                 'next_mention_acc', 'next_mention_f1']
+]
+
 
 #DEFAULT_STATS = ['valid_ppl']
-DEFAULT_STATS = ['valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_next_mention_acc', 'valid_next_mention_f1']
+DEFAULT_STATS = ['valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_ref_exact_match', 'valid_next_mention_acc', 'valid_next_mention_f1']
 
 def make_parser():
     parser = argparse.ArgumentParser()
@@ -40,7 +49,11 @@ def parse(log_file):
                             tokens = tokens[2:]
                             if not tokens:
                                 continue
-                        key, value = tokens
+                        if tokens[0] in ['train_ppl(avg', 'valid_ppl(avg']:
+                            key = ' '.join(tokens[:3])
+                            value = tokens[-1]
+                        else:
+                            key, value = tokens
                     key = key.replace("accuracy", "acc")
                     assert epoch is not None
                     stats_by_epoch[epoch][key] = float(value)
@@ -65,5 +78,8 @@ if __name__ == "__main__":
             else:
                 print('df {} does not have stat {}'.format(name, stat))
         collected_df = pandas.DataFrame(data)
-        collected_df.plot(title=stat)
+        if collected_df.empty:
+            print("stat {} is empty".format(stat))
+        else:
+            collected_df.plot(title=stat)
         plt.show()

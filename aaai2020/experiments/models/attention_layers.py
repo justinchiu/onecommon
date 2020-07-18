@@ -184,7 +184,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
             self.transition_params = nn.Parameter(torch.zeros(3), requires_grad=False)
         elif args.structured_temporal_attention_transitions == 'relational':
             self.self_transition_params = nn.Parameter(torch.zeros(3))
-            self.relation_encoder = FeedForward(
+            self.temporal_relation_encoder = FeedForward(
                 n_hidden_layers=1, input_dim=self.relation_dim, hidden_dim=args.structured_attention_hidden_dim,
                 output_dim=3,
                 dropout_p=args.structured_attention_dropout,
@@ -245,7 +245,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
             transition_params = torch.stack(transition_params, 0).unsqueeze(0)
         elif self.args.structured_temporal_attention_transitions == 'relational':
             transition_params = torch.zeros(batch_size, num_dots*num_dots, 3)
-            rel_encoded = self.relation_encoder(ctx_differences)
+            rel_encoded = self.temporal_relation_encoder(ctx_differences)
             def get_index(i, j):
                 return i * num_dots + j
             ix = 0
