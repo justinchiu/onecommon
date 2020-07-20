@@ -581,22 +581,8 @@ class RnnReferenceModel(nn.Module):
             # bsz x num_candidates x num_dots
             if not temporally_structured_candidates:
                 first_candidate_sums = candidate_dots_mentioned[:,:,0].sum(0).unsqueeze(1).expand(bsz, num_candidates, num_dots)
-            # TODO: do search over joint mention configurations using the scores
-            for mention_ix in range(num_mentions):
-                # bsz x num_candidates x num_dots
-                if temporally_structured_candidates:
-                    this_mentions = (candidate_dots_mentioned.sum(0) > 0)
-                else:
-                    # we want to compute this_mentions[b,c] = \sum_{mention} candidate_dots_mentioned[mention,b,(c if mention == mention_ix else 0)]
-                    # = [\sum_{mention} candidate_dots_mentioned[mention,b,0]] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
-                    # = first_candidate_sums[b] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
-                    # = first_candidate_sums[b] - this_first_candidates[b] + candidate_dots_mentioned[mention_ix, b, c]
-                    all_candidates_this_mention = candidate_dots_mentioned[mention_ix]
-                    this_first_candidates = candidate_dots_mentioned[mention_ix, :, 0].unsqueeze(1).expand_as(first_candidate_sums)
-                    # bsz x num_candidates x num_dots
-                    this_mentions = (first_candidate_sums - this_first_candidates + all_candidates_this_mention) > 0
-                    assert torch.all((this_mentions.float() - candidate_dots_mentioned[mention_ix].float()) >= 0)
 
+            def get_log_probs(this_mentions):
                 this_mentions_t = comb(this_mentions, batch_dim=0)
 
                 outs, *_ = self._forward(
@@ -610,10 +596,29 @@ class RnnReferenceModel(nn.Module):
                     ref_outs=ref_outs_t[:timestep] if ref_outs_t is not None else None,
                 )
                 log_probs = -crit_no_reduce(outs, tgt_t).view(T, bsz, num_candidates).sum(0)
-                s0_probs_per_mention.append(log_probs)
+                return log_probs
 
-            # num_mentions x bsz x num_candidates
-            s0_probs = torch.stack(s0_probs_per_mention, dim=0)
+            # TODO: do search over joint mention configurations using the scores
+            if temporally_structured_candidates:
+                this_mentions = (candidate_dots_mentioned.sum(0) > 0)
+                log_probs = get_log_probs(this_mentions)
+                s0_probs = log_probs.unsqueeze(0).repeat_interleave(num_mentions, dim=0)
+            else:
+                for mention_ix in range(num_mentions):
+                    # bsz x num_candidates x num_dots
+                    # we want to compute this_mentions[b,c] = \sum_{mention} candidate_dots_mentioned[mention,b,(c if mention == mention_ix else 0)]
+                    # = [\sum_{mention} candidate_dots_mentioned[mention,b,0]] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
+                    # = first_candidate_sums[b] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
+                    # = first_candidate_sums[b] - this_first_candidates[b] + candidate_dots_mentioned[mention_ix, b, c]
+                    all_candidates_this_mention = candidate_dots_mentioned[mention_ix]
+                    this_first_candidates = candidate_dots_mentioned[mention_ix, :, 0].unsqueeze(1).expand_as(first_candidate_sums)
+                    # bsz x num_candidates x num_dots
+                    this_mentions = (first_candidate_sums - this_first_candidates + all_candidates_this_mention) > 0
+                    assert torch.all((this_mentions.float() - candidate_dots_mentioned[mention_ix].float()) >= 0)
+
+                    s0_probs_per_mention.append(get_log_probs(this_mentions))
+                # num_mentions x bsz x num_candidates
+                s0_probs = torch.stack(s0_probs_per_mention, dim=0)
             return s0_probs
 
         return score_refs
