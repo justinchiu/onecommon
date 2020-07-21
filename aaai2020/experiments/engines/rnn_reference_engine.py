@@ -233,7 +233,8 @@ class RnnReferenceEngine(EngineBase):
         if self.args.lang_weight > 0:
             loss += self.args.lang_weight * forward_ret.lang_loss
         if self.args.sel_weight > 0:
-            loss += self.args.sel_weight * forward_ret.sel_loss
+            if not self.args.selection_start_epoch or (epoch >= self.args.selection_start_epoch):
+                loss += self.args.sel_weight * forward_ret.sel_loss
         if self.args.ref_weight > 0 and forward_ret.ref_loss is not None:
             loss += self.args.ref_weight * forward_ret.ref_loss
         if self.args.partner_ref_weight > 0 and forward_ret.partner_ref_loss is not None:
@@ -444,7 +445,6 @@ def int_to_bit_array(int_array, num_bits=None, base=2):
     return bits
 
 
-
 class ReferencePredictor(object):
     def __init__(self, args):
         self.args = args
@@ -461,7 +461,7 @@ class ReferencePredictor(object):
             'exact_match_denom': 0,
         }
 
-    def compute_stats(self, ref_mask, ref_tgt, ref_tgt_ix=None, ref_pred=None, ref_pred_ix=None):
+    def compute_stats(self, ref_mask, ref_tgt, ref_tgt_ix=None, ref_pred=None, ref_pred_ix=None, sum=True):
         assert ref_pred is not None or ref_pred_ix is not None
 
         num_dots = ref_tgt.size(-1)
@@ -481,17 +481,23 @@ class ReferencePredictor(object):
         ref_exact_matches = ((ref_tgt_ix == ref_pred_ix) & ref_mask_instance_level.bool())
 
         stats = {
-            'correct': ((ref_pred == ref_tgt.long()) * ref_mask.byte()).sum().item(),
-            'num_dots': ref_mask.sum().item(),
-            'gold_positive': ref_tgt.sum().item(),
-            'pred_positive': (ref_pred * ref_mask.byte()).sum().item(),
-            'true_positive': (ref_pred & ref_tgt.bool()).sum().item(),
-            'exact_match_num': ref_exact_matches.sum().float().item(),
-            'exact_match_denom': ref_mask_instance_level.sum().float().item(),
+            'correct': ((ref_pred == ref_tgt.long()) * ref_mask.byte()),
+            'num_dots': ref_mask,
+            'gold_positive': ref_tgt,
+            'pred_positive': (ref_pred * ref_mask.byte()),
+            'true_positive': (ref_pred & ref_tgt.bool()),
+            'exact_match_num': ref_exact_matches.float(),
+            'exact_match_denom': ref_mask_instance_level.float(),
         }
 
-        assert stats['pred_positive'] >= stats['true_positive']
-        assert stats['gold_positive'] >= stats['true_positive']
+        if sum:
+            stats = {
+                k: v.sum().item()
+                for k, v in stats.items()
+            }
+            assert stats['pred_positive'] >= stats['true_positive']
+            assert stats['gold_positive'] >= stats['true_positive']
+
         return stats
 
     def preprocess(self, ref_tgt, num_markables):
@@ -624,6 +630,7 @@ class PragmaticReferencePredictor(ReferencePredictor):
         parser.add_argument('--l1_sample', action='store_true', help='l1 listener should sample (otherwise top-k)')
         parser.add_argument('--l1_candidates', type=int, default=10, help='number of dot configurations for l1 to consider')
         parser.add_argument('--l1_speaker_weight', type=float, default=1.0, help='(1 - lambda) * l0_log_prob + (lambda) * s0_log_prob')
+        parser.add_argument('--l1_oracle', action='store_true')
 
     def __init__(self, args):
         super().__init__(args)
@@ -743,16 +750,59 @@ class PragmaticReferencePredictor(ReferencePredictor):
         candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_ent)
         candidate_dots = candidate_dots.view(N, bsz, k, num_ent)
 
-        # N x bsz x k
-        candidate_s0_scores = scoring_function(candidate_dots)
-        assert candidate_s0_scores.size() == candidate_l0_scores.size()
+        if self.args.l1_oracle:
+            # want to be able to take candidates over entire sequence of mentions
+            assert self.args.structured_temporal_attention
+            chosen = torch.zeros(N, bsz).long()
+            for batch_index in range(bsz):
+                # N x k x 7
+                b_ref_mask = ref_mask[:, batch_index].unsqueeze(1).repeat_interleave(k, dim=1)
+                # N x k x 7
+                b_ref_tgt_p = ref_tgt_p[:, batch_index].unsqueeze(1).repeat_interleave(k, dim=1)
+                # N x k x 7
+                b_candidates = candidate_dots[:, batch_index]
+                b_stats = self.compute_stats(b_ref_mask, b_ref_tgt_p, ref_pred=b_candidates, sum=False)
 
-        lmbd = self.args.l1_speaker_weight
-        # N x bsz x k
-        joint_scores = (1 - lmbd) * candidate_l0_scores + lmbd * candidate_s0_scores
+                # sum over num mentions and dots
+                # k
+                gold_positive = b_stats['gold_positive'].sum(0).sum(-1)
+                # k
+                true_positive = b_stats['true_positive'].sum(0).sum(-1)
+                # k
+                pred_positive = b_stats['pred_positive'].sum(0).sum(-1)
 
-        # N x bsz with values [0..k-1]
-        chosen = joint_scores.argmax(-1)
+                exact_match_num = b_stats['exact_match_num'].sum(0)
+
+                best_exact_match = (exact_match_num == exact_match_num.max(-1).values)
+
+                # break ties with f1
+                b_precision = true_positive / pred_positive
+                b_precision[torch.isnan(b_precision)] = 0
+                b_recall = true_positive / gold_positive
+                b_recall[torch.isnan(b_recall)] = 0
+                b_f1 = (2 * b_precision * b_recall) / (b_precision + b_recall)
+                b_f1[torch.isnan(b_f1)] = 0
+
+                b_f1_filtered = b_f1.clone()
+                # choose among those entries that have exact match equal to the best, by setting other F1s to a negative value
+                b_f1_filtered[~best_exact_match] = -1
+                chosen_ix = b_f1_filtered.argmax(dim=-1)
+
+                assert exact_match_num[chosen_ix].item() == exact_match_num.max(-1).values.item()
+
+                chosen[:, batch_index] = chosen_ix
+
+        else:
+            # N x bsz x k
+            candidate_s0_scores = scoring_function(candidate_dots)
+            assert candidate_s0_scores.size() == candidate_l0_scores.size()
+
+            lmbd = self.args.l1_speaker_weight
+            # N x bsz x k
+            joint_scores = (1 - lmbd) * candidate_l0_scores + lmbd * candidate_s0_scores
+
+            # N x bsz with values [0..k-1]
+            chosen = joint_scores.argmax(-1)
 
         chosen_indices = candidate_indices.gather(-1, chosen.unsqueeze(-1)).squeeze(-1)
 

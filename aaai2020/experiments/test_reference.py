@@ -118,6 +118,9 @@ def main():
     parser.add_argument(
         '--reference_prediction', choices=['l0', 'l1'], default='l0'
     )
+    parser.add_argument(
+        '--partner_reference_prediction', choices=['l0', 'l1'], default='l0'
+    )
     PragmaticReferencePredictor.add_args(parser)
 
     utils.dump_git_status(sys.stdout)
@@ -243,14 +246,19 @@ def main():
 
         merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(model.args)))
 
-        if args.reference_prediction == 'l1':
-            reference_predictor = PragmaticReferencePredictor(merged_args)
-        elif args.reference_prediction == 'l0':
-            reference_predictor = ReferencePredictor(merged_args)
-        else:
-            raise ValueError(f"invalid --reference_prediction {args.reference_prediction}")
+        def make_predictor(reference_prediction):
+            if reference_prediction == 'l1':
+                return PragmaticReferencePredictor(merged_args)
+            elif reference_prediction == 'l0':
+                return ReferencePredictor(merged_args)
+            else:
+                raise ValueError(f"invalid --reference_prediction {reference_prediction}")
+
+        reference_predictor = make_predictor(args.reference_prediction)
+        partner_reference_predictor = make_predictor(args.partner_reference_prediction)
 
         ref_stats = defaultdict(lambda: 0.0)
+        partner_ref_stats = defaultdict(lambda: 0.0)
 
         for batch in tqdm.tqdm(testset, ncols=80):
             if isinstance(corpus, ReferenceSentenceCorpus):
@@ -267,7 +275,7 @@ def main():
                 inpts, tgts, ref_inpts, ref_tgts, lens = [inpt], [tgt], [ref_inpt], [ref_tgt], [lens]
                 partner_ref_inpts = [partner_ref_inpt]
                 partner_ref_tgts_our_view = [partner_ref_tgt_our_view]
-                partner_num_markables = [partner_num_markables]
+                partner_num_markables = [this_partner_num_markables]
                 if ref_inpt is None:
                     nm = 0
                 else:
@@ -304,8 +312,7 @@ def main():
                     ctx, inpts, ref_inpts, sel_idx,
                     num_markables_by_sentence, partner_num_markables,
                     lens, dots_mentioned, belief_constructor,
-                    # partner_ref_inpt is used in training if partner reference prediction is supervised
-                    partner_ref_inpts=None
+                    partner_ref_inpts=partner_ref_inpts,
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
@@ -318,7 +325,7 @@ def main():
                     num_markables_by_sentence[0], partner_num_markables[0],
                     lens[0], dots_mentioned, belief_constructor,
                     # partner_ref_inpt is used in training if partner reference prediction is supervised
-                    partner_ref_inpt=None
+                    partner_ref_inpt=partner_ref_inpts[0],
                 )
                 outs, ref_outs = [out], [ref_out]
             else:
@@ -388,8 +395,8 @@ def main():
 
             my_ref_outs, partner_ref_outs = zip(*ref_outs)
 
-            for sentence_ix, (inpt, out, tgt, ref_inpt, (ref_out, partner_ref_out), ref_tgt) in enumerate(
-                utils.safe_zip(inpts, outs, tgts, ref_inpts, ref_outs, ref_tgts)
+            for sentence_ix, (inpt, out, tgt, ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt) in enumerate(
+                utils.safe_zip(inpts, outs, tgts, ref_inpts, partner_ref_inpts, ref_outs, ref_tgts, partner_ref_tgts_our_view)
             ):
                 sentence_num_markables = num_markables_by_sentence[sentence_ix]
                 tgt = Variable(tgt)
@@ -418,7 +425,6 @@ def main():
                         ref_loss, ref_predictions, _ref_stats = reference_predictor.forward(
                             ref_inpt, ref_tgt, ref_out, sentence_num_markables
                         )
-
                     ref_stats = utils.sum_dicts(ref_stats, _ref_stats)
 
                     ref_tgt = ref_tgt.transpose(0,1).contiguous()
@@ -486,6 +492,20 @@ def main():
                 else:
                     ref_loss = None
 
+                if partner_ref_inpt is not None:
+                    if args.partner_reference_prediction == 'l1':
+                        if not args.l1_oracle:
+                            raise NotImplementedError("non-oracle l1 for partner reference")
+                        partner_ref_loss, partner_ref_predictions, _partner_ref_stats = partner_reference_predictor.forward(
+                            partner_ref_inpt, partner_ref_tgt, partner_ref_out, partner_num_markables[sentence_ix], None
+                        )
+                    else:
+                        partner_ref_loss, partner_ref_predictions, _partner_ref_stats = partner_reference_predictor.forward(
+                            partner_ref_inpt, partner_ref_tgt, partner_ref_out, partner_num_markables[sentence_ix],
+                        )
+
+                    partner_ref_stats = utils.sum_dicts(partner_ref_stats, _partner_ref_stats)
+
                 test_lang_loss += lang_loss.item()
                 if ref_loss:
                     test_reference_loss += ref_loss.item()
@@ -533,11 +553,12 @@ def main():
                     idx += 1
 
         metrics = {}
-        add_metrics(
-            flatten_metrics({'ref_stats': ref_stats}),
-            metrics,
-            'ref'
-        )
+        flat_stats = flatten_metrics({
+            'ref_stats': ref_stats,
+            'partner_ref_stats': partner_ref_stats,
+        })
+        add_metrics(flat_stats, metrics, 'ref')
+        add_metrics(flat_stats, metrics, 'partner_ref')
         pprint.pprint(metrics)
 
         # Main results:

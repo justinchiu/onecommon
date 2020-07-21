@@ -434,7 +434,7 @@ class RnnReferenceModel(nn.Module):
         #  batch_size x hidden
         sel_inpt = sel_inpt.unsqueeze(1)
         # stack alongside the entity embeddings
-        sel_inpt = sel_inpt.expand(ctx_h.size(0), ctx_h.size(1), ctx_h.size(2))
+        sel_inpt = sel_inpt.expand(-1, ctx_h.size(1), -1)
         to_cat = [sel_inpt, ctx_h]
         if beliefs is not None:
             to_cat.append(beliefs)

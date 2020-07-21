@@ -5,7 +5,7 @@ import pandas
 STATS = [
     '{}_{}'.format(split, stat)
     for split in ['train', 'valid']
-    for stat in ['ppl', 
+    for stat in ['correct_ppl', 
                  'select_acc', 
                  'ref_acc', 'ref_f1', 'ref_exact_match', 
                  'partner_ref_acc', 'partner_ref_f1', 'partner_ref_exact_match',
@@ -14,7 +14,7 @@ STATS = [
 
 
 #DEFAULT_STATS = ['valid_ppl']
-DEFAULT_STATS = ['valid_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_ref_exact_match', 'valid_next_mention_acc', 'valid_next_mention_f1']
+DEFAULT_STATS = ['valid_correct_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_ref_exact_match', 'valid_next_mention_acc', 'valid_next_mention_f1']
 
 def make_parser():
     parser = argparse.ArgumentParser()
