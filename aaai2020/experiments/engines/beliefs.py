@@ -3,6 +3,7 @@ from collections import namedtuple
 import torch
 
 import utils
+from engines.rnn_reference_engine import ReferencePredictor
 
 BELIEF_TYPES = [
     'none',
@@ -29,6 +30,10 @@ _BeliefConstructor = namedtuple('_BeliefConstructor', [
     'is_self',
     'partner_dots_mentioned_our_view',
     'dots_mentioned',
+    'ref_inpts',
+    'partner_ref_inpts',
+    'num_markables',
+    'partner_num_markables',
 ])
 
 def noise_beliefs(zero_one_tensor, pos_to_neg_prob, neg_to_pos_prob, num_samples=1):
@@ -111,10 +116,17 @@ class BeliefConstructor(_BeliefConstructor):
                                     if m is not None else None
                                     for m in mentions]
                 elif belief_to_use == 'mentioned_predicted':
-                    # TODO: unpack ref_outs to deal with structured outputs
-                    mentions = [out[0].sigmoid().max(0).values
-                                if out is not None else None
-                                for out in ref_outs]
+                    reference_predictor = ReferencePredictor(self.args)
+                    preds = [
+                        reference_predictor.forward(ref_inpt, ref_tgt, ref_out, this_num_markables)[1]
+                        for ref_inpt, ref_tgt, ref_out, this_num_markables in
+                        utils.safe_zip(self.ref_inpts, self.ref_tgts, ref_outs, self.num_markables)
+                    ]
+                    mentions = [
+                        pred.max(0).values for pred in preds
+                        if pred is not None else None
+                    ]
+                    # TODO: is this still necessary?
                     if self.args.detach_beliefs:
                         mentions = [m.detach() if m is not None else None for m in mentions]
                 elif belief_to_use in ['partner_mentioned', 'partner_mentioned_noised']:
@@ -126,10 +138,17 @@ class BeliefConstructor(_BeliefConstructor):
                                     for m in mentions]
                 else:
                     assert belief_to_use == 'partner_mentioned_predicted'
-                    # TODO: use full mention logits if available rather than marginalized logits
-                    mentions = [out[0].sigmoid().max(0).values
-                                if out is not None else None
-                                for out in partner_ref_outs]
+                    reference_predictor = ReferencePredictor(self.args)
+                    preds = [
+                        reference_predictor.forward(partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables)[1]
+                        for partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables in
+                        utils.safe_zip(self.partner_ref_inpts, self.partner_ref_tgts_our_view, partner_ref_outs, self.partner_num_markables)
+                    ]
+                    mentions = [
+                        pred.max(0).values for pred in preds
+                        if pred is not None else None
+                    ]
+                    # TODO: is this still necessary?
                     if self.args.detach_beliefs:
                         mentions = [m.detach() if m is not None else None for m in mentions]
                 if timestep_to_use_name == 'cumulative':

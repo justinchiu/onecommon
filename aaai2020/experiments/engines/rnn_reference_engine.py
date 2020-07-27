@@ -17,8 +17,6 @@ from collections import defaultdict
 import utils
 from engines import EngineBase
 
-from engines.beliefs import BeliefConstructor
-
 ForwardRet = namedtuple(
     "ForwardRet",
     ['lang_loss', 'unnormalized_lang_loss',
@@ -850,7 +848,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _forward(self, batch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
-        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables, ref_disagreements, partner_ref_disagreements = batch
+        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables, ref_disagreements, partner_ref_disagreements = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)
@@ -876,14 +874,19 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         dots_mentioned = make_dots_mentioned_multi(ref_tgts, self.args, bsz, num_dots)
         partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, self.args, bsz, num_dots)
 
+        # TODO: fix module structure so we can import this up top without a circular import
+        from engines.beliefs import BeliefConstructor
         belief_constructor = BeliefConstructor(
             self.args, bsz, num_dots, inpts, ref_tgts, partner_ref_tgts_our_view,
-            real_ids, partner_real_ids, sel_tgt, is_self, partner_dots_mentioned_our_view, dots_mentioned
+            real_ids, partner_real_ids, sel_tgt, is_self, partner_dots_mentioned_our_view, dots_mentioned,
+            ref_inpts, partner_ref_inpts,
+            num_markables,
+            partner_num_markables,
         )
 
         outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, lang_h, ctx_h, ctx_differences = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
-            num_markables, all_partner_num_markables,
+            num_markables, partner_num_markables,
             lens, dots_mentioned,
             belief_constructor=belief_constructor,
             partner_ref_inpts=partner_ref_inpts,
@@ -930,14 +933,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         assert len(ref_inpts) == len(ref_tgts) == len(num_markables)
 
-        assert len(partner_ref_inpts) == len(partner_ref_tgts_our_view) == len(all_partner_num_markables)
+        assert len(partner_ref_inpts) == len(partner_ref_tgts_our_view) == len(partner_num_markables)
 
         # TODO: just index into the lists; the safety check isn't worth it
         for ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt,\
             this_num_markables,this_partner_num_markables, this_ctx_attn_prob, this_feed_ctx_attn_prob, \
             this_dots_mentioned, inpt, tgt in utils.safe_zip(
             ref_inpts, partner_ref_inpts, ref_outs_and_partner_ref_outs, ref_tgts, partner_ref_tgts_our_view,
-            num_markables, all_partner_num_markables, ctx_attn_prob, feed_ctx_attn_prob,
+            num_markables, partner_num_markables, ctx_attn_prob, feed_ctx_attn_prob,
             dots_mentioned, inpts, tgts
         ):
             if (this_num_markables == 0).all() or ref_tgt is None:

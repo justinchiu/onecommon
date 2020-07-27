@@ -264,7 +264,7 @@ def main():
             if isinstance(corpus, ReferenceSentenceCorpus):
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, \
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, \
-                lens, _, _, num_markables_by_sentence, is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables, ref_disagreements, partner_ref_disagreements  = batch
+                lens, _, _, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables, ref_disagreements, partner_ref_disagreements  = batch
                 bsz = ctx.size(0)
                 multi_sentence = True
             elif isinstance(corpus, ReferenceCorpus):
@@ -280,7 +280,7 @@ def main():
                     nm = 0
                 else:
                     nm = ref_inpt.size(1)
-                num_markables_by_sentence = [
+                num_markables = [
                     torch.full((bsz,), nm).long()
                 ]
                 multi_sentence = False
@@ -303,14 +303,17 @@ def main():
                     belief_constructor = BeliefConstructor(
                         model.args,
                         bsz, num_dots, inpts, ref_tgts, partner_ref_tgts_our_view,
-                        real_ids, partner_real_ids, sel_tgt, is_self, partner_dots_mentioned_our_view, dots_mentioned
+                        real_ids, partner_real_ids, sel_tgt, is_self, partner_dots_mentioned_our_view, dots_mentioned,
+                        ref_inpts, partner_ref_inpts,
+                        num_markables,
+                        partner_num_markables,
                     )
                 else:
                     dots_mentioned = None
                     belief_constructor = None
                 outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, lang_hs, ctx_h, ctx_differences = model.forward(
                     ctx, inpts, ref_inpts, sel_idx,
-                    num_markables_by_sentence, partner_num_markables,
+                    num_markables, partner_num_markables,
                     lens, dots_mentioned, belief_constructor,
                     partner_ref_inpts=partner_ref_inpts,
                 )
@@ -322,7 +325,7 @@ def main():
                 generation_beliefs = None
                 out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, lang_h, ctx_h, ctx_differences = model.forward(
                     ctx, inpts[0], ref_inpts[0], sel_idx,
-                    num_markables_by_sentence[0], partner_num_markables[0],
+                    num_markables[0], partner_num_markables[0],
                     lens[0], dots_mentioned, belief_constructor,
                     # partner_ref_inpt is used in training if partner reference prediction is supervised
                     partner_ref_inpt=partner_ref_inpts[0],
@@ -398,7 +401,7 @@ def main():
             for sentence_ix, (inpt, out, tgt, ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt) in enumerate(
                 utils.safe_zip(inpts, outs, tgts, ref_inpts, partner_ref_inpts, ref_outs, ref_tgts, partner_ref_tgts_our_view)
             ):
-                sentence_num_markables = num_markables_by_sentence[sentence_ix]
+                sentence_num_markables = num_markables[sentence_ix]
                 tgt = Variable(tgt)
                 # lang_loss = crit(out, tgt)
 
@@ -412,7 +415,7 @@ def main():
                     if args.reference_prediction == 'l1':
                         scoring_function = model.make_ref_scoring_function(
                             ctx_differences, ctx_h, inpt, tgt, ref_inpt,
-                            num_markables_by_sentence[sentence_ix], partner_num_markables[sentence_ix],
+                            num_markables[sentence_ix], partner_num_markables[sentence_ix],
                             lens[sentence_ix], lang_hs[sentence_ix],
                             belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],
                             timestep=sentence_ix, partner_ref_outs=partner_ref_outs, ref_outs=my_ref_outs,
