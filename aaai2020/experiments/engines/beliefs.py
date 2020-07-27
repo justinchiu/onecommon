@@ -123,8 +123,8 @@ class BeliefConstructor(_BeliefConstructor):
                         utils.safe_zip(self.ref_inpts, self.ref_tgts, ref_outs, self.num_markables)
                     ]
                     mentions = [
-                        pred.max(0).values for pred in preds
-                        if pred is not None else None
+                        pred.max(0).values if pred is not None else None
+                        for pred in preds
                     ]
                     # TODO: is this still necessary?
                     if self.args.detach_beliefs:
@@ -145,8 +145,8 @@ class BeliefConstructor(_BeliefConstructor):
                         utils.safe_zip(self.partner_ref_inpts, self.partner_ref_tgts_our_view, partner_ref_outs, self.partner_num_markables)
                     ]
                     mentions = [
-                        pred.max(0).values for pred in preds
-                        if pred is not None else None
+                        pred.max(0).values if pred is not None else None
+                        for pred in preds
                     ]
                     # TODO: is this still necessary?
                     if self.args.detach_beliefs:
