@@ -120,7 +120,7 @@ class BeliefConstructor(_BeliefConstructor):
                     preds = [
                         reference_predictor.forward(ref_inpt, ref_tgt, ref_out, this_num_markables)[1]
                         for ref_inpt, ref_tgt, ref_out, this_num_markables in
-                        utils.safe_zip(self.ref_inpts, self.ref_tgts, ref_outs, self.num_markables)
+                        zip(self.ref_inpts, self.ref_tgts, ref_outs, self.num_markables)
                     ]
                     mentions = [
                         pred.max(0).values if pred is not None else None
@@ -142,7 +142,7 @@ class BeliefConstructor(_BeliefConstructor):
                     preds = [
                         reference_predictor.forward(partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables)[1]
                         for partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables in
-                        utils.safe_zip(self.partner_ref_inpts, self.partner_ref_tgts_our_view, partner_ref_outs, self.partner_num_markables)
+                        zip(self.partner_ref_inpts, self.partner_ref_tgts_our_view, partner_ref_outs, self.partner_num_markables)
                     ]
                     mentions = [
                         pred.max(0).values if pred is not None else None
