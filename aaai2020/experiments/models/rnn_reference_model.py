@@ -66,6 +66,8 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--feed_context_attend', action='store_true')
         parser.add_argument('--feed_context_attend_separate', action='store_true')
 
+        parser.add_argument('--hidden_context', action='store_true')
+
         parser.add_argument('--untie_grus',
                             action='store_true',
                             help="don't use the same weights for the reader and writer")
@@ -82,6 +84,10 @@ class RnnReferenceModel(nn.Module):
                             help="don't allow attention to dots that aren't mentioned in the utterance")
 
         parser.add_argument('--feed_attention_constrained',
+                            action='store_true',
+                            help="don't allow attention to dots that aren't mentioned in the utterance")
+
+        parser.add_argument('--hidden_attention_constrained',
                             action='store_true',
                             help="don't allow attention to dots that aren't mentioned in the utterance")
 
@@ -139,6 +145,17 @@ class RnnReferenceModel(nn.Module):
             gru_input_size = args.nembed_word + args.nembed_ctx
         else:
             gru_input_size = args.nembed_word
+
+        if self.args.hidden_context:
+            self.hidden_ctx_layer = nn.Linear(args.nembed_ctx, args.nembed_ctx)
+            self.hidden_ctx_gate = nn.Sequential(
+                torch.nn.Linear(args.nembed_ctx+args.nhid_lang, args.nhid_lang),
+                nn.Sigmoid()
+            )
+            self.hidden_ctx_addition = nn.Sequential(
+                torch.nn.Linear(args.nembed_ctx, args.nhid_lang),
+                nn.Tanh(),
+            )
 
         self.reader = nn.GRU(
             input_size=gru_input_size,
@@ -200,6 +217,11 @@ class RnnReferenceModel(nn.Module):
         if args.next_mention_prediction:
             ref_attn_names.append('next_mention')
 
+        lang_attn_names = ['lang', 'feed']
+
+        if args.hidden_context:
+            lang_attn_names.append('hidden')
+
         if args.mention_beliefs:
             assert args.next_mention_prediction
 
@@ -212,6 +234,7 @@ class RnnReferenceModel(nn.Module):
                 'sel': AttentionLayer,
                 'lang': AttentionLayer, # todo: consider structured attention with sigmoids here
                 'feed': AttentionLayer,
+                'hidden': AttentionLayer,
             }
         else:
             attention_constructors = defaultdict(lambda: AttentionLayer)
@@ -229,14 +252,14 @@ class RnnReferenceModel(nn.Module):
             else:
                 self.feed_attn = None
         elif args.separate_attn:
-            for attn_name in ['lang', 'sel', 'feed'] + ref_attn_names:
+            for attn_name in lang_attn_names + ['sel'] + ref_attn_names:
                 input_dim = args.nhid_lang + args.nembed_ctx
-                if args.mark_dots_mentioned and attn_name in ['lang', 'feed']:
+                if args.mark_dots_mentioned and attn_name in lang_attn_names:
                     # TODO: consider tiling the indicator feature across more dimensions
                     input_dim += 1
                 if args.selection_beliefs and attn_name == 'sel':
                     input_dim += len(args.selection_beliefs)
-                if args.generation_beliefs and attn_name in ['lang', 'feed']:
+                if args.generation_beliefs and attn_name in lang_attn_names:
                     input_dim += len(args.generation_beliefs)
                 if args.mention_beliefs and attn_name == 'next_mention':
                     input_dim += len(args.mention_beliefs)
@@ -441,7 +464,7 @@ class RnnReferenceModel(nn.Module):
         # TODO: pass something for num_markables for consistency; right now it relies on selection not using StructuredTemporalAttention
         return self._apply_attention('sel', torch.cat(to_cat, 2), ctx_differences, num_markables=None)
 
-    def _language_conditioned_dot_attention(self, ctx_differences, ctx_h, lang_hs, use_feed_attn, dots_mentioned, generation_beliefs):
+    def _language_conditioned_dot_attention(self, ctx_differences, ctx_h, lang_hs, attention_type, dots_mentioned, generation_beliefs):
         # lang_hs: seq_len x batch_size x hidden
         # ctx_h: batch_size x num_dots x nembed_ctx
         # dots_mentioned: batch_size x num_dots, binary tensor of which dots to allow attention on. if all zero, output zeros
@@ -457,10 +480,13 @@ class RnnReferenceModel(nn.Module):
         # num_dots = ctx_h.size(1)
 
         constrain_attention = False
-        if use_feed_attn and vars(self.args).get('feed_attention_constrained', False):
-            constrain_attention = True
-        if (not use_feed_attn) and vars(self.args).get('word_attention_constrained', False):
-            constrain_attention = True
+        assert attention_type in ['feed', 'lang', 'hidden']
+        constrain_attention = vars(self.args).get('{}_attention_constrained'.format(attention_type), False)
+
+        # if use_feed_attn and vars(self.args).get('feed_attention_constrained', False):
+        #     constrain_attention = True
+        # if (not use_feed_attn) and vars(self.args).get('word_attention_constrained', False):
+        #     constrain_attention = True
 
         if constrain_attention:
             assert dots_mentioned is not None
@@ -487,7 +513,7 @@ class RnnReferenceModel(nn.Module):
 
         # seq_len x batch_size x num_dots
         attn_logit, _, _ = self._apply_attention(
-            'feed' if use_feed_attn else 'lang',
+            attention_type,
             torch.cat([lang_h_expand, ctx_h_expand], 3),
             ctx_differences,
             num_markables=None,
@@ -648,7 +674,7 @@ class RnnReferenceModel(nn.Module):
             ctx_attn_prob = None
         else:
             ctx_attn_prob = self._language_conditioned_dot_attention(
-                ctx_differences, ctx_h, lang_hs, use_feed_attn=False, dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
+                ctx_differences, ctx_h, lang_hs, attention_type='lang', dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
             )
             ctx_h_to_expand = ctx_h
             if vars(self.args).get('marks_in_word_prediction', False):
@@ -757,7 +783,7 @@ class RnnReferenceModel(nn.Module):
             # bsz x num_dots
             feed_ctx_attn_prob = self._language_conditioned_dot_attention(
                 ctx_differences, ctx_h, lang_hs,
-                use_feed_attn=True, dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
+                attention_type='feed', dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
             ).squeeze(0).squeeze(-1)
             # bsz x num_dots x nembed_ctx
             ctx_emb = self.feed_ctx_layer(ctx_h)
@@ -767,6 +793,17 @@ class RnnReferenceModel(nn.Module):
             ctx_emb = self.feed_ctx_layer(ctx_h).mean(1)
             feed_ctx_attn_prob = None
         return ctx_emb, feed_ctx_attn_prob
+
+    def _context_for_hidden(self, ctx_differences, ctx_h, lang_hs, dots_mentioned, generation_beliefs):
+        # bsz x num_dots
+        ctx_attn_prob = self._language_conditioned_dot_attention(
+            ctx_differences, ctx_h, lang_hs,
+            attention_type='hidden', dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
+        ).squeeze(0).squeeze(-1)
+        # bsz x num_dots x nembed_ctx
+        ctx_emb = self.hidden_ctx_layer(ctx_h)
+        ctx_emb = torch.einsum("bn,bnd->bd", (ctx_attn_prob, ctx_emb))
+        return ctx_emb, ctx_attn_prob
 
     def _init_h(self, bsz):
         if hasattr(self, 'reader_init_h'):
@@ -785,9 +822,26 @@ class RnnReferenceModel(nn.Module):
 
         if lang_h is None:
             # lang_h = self._zero(1, bsz, self.args.nhid_lang)
-            reader_lang_h, writer_lang_h = self._init_h(bsz)
+            h = self._init_h(bsz)
+            reader_lang_h, writer_lang_h = h
         else:
             reader_lang_h, writer_lang_h = lang_h, lang_h
+
+        if self.args.hidden_context:
+            ctx_emb_for_hidden, _ = self._context_for_hidden(
+                ctx_differences, ctx_h, writer_lang_h, dots_mentioned=dots_mentioned, generation_beliefs=generation_beliefs
+            )
+            if self.args.untie_grus:
+                # TODO: maybe only update the writer
+                raise NotImplementedError()
+            gate_weights = self.hidden_ctx_gate(
+                # TODO: modify this if more than 1 layer
+                # reader_lang_h: 1 x bsz x hidden_dim
+                torch.cat((reader_lang_h.squeeze(0), ctx_emb_for_hidden), -1)
+            )
+            addition = self.hidden_ctx_addition(ctx_emb_for_hidden)
+            reader_lang_h = gate_weights * reader_lang_h + (1 - gate_weights) * addition
+            writer_lang_h = reader_lang_h
 
         # seq_len x batch_size x nembed_word
         dialog_emb = self.embed_dialogue(inpt)
@@ -862,6 +916,9 @@ class RnnReferenceModel(nn.Module):
             )
         else:
             ctx_emb, feed_ctx_attn_prob = None, None
+
+        # TODO: add hidden_context
+
         ctx_attn_probs = []
         top_words = []
         for word_ix in range(max_words):
@@ -888,7 +945,7 @@ class RnnReferenceModel(nn.Module):
 
                 # add a time dimension to lang_h
                 ctx_attn_prob = self._language_conditioned_dot_attention(
-                    ctx_differences, ctx_h, lang_h.unsqueeze(0), use_feed_attn=False, dots_mentioned=dots_mentioned,
+                    ctx_differences, ctx_h, lang_h.unsqueeze(0), attention_type='lang', dots_mentioned=dots_mentioned,
                     generation_beliefs=generation_beliefs,
                 )
                 # remove the time dimension
