@@ -31,7 +31,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from engines.beliefs import BeliefConstructor
-from engines.rnn_reference_engine import make_dots_mentioned_multi, ReferencePredictor, PragmaticReferencePredictor
+from engines.rnn_reference_engine import make_dots_mentioned_multi, ReferencePredictor, PragmaticReferencePredictor, \
+    make_dots_mentioned_per_ref_multi
 from engines.rnn_reference_engine import add_metrics, flatten_metrics
 
 sns.set(font_scale=1.15)
@@ -298,6 +299,7 @@ def main():
                 # don't cheat!
                 if args.allow_belief_cheating:
                     dots_mentioned = make_dots_mentioned_multi(ref_tgts, model.args, bsz, num_dots)
+                    dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(ref_tgts, model.args, bsz, num_dots)
                     partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, model.args, bsz, num_dots)
 
                     belief_constructor = BeliefConstructor(
@@ -310,11 +312,12 @@ def main():
                     )
                 else:
                     dots_mentioned = None
+                    dots_mentioned_per_ref = None
                     belief_constructor = None
                 outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, lang_hs, ctx_h, ctx_differences = model.forward(
                     ctx, inpts, ref_inpts, sel_idx,
                     num_markables, partner_num_markables,
-                    lens, dots_mentioned, belief_constructor,
+                    lens, dots_mentioned, dots_mentioned_per_ref, belief_constructor,
                     partner_ref_inpts=partner_ref_inpts,
                 )
             elif isinstance(corpus, ReferenceCorpus):

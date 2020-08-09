@@ -59,6 +59,15 @@ def make_dots_mentioned_multi(refs, args, bsz, num_dots):
         dots_mentioned.append(make_dots_mentioned(ref_tgt, args))
     return dots_mentioned
 
+def make_dots_mentioned_per_ref_multi(refs, args, bsz, num_dots):
+    dots_mentioned_per_ref = []
+    for ref_tgt in refs:
+        if ref_tgt is None:
+            dots_mentioned_per_ref.append(torch.zeros(bsz, 0, num_dots).bool())
+            continue
+        dots_mentioned_per_ref.append(ref_tgt > 0)
+    return dots_mentioned_per_ref
+
 def add_metrics(metric_dict_src, metric_dict_tgt, prefix):
     gold_positive = metric_dict_src['{}_gold_positive'.format(prefix)]
     pred_positive = metric_dict_src['{}_pred_positive'.format(prefix)]
@@ -155,12 +164,16 @@ class RnnReferenceEngine(EngineBase):
         else:
             dots_mentioned = None
 
+        raise NotImplementedError("dots_mentioned_per_ref, num_markables")
+
         out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, lang_h = \
             self.model.forward(
                 ctx, inpt, ref_inpt, sel_idx,
                 num_markables=None, # todo: fix this to be a vector of (bsz,) with constant value determined by the size of ref_tgt
                 partner_num_markables=partner_num_markables,
-                lens=None, dots_mentioned=dots_mentioned,
+                lens=None,
+                dots_mentioned=dots_mentioned,
+                dots_mentioned_per_ref=dots_mentioned_per_ref,
                 belief_constructor=None, partner_ref_inpt=partner_ref_inpt,
             )
 
@@ -874,6 +887,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         dots_mentioned = make_dots_mentioned_multi(ref_tgts, self.args, bsz, num_dots)
         partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, self.args, bsz, num_dots)
 
+        dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(ref_tgts, self.args, bsz, num_dots)
+
         # TODO: fix module structure so we can import this up top without a circular import
         from engines.beliefs import BeliefConstructor
         belief_constructor = BeliefConstructor(
@@ -887,7 +902,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, lang_h, ctx_h, ctx_differences = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
-            lens, dots_mentioned,
+            lens,
+            dots_mentioned, dots_mentioned_per_ref,
             belief_constructor=belief_constructor,
             partner_ref_inpts=partner_ref_inpts,
         )

@@ -86,10 +86,15 @@ class RnnAgent(Agent):
     def feed_partner_context(self, partner_context):
         pass
 
-    def read(self, inpt, dots_mentioned=None):
+    def read(self, inpt, dots_mentioned=None, dots_mentioned_per_ref=None, num_mentions=None,):
         self.sents.append(Variable(self._encode(['THEM:'] + inpt, self.model.word_dict)))
         inpt = self._encode(inpt, self.model.word_dict)
-        lang_hs, lang_h = self.model.read(self.ctx_differences, self.ctx_h, Variable(inpt), self.lang_h.unsqueeze(0), dots_mentioned=dots_mentioned)
+        lang_hs, lang_h = self.model.read(
+            self.ctx_differences, self.ctx_h, Variable(inpt), self.lang_h.unsqueeze(0),
+            dots_mentioned=dots_mentioned,
+            dots_mentioned_per_ref=dots_mentioned_per_ref,
+            num_mentions=num_mentions,
+        )
         self.lang_h = lang_h.squeeze(0)
         self.lang_hs.append(lang_hs.squeeze(1))
         self.words.append(self.model.word2var('THEM:').unsqueeze(0))
