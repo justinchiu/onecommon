@@ -419,7 +419,7 @@ def main():
                         scoring_function = model.make_ref_scoring_function(
                             ctx_differences, ctx_h, inpt, tgt, ref_inpt,
                             num_markables[sentence_ix], partner_num_markables[sentence_ix],
-                            lens[sentence_ix], reader_lang_hs[sentence_ix],
+                            lens[sentence_ix], (reader_lang_hs[sentence_ix], writer_lang_hs[sentence_ix]),
                             belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],
                             timestep=sentence_ix, partner_ref_outs=partner_ref_outs, ref_outs=my_ref_outs,
                             temporally_structured_candidates=model.args.structured_temporal_attention,

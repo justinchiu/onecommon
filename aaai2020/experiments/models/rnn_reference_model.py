@@ -571,7 +571,7 @@ class RnnReferenceModel(nn.Module):
     def make_ref_scoring_function(
         self, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
         num_markables, partner_num_markables,
-        lens, lang_h, belief_constructor=None,
+        lens, reader_and_writer_lang_h, belief_constructor=None,
         partner_ref_inpt=None, timestep=0, partner_ref_outs=None, ref_outs=None,
         temporally_structured_candidates=False,
     ):
@@ -608,7 +608,15 @@ class RnnReferenceModel(nn.Module):
             tgt_t = tile(tgt.view(T, bsz), batch_dim=1).flatten()
             ref_inpt_t = tile(ref_inpt)
             lens_t = tile(lens)
-            lang_h_t = tile(lang_h, batch_dim=1)
+
+            if reader_and_writer_lang_h is not None:
+                reader_lang_h, writer_lang_h = reader_and_writer_lang_h
+                reader_lang_h_t = tile(reader_lang_h, batch_dim=1)
+                writer_lang_h_t = tile(writer_lang_h, batch_dim=1)
+                reader_and_writer_lang_h_t = (reader_lang_h_t, writer_lang_h_t)
+            else:
+                reader_and_writer_lang_h_t = None
+
             partner_ref_inpt_t = tile(partner_ref_inpt)
             num_markables_t = tile(num_markables)
             partner_num_markables_t = tile(partner_num_markables)
@@ -632,18 +640,18 @@ class RnnReferenceModel(nn.Module):
             if not temporally_structured_candidates:
                 first_candidate_sums = candidate_dots_mentioned[:,:,0].sum(0).unsqueeze(1).expand(bsz, num_candidates, num_dots)
 
-            def get_log_probs(this_mentions):
+            def get_log_probs(this_mentions, this_mentions_per_ref):
                 this_mentions_t = comb(this_mentions, batch_dim=0)
-                raise NotImplementedError("dots_mentioned_per_ref")
+                this_mentions_per_ref_t = comb(this_mentions_per_ref, batch_dim=0)
 
                 outs, *_ = self._forward(
                     ctx_differences_t, ctx_h_t, inpt_t, ref_inpt_t, sel_idx=None,
                     num_markables=num_markables_t,
                     partner_num_markables=partner_num_markables_t,
-                    lens=lens_t, lang_h=lang_h_t,
+                    lens=lens_t, reader_and_writer_lang_h=reader_and_writer_lang_h_t,
                     compute_sel_out=False, pack=True,
                     dots_mentioned=this_mentions_t,
-                    dots_mentioned_per_ref=None,
+                    dots_mentioned_per_ref=this_mentions_per_ref_t,
                     belief_constructor=belief_constructor, timestep=timestep, partner_ref_inpt=partner_ref_inpt_t,
                     partner_ref_outs=partner_ref_outs_t[:timestep] if partner_ref_outs_t is not None else None,
                     ref_outs=ref_outs_t[:timestep] if ref_outs_t is not None else None,
@@ -651,10 +659,13 @@ class RnnReferenceModel(nn.Module):
                 log_probs = -crit_no_reduce(outs, tgt_t).view(T, bsz, num_candidates).sum(0)
                 return log_probs
 
+            # candidate_dots_mentioned: max_num_mentions x bsz x num_candidates x num_dots
+            candidate_dots_mentioned_per_ref = einops.rearrange(candidate_dots_mentioned, "nm b c d->b c nm d")
+
             # TODO: do search over joint mention configurations using the scores
             if temporally_structured_candidates:
                 this_mentions = (candidate_dots_mentioned.sum(0) > 0)
-                log_probs = get_log_probs(this_mentions)
+                log_probs = get_log_probs(this_mentions, candidate_dots_mentioned_per_ref)
                 s0_probs = log_probs.unsqueeze(0).repeat_interleave(num_mentions, dim=0)
             else:
                 for mention_ix in range(num_mentions):
@@ -669,7 +680,7 @@ class RnnReferenceModel(nn.Module):
                     this_mentions = (first_candidate_sums - this_first_candidates + all_candidates_this_mention) > 0
                     assert torch.all((this_mentions.float() - candidate_dots_mentioned[mention_ix].float()) >= 0)
 
-                    s0_probs_per_mention.append(get_log_probs(this_mentions))
+                    s0_probs_per_mention.append(get_log_probs(this_mentions, candidate_dots_mentioned_per_ref))
                 # num_mentions x bsz x num_candidates
                 s0_probs = torch.stack(s0_probs_per_mention, dim=0)
             return s0_probs
@@ -686,6 +697,8 @@ class RnnReferenceModel(nn.Module):
         # lang_h: num_layers*num_directions x bsz x nhid_lang
         bsz = ctx_h.size(0)
         seq_len = inpt.size(0)
+
+        # dots_mentioned_per_ref: bsz x max_num_mentions x num_dots
 
         # print('inpt size: {}'.format(inpt.size()))
         if belief_constructor is not None:
@@ -909,7 +922,7 @@ class RnnReferenceModel(nn.Module):
         else:
             reader_lang_h, writer_lang_h = reader_and_writer_lang_h
 
-        if self.args.hidden_context:
+        if vars(self.args).get('hidden_context', False):
             ctx_emb_for_hidden, _ = self._context_for_hidden(
                 ctx_differences, ctx_h, writer_lang_h,
                 dots_mentioned=dots_mentioned, dots_mentioned_per_ref=dots_mentioned_per_ref,
