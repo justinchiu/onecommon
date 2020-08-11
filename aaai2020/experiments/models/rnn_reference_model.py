@@ -353,15 +353,15 @@ class RnnReferenceModel(nn.Module):
     def _attention_name(self, name):
         return '{}_attn'.format(name)
 
-    def _apply_attention(self, name, input, ctx_differences, num_markables):
+    def _apply_attention(self, name, lang_input, input, ctx_differences, num_markables):
         if self.args.share_attn:
-            return self.attn(input, ctx_differences, num_markables)
+            return self.attn(lang_input, input, ctx_differences, num_markables)
         elif self.args.separate_attn:
             attn_module = getattr(self, self._attention_name(name))
-            return attn_module(input, ctx_differences, num_markables)
+            return attn_module(lang_input, input, ctx_differences, num_markables)
         else:
             attn_module = getattr(self, self._attention_name(name))
-            return attn_module(self.attn_prefix(input), ctx_differences, num_markables)
+            return attn_module(lang_input, self.attn_prefix(input), ctx_differences, num_markables)
 
     def _zero(self, *sizes):
         h = torch.Tensor(*sizes).fill_(0)
@@ -414,14 +414,18 @@ class RnnReferenceModel(nn.Module):
         ref_inpt = torch.mean(ref_inpt, 0)
 
         # num_refs x batch_size x num_dots x hidden_dim
-        ref_inpt = ref_inpt.unsqueeze(2).expand(-1, -1, num_dots, -1)
-        ctx_h = ctx_h.unsqueeze(0).expand(ref_inpt.size(0), ref_inpt.size(1), ref_inpt.size(2), ctx_h.size(-1))
+        ref_inpt_expand = ref_inpt.unsqueeze(2).expand(-1, -1, num_dots, -1)
+        ctx_h = ctx_h.unsqueeze(0).expand(
+            ref_inpt_expand.size(0), ref_inpt_expand.size(1), ref_inpt_expand.size(2), ctx_h.size(-1)
+        )
 
         if vars(self.args).get('partner_reference_prediction', False):
             attention_params_name = 'ref' if for_self else 'ref_partner'
         else:
             attention_params_name = 'ref'
-        outs = self._apply_attention(attention_params_name, torch.cat([ref_inpt, ctx_h], -1), ctx_differences, num_markables)
+        outs = self._apply_attention(
+            attention_params_name, ref_inpt, torch.cat([ref_inpt_expand, ctx_h], -1), ctx_differences, num_markables
+        )
         return outs
 
     def next_mention_prediction(self, ctx_differences, ctx_h, outs_emb, lens, mention_beliefs):
@@ -442,18 +446,20 @@ class RnnReferenceModel(nn.Module):
 
         # batch_size x hidden_dim
         states = states.squeeze(0)
-
-        # batch_size x num_dots x hidden_dim
-        states = states.unsqueeze(1).expand(-1, num_dots, -1)
-
         # add a dummy time dimension for attention
         # 1 x batch_size x num_dots x hidden_dim
         ctx_h = ctx_h.unsqueeze(0)
         states = states.unsqueeze(0)
 
+        # 1(T) x batch_size x num_dots x hidden_dim
+        states_expand = states.unsqueeze(2).expand(-1, -1, num_dots, -1)
+
         num_markables = torch.full((bsz,), 1).long()
 
-        return self._apply_attention('next_mention', torch.cat([states, ctx_h], -1), ctx_differences, num_markables)
+        return self._apply_attention('next_mention',
+                                     states,
+                                     torch.cat([states_expand, ctx_h], -1), ctx_differences, num_markables
+                                     )
 
     def selection(self, ctx_differences, ctx_h, outs_emb, sel_idx, beliefs=None):
         # outs_emb: length x batch_size x dim
@@ -480,12 +486,12 @@ class RnnReferenceModel(nn.Module):
         #  batch_size x hidden
         sel_inpt = sel_inpt.unsqueeze(1)
         # stack alongside the entity embeddings
-        sel_inpt = sel_inpt.expand(-1, ctx_h.size(1), -1)
-        to_cat = [sel_inpt, ctx_h]
+        sel_inpt_expand = sel_inpt.expand(-1, ctx_h.size(1), -1)
+        to_cat = [sel_inpt_expand, ctx_h]
         if beliefs is not None:
             to_cat.append(beliefs)
         # TODO: pass something for num_markables for consistency; right now it relies on selection not using StructuredTemporalAttention
-        return self._apply_attention('sel', torch.cat(to_cat, 2), ctx_differences, num_markables=None)
+        return self._apply_attention('sel', sel_inpt, torch.cat(to_cat, 2), ctx_differences, num_markables=None)
 
     def _language_conditioned_dot_attention(self, ctx_differences, ctx_h, lang_hs, attention_type,
                                             dots_mentioned, dots_mentioned_per_ref, generation_beliefs):
@@ -538,6 +544,7 @@ class RnnReferenceModel(nn.Module):
         # seq_len x batch_size x num_dots
         attn_logit, _, _ = self._apply_attention(
             attention_type,
+            lang_hs,
             torch.cat([lang_h_expand, ctx_h_expand], 3),
             ctx_differences,
             num_markables=None,
