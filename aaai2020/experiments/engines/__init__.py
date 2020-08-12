@@ -19,10 +19,10 @@ def add_training_args(parser):
                        help='initial learning rate')
     group.add_argument('--min_lr', type=float, default=1e-5,
                        help='min threshold for learning rate annealing')
-    group.add_argument('--decay_rate', type=float, default=9.0,
-                       help='decrease learning rate by this factor')
-    group.add_argument('--decay_every', type=int, default=1,
-                       help='decrease learning rate after decay_every epochs')
+    # group.add_argument('--decay_rate', type=float, default=9.0,
+    #                    help='decrease learning rate by this factor')
+    # group.add_argument('--decay_every', type=int, default=1,
+    #                    help='decrease learning rate after decay_every epochs')
     group.add_argument('--momentum', type=float, default=0.0,
                        help='momentum for sgd')
     group.add_argument('--clip', type=float, default=0.5,
@@ -38,7 +38,7 @@ def add_training_args(parser):
 
     group.add_argument('--reduce_plateau', action='store_true')
     group.add_argument('--reduce_plateau_factor', type=float, default=0.2)
-    group.add_argument('--reduce_plateau_patience', type=float, default=4)
+    group.add_argument('--reduce_plateau_patience', type=float, default=2)
     group.add_argument('--reduce_plateau_min_lr', type=float, default=1e-6)
 
 def add_engine_args(parser):

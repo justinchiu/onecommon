@@ -388,7 +388,6 @@ class RnnReferenceEngine(EngineBase):
         #        + metrics['ref_loss'] * int(self.args.ref_weight > 0) \
         #        + metrics['partner_ref_loss'] * int(self.args.partner_ref_weight > 0)
 
-        # TODO: add next mention loss
         return metrics['lang_loss'] * self.args.lang_weight \
                + metrics['select_loss'] * self.args.sel_weight \
                + metrics['ref_loss'] * self.args.ref_weight \
