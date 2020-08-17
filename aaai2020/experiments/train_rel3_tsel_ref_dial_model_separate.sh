@@ -10,14 +10,17 @@ fi
 
 script_name=rel3_tsel_ref_dial_model_separate
 
-mkdir -p serialized_models/$script_name
-mkdir -p expts/$script_name
+model_dir="${script_name}/${name}"
+output_dir="expts/${model_dir}"
+
+#mkdir -p serialized_models/$script_name
+mkdir -p $output_dir
 
 python -u train_reference.py \
 	--ctx_encoder_type rel_attn_encoder_3 \
 	--max_epoch 30 \
 	--optimizer adam \
-	--model_file ${script_name}/${name} \
+	--model_file $model_dir \
 	--nembed_word 256 \
 	--nembed_ctx 256 \
 	--nhid_lang 256 \
@@ -29,10 +32,9 @@ python -u train_reference.py \
 	--clip 0.5 \
 	--dropout 0.5 \
 	--unk_threshold 10 \
-        --separate_attn \
-        --cuda \
+  --separate_attn \
+  --cuda \
   $@ \
-  | tee expts/${script_name}/${name}.out
-
+  | tee ${output_dir}/train_fold-1.out
 
 #	--repeat_train \
