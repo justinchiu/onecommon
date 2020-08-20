@@ -166,7 +166,7 @@ class RnnReferenceEngine(EngineBase):
 
         raise NotImplementedError("dots_mentioned_per_ref, num_markables")
 
-        out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, reader_lang_h, writer_lang_h = \
+        out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, (reader_lang_h, writer_lang_h) = \
             self.model.forward(
                 ctx, inpt, ref_inpt, sel_idx,
                 num_markables=None, # todo: fix this to be a vector of (bsz,) with constant value determined by the size of ref_tgt
@@ -898,7 +898,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             partner_num_markables,
         )
 
-        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, reader_lang_h, writer_lang_h, ctx_h, ctx_differences = self.model.forward(
+        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_h, writer_lang_h), ctx_h, ctx_differences = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
             lens,

@@ -191,10 +191,10 @@ class RnnReferenceModel(nn.Module):
 
         # tie the weights between reader and writer?
         if not args.untie_grus:
-            self.writer.weight_ih = self.reader.weight_ih_l0
-            self.writer.weight_hh = self.reader.weight_hh_l0
-            self.writer.bias_ih = self.reader.bias_ih_l0
-            self.writer.bias_hh = self.reader.bias_hh_l0
+            self.writer.weight_ih_l0 = self.reader.weight_ih_l0
+            self.writer.weight_hh_l0 = self.reader.weight_hh_l0
+            self.writer.bias_ih_l0 = self.reader.bias_ih_l0
+            self.writer.bias_hh_l0 = self.reader.bias_hh_l0
             self.writer_init_h = self.reader_init_h
         else:
             # n_layers * n_directions x nhid_lang
@@ -712,7 +712,7 @@ class RnnReferenceModel(nn.Module):
             generation_beliefs = belief_constructor.make_beliefs('generation_beliefs', timestep, partner_ref_outs, ref_outs)
         else:
             generation_beliefs = None
-        (reader_lang_hs, writer_lang_hs), (reader_last_h, writer_last_h), feed_ctx_attn_prob = self._read(
+        (reader_lang_hs, writer_lang_hs), reader_and_writer_lang_h, feed_ctx_attn_prob = self._read(
             ctx_differences, ctx_h, inpt, reader_and_writer_lang_h=reader_and_writer_lang_h,
             lens=lens, pack=pack,
             dots_mentioned=dots_mentioned,
@@ -804,7 +804,7 @@ class RnnReferenceModel(nn.Module):
             sel_out = self.selection(ctx_differences, ctx_h, reader_lang_hs, sel_idx, beliefs=selection_beliefs)
         else:
             sel_out = None
-        return outs, (ref_out, partner_ref_out), sel_out, (reader_last_h, writer_last_h), ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
+        return outs, (ref_out, partner_ref_out), sel_out, reader_and_writer_lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
 
     def forward(self, ctx, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
@@ -827,7 +827,7 @@ class RnnReferenceModel(nn.Module):
 
         reader_and_writer_lang_h = None
 
-        outs, (ref_out, partner_ref_out), sel_out, last_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
+        outs, (ref_out, partner_ref_out), sel_out, reader_and_writer_lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
             ctx_differences, ctx_h, inpt, ref_inpt, sel_idx,
             num_markables, partner_num_markables,
             lens=lens, reader_and_writer_lang_h=reader_and_writer_lang_h, compute_sel_out=True, pack=False,
@@ -835,8 +835,7 @@ class RnnReferenceModel(nn.Module):
             belief_constructor=belief_constructor,
             partner_ref_inpt=partner_ref_inpt, timestep=0, partner_ref_outs=[],
         )
-        reader_lang_h, writer_lang_h = reader_and_writer_lang_h
-        return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, reader_lang_h, writer_lang_h, ctx_h, ctx_differences
+        return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, reader_and_writer_lang_h, ctx_h, ctx_differences
 
     def _context_for_feeding(self, ctx_differences, ctx_h, lang_hs, dots_mentioned, dots_mentioned_per_ref, generation_beliefs):
         if self.args.feed_context_attend:
@@ -974,7 +973,7 @@ class RnnReferenceModel(nn.Module):
         else:
             writer_lang_hs, writer_last_h = reader_lang_hs, reader_last_h
 
-        return (reader_lang_hs, writer_lang_hs), (reader_lang_h, writer_lang_h), feed_ctx_attn_prob
+        return (reader_lang_hs, writer_lang_hs), (reader_last_h, writer_last_h), feed_ctx_attn_prob
 
     def read(self, ctx_differences, ctx_h, inpt, reader_and_writer_lang_h, prefix_token='THEM:',
              dots_mentioned=None, dots_mentioned_per_ref=None,
@@ -1231,4 +1230,4 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         assert sel_out is not None
 
-        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, all_reader_lang_h, all_writer_lang_h, ctx_h, ctx_differences
+        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, (all_reader_lang_h, all_writer_lang_h), ctx_h, ctx_differences
