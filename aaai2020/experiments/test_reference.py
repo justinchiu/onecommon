@@ -104,6 +104,8 @@ def main():
     parser.add_argument('--show_errors', action='store_true', default=False,
         help='show errors')
 
+    parser.add_argument('--model_referent_annotation_output_path', help='write the referent predictions to this file')
+
     parser.add_argument(
         '--lang_only_self',
         action='store_true',
@@ -341,7 +343,6 @@ def main():
 
             for j in range(bsz):
                 chat_id = chat_ids[j]
-
                 remaining_markables = markable_annotation[chat_id]["markables"]
 
                 def keep_markable(markable):
@@ -396,6 +397,7 @@ def main():
                                     assert False
                         acc_sent_length += this_len
                         markables_by_sentence.append(markables)
+
                     assert not remaining_markables
                 markables_by_sentence_by_batch.append(markables_by_sentence)
 
@@ -442,11 +444,13 @@ def main():
 
                     # compute more details of reference resolution
                     for j in range(bsz): # batch idx
+                        chat_id = chat_ids[j]
                         markables = markables_by_sentence_by_batch[j][sentence_ix]
                         this_num_markables = sentence_num_markables[j].item()
                         assert len(markables) == this_num_markables
 
                         # add chat level details if not exists
+                        # TODO: fix this
                         if chat_id not in reference_correct:
                             reference_correct[chat_id] = _ref_stats['correct']
                         if chat_id not in reference_total:
@@ -496,6 +500,9 @@ def main():
                                 for ent, is_referent in zip(chat['scenario']['kbs'][agents[j]], ref_predictions.long()[i][j].tolist()):
                                     if is_referent:
                                         model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'].append("agent_{}_{}".format(agents[j], ent['id']))
+
+                        if chat_id == 'C_00f2f48799d74bea8103a92e884aecba':
+                            print('here')
 
                     # moved these here to fix a bug; previously some batches were getting double-counted if the batch afterward had no referents
                     test_reference_correct += _ref_stats['correct']
@@ -670,7 +677,8 @@ def main():
                 num_markables_correct.append(repeat_results["num_markables_correct"][split][k] / (repeat_results["num_markables_counter"][split][k] * 7))
             print('{}: {:.5f} (std {}) {:.5f} (std {}) (count {})'.format(k, np.mean(num_markables_correct), np.std(num_markables_correct), np.mean(exact_match_rate), np.std(exact_match_rate), np.mean(num_markables)))
 
-    dump_json(model_referent_annotation, "model_referent_annotation.json")
+    if args.model_referent_annotation_output_path:
+        dump_json(model_referent_annotation, args.model_referent_annotation_output_path)
 
     # pdb.set_trace()
 
