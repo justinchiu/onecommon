@@ -278,9 +278,10 @@ class RnnReferenceModel(nn.Module):
             assert not args.selection_beliefs
             assert not args.generation_beliefs
             assert not args.mention_beliefs
-            self.attn = AttentionLayer(args, 2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, dropout_p=args.dropout)
+            assert not self.args.bidirectional_reader
+            self.attn = AttentionLayer(args, 2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, dropout_p=args.dropout, language_dim=args.nhid_lang)
             if self.args.feed_context_attend_separate:
-                self.feed_attn = AttentionLayer(args, 2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, dropout_p=args.dropout)
+                self.feed_attn = AttentionLayer(args, 2, args.nhid_lang + args.nembed_ctx, args.nhid_attn, dropout_p=args.dropout, language_dim=args.nhid_lang)
             else:
                 self.feed_attn = None
         elif args.separate_attn:
@@ -307,7 +308,7 @@ class RnnReferenceModel(nn.Module):
                 setattr(
                     self,
                     self._attention_name(attn_name),
-                    attention_constructors[attn_name](args, 2, input_dim, args.nhid_attn, dropout_p=args.dropout)
+                    attention_constructors[attn_name](args, 2, input_dim, args.nhid_attn, dropout_p=args.dropout, language_dim=lang_input_dim)
                 )
         else:
             assert not args.mark_dots_mentioned

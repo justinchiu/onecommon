@@ -35,7 +35,7 @@ class AttentionLayer(nn.Module):
     def add_args(cls, parser):
         pass
 
-    def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p):
+    def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p, language_dim):
         super().__init__()
         self.args = args
         self.feedforward = FeedForward(n_hidden_layers, input_dim, hidden_dim, output_dim=1, dropout_p=dropout_p)
@@ -55,7 +55,7 @@ class StructuredAttentionLayer(nn.Module):
         parser.add_argument('--structured_attention_language_conditioned', action='store_true')
         parser.set_defaults(structured_attention_marginalize=True)
 
-    def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p):
+    def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p, language_dim):
         super().__init__()
         self.args = args
         self.feedforward = FeedForward(n_hidden_layers, input_dim, hidden_dim, output_dim=2, dropout_p=dropout_p)
@@ -65,7 +65,7 @@ class StructuredAttentionLayer(nn.Module):
 
         input_dim = self.relation_dim
         if self.args.structured_attention_language_conditioned:
-            input_dim += self.args.nhid_lang
+            input_dim += language_dim
 
         self.relation_encoder = FeedForward(
             n_hidden_layers=1, input_dim=input_dim, hidden_dim=args.structured_attention_hidden_dim,
@@ -187,8 +187,8 @@ class StructuredAttentionLayer(nn.Module):
 
 
 class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
-    def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p):
-        super().__init__(args, n_hidden_layers, input_dim, hidden_dim, dropout_p)
+    def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p, language_dim):
+        super().__init__(args, n_hidden_layers, input_dim, hidden_dim, dropout_p, language_dim)
         if args.structured_temporal_attention_transitions == 'dot_id':
             self.self_transition_params = nn.Parameter(torch.zeros(3))
             # TODO: consider just fixing this to zeros
@@ -200,7 +200,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
 
             input_dim = self.relation_dim
             if self.args.structured_attention_language_conditioned:
-                input_dim += self.args.nhid_lang
+                input_dim += language_dim
             self.temporal_relation_encoder = FeedForward(
                 n_hidden_layers=1, input_dim=input_dim, hidden_dim=args.structured_attention_hidden_dim,
                 output_dim=3,

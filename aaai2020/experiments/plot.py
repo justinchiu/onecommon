@@ -9,12 +9,12 @@ STATS = [
                  'select_acc', 
                  'ref_acc', 'ref_f1', 'ref_exact_match', 
                  'partner_ref_acc', 'partner_ref_f1', 'partner_ref_exact_match',
-                 'next_mention_acc', 'next_mention_f1']
+                 'next_mention_acc', 'next_mention_f1', 'next_mention_exact_match']
 ]
 
 
 #DEFAULT_STATS = ['valid_ppl']
-DEFAULT_STATS = ['valid_correct_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_ref_exact_match', 'valid_next_mention_acc', 'valid_next_mention_f1']
+DEFAULT_STATS = ['valid_correct_ppl', 'valid_select_acc', 'valid_ref_acc', 'valid_ref_f1', 'valid_ref_exact_match', 'valid_next_mention_f1', 'valid_next_mention_exact_match']
 
 def make_parser():
     parser = argparse.ArgumentParser()
