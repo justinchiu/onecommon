@@ -73,8 +73,13 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--untie_grus',
                             action='store_true',
                             help="don't use the same weights for the reader and writer")
+        parser.add_argument('--bidirectional_reader',
+                            action='store_true',
+                            help="use a bidirectional reader")
 
         parser.add_argument('--attention_type', choices=['softmax', 'sigmoid'], default='softmax')
+
+        parser.add_argument('--learned_pooling', action='store_true')
 
         # beliefs / dot-conditioning
         parser.add_argument('--no_word_attention',
@@ -106,6 +111,7 @@ class RnnReferenceModel(nn.Module):
 
         parser.add_argument('--detach_beliefs', action='store_true',
                             help='don\'t backprop through the belief prediction network')
+
 
         # auxiliary models
         parser.add_argument('--partner_reference_prediction', action='store_true')
@@ -173,7 +179,7 @@ class RnnReferenceModel(nn.Module):
         self.reader = nn.GRU(
             input_size=gru_input_size,
             hidden_size=args.nhid_lang,
-            bias=True)
+            bias=True, bidirectional=args.bidirectional_reader)
 
         self.writer = nn.GRU(
             input_size=gru_input_size,
@@ -185,9 +191,12 @@ class RnnReferenceModel(nn.Module):
             hidden_size=args.nhid_lang,
             bias=True)
 
-        # TODO: refactor to add n_layers dimension
         # nhid_lang
+        # TODO: pass these
         self.reader_init_h = torch.nn.Parameter(torch.zeros(args.nhid_lang), requires_grad=True)
+        if args.bidirectional_reader:
+            self.reader_init_h_reverse = torch.nn.Parameter(torch.zeros(args.nhid_lang), requires_grad=True)
+
 
         # tie the weights between reader and writer?
         if not args.untie_grus:
@@ -276,7 +285,12 @@ class RnnReferenceModel(nn.Module):
                 self.feed_attn = None
         elif args.separate_attn:
             for attn_name in lang_attn_names + ['sel'] + ref_attn_names:
-                input_dim = args.nhid_lang + args.nembed_ctx
+                if attn_name in lang_attn_names or attn_name == 'next_mention':
+                    # writer
+                    lang_input_dim = self.args.nhid_lang
+                else:
+                    lang_input_dim = self.args.nhid_lang * self.num_reader_directions
+                input_dim = lang_input_dim + args.nembed_ctx
                 if args.mark_dots_mentioned and attn_name in lang_attn_names:
                     # TODO: consider tiling the indicator feature across more dimensions
                     input_dim += 1
@@ -334,6 +348,11 @@ class RnnReferenceModel(nn.Module):
 
         self.dropout = nn.Dropout(args.dropout)
 
+        # learned pooling
+        if self.args.learned_pooling:
+            self.ref_pooling_weights = nn.Parameter(torch.zeros(3), requires_grad=True)
+            self.partner_ref_pooling_weights = nn.Parameter(torch.zeros(3), requires_grad=True)
+
         # mask for disabling special tokens when generating sentences
         self.special_token_mask = make_mask(len(word_dict),
             [word_dict.get_idx(w) for w in ['<unk>', 'YOU:', 'THEM:', '<pad>']])
@@ -349,6 +368,29 @@ class RnnReferenceModel(nn.Module):
         #     init_cont(self.lang_attn, args.init_range)
         #     init_cont(self.sel_attn, args.init_range)
         #     init_cont(self.ref_attn, args.init_range)
+
+    @property
+    def num_reader_directions(self):
+        if vars(self.args).get('bidirectional_reader', False):
+            return 2
+        else:
+            return 1
+
+    def reader_forward_hs(self, reader_lang_hs):
+        assert reader_lang_hs.dim() == 3
+        # batch x seq_len x num_directions x hidden size.
+        # or is it seq_len x batch x num_directions x hidden size?
+        # should be fine either way
+        separated = reader_lang_hs.view(reader_lang_hs.size(0), reader_lang_hs.size(1), self.num_reader_directions, -1)
+        return separated[:,:,0]
+
+    def reader_forward_last_h(self, reader_last_h):
+        assert reader_last_h.dim() == 3
+        num_layers = 1
+        assert reader_last_h.size(0) == self.num_reader_directions
+        # num_layers(1) x num_directions x batch x hidden_size
+        separated = reader_last_h.unsqueeze(0)
+        return separated[:,0]
 
     def _attention_name(self, name):
         return '{}_attn'.format(name)
@@ -408,10 +450,16 @@ class RnnReferenceModel(nn.Module):
         # reshape
         ref_inpt = ref_inpt.view(3, -1, ref_inpt.size(1), ref_inpt.size(2))
 
-        # this mean pools embeddings for the referent's start and end, as well as the end of the sentence it occurs in
-        # take mean
+        # pool embeddings for the referent's start and end, as well as the end of the sentence it occurs in
+        # to produce ref_inpt of size
         # num_refs x batch_size x hidden_dim
-        ref_inpt = torch.mean(ref_inpt, 0)
+        if vars(self.args).get('learned_pooling', False):
+            # learned weights
+            ref_weights = (self.ref_pooling_weights if for_self else self.partner_ref_pooling_weights).softmax(-1)
+            ref_inpt = torch.einsum("tnbh,t->nbh", (ref_inpt, ref_weights))
+        else:
+            # mean pooling
+            ref_inpt = torch.mean(ref_inpt, 0)
 
         # num_refs x batch_size x num_dots x hidden_dim
         ref_inpt_expand = ref_inpt.unsqueeze(2).expand(-1, -1, num_dots, -1)
@@ -906,9 +954,14 @@ class RnnReferenceModel(nn.Module):
 
     def _init_h(self, bsz):
         if hasattr(self, 'reader_init_h'):
-            reader_lang_h = self.reader_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
+            if vars(self.args).get('bidirectional_reader', False):
+                reader_lang_h = torch.stack((self.reader_init_h, self.reader_init_h_reverse), 0)
+                reader_lang_h = reader_lang_h.unsqueeze(1).expand(2, bsz, -1).contiguous()
+            else:
+                reader_lang_h = self.reader_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
             writer_lang_h = self.writer_init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
         else:
+            # for backward compatibility, when we didn't have untied grus. TODO: just remove this
             reader_lang_h = self.init_h.unsqueeze(0).unsqueeze(1).expand(1, bsz, -1).contiguous()
             writer_lang_h = reader_lang_h
         return reader_lang_h, writer_lang_h
@@ -944,8 +997,9 @@ class RnnReferenceModel(nn.Module):
             if not self.args.untie_grus:
                 assert torch.allclose(reader_lang_h, writer_lang_h)
             writer_lang_h = gate_weights * writer_lang_h + (1 - gate_weights) * addition
-            if not self.args.untie_grus:
-                reader_lang_h = writer_lang_h
+            assert self.args.untie_grus
+            # if not self.args.untie_grus:
+            #     reader_lang_h = writer_lang_h
 
         # seq_len x batch_size x nembed_word
         dialog_emb = self.embed_dialogue(inpt)
@@ -971,7 +1025,7 @@ class RnnReferenceModel(nn.Module):
             if pack:
                 writer_lang_hs, _ = pad_packed_sequence(writer_lang_hs, total_length=seq_len)
         else:
-            writer_lang_hs, writer_last_h = reader_lang_hs, reader_last_h
+            writer_lang_hs, writer_last_h = self.reader_forward_hs(reader_lang_hs), self.reader_forward_last_h(reader_last_h)
 
         return (reader_lang_hs, writer_lang_hs), (reader_last_h, writer_last_h), feed_ctx_attn_prob
 
