@@ -269,6 +269,9 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
             transition_params = torch.zeros(N-1, batch_size, num_dots*num_dots, 3)
             if vars(self.args).get('structured_attention_language_conditioned', False):
                 num_pairs = ctx_differences.size(1)
+                # lang_input: num_mentions x batch_size x hidden
+                # get a representation for each pair mention_i mention_{i+1} by subtracting
+                # TODO: maybe consider a symmetric rep as well? e.g. concatenation or adding
                 input_diffs = lang_input[1:] - lang_input[:-1]
                 input_diffs_expand = input_diffs.unsqueeze(2).repeat_interleave(num_pairs, dim=2)
                 ctx_differences_expand = ctx_differences.unsqueeze(0).repeat_interleave(N-1, dim=0)

@@ -501,9 +501,6 @@ def main():
                                     if is_referent:
                                         model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'].append("agent_{}_{}".format(agents[j], ent['id']))
 
-                        if chat_id == 'C_00f2f48799d74bea8103a92e884aecba':
-                            print('here')
-
                     # moved these here to fix a bug; previously some batches were getting double-counted if the batch afterward had no referents
                     test_reference_correct += _ref_stats['correct']
                     test_reference_total += _ref_stats['num_dots']

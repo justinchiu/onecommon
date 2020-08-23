@@ -14,10 +14,45 @@ import torch.nn.functional as F
 
 from models.utils import *
 
+def single_difference(ent_i, ent_j, relation_include, relation_include_angle, symmetric):
+    # ent_i: ... x 4
+    # ent_j: ... x 4
+    assert ent_i.size(-1) == 4
+    assert ent_j.size(-1) == 4
+    dist = torch.sqrt((ent_i[...,0] - ent_j[...,0])**2 + (ent_i[...,1] - ent_j[...,1])**2)
+
+    position_i, appearance_i = torch.split(ent_i, (2,2), dim=-1)
+    position_j, appearance_j = torch.split(ent_j, (2,2), dim=-1)
+
+    to_cat = []
+    if 'i_position' in relation_include:
+        to_cat.append(position_i)
+    if 'i_appearance' in relation_include:
+        to_cat.append(appearance_i)
+    if 'j_position' in relation_include:
+        to_cat.append(position_j)
+    if 'j_appearance' in relation_include:
+        to_cat.append(appearance_j)
+    property_diff = ent_i - ent_j
+    if symmetric:
+        property_diff = torch.abs(property_diff)
+    to_cat.extend([property_diff, dist.unsqueeze(-1)])
+
+    if relation_include_angle:
+        if symmetric:
+            raise NotImplementedError("symmetric relation encoding that includes angles is not implemented")
+        diff = position_i - position_j
+        diff_x, diff_y = torch.split(diff, (1,1), dim=-1)
+        rad_1 = torch.atan2(diff_x, diff_y) / math.pi
+        rad_2 = torch.atan2(diff_y, diff_x) / math.pi
+        to_cat.append(rad_1)
+        to_cat.append(rad_2)
+    return torch.cat(to_cat, -1)
+
 def pairwise_differences(ctx, num_ent, dim_ent,
                          relation_include=['i_position', 'i_appearance', 'j_position', 'j_appearance'],
                          relation_include_angle=False,
-                         symmetric=False
+                         symmetric=False,
                          ):
     ents = ctx.view(ctx.size(0), num_ent, dim_ent)
 
@@ -32,33 +67,8 @@ def pairwise_differences(ctx, num_ent, dim_ent,
                 continue
             if symmetric and i > j:
                 continue
-            dist = torch.sqrt((ents[:,i,0] - ents[:,j,0])**2 + (ents[:,i,1] - ents[:,j,1])**2)
-
-            to_cat = []
-            if 'i_position' in relation_include:
-                to_cat.append(position[:,i])
-            if 'i_appearance' in relation_include:
-                to_cat.append(appearance[:,i])
-            if 'j_position' in relation_include:
-                to_cat.append(position[:,j])
-            if 'j_appearance' in relation_include:
-                to_cat.append(appearance[:,j])
-            property_diff = ents[:,i,:] - ents[:,j,:]
-            if symmetric:
-                property_diff = torch.abs(property_diff)
-            to_cat.extend([property_diff, dist.unsqueeze(1)])
-
-            if relation_include_angle:
-                if symmetric:
-                    raise NotImplementedError("symmetric relation encoding that includes angles is not implemented")
-                diff = position[:,i] - position[:,j]
-                diff_x, diff_y = torch.split(diff, (1,1), dim=-1)
-                rad_1 = torch.atan2(diff_x, diff_y) / math.pi
-                rad_2 = torch.atan2(diff_y, diff_x) / math.pi
-                to_cat.append(rad_1)
-                to_cat.append(rad_2)
-
-            rel_pairs.append((torch.cat(to_cat, 1).unsqueeze(1)))
+            diff = single_difference(ents[:,i], ents[:,j], relation_include, relation_include_angle, symmetric)
+            rel_pairs.append(diff.unsqueeze(1))
         # ent_rel_pairs.append(torch.cat(rel_pairs, 1).unsqueeze(1))
     ent_rel_pairs_t = torch.cat(rel_pairs, 1)
     if not symmetric:
@@ -337,6 +347,7 @@ class RelationalAttentionContextEncoder3(nn.Module):
                             choices=['i_position', 'i_appearance', 'j_position', 'j_appearance'],
                             default=['i_appearance', 'j_appearance'],
                             nargs='*')
+        parser.add_argument('--encode_relative_to_extremes', action='store_true')
 
     def __init__(self, domain, args):
         super(RelationalAttentionContextEncoder3, self).__init__()
@@ -351,18 +362,37 @@ class RelationalAttentionContextEncoder3(nn.Module):
 
         relation_input_dim = 2 * len(self.args.relation_include) + domain.dim_ent() + 1
 
+        if args.encode_relative_to_extremes:
+            assert args.nembed_ctx % 4 == 0
+            extremes_output_dim = args.nembed_ctx // 4
+            remaining_dims = args.nembed_ctx - extremes_output_dim
+        else:
+            extremes_output_dim = 0
+            remaining_dims = args.nembed_ctx
+
         if property_input_dim == 0:
-            property_output_dim = args.nembed_ctx
-            relation_output_dim = args.nembed_ctx
+            property_output_dim = 0
+            relation_output_dim = remaining_dims
             self.property_encoder = None
         else:
-            property_output_dim = int(args.nembed_ctx / 2)
-            relation_output_dim = int(args.nembed_ctx / 2)
+            property_output_dim = remaining_dims // 2
+            relation_output_dim = remaining_dims - property_output_dim
             self.property_encoder = nn.Sequential(
                 torch.nn.Linear(property_input_dim, property_output_dim),
                 nn.ReLU(),
                 nn.Dropout(args.dropout),
             )
+
+        assert property_output_dim + relation_output_dim + extremes_output_dim == args.nembed_ctx
+
+        if args.encode_relative_to_extremes:
+            self.extremes_encoder = nn.Sequential(
+                torch.nn.Linear(relation_input_dim*2, extremes_output_dim),
+                nn.ReLU(),
+                nn.Dropout(args.dropout),
+            )
+        else:
+            self.extremes_encoder = None
 
         if args.relation_encoder_layers == 2:
             hidden_dim = relation_output_dim
@@ -382,7 +412,7 @@ class RelationalAttentionContextEncoder3(nn.Module):
                 nn.Dropout(args.dropout),
             )
 
-        init_cont([self.property_encoder, self.relation_encoder], args.init_range)
+        init_cont([self.property_encoder, self.relation_encoder, self.extremes_encoder], args.init_range)
 
     def forward(self, ctx):
         relation_include_angle = hasattr(self, 'args') and self.args.relation_include_angle
@@ -397,18 +427,38 @@ class RelationalAttentionContextEncoder3(nn.Module):
             assert self.relation_pooling == 'max'
             rel_emb_pooled, _ = rel_emb.max(2)
 
+        to_cat = []
+
         if self.property_encoder is not None:
-            to_cat = []
+            prop_to_cat = []
             if 'position' in self.args.properties_include:
-                to_cat.append(position)
+                prop_to_cat.append(position)
             if 'appearance' in self.args.properties_include:
-                to_cat.append(appearance)
-            if len(to_cat) > 1:
-                to_embed = torch.cat(to_cat, dim=-1)
+                prop_to_cat.append(appearance)
+            if len(prop_to_cat) > 1:
+                to_embed = torch.cat(prop_to_cat, dim=-1)
             else:
-                to_embed = to_cat[0]
+                to_embed = prop_to_cat[0]
             prop_emb = self.property_encoder(to_embed)
-            out = torch.cat([prop_emb, rel_emb_pooled], 2)
+            to_cat.append(prop_emb)
+
+        to_cat.append(rel_emb_pooled)
+
+        if vars(self.args).get('encode_relative_to_extremes'):
+            ents = ctx.view(ctx.size(0), self.num_ent, self.dim_ent)
+            # bsz x num_ent x relation_input_dim
+            ex_min = ents.min(1).values.unsqueeze(1).expand_as(ents)
+            # bsz x num_ent x relation_input_dim
+            ex_max = ents.max(1).values.unsqueeze(1).expand_as(ents)
+            # bsz x num_ent x relation_input_dim
+            diffs_min = single_difference(ents, ex_min, self.args.relation_include, relation_include_angle,symmetric=False)
+            diffs_max = single_difference(ents, ex_max, self.args.relation_include, relation_include_angle,symmetric=False)
+            diffs = torch.cat((diffs_min, diffs_max), dim=-1)
+            extremes_emb = self.extremes_encoder(diffs)
+            to_cat.append(extremes_emb)
+
+        if len(to_cat) > 1:
+            out = torch.cat(to_cat, 2)
         else:
-            out = rel_emb_pooled
+            out = to_cat[0]
         return out
