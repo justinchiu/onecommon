@@ -558,9 +558,14 @@ class RnnReferenceModel(nn.Module):
         # bsz = lang_hs.size(1)
         # num_dots = ctx_h.size(1)
 
-        constrain_attention = False
         assert attention_type in ['feed', 'lang', 'hidden']
-        constrain_attention = vars(self.args).get('{}_attention_constrained'.format(attention_type), False)
+        # I messed up the argument naming
+        # TODO: maybe rename "lang" -> "word" everywhere
+        if attention_type == 'lang':
+            constrain_attention_type = 'word'
+        else:
+            constrain_attention_type = attention_type
+        constrain_attention = vars(self.args).get('{}_attention_constrained'.format(constrain_attention_type), False)
 
         # if use_feed_attn and vars(self.args).get('feed_attention_constrained', False):
         #     constrain_attention = True
