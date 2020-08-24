@@ -59,7 +59,12 @@ class StructuredAttentionLayer(nn.Module):
         super().__init__()
         self.args = args
         self.feedforward = FeedForward(n_hidden_layers, input_dim, hidden_dim, output_dim=2, dropout_p=dropout_p)
+
         self.relation_dim = 4 + 1 # +1 for distance
+
+        assymmetric_pairs = vars(self.args).get('structured_attention_asymmetric_pairs', False)
+        if assymmetric_pairs:
+            self.relation_dim += 4
 
         self.num_ent = 7
 

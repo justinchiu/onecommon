@@ -14,7 +14,7 @@ import torch.nn.functional as F
 
 from models.utils import *
 
-def single_difference(ent_i, ent_j, relation_include, relation_include_angle, symmetric):
+def single_difference(ent_i, ent_j, relation_include, relation_include_angle, include_symmetric_rep, include_asymmetric_rep):
     # ent_i: ... x 4
     # ent_j: ... x 4
     assert ent_i.size(-1) == 4
@@ -34,13 +34,16 @@ def single_difference(ent_i, ent_j, relation_include, relation_include_angle, sy
     if 'j_appearance' in relation_include:
         to_cat.append(appearance_j)
     property_diff = ent_i - ent_j
-    if symmetric:
-        property_diff = torch.abs(property_diff)
-    to_cat.extend([property_diff, dist.unsqueeze(-1)])
+
+    if include_symmetric_rep:
+        to_cat.append(torch.abs(property_diff))
+    if include_asymmetric_rep:
+        to_cat.append(property_diff)
+    to_cat.append(dist.unsqueeze(-1))
 
     if relation_include_angle:
-        if symmetric:
-            raise NotImplementedError("symmetric relation encoding that includes angles is not implemented")
+        if not include_asymmetric_rep:
+            raise NotImplementedError("a symmetric representation that includes angles isn't implemented")
         diff = position_i - position_j
         diff_x, diff_y = torch.split(diff, (1,1), dim=-1)
         rad_1 = torch.atan2(diff_x, diff_y) / math.pi
@@ -53,6 +56,7 @@ def pairwise_differences(ctx, num_ent, dim_ent,
                          relation_include=['i_position', 'i_appearance', 'j_position', 'j_appearance'],
                          relation_include_angle=False,
                          symmetric=False,
+                         include_asymmetric_rep_in_symmetric=False,
                          ):
     ents = ctx.view(ctx.size(0), num_ent, dim_ent)
 
@@ -67,7 +71,8 @@ def pairwise_differences(ctx, num_ent, dim_ent,
                 continue
             if symmetric and i > j:
                 continue
-            diff = single_difference(ents[:,i], ents[:,j], relation_include, relation_include_angle, symmetric)
+            diff = single_difference(ents[:,i], ents[:,j], relation_include, relation_include_angle,
+                                     symmetric, (not symmetric) or include_asymmetric_rep_in_symmetric)
             rel_pairs.append(diff.unsqueeze(1))
         # ent_rel_pairs.append(torch.cat(rel_pairs, 1).unsqueeze(1))
     ent_rel_pairs_t = torch.cat(rel_pairs, 1)
@@ -417,7 +422,8 @@ class RelationalAttentionContextEncoder3(nn.Module):
     def forward(self, ctx):
         relation_include_angle = hasattr(self, 'args') and self.args.relation_include_angle
         position, appearance, ent_rel_pairs = pairwise_differences(
-            ctx, self.num_ent, self.dim_ent, self.args.relation_include, relation_include_angle, symmetric=False
+            ctx, self.num_ent, self.dim_ent, self.args.relation_include, relation_include_angle,
+            symmetric=False,
         )
         rel_emb = self.relation_encoder(ent_rel_pairs)
 
@@ -451,8 +457,10 @@ class RelationalAttentionContextEncoder3(nn.Module):
             # bsz x num_ent x relation_input_dim
             ex_max = ents.max(1).values.unsqueeze(1).expand_as(ents)
             # bsz x num_ent x relation_input_dim
-            diffs_min = single_difference(ents, ex_min, self.args.relation_include, relation_include_angle,symmetric=False)
-            diffs_max = single_difference(ents, ex_max, self.args.relation_include, relation_include_angle,symmetric=False)
+            diffs_min = single_difference(ents, ex_min, self.args.relation_include, relation_include_angle,
+                                          include_symmetric_rep=False, include_asymmetric_rep=True)
+            diffs_max = single_difference(ents, ex_max, self.args.relation_include, relation_include_angle,
+                                          include_symmetric_rep=False, include_asymmetric_rep=True)
             diffs = torch.cat((diffs_min, diffs_max), dim=-1)
             extremes_emb = self.extremes_encoder(diffs)
             to_cat.append(extremes_emb)
