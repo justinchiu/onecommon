@@ -61,6 +61,7 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--structured_temporal_attention_training',
                             choices=['likelihood', 'max_margin'],
                             default='likelihood')
+        parser.add_argument('--structured_attention_asymmetric_pairs', action='store_true')
 
         parser.add_argument('--selection_attention', action='store_true')
         parser.add_argument('--feed_context', action='store_true')
@@ -421,8 +422,10 @@ class RnnReferenceModel(nn.Module):
         return inpt_emb
 
     def ctx_differences(self, ctx):
+        assymmetric_pairs = vars(self.args).get('structured_attention_asymmetric_pairs', False)
         _, _, ctx_differences = pairwise_differences(
-            ctx, num_ent=self.num_ent, dim_ent=4, symmetric=True, relation_include=[]
+            ctx, num_ent=self.num_ent, dim_ent=4, symmetric=True, relation_include=[],
+            include_asymmetric_rep_in_symmetric=assymmetric_pairs
         )
         return ctx_differences
 
