@@ -8,31 +8,8 @@ import utils
 from domain import get_domain
 
 import engines
+from engines.rnn_reference_engine import add_loss_args
 
-def add_loss_args(parser):
-    pass
-    group = parser.add_argument_group('loss')
-    group.add_argument('--lang_weight', type=float, default=1.0,
-                        help='language loss weight')
-    group.add_argument('--ref_weight', type=float, default=1.0,
-                        help='reference loss weight')
-    group.add_argument('--partner_ref_weight', type=float, default=1.0,
-                       help='partner reference loss weight')
-    group.add_argument('--sel_weight', type=float, default=1.0,
-                        help='selection loss weight')
-    group.add_argument('--next_mention_weight', type=float, default=1.0,
-                       help='next mention loss weight')
-    group.add_argument('--next_mention_start_epoch', type=int,
-                       help='only supervise next mention in this epoch onward (to allow pretraining)')
-    group.add_argument('--selection_start_epoch', type=int,
-                       help='only supervise selection in this epoch onward (to allow pretraining)')
-    group.add_argument('--lang_only_self', action='store_true')
-
-    # these args only make sense if --lang_only_self is True
-    group.add_argument('--word_attention_supervised', action='store_true')
-    group.add_argument('--feed_attention_supervised', action='store_true')
-
-    group.add_argument('--attention_supervision_method', choices=['kl', 'penalize_unmentioned'], default='kl')
 
 def main():
     parser = argparse.ArgumentParser(description='training script for reference resolution')

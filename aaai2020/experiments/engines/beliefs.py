@@ -8,28 +8,31 @@ from engines.rnn_reference_engine import ReferencePredictor
 BELIEF_TYPES = [
     'none',
     'selected', 'partners',
-    'last_partner_mentioned',
+    'next_mentioned',
+
+    # this mentions
+    'this_mentioned', 'this_mentioned_predicted',
+    'last_mentioned', 'last_mentioned_predicted',
+    'last_primary_mentioned', 'last_primary_mentioned_predicted',
+    't-2_mentioned',
+    'cumulative_mentioned',
+
+    # partner mentions
+    'this_partner_mentioned', 'this_partner_mentioned_predicted', 'this_partner_mentioned_noised',
+    'last_partner_mentioned', 'last_partner_mentioned_predicted',
+    'last_partner_primary_mentioned', 'last_partner_primary_mentioned_predicted',
     't-2_partner_mentioned',
     'cumulative_partner_mentioned',
-    'this_partner_mentioned',
-    'this_partner_mentioned_predicted',
-    'this_partner_mentioned_noised',
-    'last_partner_mentioned_predicted',
-    'this_mentioned',
-    'this_mentioned_predicted',
-    'last_mentioned_predicted',
-    'cumulative_mentioned',
-    'last_mentioned',
-    't-2_mentioned',
-    'next_mentioned',
 ]
 
 _BeliefConstructor = namedtuple('_BeliefConstructor', [
-    'args',
+    'args', 'epoch',
     'bsz', 'num_dots', 'inpts', 'ref_tgts', 'partner_ref_tgts_our_view', 'real_ids', 'partner_real_ids', 'sel_tgt',
     'is_self',
     'partner_dots_mentioned_our_view',
+    'partner_dots_mentioned_our_view_per_ref',
     'dots_mentioned',
+    'dots_mentioned_per_ref',
     'ref_inpts',
     'partner_ref_inpts',
     'num_markables',
@@ -64,8 +67,12 @@ class BeliefConstructor(_BeliefConstructor):
         parser.add_argument('--mention_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
         # parser.add_argument('--mention_beliefs_patterns', nargs='*')
         parser.add_argument('--ref_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
+        parser.add_argument('--ref_beliefs_warmup', choices=BELIEF_TYPES, nargs='*', default=[])
+        parser.add_argument('--ref_beliefs_warmup_epochs', type=int)
         # parser.add_argument('--ref_beliefs_patterns', nargs='*')
         parser.add_argument('--partner_ref_beliefs', choices=BELIEF_TYPES, nargs='*', default=[])
+        parser.add_argument('--partner_ref_beliefs_warmup', choices=BELIEF_TYPES, nargs='*', default=[])
+        parser.add_argument('--partner_ref_beliefs_warmup_epochs', type=int)
         # parser.add_argument('--partner_beliefs_patterns', nargs='*')
 
         parser.add_argument('--belief_noise_pos_to_neg_probability', type=float, default=0.0)
@@ -73,10 +80,22 @@ class BeliefConstructor(_BeliefConstructor):
 
     def make_beliefs(self, belief_type, timestep, partner_ref_outs, ref_outs):
         assert belief_type in [
-            'selection_beliefs', 'generation_beliefs', 'mention_beliefs', 'ref_beliefs', 'partner_ref_beliefs'
+            'selection_beliefs', 'generation_beliefs', 'mention_beliefs', 'ref_beliefs', 'partner_ref_beliefs',
         ]
 
-        beliefs_names = vars(self.args)[belief_type]
+        if belief_type in ['ref_beliefs', 'partner_ref_beliefs'] and self.epoch is not None:
+            if belief_type == 'ref_beliefs':
+                if self.args.ref_beliefs_warmup_epochs is not None and self.epoch <= self.args.ref_beliefs_warmup_epochs:
+                    beliefs_names = self.args.ref_beliefs_warmup
+                else:
+                    beliefs_names = self.args.ref_beliefs
+            if belief_type == 'partner_ref_beliefs':
+                if self.args.partner_ref_beliefs_warmup_epochs is not None and self.epoch <= self.args.partner_ref_beliefs_warmup_epochs:
+                    beliefs_names = self.args.partner_ref_beliefs_warmup
+                else:
+                    beliefs_names = self.args.partner_ref_beliefs
+        else:
+            beliefs_names = vars(self.args)[belief_type]
 
         if timestep >= 0:
             if belief_type in ['generation_beliefs', 'ref_beliefs', 'partner_ref_beliefs']:
@@ -106,7 +125,9 @@ class BeliefConstructor(_BeliefConstructor):
                 belief_to_use = '_'.join(tokens[1:])
                 assert belief_to_use in [
                     'mentioned', 'mentioned_predicted', 'mentioned_noised',
-                    'partner_mentioned', 'partner_mentioned_predicted', 'partner_mentioned_noised'
+                    'partner_mentioned', 'partner_mentioned_predicted', 'partner_mentioned_noised',
+                    'primary_mentioned', 'primary_mentioned_predicted',
+                    'partner_primary_mentioned', 'partner_primary_mentioned_predicted',
                 ]
                 if belief_to_use in ['mentioned', 'mentioned_noised']:
                     mentions = self.dots_mentioned
@@ -115,17 +136,34 @@ class BeliefConstructor(_BeliefConstructor):
                                                   self.args.belief_noise_neg_to_pos_probability)
                                     if m is not None else None
                                     for m in mentions]
-                elif belief_to_use == 'mentioned_predicted':
+                elif belief_to_use == 'primary_mentioned':
+                    # use the dots mentioned in the first mention per utterance
+                    # self.dots_mentioned_per_ref is a list with one tensor for each utterance, of size
+                    # bsz x num_mentions x num_dots
+                    mentions = [utt_mentions[:,0] if (utt_mentions is not None and utt_mentions.size(1) > 0) else None
+                                for utt_mentions in self.dots_mentioned_per_ref]
+                elif belief_to_use == 'partner_primary_mentioned':
+                    # use the dots mentioned in the first mention per utterance
+                    mentions = [utt_mentions[:,0] if (utt_mentions is not None and utt_mentions.size(1) > 0) else None
+                                for utt_mentions in self.partner_dots_mentioned_our_view_per_ref]
+                elif belief_to_use in ['mentioned_predicted', 'primary_mentioned_predicted']:
                     reference_predictor = ReferencePredictor(self.args)
                     preds = [
                         reference_predictor.forward(ref_inpt, ref_tgt, ref_out, this_num_markables)[1]
                         for ref_inpt, ref_tgt, ref_out, this_num_markables in
                         zip(self.ref_inpts, self.ref_tgts, ref_outs, self.num_markables)
                     ]
-                    mentions = [
-                        pred.max(0).values if pred is not None else None
-                        for pred in preds
-                    ]
+                    if belief_to_use == 'mentioned_predicted':
+                        mentions = [
+                            pred.max(0).values if pred is not None else None
+                            for pred in preds
+                        ]
+                    else:
+                        assert belief_to_use == 'primary_mentioned_predicted'
+                        mentions = [
+                            pred[0] if pred is not None else None
+                            for pred in preds
+                        ]
                     # TODO: is this still necessary?
                     if self.args.detach_beliefs:
                         mentions = [m.detach() if m is not None else None for m in mentions]
@@ -137,18 +175,24 @@ class BeliefConstructor(_BeliefConstructor):
                                     if m is not None else None
                                     for m in mentions]
                 else:
-                    assert belief_to_use == 'partner_mentioned_predicted'
+                    assert belief_to_use in ['partner_mentioned_predicted', 'partner_primary_mentioned_predicted']
                     reference_predictor = ReferencePredictor(self.args)
                     preds = [
                         reference_predictor.forward(partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables)[1]
                         for partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables in
                         zip(self.partner_ref_inpts, self.partner_ref_tgts_our_view, partner_ref_outs, self.partner_num_markables)
                     ]
-                    mentions = [
-                        pred.max(0).values if pred is not None else None
-                        for pred in preds
-                    ]
-                    # TODO: is this still necessary?
+                    if belief_to_use == 'partner_mentioned_predicted':
+                        mentions = [
+                            pred.max(0).values if pred is not None else None
+                            for pred in preds
+                        ]
+                    else:
+                        assert belief_to_use == 'partner_primary_mentioned_predicted'
+                        mentions = [
+                            pred[0] if pred is not None else None
+                            for pred in preds
+                        ]
                     if self.args.detach_beliefs:
                         mentions = [m.detach() if m is not None else None for m in mentions]
                 if timestep_to_use_name == 'cumulative':

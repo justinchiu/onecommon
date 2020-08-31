@@ -57,6 +57,7 @@ def pairwise_differences(ctx, num_ent, dim_ent,
                          relation_include_angle=False,
                          symmetric=False,
                          include_asymmetric_rep_in_symmetric=False,
+                         include_self=False,
                          ):
     ents = ctx.view(ctx.size(0), num_ent, dim_ent)
 
@@ -67,7 +68,7 @@ def pairwise_differences(ctx, num_ent, dim_ent,
     for i in range(num_ent):
         # rel_pairs = []
         for j in range(num_ent):
-            if i == j:
+            if (not include_self) and i == j:
                 continue
             if symmetric and i > j:
                 continue
@@ -77,8 +78,12 @@ def pairwise_differences(ctx, num_ent, dim_ent,
         # ent_rel_pairs.append(torch.cat(rel_pairs, 1).unsqueeze(1))
     ent_rel_pairs_t = torch.cat(rel_pairs, 1)
     if not symmetric:
-        assert len(rel_pairs) == num_ent * (num_ent - 1)
-        ent_rel_pairs_t = ent_rel_pairs_t.view(ent_rel_pairs_t.size(0), num_ent, num_ent-1, ent_rel_pairs_t.size(-1))
+        if include_self:
+            assert len(rel_pairs) == num_ent * num_ent
+            ent_rel_pairs_t = ent_rel_pairs_t.view(ent_rel_pairs_t.size(0), num_ent, num_ent, ent_rel_pairs_t.size(-1))
+        else:
+            assert len(rel_pairs) == num_ent * (num_ent - 1)
+            ent_rel_pairs_t = ent_rel_pairs_t.view(ent_rel_pairs_t.size(0), num_ent, num_ent-1, ent_rel_pairs_t.size(-1))
     else:
         assert len(rel_pairs) == num_ent * (num_ent - 1) // 2
     return position, appearance, ent_rel_pairs_t
@@ -419,18 +424,32 @@ class RelationalAttentionContextEncoder3(nn.Module):
 
         init_cont([self.property_encoder, self.relation_encoder, self.extremes_encoder], args.init_range)
 
-    def forward(self, ctx):
+    def forward(self, ctx, relational_dot_mask=None):
         relation_include_angle = hasattr(self, 'args') and self.args.relation_include_angle
+        bsz = ctx.size(0)
         position, appearance, ent_rel_pairs = pairwise_differences(
             ctx, self.num_ent, self.dim_ent, self.args.relation_include, relation_include_angle,
-            symmetric=False,
+            symmetric=False, include_self=(relational_dot_mask is not None)
         )
         rel_emb = self.relation_encoder(ent_rel_pairs)
 
         if self.relation_pooling == 'mean':
-            rel_emb_pooled = rel_emb.mean(2)
+            if relational_dot_mask is not None:
+                # rel_emb: bsz x num_dots x num_dots x hidden_dim
+                assert relational_dot_mask.size() == (bsz, self.num_ent)
+                dot_mask_select = torch.einsum("bx,by->bxy", (relational_dot_mask,relational_dot_mask))
+                # remove diagonals
+                # remove diagonal entries
+                dot_mask_select *= (1-torch.eye(self.num_ent)).unsqueeze(0).expand_as(dot_mask_select)
+                # rel_emb_pooled: bsz x num_dots x hidden_dim
+                rel_emb_pooled = (rel_emb * dot_mask_select.unsqueeze(-1).expand_as(rel_emb)).sum(2)
+                rel_emb_pooled = rel_emb_pooled / torch.clamp_min(relational_dot_mask.sum(1) - 1, 1.0).unsqueeze(-1).unsqueeze(-1)
+            else:
+                rel_emb_pooled = rel_emb.mean(2)
         else:
             assert self.relation_pooling == 'max'
+            if relational_dot_mask is not None:
+                raise NotImplementedError()
             rel_emb_pooled, _ = rel_emb.max(2)
 
         to_cat = []

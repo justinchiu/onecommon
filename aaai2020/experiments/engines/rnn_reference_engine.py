@@ -4,7 +4,6 @@ import copy
 import pprint
 import time
 
-import math
 import numpy as np
 import pyro
 import torch
@@ -16,6 +15,7 @@ from collections import defaultdict
 
 import utils
 from engines import EngineBase
+from models.utils import bit_to_int_array, int_to_bit_array
 
 ForwardRet = namedtuple(
     "ForwardRet",
@@ -31,9 +31,41 @@ ForwardRet = namedtuple(
      'next_mention_loss', 'next_mention_stats',
      # 'next_mention_correct', 'next_mention_gold_positive', 'next_mention_pred_positive',
      # 'next_mention_true_positive', 'next_mention_num_dots', 'next_mention_em_num', 'next_mention_em_denom',
+     'lang_rsa_loss',
      ],
 )
 
+def add_loss_args(parser):
+    pass
+    group = parser.add_argument_group('loss')
+    group.add_argument('--lang_weight', type=float, default=1.0,
+                       help='language loss weight')
+    group.add_argument('--ref_weight', type=float, default=1.0,
+                       help='reference loss weight')
+    group.add_argument('--partner_ref_weight', type=float, default=1.0,
+                       help='partner reference loss weight')
+    group.add_argument('--sel_weight', type=float, default=1.0,
+                       help='selection loss weight')
+    group.add_argument('--next_mention_weight', type=float, default=1.0,
+                       help='next mention loss weight')
+    group.add_argument('--next_mention_start_epoch', type=int,
+                       help='only supervise next mention in this epoch onward (to allow pretraining)')
+    group.add_argument('--selection_start_epoch', type=int,
+                       help='only supervise selection in this epoch onward (to allow pretraining)')
+    group.add_argument('--lang_only_self', action='store_true')
+
+    group.add_argument('--max_mentions_in_generation_training',
+                       type=int,
+                       help='don\'t supervise/compute the language loss for more mentions than this')
+
+    group.add_argument('--lang_rsa_weight', type=float, default=0.0,
+                       help='weight for \log p(m | u) = \log p(u | m) - \log \sum_m\' \exp p(u | m\')')
+
+    # these args only make sense if --lang_only_self is True
+    group.add_argument('--word_attention_supervised', action='store_true')
+    group.add_argument('--feed_attention_supervised', action='store_true')
+
+    group.add_argument('--attention_supervision_method', choices=['kl', 'penalize_unmentioned'], default='kl')
 
 def unwrap(loss):
     if loss is not None:
@@ -147,7 +179,7 @@ class RnnReferenceEngine(EngineBase):
         }
         return ref_loss, ref_pred, stats
 
-    def _forward(self, batch):
+    def _forward(self, batch, epoch):
         assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.feed_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.mark_dots_mentioned, 'this only makes sense for a hierarchical model, and --lang_only_self'
@@ -222,7 +254,7 @@ class RnnReferenceEngine(EngineBase):
         )
 
     def train_batch(self, batch, epoch):
-        forward_ret = self._forward(batch)
+        forward_ret = self._forward(batch, epoch)
 
         # default
         # TODO: sel_loss scaling varies based on whether lang_weight is positive
@@ -254,6 +286,9 @@ class RnnReferenceEngine(EngineBase):
             if not self.args.next_mention_start_epoch or (epoch >= self.args.next_mention_start_epoch):
                 loss += self.args.next_mention_weight * forward_ret.next_mention_loss
 
+        if self.args.lang_rsa_weight > 0 and forward_ret.lang_rsa_loss is not None:
+            loss += self.args.lang_rsa_weight * forward_ret.lang_rsa_loss
+
         if forward_ret.word_attn_loss is not None:
             loss = loss + forward_ret.word_attn_loss
 
@@ -270,11 +305,11 @@ class RnnReferenceEngine(EngineBase):
 
     def valid_batch(self, batch, epoch):
         with torch.no_grad():
-            return self._forward(batch)
+            return self._forward(batch, epoch)
 
     def test_batch(self, batch, epoch):
         with torch.no_grad():
-            return self._forward(batch)
+            return self._forward(batch, epoch)
 
     def _pass(self, dataset, batch_fn, split_name, use_tqdm, epoch):
         start_time = time.time()
@@ -305,6 +340,7 @@ class RnnReferenceEngine(EngineBase):
             'select_accuracy': metrics['sel_correct'] / metrics['sel_num_dots'],
             'time': time_elapsed,
             'correct_ppl': np.exp(metrics['unnormalized_lang_loss'] / metrics['num_words']),
+            'lang_rsa_loss': metrics['lang_rsa_loss'] / len(dataset),
         }
         add_metrics(metrics, aggregate_metrics, "ref")
         add_metrics(metrics, aggregate_metrics, "partner_ref")
@@ -343,6 +379,7 @@ class RnnReferenceEngine(EngineBase):
                 metrics['ref_loss'] *= self.args.ref_weight
                 metrics['partner_ref_loss'] *= self.args.partner_ref_weight
                 metrics['next_mention_loss'] *= self.args.next_mention_weight
+                metrics['lang_rsa_loss'] *= self.args.lang_rsa_weight
 
                 quantities = [
                     ['lang_loss', 'ppl(avg exp lang_loss)', 'correct_ppl'],
@@ -352,6 +389,7 @@ class RnnReferenceEngine(EngineBase):
                      'partner_ref_f1', 'partner_ref_exact_match'],
                     ['next_mention_loss', 'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall',
                      'next_mention_f1', 'next_mention_exact_match'],
+                    ['lang_rsa_loss']
                 ]
                 for line_metrics in quantities:
                     print('epoch {:03d} \t '.format(epoch) + ' \t '.join(
@@ -392,7 +430,8 @@ class RnnReferenceEngine(EngineBase):
                + metrics['select_loss'] * self.args.sel_weight \
                + metrics['ref_loss'] * self.args.ref_weight \
                + metrics['partner_ref_loss'] * self.args.partner_ref_weight \
-               + metrics['next_mention_loss'] * self.args.next_mention_weight
+               + metrics['next_mention_loss'] * self.args.next_mention_weight \
+               + metrics['lang_rsa_loss'] * self.args.lang_rsa_weight
 
     def train(self, corpus, model_filename_fn):
         best_model, best_combined_valid_loss = copy.deepcopy(self.model), 1e100
@@ -426,33 +465,6 @@ class RnnReferenceEngine(EngineBase):
                 # utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'), prefix_dir=None)
 
         return best_combined_valid_loss, best_model
-
-
-def bit_to_int_array(bit_array, base=2):
-    int_array = torch.zeros(bit_array.size()[:-1]).to(bit_array.device).long()
-    N = bit_array.size(-1)
-    for ix in range(N):
-        int_array *= base
-        int_array += bit_array[..., ix]
-    return int_array
-
-
-def int_to_bit_array(int_array, num_bits=None, base=2):
-    assert int_array.dtype in [torch.int16, torch.int32, torch.int64]
-    assert (int_array >= 0).all()
-    if num_bits is None:
-        num_bits = (int_array.max().float().log() / math.log(base)).floor().long().item() + 1
-    int_array_flat = int_array.view(-1)
-    N = int_array_flat.size(0)
-    ix = torch.arange(N)
-    bits = torch.zeros(N, num_bits).to(int_array.device).long()
-    remainder = int_array_flat
-    for i in range(num_bits):
-        bits[ix, num_bits - i - 1] = remainder % base
-        remainder = remainder / base
-    assert (remainder == 0).all()
-    bits = bits.view((int_array.size()) + (num_bits,))
-    return bits
 
 
 class ReferencePredictor(object):
@@ -587,7 +599,7 @@ class ReferencePredictor(object):
         # aggregate with single timestep info
         # N x bsz
         ref_pred_ix[:,has_multiple] = ref_pred_ix_transpose_multi.transpose(0,1).contiguous()[:,has_multiple]
-        ref_pred[:,has_multiple] = int_to_bit_array(ref_pred_ix[:,has_multiple], num_bits=num_dots)
+        ref_pred[:,has_multiple] = int_to_bit_array(ref_pred_ix[:, has_multiple], num_bits=num_dots)
 
         gold_parts = LinearChainNoScanCRF.struct.to_parts(
             ref_tgt_ix_transpose, 2**num_dots, lengths=num_markables
@@ -857,7 +869,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _ref_loss(self, *args):
         return self.ref_loss.forward(*args)
 
-    def _forward(self, batch):
+    def _forward(self, batch, epoch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
         ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables, ref_disagreements, partner_ref_disagreements = batch
@@ -884,38 +896,64 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         last_partner_ref_out = None
 
         dots_mentioned = make_dots_mentioned_multi(ref_tgts, self.args, bsz, num_dots)
-        partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, self.args, bsz, num_dots)
-
         dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(ref_tgts, self.args, bsz, num_dots)
+
+        partner_dots_mentioned_our_view = make_dots_mentioned_multi(
+            partner_ref_tgts_our_view, self.args, bsz, num_dots
+        )
+        partner_dots_mentioned_our_view_per_ref = make_dots_mentioned_per_ref_multi(
+            partner_ref_tgts_our_view, self.args, bsz, num_dots
+        )
 
         # TODO: fix module structure so we can import this up top without a circular import
         from engines.beliefs import BeliefConstructor
         belief_constructor = BeliefConstructor(
-            self.args, bsz, num_dots, inpts, ref_tgts, partner_ref_tgts_our_view,
-            real_ids, partner_real_ids, sel_tgt, is_self, partner_dots_mentioned_our_view, dots_mentioned,
+            self.args, epoch, bsz, num_dots, inpts, ref_tgts, partner_ref_tgts_our_view,
+            real_ids, partner_real_ids, sel_tgt, is_self,
+            partner_dots_mentioned_our_view, partner_dots_mentioned_our_view_per_ref,
+            dots_mentioned, dots_mentioned_per_ref,
             ref_inpts, partner_ref_inpts,
             num_markables,
             partner_num_markables,
         )
 
-        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_h, writer_lang_h), ctx_h, ctx_differences = self.model.forward(
+        compute_lang_rsa_losses = self.args.lang_rsa_weight > 0
+
+        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_h, writer_lang_h), ctx_h, ctx_differences, l1_scores = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
             lens,
             dots_mentioned, dots_mentioned_per_ref,
             belief_constructor=belief_constructor,
             partner_ref_inpts=partner_ref_inpts,
+            compute_lang_rsa_losses=compute_lang_rsa_losses,
+            tgts=tgts,
+            ref_tgts=ref_tgts,
         )
 
         sel_tgt = Variable(sel_tgt)
         lang_losses = []
+        rsa_lang_losses = []
         assert len(inpts) == len(tgts) == len(outs) == len(lens)
         for i, (out, tgt) in enumerate(zip(outs, tgts)):
             # T x bsz
             loss = self.crit_no_reduce(out, tgt).view(-1, bsz)
+            if self.args.max_mentions_in_generation_training is not None:
+                assert self.args.lang_only_self
+            if compute_lang_rsa_losses:
+                assert self.args.lang_only_self
             if self.args.lang_only_self:
                 # loss = loss * (this_is_self.unsqueeze(0).expand_as(loss))
-                loss = loss * (is_self[i].unsqueeze(0).expand_as(loss))
+                mask = is_self[i]
+                if self.args.max_mentions_in_generation_training is not None:
+                    mask = mask & (num_markables[i] <= self.args.max_mentions_in_generation_training)
+                loss = loss * (mask.unsqueeze(0).expand_as(loss))
+
+                if compute_lang_rsa_losses and l1_scores[i] is not None:
+                    # max_num_mentions x bsz
+                    rsa_lang_losses.append(-l1_scores[i].sum())
+                else:
+                    rsa_lang_losses.append(torch.tensor(0.0))
             lang_losses.append(loss.sum())
         total_lens = sum(l.sum() for l in lens)
 
@@ -927,6 +965,11 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         unnormed_lang_loss = sum(lang_losses)
         lang_loss = unnormed_lang_loss / total_lens
+
+        if rsa_lang_losses:
+            rsa_lang_loss = torch.mean(torch.stack(rsa_lang_losses, -1), -1)
+        else:
+            rsa_lang_loss = None
 
         ref_losses = []
         # other keys and values will be added
@@ -1059,10 +1102,17 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                     ))
                 else:
                     feed_attn_losses.append(feed_attn_loss)
-        ref_loss = sum(ref_losses) / ref_stats['num_dots']
+
+        if ref_stats['num_dots'] == 0 or (not ref_losses):
+            # not sure why I had this assert, it seems it can be tripped if you have a batch with no self mentions
+            # assert ref_stats['num_dots'] == 0 and (not ref_losses)
+            ref_loss = 0
+        else:
+            ref_loss = sum(ref_losses) / ref_stats['num_dots']
 
         if partner_ref_stats['num_dots'] == 0 or (not partner_ref_losses):
-            assert partner_ref_stats['num_dots'] == 0 and (not partner_ref_losses)
+            # not sure why I had this assert, it seems it can be tripped if you have a batch with no *partner* mentions
+            # assert partner_ref_stats['num_dots'] == 0 and (not partner_ref_losses)
             partner_ref_loss = None
         else:
             partner_ref_loss = sum(partner_ref_losses) / partner_ref_stats['num_dots']
@@ -1110,7 +1160,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 next_mention_losses.append(_loss)
 
         if next_mention_stats['num_dots'] == 0 or (not next_mention_losses):
-            assert next_mention_stats['num_dots'] == 0 and (not next_mention_losses)
+            # not sure why I had this assert, it seems it can be tripped if you have a batch with no *next* mentions
+            # assert next_mention_stats['num_dots'] == 0 and (not next_mention_losses)
             next_mention_loss = None
         else:
             next_mention_loss = sum(next_mention_losses) / next_mention_stats['num_dots']
@@ -1130,4 +1181,6 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             partner_ref_stats=partner_ref_stats,
             next_mention_loss=next_mention_loss,
             next_mention_stats=next_mention_stats,
+            lang_rsa_loss=rsa_lang_loss,
         )
+

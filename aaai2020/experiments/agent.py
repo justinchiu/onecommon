@@ -70,7 +70,7 @@ class RnnAgent(Agent):
         return dictionary.i2w(out.data.squeeze(1).cpu())
 
     def feed_context(self, context):
-        self.lang_hs = []
+        self.reader_lang_hs = []
         self.logprobs = []
         self.sents = []
         self.words = []
@@ -80,39 +80,45 @@ class RnnAgent(Agent):
         self.ctx_differences = self.model.ctx_differences(self.ctx)
         # self.lang_h = self.model.init_h.unsqueeze(0) # get batch size of 1
         # TODO: writer_lang_h
-        self.lang_h = self.model.reader_init_h.unsqueeze(0) # get batch size of 1
+        self.reader_and_writer_lang_h = self.model._init_h(1) # get batch size of 1
         self.extras = []
 
     def feed_partner_context(self, partner_context):
         pass
 
-    def read(self, inpt, dots_mentioned=None, dots_mentioned_per_ref=None, num_mentions=None,):
-        self.sents.append(Variable(self._encode(['THEM:'] + inpt, self.model.word_dict)))
+    def read(self, inpt, dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,start_token='THEM:'):
+        self.sents.append(Variable(self._encode([start_token] + inpt, self.model.word_dict)))
         inpt = self._encode(inpt, self.model.word_dict)
-        lang_hs, lang_h = self.model.read(
-            self.ctx_differences, self.ctx_h, Variable(inpt), self.lang_h.unsqueeze(0),
+        (reader_lang_hs, writer_lang_hs), reader_and_writer_lang_h = self.model.read(
+            self.ctx, self.ctx_differences, self.ctx_h, Variable(inpt), self.reader_and_writer_lang_h,
+            prefix_token=start_token,
             dots_mentioned=dots_mentioned,
             dots_mentioned_per_ref=dots_mentioned_per_ref,
-            num_mentions=num_mentions,
+            num_markables=num_markables,
         )
-        self.lang_h = lang_h.squeeze(0)
-        self.lang_hs.append(lang_hs.squeeze(1))
-        self.words.append(self.model.word2var('THEM:').unsqueeze(0))
+        self.reader_and_writer_lang_h = reader_and_writer_lang_h
+        self.reader_lang_hs.append(reader_lang_hs.squeeze(1))
+        self.words.append(self.model.word2var(start_token).unsqueeze(0))
         self.words.append(Variable(inpt))
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
-    def write(self, max_words=100, force_words=None, start_token='YOU:', dots_mentioned=None, temperature_override=None, generation_beliefs=None):
+    def write(self, max_words=100, force_words=None, start_token='YOU:',
+              dots_mentioned=None, dots_mentioned_per_ref=None,
+              num_markables=None,
+              temperature_override=None, generation_beliefs=None):
         temperature = temperature_override if temperature_override is not None else self.args.temperature
-        outs, logprobs, self.lang_h, lang_hs, extra = self.model.write(
-            self.ctx_differences, self.ctx_h, self.lang_h,
+        outs, logprobs, self.reader_and_writer_lang_h, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
+            self.ctx, self.ctx_differences, self.ctx_h, self.reader_and_writer_lang_h,
             max_words, temperature,
             start_token=start_token,
             force_words=force_words,
             dots_mentioned=dots_mentioned,
+            dots_mentioned_per_ref=dots_mentioned_per_ref,
+            num_markables=num_markables,
             generation_beliefs=generation_beliefs,
         )
         self.logprobs.extend(logprobs)
-        self.lang_hs.append(lang_hs)
+        self.reader_lang_hs.append(reader_lang_hs)
         #self.words.append(self.model.word2var('YOU:').unsqueeze(0))
         self.words.append(outs)
         self.sents.append(torch.cat([self.model.word2var(start_token).unsqueeze(1), outs], 0))
@@ -131,7 +137,7 @@ class RnnAgent(Agent):
         #    pdb.set_trace()
         #assert (torch.cat(self.words).size(0) + 1 == torch.cat(self.lang_hs).size(0))
         # remove 'YOU:'
-        outs = outs.narrow(0, 1, outs.size(0) - 1)
+        # outs = outs.narrow(0, 1, outs.size(0) - 1)
         return self._decode(outs, self.model.word_dict)
 
     def predict_referents(self, ref_inpt, ref_beliefs):
@@ -163,8 +169,8 @@ class RnnAgent(Agent):
         return lens, rev_idxs, hid_idxs
 
     def _choose(self, sample=False):
-        outs_emb = torch.cat(self.lang_hs).unsqueeze(1)
-        sel_idx = torch.Tensor(1).fill_(torch.cat(self.lang_hs).size(0) - 1).long()
+        outs_emb = torch.cat(self.reader_lang_hs).unsqueeze(1)
+        sel_idx = torch.Tensor(1).fill_(outs_emb.size(0) - 1).long()
         choice_logit = self.model.selection(self.ctx_differences, self.ctx_h, outs_emb, sel_idx)
 
         prob = F.softmax(choice_logit, dim=1)

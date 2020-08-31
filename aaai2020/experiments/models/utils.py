@@ -63,3 +63,30 @@ def make_mask(n, marked, value=-1000):
     for i in marked:
         mask[i] = value
     return mask
+
+
+def bit_to_int_array(bit_array, base=2):
+    int_array = torch.zeros(bit_array.size()[:-1]).to(bit_array.device).long()
+    N = bit_array.size(-1)
+    for ix in range(N):
+        int_array *= base
+        int_array += bit_array[..., ix]
+    return int_array
+
+
+def int_to_bit_array(int_array, num_bits=None, base=2):
+    assert int_array.dtype in [torch.int16, torch.int32, torch.int64]
+    assert (int_array >= 0).all()
+    if num_bits is None:
+        num_bits = (int_array.max().float().log() / math.log(base)).floor().long().item() + 1
+    int_array_flat = int_array.view(-1)
+    N = int_array_flat.size(0)
+    ix = torch.arange(N)
+    bits = torch.zeros(N, num_bits).to(int_array.device).long()
+    remainder = int_array_flat
+    for i in range(num_bits):
+        bits[ix, num_bits - i - 1] = remainder % base
+        remainder = remainder / base
+    assert (remainder == 0).all()
+    bits = bits.view((int_array.size()) + (num_bits,))
+    return bits

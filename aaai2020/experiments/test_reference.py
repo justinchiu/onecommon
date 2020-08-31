@@ -302,12 +302,19 @@ def main():
                 if args.allow_belief_cheating:
                     dots_mentioned = make_dots_mentioned_multi(ref_tgts, model.args, bsz, num_dots)
                     dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(ref_tgts, model.args, bsz, num_dots)
-                    partner_dots_mentioned_our_view = make_dots_mentioned_multi(partner_ref_tgts_our_view, model.args, bsz, num_dots)
+                    partner_dots_mentioned_our_view = make_dots_mentioned_multi(
+                        partner_ref_tgts_our_view, model.args, bsz, num_dots
+                    )
+                    partner_dots_mentioned_our_view_per_ref = make_dots_mentioned_per_ref_multi(
+                        partner_ref_tgts_our_view, model.args, bsz, num_dots
+                    )
 
                     belief_constructor = BeliefConstructor(
-                        model.args,
+                        model.args, None,
                         bsz, num_dots, inpts, ref_tgts, partner_ref_tgts_our_view,
-                        real_ids, partner_real_ids, sel_tgt, is_self, partner_dots_mentioned_our_view, dots_mentioned,
+                        real_ids, partner_real_ids, sel_tgt, is_self,
+                        partner_dots_mentioned_our_view, partner_dots_mentioned_our_view_per_ref,
+                        dots_mentioned, dots_mentioned_per_ref,
                         ref_inpts, partner_ref_inpts,
                         num_markables,
                         partner_num_markables,
@@ -424,7 +431,7 @@ def main():
                 if ref_inpt is not None:
                     if args.reference_prediction == 'l1':
                         scoring_function = model.make_ref_scoring_function(
-                            ctx_differences, ctx_h, inpt, tgt, ref_inpt,
+                            ctx, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
                             num_markables[sentence_ix], partner_num_markables[sentence_ix],
                             lens[sentence_ix], reader_and_writer_lang_h,
                             belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],
