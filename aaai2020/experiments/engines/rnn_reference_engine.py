@@ -1,21 +1,20 @@
-import string
+import os
 from collections import namedtuple
 import copy
 import pprint
 import time
 
 import numpy as np
-import pyro
 import torch
 import tqdm
-from torch import nn
 from torch.autograd import Variable
 
 from collections import defaultdict
 
 import utils
 from engines import EngineBase
-from models.utils import bit_to_int_array, int_to_bit_array
+from models.reference_predictor import ReferencePredictor
+from models.utils import bit_to_int_array
 
 ForwardRet = namedtuple(
     "ForwardRet",
@@ -374,6 +373,7 @@ class RnnReferenceEngine(EngineBase):
             for split_name, metrics in [('train', train_metrics), ('valid', valid_metrics)]:
                 metrics = metrics.copy()
                 metrics['ppl(avg exp lang_loss)'] = np.exp(metrics['lang_loss'])
+                metrics['lang_loss_unweighted'] = metrics['lang_loss']
                 metrics['lang_loss'] *= self.args.lang_weight
                 metrics['select_loss'] *= self.args.sel_weight
                 metrics['ref_loss'] *= self.args.ref_weight
@@ -455,389 +455,19 @@ class RnnReferenceEngine(EngineBase):
             if combined_valid_loss < best_combined_valid_loss:
                 print(
                     f"update best model -- valid combined: {combined_valid_loss:.4f}\t" +
-                    '\t'.join(f'{name} {metrics["valid"][name]:.4f}' for name in ['lang_loss', 'select_loss', 'select_accuracy', 'ref_loss', 'partner_ref_loss', 'next_mention_loss'])
+                    '\t'.join(
+                        f'{name} {metrics["valid"][name]:.4f}'
+                        for name in ['lang_loss', 'select_loss', 'select_accuracy', 'ref_loss', 'partner_ref_loss', 'next_mention_loss', 'lang_rsa_loss']
+                    )
                 )
                 best_combined_valid_loss = combined_valid_loss
                 best_model = copy.deepcopy(self.model)
                 best_model.flatten_parameters()
 
-                # utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'), prefix_dir=None)
-                # utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'), prefix_dir=None)
+                utils.save_model(best_model, model_filename_fn('ep-{}'.format(epoch), 'th'), prefix_dir=None)
+                utils.save_model(best_model.state_dict(), model_filename_fn('ep-{}'.format(epoch), 'stdict'), prefix_dir=None)
 
         return best_combined_valid_loss, best_model
-
-
-class ReferencePredictor(object):
-    def __init__(self, args):
-        self.args = args
-        self.crit = nn.BCEWithLogitsLoss(reduction='none')
-
-    def empty_stats(self):
-        return {
-            'correct': 0,
-            'num_dots': 0,
-            'gold_positive': 0,
-            'pred_positive': 0,
-            'true_positive': 0,
-            'exact_match_num': 0,
-            'exact_match_denom': 0,
-        }
-
-    def compute_stats(self, ref_mask, ref_tgt, ref_tgt_ix=None, ref_pred=None, ref_pred_ix=None, sum=True):
-        assert ref_pred is not None or ref_pred_ix is not None
-
-        num_dots = ref_tgt.size(-1)
-        if ref_tgt_ix is None:
-            ref_tgt_ix = bit_to_int_array(ref_tgt.long())
-        assert ref_tgt_ix.max().item() <= 2 ** num_dots
-
-        if ref_pred is None:
-            ref_pred = int_to_bit_array(ref_pred_ix, num_bits=num_dots)
-
-        if ref_pred_ix is None:
-            ref_pred_ix = bit_to_int_array(ref_pred.long())
-
-        ref_mask_instance_level = (ref_mask.sum(-1) > 0).float()
-
-        # N x bsz
-        ref_exact_matches = ((ref_tgt_ix == ref_pred_ix) & ref_mask_instance_level.bool())
-
-        stats = {
-            'correct': ((ref_pred == ref_tgt.long()) * ref_mask.byte()),
-            'num_dots': ref_mask,
-            'gold_positive': ref_tgt,
-            'pred_positive': (ref_pred * ref_mask.byte()),
-            'true_positive': (ref_pred & ref_tgt.bool()),
-            'exact_match_num': ref_exact_matches.float(),
-            'exact_match_denom': ref_mask_instance_level.float(),
-        }
-
-        if sum:
-            stats = {
-                k: v.sum().item()
-                for k, v in stats.items()
-            }
-            assert stats['pred_positive'] >= stats['true_positive']
-            assert stats['gold_positive'] >= stats['true_positive']
-
-        return stats
-
-    def preprocess(self, ref_tgt, num_markables):
-        ref_tgt = Variable(ref_tgt)
-        ref_mask = torch.zeros_like(ref_tgt)
-        for i, nm in enumerate(num_markables):
-            ref_mask[i, :nm, :] = 1
-
-        # max(this_num_markables) x batch_size x num_dots
-        ref_tgt = torch.transpose(ref_tgt, 0, 1).contiguous().float()
-        # print(ref_tgt.size())
-        ref_mask = torch.transpose(ref_mask, 0, 1).contiguous()
-        return ref_tgt, ref_mask
-
-    def _forward_non_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask):
-        ref_out_logits, ref_out_full, _ = ref_out
-        del ref_out
-
-        N, bsz, num_dots = ref_tgt.size()
-        ref_mask_instance_level = (ref_mask.sum(-1) > 0).float()
-
-        if self.args.structured_attention_marginalize:
-            assert ref_tgt.size() == ref_out_logits.size()
-            assert ref_tgt.size() == ref_mask.size()
-            # print('ref_out size: {}'.format(ref_out.size()))
-            # print('ref_tgt size: {}'.format(ref_tgt.size()))
-            ref_loss = (self.crit(ref_out_logits, ref_tgt) * ref_mask.float()).sum()
-            ref_pred = (ref_out_logits > 0).long()
-
-            ref_pred_ix = bit_to_int_array(ref_pred.long())
-
-        else:
-            ref_tgt_reshape = ref_tgt.view(-1, num_dots)
-            ref_out_reshape = ref_out_full.view(-1, 2**num_dots)
-            N_bsz = ref_tgt_reshape.size(0)
-            assert N_bsz == ref_out_reshape.size(0)
-
-            ref_loss = -(ref_out_reshape[torch.arange(N_bsz), ref_tgt_ix.view(-1)] * ref_mask_instance_level.view(-1)).sum()
-            # N x bsz
-            ref_pred_ix = ref_out_reshape.argmax(-1).view(N, bsz)
-            # N x bsz x num_dots
-            ref_pred = int_to_bit_array(ref_pred_ix, num_bits=num_dots)
-        return ref_loss, ref_pred, ref_pred_ix
-
-    def _forward_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables):
-        from torch_struct import LinearChainNoScanCRF
-
-        marginal_log_probs, joint_log_probs, temporal_dist = ref_out
-        assert isinstance(temporal_dist, LinearChainNoScanCRF)
-
-        num_dots = ref_tgt.size(-1)
-        # bsz x N x 2**num_dots x 2**num_dots
-        ref_tgt_ix_transpose = ref_tgt_ix.transpose(0,1)
-        bsz, N, *_ = ref_tgt_ix_transpose.size()
-
-        ref_loss = 0
-        ref_pred = torch.zeros(N, bsz, num_dots).long()
-        ref_pred_ix = torch.zeros(N, bsz).long()
-
-        has_multiple = num_markables > 1
-
-        # collect for single markables
-        if (~has_multiple).any():
-            ref_loss_single, ref_pred_single, ref_pred_ix_single = self._forward_non_temporal(
-                (marginal_log_probs[:,~has_multiple], joint_log_probs[:,~has_multiple], None),
-                ref_tgt[:,~has_multiple], ref_tgt_ix[:,~has_multiple],
-                ref_mask[:,~has_multiple]
-            )
-            ref_loss += ref_loss_single
-            ref_pred[:,~has_multiple] = ref_pred_single
-            ref_pred_ix[:,~has_multiple] = ref_pred_ix_single
-
-
-        ref_pred_ix_transpose_multi, exp_num_dots = LinearChainNoScanCRF.struct.from_parts(temporal_dist.argmax)
-        assert exp_num_dots == 2**num_dots
-
-        # aggregate with single timestep info
-        # N x bsz
-        ref_pred_ix[:,has_multiple] = ref_pred_ix_transpose_multi.transpose(0,1).contiguous()[:,has_multiple]
-        ref_pred[:,has_multiple] = int_to_bit_array(ref_pred_ix[:, has_multiple], num_bits=num_dots)
-
-        gold_parts = LinearChainNoScanCRF.struct.to_parts(
-            ref_tgt_ix_transpose, 2**num_dots, lengths=num_markables
-        )
-        if self.args.structured_temporal_attention_training == 'likelihood':
-            log_likelihoods = temporal_dist.log_prob(gold_parts)
-            losses = -log_likelihoods
-        elif self.args.structured_temporal_attention_training == 'max_margin':
-            gold_scores = temporal_dist.score(gold_parts)
-            pred_scores = temporal_dist.score(temporal_dist.argmax)
-            # hinge loss with a structured margin
-            errors = (ref_mask * (ref_pred != ref_tgt)).sum(0).sum(-1)
-            losses = torch.max((pred_scores - gold_scores + errors), torch.zeros_like(gold_scores))
-            # print(f"gold_scores: {gold_scores}")
-            # print(f"pred_scores: {pred_scores}")
-            # print(f"losses: {losses}")
-        else:
-            raise NotImplementedError("--structured_temporal_attention_training={}".format(self.args.structured_temporal_attention_training))
-
-        ref_loss_multi = (losses * has_multiple).sum()
-        ref_loss += ref_loss_multi
-        return ref_loss, ref_pred, ref_pred_ix
-
-    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables):
-        if ref_inpt is None or ref_out is None:
-            return None, None, self.empty_stats()
-
-        ref_tgt, ref_mask = self.preprocess(ref_tgt, num_markables)
-
-        # N: max(this_num_markables)
-        N, bsz, num_dots = ref_tgt.size()
-
-        # N x bsz
-        ref_tgt_ix = bit_to_int_array(ref_tgt.long())
-        assert ref_tgt_ix.max().item() <= 2 ** num_dots
-
-        if ref_out[2] is None:
-            ref_loss, ref_pred, ref_pred_ix = self._forward_non_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask)
-        else:
-            ref_loss, ref_pred, ref_pred_ix = self._forward_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables)
-
-        stats = self.compute_stats(ref_mask, ref_tgt, ref_tgt_ix, ref_pred, ref_pred_ix)
-
-        return ref_loss, ref_pred, stats
-
-
-class PragmaticReferencePredictor(ReferencePredictor):
-    @staticmethod
-    def add_args(parser):
-        parser.add_argument('--l1_sample', action='store_true', help='l1 listener should sample (otherwise top-k)')
-        parser.add_argument('--l1_candidates', type=int, default=10, help='number of dot configurations for l1 to consider')
-        parser.add_argument('--l1_speaker_weight', type=float, default=1.0, help='(1 - lambda) * l0_log_prob + (lambda) * s0_log_prob')
-        parser.add_argument('--l1_oracle', action='store_true')
-
-    def __init__(self, args):
-        super().__init__(args)
-        self._logit_to_full_einsum_str = None
-
-    def logit_to_full_einsum_str(self, logits):
-        if self._logit_to_full_einsum_str is not None:
-            return self._logit_to_full_einsum_str
-
-        mentions, bsz, num_ent = logits.size()
-        var_names = string.ascii_lowercase[:num_ent]
-        batch_name = 'z'
-        mention_name = 'y'
-        assert batch_name not in var_names
-        assert mention_name not in var_names
-
-        self._logit_to_full_einsum_str = '{}->{}'.format(
-            ','.join('{}{}{}'.format(mention_name, batch_name, var_name) for var_name in var_names),
-            '{}{}{}'.format(mention_name, batch_name, ''.join(var_names))
-        )
-        return self._logit_to_full_einsum_str
-
-    def logits_to_full(self, logits):
-        num_ent = logits.size(-1)
-        einsum_str = self.logit_to_full_einsum_str(logits)
-
-        # mentions x bsz x num_ent x 2
-        stack_logits = torch.stack((-logits, logits), dim=-1)
-        assert stack_logits.dim() == 4
-
-        # num_ent arrays, each of size mentions x bsz x 2
-        factored_logits = (l.squeeze(-2) for l in stack_logits.split(1, dim=-2))
-
-        outputs = pyro.ops.contract.einsum(
-            einsum_str,
-            *factored_logits,
-            modulo_total=True,
-            backend='pyro.ops.einsum.torch_log',
-        )
-        assert len(outputs) == 1
-        output = outputs[0]
-        assert output.dim() == 2 + num_ent
-        return output
-
-    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, scoring_function):
-        k = self.args.l1_candidates
-        if ref_inpt is None or ref_out is None:
-            return None, None, self.empty_stats()
-
-        ref_tgt_p, ref_mask = self.preprocess(ref_tgt, num_markables)
-
-        ref_out_logits, ref_out_full, ref_dist = ref_out
-
-        N, bsz, num_dots = ref_out_logits.size()
-
-        candidate_l0_scores = torch.zeros(N, bsz, k).to(ref_inpt.device)
-        candidate_indices = torch.zeros(N, bsz, k).long().to(ref_inpt.device)
-
-        if ref_dist is not None:
-            assert not self.args.l1_sample
-
-            use_temporal = num_markables > 1
-
-            # k x bsz x N-1 x C x C
-            candidate_edges = ref_dist.topk(k)
-            # (k*bsz) x N
-            candidates, C = ref_dist.struct.from_parts(candidate_edges.view((-1,) + candidate_edges.size()[2:]))
-            assert C == 2**num_dots
-            candidates = candidates.view(k, bsz, N)
-            # N x bsz x k
-            candidate_indices_multi = candidates.transpose(0,2)
-            candidate_indices[:,use_temporal] = candidate_indices_multi[:,use_temporal]
-
-            # k x bsz
-            candidate_l0_scores_multi = ref_dist.log_prob(candidate_edges)
-            # bsz x k
-            candidate_l0_scores_multi = candidate_l0_scores_multi.transpose(0,1)
-            # tile across mention dimension
-            # N x bsz x k
-            candidate_l0_scores_multi = candidate_l0_scores_multi.unsqueeze(0).repeat_interleave(N, dim=0)
-            candidate_l0_scores[:,use_temporal] = candidate_l0_scores_multi[:,use_temporal]
-
-        else:
-            use_temporal = torch.zeros_like(num_markables).bool()
-
-        ## get scores and candidates for batch items where use_temporal == False
-        if ref_out_full is None:
-            ref_out_full = self.logits_to_full(ref_out_logits).contiguous()
-
-        num_ent = ref_tgt_p.size(-1)
-        # num_mentions x bsz x
-        assert ref_out_full.dim() == 2 + num_ent
-
-        ref_out_full_reshape = ref_out_full.view(N, bsz, 2**num_ent)
-        l0_log_probs = ref_out_full_reshape.log_softmax(dim=-1)
-
-        if self.args.l1_sample:
-            # sample without replacement
-            scores = torch.distributions.Gumbel(l0_log_probs, scale=1.0).sample()
-        else:
-            scores = l0_log_probs
-        tk = scores.topk(k=k, dim=-1)
-
-        # N x bsz x k
-        # l0_scores = tk.values
-        candidate_indices_single = tk.indices
-        candidate_l0_scores_single = l0_log_probs.gather(-1, candidate_indices_single)
-
-        candidate_indices[:,~use_temporal] = candidate_indices_single[:,~use_temporal]
-
-        # N x bsz x k
-        candidate_l0_scores[:,~use_temporal] = candidate_l0_scores_single[:,~use_temporal]
-
-        ## now that candidate_indices and candidate_l0_scores are created, rescore them
-
-        # (N*bsz) x k x 7
-        candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_ent)
-        candidate_dots = candidate_dots.view(N, bsz, k, num_ent)
-
-        if self.args.l1_oracle:
-            # want to be able to take candidates over entire sequence of mentions
-            assert self.args.structured_temporal_attention
-            chosen = torch.zeros(N, bsz).long()
-            for batch_index in range(bsz):
-                # N x k x 7
-                b_ref_mask = ref_mask[:, batch_index].unsqueeze(1).repeat_interleave(k, dim=1)
-                # N x k x 7
-                b_ref_tgt_p = ref_tgt_p[:, batch_index].unsqueeze(1).repeat_interleave(k, dim=1)
-                # N x k x 7
-                b_candidates = candidate_dots[:, batch_index]
-                b_stats = self.compute_stats(b_ref_mask, b_ref_tgt_p, ref_pred=b_candidates, sum=False)
-
-                # sum over num mentions and dots
-                # k
-                gold_positive = b_stats['gold_positive'].sum(0).sum(-1)
-                # k
-                true_positive = b_stats['true_positive'].sum(0).sum(-1)
-                # k
-                pred_positive = b_stats['pred_positive'].sum(0).sum(-1)
-
-                exact_match_num = b_stats['exact_match_num'].sum(0)
-
-                best_exact_match = (exact_match_num == exact_match_num.max(-1).values)
-
-                # break ties with f1
-                b_precision = true_positive / pred_positive
-                b_precision[torch.isnan(b_precision)] = 0
-                b_recall = true_positive / gold_positive
-                b_recall[torch.isnan(b_recall)] = 0
-                b_f1 = (2 * b_precision * b_recall) / (b_precision + b_recall)
-                b_f1[torch.isnan(b_f1)] = 0
-
-                b_f1_filtered = b_f1.clone()
-                # choose among those entries that have exact match equal to the best, by setting other F1s to a negative value
-                b_f1_filtered[~best_exact_match] = -1
-                chosen_ix = b_f1_filtered.argmax(dim=-1)
-
-                assert exact_match_num[chosen_ix].item() == exact_match_num.max(-1).values.item()
-
-                chosen[:, batch_index] = chosen_ix
-
-        else:
-            # N x bsz x k
-            candidate_s0_scores = scoring_function(candidate_dots)
-            assert candidate_s0_scores.size() == candidate_l0_scores.size()
-
-            lmbd = self.args.l1_speaker_weight
-            # N x bsz x k
-            joint_scores = (1 - lmbd) * candidate_l0_scores + lmbd * candidate_s0_scores
-
-            # N x bsz with values [0..k-1]
-            chosen = joint_scores.argmax(-1)
-
-        chosen_indices = candidate_indices.gather(-1, chosen.unsqueeze(-1)).squeeze(-1)
-
-        # convert indices to bits
-        ref_pred = int_to_bit_array(chosen_indices, num_bits=num_ent)
-
-        if self.args.l1_candidates == 1 and self.args.l1_speaker_weight == 0.0:
-            ref_pred_l0 = super().forward(ref_inpt, ref_tgt, ref_out, num_markables)[1]
-            assert (ref_pred == ref_pred_l0).all()
-
-        stats = self.compute_stats(ref_mask, ref_tgt_p, ref_pred=ref_pred)
-        ref_loss = 0.0
-        return ref_loss, ref_pred, stats
 
 
 class HierarchicalRnnReferenceEngine(RnnReferenceEngine):

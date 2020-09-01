@@ -30,10 +30,10 @@ from domain import get_domain
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from engines.beliefs import BeliefConstructor
-from engines.rnn_reference_engine import make_dots_mentioned_multi, ReferencePredictor, PragmaticReferencePredictor, \
-    make_dots_mentioned_per_ref_multi
+from models.reference_predictor import ReferencePredictor, PragmaticReferencePredictor
+from engines.rnn_reference_engine import make_dots_mentioned_multi, make_dots_mentioned_per_ref_multi
 from engines.rnn_reference_engine import add_metrics, flatten_metrics
+from engines.beliefs import BeliefConstructor
 
 sns.set(font_scale=1.15)
 
@@ -323,7 +323,7 @@ def main():
                     dots_mentioned = None
                     dots_mentioned_per_ref = None
                     belief_constructor = None
-                outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_hs, writer_lang_hs), ctx_h, ctx_differences = model.forward(
+                outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_hs, writer_lang_hs), ctx_h, ctx_differences, l1_scores = model.forward(
                     ctx, inpts, ref_inpts, sel_idx,
                     num_markables, partner_num_markables,
                     lens, dots_mentioned, dots_mentioned_per_ref, belief_constructor,
@@ -439,11 +439,13 @@ def main():
                             temporally_structured_candidates=model.args.structured_temporal_attention,
                         )
                         ref_loss, ref_predictions, _ref_stats = reference_predictor.forward(
-                            ref_inpt, ref_tgt, ref_out, sentence_num_markables, scoring_function
+                            ref_inpt, ref_tgt, ref_out, sentence_num_markables, scoring_function,
+                            by_num_markables=True,
                         )
                     else:
                         ref_loss, ref_predictions, _ref_stats = reference_predictor.forward(
-                            ref_inpt, ref_tgt, ref_out, sentence_num_markables
+                            ref_inpt, ref_tgt, ref_out, sentence_num_markables,
+                            by_num_markables=True,
                         )
                     ref_stats = utils.sum_dicts(ref_stats, _ref_stats)
 
@@ -519,11 +521,13 @@ def main():
                         if not args.l1_oracle:
                             raise NotImplementedError("non-oracle l1 for partner reference")
                         partner_ref_loss, partner_ref_predictions, _partner_ref_stats = partner_reference_predictor.forward(
-                            partner_ref_inpt, partner_ref_tgt, partner_ref_out, partner_num_markables[sentence_ix], None
+                            partner_ref_inpt, partner_ref_tgt, partner_ref_out, partner_num_markables[sentence_ix], None,
+                            by_num_markables=True
                         )
                     else:
                         partner_ref_loss, partner_ref_predictions, _partner_ref_stats = partner_reference_predictor.forward(
                             partner_ref_inpt, partner_ref_tgt, partner_ref_out, partner_num_markables[sentence_ix],
+                            by_num_markables=True,
                         )
 
                     partner_ref_stats = utils.sum_dicts(partner_ref_stats, _partner_ref_stats)
@@ -581,6 +585,9 @@ def main():
         })
         add_metrics(flat_stats, metrics, 'ref')
         add_metrics(flat_stats, metrics, 'partner_ref')
+        for num_markables in [1]:
+            add_metrics(flat_stats, metrics, f'ref_nm-{num_markables}')
+            add_metrics(flat_stats, metrics, f'partner_ref_nm-{num_markables}')
         pprint.pprint(metrics)
 
         # Main results:
@@ -687,4 +694,5 @@ def main():
     # pdb.set_trace()
 
 if __name__ == '__main__':
-    main()
+    with torch.no_grad():
+        main()

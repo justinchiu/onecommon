@@ -3,7 +3,6 @@ from collections import namedtuple
 import torch
 
 import utils
-from engines.rnn_reference_engine import ReferencePredictor
 
 BELIEF_TYPES = [
     'none',
@@ -147,6 +146,8 @@ class BeliefConstructor(_BeliefConstructor):
                     mentions = [utt_mentions[:,0] if (utt_mentions is not None and utt_mentions.size(1) > 0) else None
                                 for utt_mentions in self.partner_dots_mentioned_our_view_per_ref]
                 elif belief_to_use in ['mentioned_predicted', 'primary_mentioned_predicted']:
+                    # import here to avoid a circular import
+                    from models.reference_predictor import ReferencePredictor
                     reference_predictor = ReferencePredictor(self.args)
                     preds = [
                         reference_predictor.forward(ref_inpt, ref_tgt, ref_out, this_num_markables)[1]
