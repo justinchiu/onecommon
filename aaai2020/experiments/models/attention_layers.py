@@ -4,6 +4,8 @@ import pyro.ops
 import torch
 from torch import nn
 
+import functools
+
 BIG_NEG = -1e9
 
 
@@ -44,6 +46,18 @@ class AttentionLayer(nn.Module):
         # takes ctx_differences and num_markables as an argument for compatibility with StructuredAttentionLayer
         return self.feedforward(input).squeeze(-1), None, None
 
+@functools.lru_cache(1)
+def logit_to_full_einsum_str(num_ent):
+    var_names = string.ascii_lowercase[:num_ent]
+    batch_name = 'z'
+    mention_name = 'y'
+    assert batch_name not in var_names
+    assert mention_name not in var_names
+
+    return '{}->{}'.format(
+        ','.join('{}{}{}'.format(mention_name, batch_name, var_name) for var_name in var_names),
+        '{}{}{}'.format(mention_name, batch_name, ''.join(var_names))
+    )
 
 class StructuredAttentionLayer(nn.Module):
     @classmethod
@@ -79,6 +93,29 @@ class StructuredAttentionLayer(nn.Module):
         )
 
         # self.contraction_string = self.build_contraction_string(self.num_ent)
+
+    @staticmethod
+    def marginal_logits_to_full_logits(logits):
+        num_ent = logits.size(-1)
+        einsum_str = logit_to_full_einsum_str(num_ent)
+
+        # mentions x bsz x num_ent x 2
+        stack_logits = torch.stack((-logits, logits), dim=-1)
+        assert stack_logits.dim() == 4
+
+        # num_ent arrays, each of size mentions x bsz x 2
+        factored_logits = (l.squeeze(-2) for l in stack_logits.split(1, dim=-2))
+
+        outputs = pyro.ops.contract.einsum(
+            einsum_str,
+            *factored_logits,
+            modulo_total=True,
+            backend='pyro.ops.einsum.torch_log',
+        )
+        assert len(outputs) == 1
+        output = outputs[0]
+        assert output.dim() == 2 + num_ent
+        return output
 
     def build_contraction_string(self, num_ent):
         var_names = string.ascii_lowercase[:num_ent]

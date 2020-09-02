@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 
-from models.attention_layers import StructuredTemporalAttentionLayer
+from models.attention_layers import StructuredTemporalAttentionLayer, StructuredAttentionLayer
 from models.utils import bit_to_int_array, int_to_bit_array
 
 
@@ -221,44 +221,9 @@ class PragmaticReferencePredictor(ReferencePredictor):
         super().__init__(args)
         self._logit_to_full_einsum_str = None
 
-    def logit_to_full_einsum_str(self, logits):
-        if self._logit_to_full_einsum_str is not None:
-            return self._logit_to_full_einsum_str
-
-        mentions, bsz, num_ent = logits.size()
-        var_names = string.ascii_lowercase[:num_ent]
-        batch_name = 'z'
-        mention_name = 'y'
-        assert batch_name not in var_names
-        assert mention_name not in var_names
-
-        self._logit_to_full_einsum_str = '{}->{}'.format(
-            ','.join('{}{}{}'.format(mention_name, batch_name, var_name) for var_name in var_names),
-            '{}{}{}'.format(mention_name, batch_name, ''.join(var_names))
-        )
-        return self._logit_to_full_einsum_str
-
     def marginal_logits_to_full_logits(self, logits):
-        num_ent = logits.size(-1)
-        einsum_str = self.logit_to_full_einsum_str(logits)
-
-        # mentions x bsz x num_ent x 2
-        stack_logits = torch.stack((-logits, logits), dim=-1)
-        assert stack_logits.dim() == 4
-
-        # num_ent arrays, each of size mentions x bsz x 2
-        factored_logits = (l.squeeze(-2) for l in stack_logits.split(1, dim=-2))
-
-        outputs = pyro.ops.contract.einsum(
-            einsum_str,
-            *factored_logits,
-            modulo_total=True,
-            backend='pyro.ops.einsum.torch_log',
-        )
-        assert len(outputs) == 1
-        output = outputs[0]
-        assert output.dim() == 2 + num_ent
-        return output
+        # TODO: refactor this
+        return StructuredAttentionLayer.marginal_logits_to_full_logits(logits)
 
     def make_candidates(self, ref_out, num_markables):
 

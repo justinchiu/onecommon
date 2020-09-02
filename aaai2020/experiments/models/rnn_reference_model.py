@@ -19,6 +19,8 @@ from models.ctx_encoder import *
 from models.reference_predictor import PragmaticReferencePredictor
 from utils import set_temporary_default_tensor_type
 
+from torch.distributions import Gumbel
+
 BIG_NEG = -1e6
 
 
@@ -1357,33 +1359,75 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     next_mention_out=next_mention_out,
                 )
 
-                if self.args.max_mentions_in_generation_training != 1:
-                    # this will change joint_log_probs_selected below
-                    raise NotImplementedError("need to implement sampling here")
-
-                candidates = torch.arange(0, 2**self.num_ent)
                 max_num_mentions = ref_inpt.size(1)
-                candidates = candidates.unsqueeze(0).repeat_interleave(max_num_mentions, dim=0)
-                candidates = candidates.unsqueeze(1).repeat_interleave(bsz, dim=1)
-                candidates = int_to_bit_array(candidates, num_bits=self.num_ent)
-                # max_num_mentions x bsz x 2**self.num_ent
+                if self.args.l1_normalizer_sampling == 'none':
+                    num_candidates = 2**self.num_ent
+                    if self.args.max_mentions_in_generation_training != 1:
+                        raise NotImplementedError()
+                    candidate_indices = torch.arange(0, num_candidates)
+                    candidate_indices = candidate_indices.unsqueeze(0).repeat_interleave(max_num_mentions, dim=0)
+                    # max_num_mentions x bsz x 2**7
+                    candidate_indices = candidate_indices.unsqueeze(1).repeat_interleave(bsz, dim=1)
+                elif self.args.l1_normalizer_sampling in ['noised', 'uniform']:
+                    num_candidates = self.args.l1_normalizer_sampling_candidates
+                    assert num_candidates is not None
+                    if self.args.l1_normalizer_sampling == 'noised':
+                        # max_num_mentions x bsz x 7
+                        # define sampling probabilities: no dot[0]: 0.1; dot[1]: 0.9
+                        ref_tgt_logits_t = (ref_tgt.transpose(0,1) * 0.8 + 0.1).log()
+                        # max_num_mentions x bsz x 2 x 2 x ...
+                        joint_logits = StructuredAttentionLayer.marginal_logits_to_full_logits(ref_tgt_logits_t).contiguous()
+                        # max_num_mentions x bsz x_num_mentions x 2**7
+                        joint_logits = joint_logits.view(joint_logits.size(0), joint_logits.size(1), -1)
+                    elif self.args.l1_normalizer_sampling == 'uniform':
+                        joint_logits = torch.zeros(max_num_mentions, bsz, 2**self.num_ent)
+                    # max_num_mentions x bsz x 2**7
+                    noised_logits = Gumbel(joint_logits, scale=1.0).sample()
+                    # sample each mention independently
+                    # max_num_mentions x bsz x num_candidates
+                    candidate_indices = noised_logits.topk(num_candidates, dim=-1).indices
+                elif self.args.l1_normalizer_sampling == 'next_mention':
+                    pass
+                else:
+                    raise ValueError(f"invalid --l1_normalizer_sampling={self.args.l1_normalizer_sampling}")
+
+                # TODO: this may be double-counting dot configurations that differ beyond the num_markables for that instance
+                ## ensure candidates includes the gold
+                # bsz , with entries ranging from 0 to 2**(7*max_num_mentions)
+                ref_tgt_indices_joint = bit_to_int_array(ref_tgt.view(ref_tgt.size(0), -1))
+
+                # max_num_mentions x bsz x num_candidates x 2**7
+                candidates = int_to_bit_array(candidate_indices, num_bits=self.num_ent)
+                # bsz x num_candidates
+                candidate_indices_joint = bit_to_int_array(
+                    einops.rearrange(candidates, "mnm b n d -> b n (mnm d)")
+                )
+                is_present = (candidate_indices_joint == ref_tgt_indices_joint.unsqueeze(-1)).any(-1)
+
+                # for any indices that don't contain the gold, replace them with the gold
+                candidate_indices_joint[:,0] = torch.where(is_present, candidate_indices_joint[:,0], ref_tgt_indices_joint)
+                # check that it's present exactly once
+                assert ((candidate_indices_joint == ref_tgt_indices_joint.unsqueeze(-1)).sum(-1) == 1).all()
+
+                # bsz
+                gold_candidate_indices = (candidate_indices_joint == ref_tgt_indices_joint.unsqueeze(-1)).float().argmax(-1)
+
+                candidates = einops.rearrange(
+                    int_to_bit_array(candidate_indices_joint, num_bits=self.num_ent * max_num_mentions),
+                    "b n (mnm d) -> mnm b n d",
+                    mnm=max_num_mentions, d=self.num_ent,
+                )
+
+                assert candidates.size() == (max_num_mentions, bsz, num_candidates, self.num_ent)
 
                 # log p(d | u)
                 # bsz x num_candidates
-                joint_log_probs = scoring_function(candidates, normalize_over_candidates=True)
+                this_l1_log_probs_all = scoring_function(candidates, normalize_over_candidates=True)
 
-                # max_num_mentions x bsz
-                ref_tgt_indices = bit_to_int_array(ref_tgt).transpose(0,1)
-                # max_num_mentions x bsz
-                joint_log_probs_selected = joint_log_probs.unsqueeze(0).expand(
-                    ref_tgt_indices.size(0), -1, -1
-                ).gather(-1, ref_tgt_indices.unsqueeze(-1)).squeeze(-1)
-                mask = torch.zeros_like(joint_log_probs_selected)
-                for bix, nm in enumerate(num_markables[i]):
-                    mask[:nm, bix] = 1.0
+                # bsz
+                this_l1_log_probs = this_l1_log_probs_all.gather(-1, gold_candidate_indices.unsqueeze(-1)).squeeze(-1)
 
-                this_l1_probs = mask * joint_log_probs_selected
-                l1_log_probs.append(this_l1_probs)
+                l1_log_probs.append(this_l1_log_probs)
             else:
                 l1_log_probs.append(None)
 

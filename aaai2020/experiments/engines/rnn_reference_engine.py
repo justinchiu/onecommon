@@ -60,6 +60,8 @@ def add_loss_args(parser):
     group.add_argument('--l1_loss_weight', type=float, default=0.0,
                        help='weight for \log p(d | u) = p(d) \log p(u | d) - \log \sum_d\' \exp p(d\') p(u | d\')')
     group.add_argument('--l1_prior', choices=['uniform', 'next_mention'], default='uniform', help='how to parameterize p(d)')
+    group.add_argument('--l1_normalizer_sampling', choices=['none', 'noised', 'uniform', 'next_mention'], default='none', help='how to sample candidates to compute the normalizer. none: exhaustive')
+    group.add_argument('--l1_normalizer_sampling_candidates', type=int, help='how many candidates to sample when computing the normalizer')
 
     # these args only make sense if --lang_only_self is True
     group.add_argument('--word_attention_supervised', action='store_true')
@@ -583,9 +585,9 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 l1_mask = mask & (num_markables[i] > 0)
                 if compute_l1_loss and l1_log_probs[i] is not None and l1_mask.any():
                     # l1_scores[i]: max_num_mentions x bsz
-                    normalizer = num_markables[i][l1_mask].sum()
+                    normalizer = (num_markables[i] * l1_mask).sum()
                     assert normalizer.item() != 0
-                    l1_losses.append(-l1_log_probs[i][:,l1_mask].sum() / normalizer)
+                    l1_losses.append(-(l1_log_probs[i] * l1_mask).sum() / normalizer)
                 else:
                     l1_losses.append(torch.tensor(0.0))
             lang_losses.append(loss.sum())
