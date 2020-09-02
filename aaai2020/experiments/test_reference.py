@@ -437,7 +437,6 @@ def main():
                             lens[sentence_ix], reader_and_writer_lang_h,
                             belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],
                             timestep=sentence_ix, partner_ref_outs=partner_ref_outs, ref_outs=my_ref_outs,
-                            temporally_structured_candidates=True,
                             next_mention_out=next_mention_out
                         )
                         ref_loss, ref_predictions, _ref_stats = reference_predictor.forward(

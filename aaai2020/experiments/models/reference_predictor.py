@@ -402,10 +402,11 @@ class PragmaticReferencePredictor(ReferencePredictor):
             if vars(self.args).get('l1_loss_weight', 0.0) != 0.0:
                 assert self.args.l1_renormalize
 
-            # N x bsz x k
+            # bsz x k
             # p(u | d_1, d_N)
             candidate_l1_scores = scoring_function(candidate_dots, normalize_over_candidates=self.args.l1_renormalize)
-            assert candidate_l1_scores.size() == candidate_l0_scores.size()
+            candidate_l1_scores = candidate_l1_scores.unsqueeze(0).expand_as(candidate_l0_scores)
+            # assert candidate_l1_scores.size() == candidate_l0_scores.size()
 
             lmbd = self.args.l1_speaker_weight
             # N x bsz x k
