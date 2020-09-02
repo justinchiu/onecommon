@@ -257,24 +257,24 @@ class PragmaticReferencePredictor(ReferencePredictor):
         assert output.dim() == 2 + num_ent
         return output
 
-    def make_candidates(self, ref_inpt, ref_out, num_markables):
+    def make_candidates(self, ref_out, num_markables):
 
         ref_out_logits, ref_out_full, ref_dist = ref_out
 
         N, bsz, num_dots = ref_out_logits.size()
 
         if self.args.l1_exhaustive_single:
-            candidate_indices = torch.arange(2**num_dots).to(ref_inpt.device)
+            candidate_indices = torch.arange(2**num_dots).to(ref_out_logits.device)
             candidate_indices = candidate_indices.unsqueeze(0).repeat_interleave(N, 0)
             candidate_indices = candidate_indices.unsqueeze(1).repeat_interleave(bsz, 1)
             candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_dots)
-            candidate_l0_scores = torch.zeros(N, bsz, 2**num_dots).long().to(ref_inpt.device)
+            candidate_l0_scores = torch.zeros(N, bsz, 2**num_dots).long().to(ref_out_logits.device)
             return candidate_indices, candidate_dots, candidate_l0_scores
 
         k = self.args.l1_candidates
 
-        candidate_l0_scores = torch.zeros(N, bsz, k).to(ref_inpt.device)
-        candidate_indices = torch.zeros(N, bsz, k).long().to(ref_inpt.device)
+        candidate_l0_scores = torch.zeros(N, bsz, k).to(ref_out_logits.device)
+        candidate_indices = torch.zeros(N, bsz, k).long().to(ref_out_logits.device)
 
         if ref_dist is not None:
             assert not self.args.l1_sample
@@ -343,7 +343,7 @@ class PragmaticReferencePredictor(ReferencePredictor):
         N, bsz, num_dots = ref_out_logits.size()
         ref_tgt_p, ref_mask = self.preprocess(ref_tgt, num_markables)
 
-        candidate_indices, candidate_dots, candidate_l0_scores = self.make_candidates(ref_inpt, ref_out, num_markables)
+        candidate_indices, candidate_dots, candidate_l0_scores = self.make_candidates(ref_out, num_markables)
 
         k = candidate_dots.size(-1)
 

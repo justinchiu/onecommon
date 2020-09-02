@@ -436,7 +436,7 @@ def main():
                             lens[sentence_ix], reader_and_writer_lang_h,
                             belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],
                             timestep=sentence_ix, partner_ref_outs=partner_ref_outs, ref_outs=my_ref_outs,
-                            temporally_structured_candidates=model.args.structured_temporal_attention,
+                            temporally_structured_candidates=vars(model.args).get('structured_temporal_attention', False),
                         )
                         ref_loss, ref_predictions, _ref_stats = reference_predictor.forward(
                             ref_inpt, ref_tgt, ref_out, sentence_num_markables, scoring_function,
@@ -584,10 +584,12 @@ def main():
             'partner_ref_stats': partner_ref_stats,
         })
         add_metrics(flat_stats, metrics, 'ref')
-        add_metrics(flat_stats, metrics, 'partner_ref')
+        if model.args.partner_reference_prediction:
+            add_metrics(flat_stats, metrics, 'partner_ref')
         for num_markables in [1]:
             add_metrics(flat_stats, metrics, f'ref_nm-{num_markables}')
-            add_metrics(flat_stats, metrics, f'partner_ref_nm-{num_markables}')
+            if model.args.partner_reference_prediction:
+                add_metrics(flat_stats, metrics, f'partner_ref_nm-{num_markables}')
         pprint.pprint(metrics)
 
         # Main results:

@@ -30,7 +30,7 @@ ForwardRet = namedtuple(
      'next_mention_loss', 'next_mention_stats',
      # 'next_mention_correct', 'next_mention_gold_positive', 'next_mention_pred_positive',
      # 'next_mention_true_positive', 'next_mention_num_dots', 'next_mention_em_num', 'next_mention_em_denom',
-     'lang_rsa_loss',
+     'l1_loss',
      ],
 )
 
@@ -57,8 +57,10 @@ def add_loss_args(parser):
                        type=int,
                        help='don\'t supervise/compute the language loss for more mentions than this')
 
-    group.add_argument('--lang_rsa_weight', type=float, default=0.0,
-                       help='weight for \log p(m | u) = \log p(u | m) - \log \sum_m\' \exp p(u | m\')')
+    # l1 training
+    group.add_argument('--l1_loss_weight', type=float, default=0.0,
+                       help='weight for \log p(d | u) = p(d) \log p(u | d) - \log \sum_d\' \exp p(d\') p(u | d\')')
+    group.add_argument('--l1_prior', choices=['uniform', 'next_mention'], default='uniform', help='how to parameterize p(d)')
 
     # these args only make sense if --lang_only_self is True
     group.add_argument('--word_attention_supervised', action='store_true')
@@ -285,8 +287,8 @@ class RnnReferenceEngine(EngineBase):
             if not self.args.next_mention_start_epoch or (epoch >= self.args.next_mention_start_epoch):
                 loss += self.args.next_mention_weight * forward_ret.next_mention_loss
 
-        if self.args.lang_rsa_weight > 0 and forward_ret.lang_rsa_loss is not None:
-            loss += self.args.lang_rsa_weight * forward_ret.lang_rsa_loss
+        if self.args.l1_loss_weight > 0 and forward_ret.l1_loss is not None:
+            loss += self.args.l1_loss_weight * forward_ret.l1_loss
 
         if forward_ret.word_attn_loss is not None:
             loss = loss + forward_ret.word_attn_loss
@@ -339,7 +341,7 @@ class RnnReferenceEngine(EngineBase):
             'select_accuracy': metrics['sel_correct'] / metrics['sel_num_dots'],
             'time': time_elapsed,
             'correct_ppl': np.exp(metrics['unnormalized_lang_loss'] / metrics['num_words']),
-            'lang_rsa_loss': metrics['lang_rsa_loss'] / len(dataset),
+            'l1_loss': metrics['l1_loss'] / len(dataset),
         }
         add_metrics(metrics, aggregate_metrics, "ref")
         add_metrics(metrics, aggregate_metrics, "partner_ref")
@@ -379,7 +381,7 @@ class RnnReferenceEngine(EngineBase):
                 metrics['ref_loss'] *= self.args.ref_weight
                 metrics['partner_ref_loss'] *= self.args.partner_ref_weight
                 metrics['next_mention_loss'] *= self.args.next_mention_weight
-                metrics['lang_rsa_loss'] *= self.args.lang_rsa_weight
+                metrics['l1_loss'] *= self.args.l1_loss_weight
 
                 quantities = [
                     ['lang_loss', 'ppl(avg exp lang_loss)', 'correct_ppl'],
@@ -389,7 +391,7 @@ class RnnReferenceEngine(EngineBase):
                      'partner_ref_f1', 'partner_ref_exact_match'],
                     ['next_mention_loss', 'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall',
                      'next_mention_f1', 'next_mention_exact_match'],
-                    ['lang_rsa_loss']
+                    ['l1_loss']
                 ]
                 for line_metrics in quantities:
                     print('epoch {:03d} \t '.format(epoch) + ' \t '.join(
@@ -431,7 +433,7 @@ class RnnReferenceEngine(EngineBase):
                + metrics['ref_loss'] * self.args.ref_weight \
                + metrics['partner_ref_loss'] * self.args.partner_ref_weight \
                + metrics['next_mention_loss'] * self.args.next_mention_weight \
-               + metrics['lang_rsa_loss'] * self.args.lang_rsa_weight
+               + metrics['l1_loss'] * self.args.l1_loss_weight
 
     def train(self, corpus, model_filename_fn):
         best_model, best_combined_valid_loss = copy.deepcopy(self.model), 1e100
@@ -457,7 +459,7 @@ class RnnReferenceEngine(EngineBase):
                     f"update best model -- valid combined: {combined_valid_loss:.4f}\t" +
                     '\t'.join(
                         f'{name} {metrics["valid"][name]:.4f}'
-                        for name in ['lang_loss', 'select_loss', 'select_accuracy', 'ref_loss', 'partner_ref_loss', 'next_mention_loss', 'lang_rsa_loss']
+                        for name in ['lang_loss', 'select_loss', 'select_accuracy', 'ref_loss', 'partner_ref_loss', 'next_mention_loss', 'l1_loss']
                     )
                 )
                 best_combined_valid_loss = combined_valid_loss
@@ -547,7 +549,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             partner_num_markables,
         )
 
-        compute_lang_rsa_losses = self.args.lang_rsa_weight > 0
+        compute_l1_loss = self.args.l1_loss_weight > 0
 
         outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_h, writer_lang_h), ctx_h, ctx_differences, l1_scores = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
@@ -556,21 +558,21 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             dots_mentioned, dots_mentioned_per_ref,
             belief_constructor=belief_constructor,
             partner_ref_inpts=partner_ref_inpts,
-            compute_lang_rsa_losses=compute_lang_rsa_losses,
+            compute_l1_scores=compute_l1_loss,
             tgts=tgts,
             ref_tgts=ref_tgts,
         )
 
         sel_tgt = Variable(sel_tgt)
         lang_losses = []
-        rsa_lang_losses = []
+        l1_losses = []
         assert len(inpts) == len(tgts) == len(outs) == len(lens)
         for i, (out, tgt) in enumerate(zip(outs, tgts)):
             # T x bsz
             loss = self.crit_no_reduce(out, tgt).view(-1, bsz)
             if self.args.max_mentions_in_generation_training is not None:
                 assert self.args.lang_only_self
-            if compute_lang_rsa_losses:
+            if compute_l1_loss:
                 assert self.args.lang_only_self
             if self.args.lang_only_self:
                 # loss = loss * (this_is_self.unsqueeze(0).expand_as(loss))
@@ -579,11 +581,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                     mask = mask & (num_markables[i] <= self.args.max_mentions_in_generation_training)
                 loss = loss * (mask.unsqueeze(0).expand_as(loss))
 
-                if compute_lang_rsa_losses and l1_scores[i] is not None:
-                    # max_num_mentions x bsz
-                    rsa_lang_losses.append(-l1_scores[i].sum())
+                l1_mask = mask & (num_markables[i] > 0)
+                if compute_l1_loss and l1_scores[i] is not None and l1_mask.any():
+                    # l1_scores[i]: max_num_mentions x bsz
+                    normalizer = num_markables[i][l1_mask].sum()
+                    assert normalizer.item() != 0
+                    l1_losses.append(-l1_scores[i][:,l1_mask].sum() / normalizer)
                 else:
-                    rsa_lang_losses.append(torch.tensor(0.0))
+                    l1_losses.append(torch.tensor(0.0))
             lang_losses.append(loss.sum())
         total_lens = sum(l.sum() for l in lens)
 
@@ -596,10 +601,10 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         unnormed_lang_loss = sum(lang_losses)
         lang_loss = unnormed_lang_loss / total_lens
 
-        if rsa_lang_losses:
-            rsa_lang_loss = torch.mean(torch.stack(rsa_lang_losses, -1), -1)
+        if l1_losses:
+            l1_loss = torch.mean(torch.stack(l1_losses, -1), -1)
         else:
-            rsa_lang_loss = None
+            l1_loss = None
 
         ref_losses = []
         # other keys and values will be added
@@ -811,6 +816,6 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             partner_ref_stats=partner_ref_stats,
             next_mention_loss=next_mention_loss,
             next_mention_stats=next_mention_stats,
-            lang_rsa_loss=rsa_lang_loss,
+            l1_loss=l1_loss,
         )
 

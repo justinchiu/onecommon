@@ -16,6 +16,7 @@ from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnRefe
 from models.attention_layers import FeedForward, AttentionLayer, StructuredAttentionLayer, \
     StructuredTemporalAttentionLayer
 from models.ctx_encoder import *
+from models.reference_predictor import PragmaticReferencePredictor
 from utils import set_temporary_default_tensor_type
 
 BIG_NEG = -1e6
@@ -715,7 +716,6 @@ class RnnReferenceModel(nn.Module):
                 this_mentions_t = comb(this_mentions, batch_dim=0)
                 this_mentions_per_ref_t = comb(this_mentions_per_ref, batch_dim=0)
 
-                # TODO: define ctx_t
                 outs, *_ = self._forward(
                     ctx_t, ctx_differences_t, ctx_h_t, inpt_t, ref_inpt_t, sel_idx=None,
                     num_markables=num_markables_t,
@@ -877,7 +877,7 @@ class RnnReferenceModel(nn.Module):
 
     def forward(self, ctx, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
-                belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt, compute_lang_rsa_losses=False):
+                belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt, compute_l1_scores=False):
         # belief_function:
         # timestep 0
         if belief_constructor is not None:
@@ -1260,7 +1260,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 dots_mentioned_per_ref,
                 belief_constructor: Union[BeliefConstructor, None],
                 partner_ref_inpts,
-                compute_lang_rsa_losses=False,
+                compute_l1_scores=False,
                 tgts=None,
                 ref_tgts=None,
                 ):
@@ -1310,6 +1310,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         l1_scores = []
         assert len(inpts) == len(ref_inpts)
+
         for i in range(len(inpts)):
             inpt = inpts[i]
             ref_inpt = ref_inpts[i]
@@ -1330,7 +1331,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 partner_ref_outs=partner_ref_outs,
                 ref_outs=ref_outs,
             )
-            if compute_lang_rsa_losses and ref_inpt is not None:
+            if compute_l1_scores and ref_inpt is not None:
                 assert tgts is not None
                 tgt = tgts[i]
                 assert ref_tgts is not None
@@ -1349,13 +1350,39 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     ref_outs=ref_outs,
                     temporally_structured_candidates=True,
                 )
+
+
+                if self.args.max_mentions_in_generation_training != 1:
+                    raise NotImplementedError("need to implement sampling here")
+
                 candidates = torch.arange(0, 2**self.num_ent)
                 max_num_mentions = ref_inpt.size(1)
                 candidates = candidates.unsqueeze(0).repeat_interleave(max_num_mentions, dim=0)
                 candidates = candidates.unsqueeze(1).repeat_interleave(bsz, dim=1)
                 candidates = int_to_bit_array(candidates, num_bits=self.num_ent)
                 # max_num_mentions x bsz x 2**self.num_ent
+
+                # \log p(u | d)
                 scores = scoring_function(candidates)
+                if self.args.l1_prior == 'next_mention':
+                    assert self.args.next_mention_prediction
+                    if self.args.max_mentions_in_generation_training != 1:
+                        raise NotImplementedError("need to implement a hierarchical next-mention model for the prior")
+                    next_mention_out_logits, next_mention_out_full, _ = next_mention_out
+                    if next_mention_out_full is None:
+                        # TODO: refactor this to move logits_to_full elsewhere
+                        predictor = PragmaticReferencePredictor(self.args)
+                        # 1 x bsz x 2 x ...
+                        next_mention_out_full = predictor.logits_to_full(next_mention_out_logits).contiguous()
+                    # \log p(d). squeeze to remove the *num mention* dimension
+                    # bsz x 2^7
+                    next_mention_out_full = next_mention_out_full.squeeze(0).view(next_mention_out_full.size(1), -1)
+                    # \log p(u | d) + \log p(d); detach to not backprop through the prior p(d)
+                    scores += next_mention_out_full.unsqueeze(0).detach()
+                elif self.args.l1_prior == 'uniform':
+                    pass
+                else:
+                    raise ValueError(f"invalid --l1_prior={self.args.l1_prior}")
                 # max_num_mentions x bsz
                 ref_tgt_indices = bit_to_int_array(ref_tgt).transpose(0,1)
                 # max_num_mentions x bsz
