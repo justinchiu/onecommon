@@ -410,8 +410,9 @@ def main():
 
             my_ref_outs, partner_ref_outs = zip(*ref_outs)
 
-            for sentence_ix, (inpt, out, tgt, ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt) in enumerate(
-                utils.safe_zip(inpts, outs, tgts, ref_inpts, partner_ref_inpts, ref_outs, ref_tgts, partner_ref_tgts_our_view)
+            # next_mention_outs[i]: dots predicted to be mentioned in sentence i (TODO: rename this)
+            for sentence_ix, (inpt, out, tgt, ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt, next_mention_out) in enumerate(
+                utils.safe_zip(inpts, outs, tgts, ref_inpts, partner_ref_inpts, ref_outs, ref_tgts, partner_ref_tgts_our_view, next_mention_outs[:-1])
             ):
                 sentence_num_markables = num_markables[sentence_ix]
                 tgt = Variable(tgt)
@@ -430,13 +431,14 @@ def main():
                     reader_and_writer_lang_h = (reader_lang_hs[sentence_ix], writer_lang_hs[sentence_ix])
                 if ref_inpt is not None:
                     if args.reference_prediction == 'l1':
-                        scoring_function = model.make_ref_scoring_function(
+                        scoring_function = model.make_l1_scoring_function(
                             ctx, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
                             num_markables[sentence_ix], partner_num_markables[sentence_ix],
                             lens[sentence_ix], reader_and_writer_lang_h,
                             belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],
                             timestep=sentence_ix, partner_ref_outs=partner_ref_outs, ref_outs=my_ref_outs,
                             temporally_structured_candidates=vars(model.args).get('structured_temporal_attention', False),
+                            next_mention_out=next_mention_out
                         )
                         ref_loss, ref_predictions, _ref_stats = reference_predictor.forward(
                             ref_inpt, ref_tgt, ref_out, sentence_num_markables, scoring_function,

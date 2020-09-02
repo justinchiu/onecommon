@@ -639,19 +639,19 @@ class RnnReferenceModel(nn.Module):
 
         return attn_prob
 
-    def make_ref_scoring_function(
+    def make_l1_scoring_function(
         self, ctx, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
         num_markables, partner_num_markables,
         lens, reader_and_writer_lang_h, belief_constructor=None,
         partner_ref_inpt=None, timestep=0, partner_ref_outs=None, ref_outs=None,
-        temporally_structured_candidates=False,
+        temporally_structured_candidates=False, next_mention_out=None,
     ):
         # sel_idx isn't needed b/c we'll pass compute_sel_idx = False
         crit_no_reduce = Criterion(self.word_dict, bad_toks=['<pad>'], reduction='none')
 
-        def score_refs(candidate_dots_mentioned):
+        def score_refs(candidate_dots_mentioned_per_ref, normalize_over_candidates=False):
             # candidate_dots_mentioned: num_mentions x batch_size x num_candidates x num_dots
-            num_mentions, bsz, num_candidates, num_dots = candidate_dots_mentioned.size()
+            num_mentions, bsz, num_candidates, num_dots = candidate_dots_mentioned_per_ref.size()
             T = inpt.size(0)
 
             def comb(tensor, batch_dim):
@@ -710,8 +710,9 @@ class RnnReferenceModel(nn.Module):
 
             # bsz x num_candidates x num_dots
             if not temporally_structured_candidates:
-                first_candidate_sums = candidate_dots_mentioned[:,:,0].sum(0).unsqueeze(1).expand(bsz, num_candidates, num_dots)
+                first_candidate_sums = candidate_dots_mentioned_per_ref[:,:,0].sum(0).unsqueeze(1).expand(bsz, num_candidates, num_dots)
 
+            # TODO: do we really need triply-nested functions?
             def get_log_probs(this_mentions, this_mentions_per_ref):
                 this_mentions_t = comb(this_mentions, batch_dim=0)
                 this_mentions_per_ref_t = comb(this_mentions_per_ref, batch_dim=0)
@@ -732,12 +733,14 @@ class RnnReferenceModel(nn.Module):
                 return log_probs
 
             # candidate_dots_mentioned: max_num_mentions x bsz x num_candidates x num_dots
-            candidate_dots_mentioned_per_ref = einops.rearrange(candidate_dots_mentioned, "nm b c d->b c nm d")
+            candidate_dots_mentioned_per_ref_rearrange = einops.rearrange(candidate_dots_mentioned_per_ref, "nm b c d->b c nm d")
+
+            # TODO: fix ordering
 
             # TODO: do search over joint mention configurations using the scores
             if temporally_structured_candidates:
-                this_mentions = (candidate_dots_mentioned.sum(0) > 0)
-                log_probs = get_log_probs(this_mentions, candidate_dots_mentioned_per_ref)
+                candidate_dots_mentioned = (candidate_dots_mentioned_per_ref.sum(0) > 0)
+                log_probs = get_log_probs(candidate_dots_mentioned, candidate_dots_mentioned_per_ref_rearrange)
                 s0_probs = log_probs.unsqueeze(0).repeat_interleave(num_mentions, dim=0)
             else:
                 for mention_ix in range(num_mentions):
@@ -746,16 +749,53 @@ class RnnReferenceModel(nn.Module):
                     # = [\sum_{mention} candidate_dots_mentioned[mention,b,0]] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
                     # = first_candidate_sums[b] - candidate_dots_mentioned[mention_ix, b, 0] + candidate_dots_mentioned[mention_ix, b, c]
                     # = first_candidate_sums[b] - this_first_candidates[b] + candidate_dots_mentioned[mention_ix, b, c]
-                    all_candidates_this_mention = candidate_dots_mentioned[mention_ix]
-                    this_first_candidates = candidate_dots_mentioned[mention_ix, :, 0].unsqueeze(1).expand_as(first_candidate_sums)
+                    all_candidates_this_mention = candidate_dots_mentioned_per_ref[mention_ix]
+                    this_first_candidates = candidate_dots_mentioned_per_ref[mention_ix, :, 0].unsqueeze(1).expand_as(first_candidate_sums)
                     # bsz x num_candidates x num_dots
-                    this_mentions = (first_candidate_sums - this_first_candidates + all_candidates_this_mention) > 0
-                    assert torch.all((this_mentions.float() - candidate_dots_mentioned[mention_ix].float()) >= 0)
+                    candidate_dots_mentioned = (first_candidate_sums - this_first_candidates + all_candidates_this_mention) > 0
+                    assert torch.all((candidate_dots_mentioned.float() - candidate_dots_mentioned_per_ref[mention_ix].float()) >= 0)
 
-                    s0_probs_per_mention.append(get_log_probs(this_mentions, candidate_dots_mentioned_per_ref))
+                    s0_probs_per_mention.append(get_log_probs(candidate_dots_mentioned, candidate_dots_mentioned_per_ref_rearrange))
                 # num_mentions x bsz x num_candidates
                 s0_probs = torch.stack(s0_probs_per_mention, dim=0)
-            return s0_probs
+
+            unnormed_l1_probs = s0_probs
+            if self.args.l1_prior == 'next_mention':
+                assert self.args.next_mention_prediction
+                if self.args.max_mentions_in_generation_training != 1:
+                    raise NotImplementedError("need to implement a hierarchical next-mention model for the prior")
+                next_mention_out_logits, next_mention_out_full, _ = next_mention_out
+                if next_mention_out_full is None:
+                    # TODO: refactor this to move logits_to_full elsewhere
+                    predictor = PragmaticReferencePredictor(self.args)
+                    # 1 x bsz x 2 x ...
+                    next_mention_out_full = predictor.logits_to_full(next_mention_out_logits).contiguous()
+                # \log p(d). squeeze to remove the *num mention* dimension
+
+                # TODO: deal with a hierarchical next_mention model which predicts distributions over multiple mentions
+                # bsz x 2^7
+                prior_probs = next_mention_out_full.view(1, next_mention_out_full.size(1), -1).squeeze(0)
+                # detach to not backprop through the prior p(d)
+                prior_probs = prior_probs.detach()
+
+                # bsz x num_candidates x 2^7
+                candidate_dots_mentioned = candidate_dots_mentioned_per_ref.sum(0) > 0
+                # bsz x num_candidates
+                candidate_dots_mentioned_indices = bit_to_int_array(candidate_dots_mentioned)
+
+                # select values for the candidates
+                candidate_prior_probs = prior_probs.gather(-1, candidate_dots_mentioned_indices)
+
+                # \log p(u | d) + \log p(d)
+                unnormed_l1_probs += candidate_prior_probs
+            elif self.args.l1_prior == 'uniform':
+                pass
+            else:
+                raise ValueError(f"invalid --l1_prior={self.args.l1_prior}")
+            if normalize_over_candidates:
+                return unnormed_l1_probs.log_softmax(-1)
+            else:
+                return unnormed_l1_probs
 
         return score_refs
 
@@ -1248,21 +1288,11 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def forward(self,
-                ctx,
-                inpts,
-                ref_inpts,
-                sel_idx,
-                num_markables,
-                partner_num_markables,
-                lens,
-                dots_mentioned,
-                dots_mentioned_per_ref,
+    def forward(self, ctx, inpts, ref_inpts, sel_idx, num_markables, partner_num_markables, lens,
+                dots_mentioned, dots_mentioned_per_ref,
                 belief_constructor: Union[BeliefConstructor, None],
                 partner_ref_inpts,
-                compute_l1_scores=False,
-                tgts=None,
-                ref_tgts=None,
+                compute_l1_probs=False, tgts=None, ref_tgts=None,
                 ):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
@@ -1308,7 +1338,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 )
             )
 
-        l1_scores = []
+        l1_log_probs = []
         assert len(inpts) == len(ref_inpts)
 
         for i in range(len(inpts)):
@@ -1331,7 +1361,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 partner_ref_outs=partner_ref_outs,
                 ref_outs=ref_outs,
             )
-            if compute_l1_scores and ref_inpt is not None:
+            if compute_l1_probs and ref_inpt is not None:
                 assert tgts is not None
                 tgt = tgts[i]
                 assert ref_tgts is not None
@@ -1340,7 +1370,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 # mask = is_self[i]
                 # if self.args.max_mentions_in_generation_training is not None:
                 #     mask = mask & (num_markables[i] <= self.args.max_mentions_in_generation_training)
-                scoring_function = self.make_ref_scoring_function(
+                scoring_function = self.make_l1_scoring_function(
                     ctx, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
                     num_markables[i], partner_num_markables[i], this_lens, reader_and_writer_lang_h,
                     belief_constructor=belief_constructor,
@@ -1349,8 +1379,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     partner_ref_outs=partner_ref_outs,
                     ref_outs=ref_outs,
                     temporally_structured_candidates=True,
+                    next_mention_out=next_mention_out,
                 )
-
 
                 if self.args.max_mentions_in_generation_training != 1:
                     raise NotImplementedError("need to implement sampling here")
@@ -1362,40 +1392,21 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 candidates = int_to_bit_array(candidates, num_bits=self.num_ent)
                 # max_num_mentions x bsz x 2**self.num_ent
 
-                # \log p(u | d)
-                scores = scoring_function(candidates)
-                if self.args.l1_prior == 'next_mention':
-                    assert self.args.next_mention_prediction
-                    if self.args.max_mentions_in_generation_training != 1:
-                        raise NotImplementedError("need to implement a hierarchical next-mention model for the prior")
-                    next_mention_out_logits, next_mention_out_full, _ = next_mention_out
-                    if next_mention_out_full is None:
-                        # TODO: refactor this to move logits_to_full elsewhere
-                        predictor = PragmaticReferencePredictor(self.args)
-                        # 1 x bsz x 2 x ...
-                        next_mention_out_full = predictor.logits_to_full(next_mention_out_logits).contiguous()
-                    # \log p(d). squeeze to remove the *num mention* dimension
-                    # bsz x 2^7
-                    next_mention_out_full = next_mention_out_full.squeeze(0).view(next_mention_out_full.size(1), -1)
-                    # \log p(u | d) + \log p(d); detach to not backprop through the prior p(d)
-                    scores += next_mention_out_full.unsqueeze(0).detach()
-                elif self.args.l1_prior == 'uniform':
-                    pass
-                else:
-                    raise ValueError(f"invalid --l1_prior={self.args.l1_prior}")
+                # log p(d | u)
+                l1_log_probs = scoring_function(candidates, normalize_over_candidates=True)
+
                 # max_num_mentions x bsz
                 ref_tgt_indices = bit_to_int_array(ref_tgt).transpose(0,1)
                 # max_num_mentions x bsz
-                numerators = scores.gather(-1, ref_tgt_indices.unsqueeze(-1)).squeeze(-1)
-                normalizers = scores.logsumexp(dim=-1)
-                mask = torch.zeros_like(numerators)
+                listener_scores_selected = l1_log_probs.gather(-1, ref_tgt_indices.unsqueeze(-1)).squeeze(-1)
+                mask = torch.zeros_like(listener_scores_selected)
                 for bix, nm in enumerate(num_markables[i]):
                     mask[:nm, bix] = 1.0
-                this_l1_scores = (mask * (numerators - normalizers))
-                l1_scores.append(this_l1_scores)
-            else:
-                l1_scores.append(None)
 
+                this_l1_probs = mask * listener_scores_selected
+                l1_log_probs.append(this_l1_probs)
+            else:
+                l1_log_probs.append(None)
 
             # print("i: {}\tmention_belief.sum(): {}\t(next_mention_out > 0).sum(): {}".format(i, mention_beliefs.sum(), (next_mention_out > 0).sum()))
             all_outs.append(outs)
@@ -1414,4 +1425,4 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         assert sel_out is not None
 
-        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, (all_reader_lang_h, all_writer_lang_h), ctx_h, ctx_differences, l1_scores
+        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, (all_reader_lang_h, all_writer_lang_h), ctx_h, ctx_differences, l1_log_probs

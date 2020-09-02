@@ -35,7 +35,6 @@ ForwardRet = namedtuple(
 )
 
 def add_loss_args(parser):
-    pass
     group = parser.add_argument_group('loss')
     group.add_argument('--lang_weight', type=float, default=1.0,
                        help='language loss weight')
@@ -551,14 +550,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         compute_l1_loss = self.args.l1_loss_weight > 0
 
-        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_h, writer_lang_h), ctx_h, ctx_differences, l1_scores = self.model.forward(
+        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_h, writer_lang_h), ctx_h, ctx_differences, l1_log_probs = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
             lens,
             dots_mentioned, dots_mentioned_per_ref,
             belief_constructor=belief_constructor,
             partner_ref_inpts=partner_ref_inpts,
-            compute_l1_scores=compute_l1_loss,
+            compute_l1_probs=compute_l1_loss,
             tgts=tgts,
             ref_tgts=ref_tgts,
         )
@@ -582,11 +581,11 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 loss = loss * (mask.unsqueeze(0).expand_as(loss))
 
                 l1_mask = mask & (num_markables[i] > 0)
-                if compute_l1_loss and l1_scores[i] is not None and l1_mask.any():
+                if compute_l1_loss and l1_log_probs[i] is not None and l1_mask.any():
                     # l1_scores[i]: max_num_mentions x bsz
                     normalizer = num_markables[i][l1_mask].sum()
                     assert normalizer.item() != 0
-                    l1_losses.append(-l1_scores[i][:,l1_mask].sum() / normalizer)
+                    l1_losses.append(-l1_log_probs[i][:,l1_mask].sum() / normalizer)
                 else:
                     l1_losses.append(torch.tensor(0.0))
             lang_losses.append(loss.sum())

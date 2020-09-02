@@ -212,7 +212,7 @@ class PragmaticReferencePredictor(ReferencePredictor):
         parser.add_argument('--l1_speaker_weight', type=float, default=1.0, help='(1 - lambda) * l0_log_prob + (lambda) * s0_log_prob')
         parser.add_argument('--l1_oracle', action='store_true')
         parser.add_argument('--l1_exhaustive_single', action='store_true', help='search over all possible candidates for a single mention (should only compare nm-1 scores)')
-        parser.add_argument('--l1_renormalize', action='store_true', help='search over all possible candidates for a single mention (should only compare nm-1 scores)')
+        parser.add_argument('--l1_renormalize', action='store_true', help='normalize l1 to be over all candidates')
 
     def __init__(self, args):
         super().__init__(args)
@@ -392,15 +392,15 @@ class PragmaticReferencePredictor(ReferencePredictor):
 
         else:
             # N x bsz x k
-            candidate_s0_scores = scoring_function(candidate_dots)
-            assert candidate_s0_scores.size() == candidate_l0_scores.size()
-
-            if self.args.l1_renormalize:
-                candidate_s0_scores = candidate_s0_scores.log_softmax(dim=-1)
+            # TODO: fix this so that we don't have to pass at inference time
+            if vars(self.args).get('l1_loss_weight', 0.0) != 0.0:
+                assert self.args.l1_renormalize
+            candidate_l1_scores = scoring_function(candidate_dots, normalize_over_candidates=self.args.l1_renormalize)
+            assert candidate_l1_scores.size() == candidate_l0_scores.size()
 
             lmbd = self.args.l1_speaker_weight
             # N x bsz x k
-            joint_scores = (1 - lmbd) * candidate_l0_scores + lmbd * candidate_s0_scores
+            joint_scores = (1 - lmbd) * candidate_l0_scores + lmbd * candidate_l1_scores
 
             # N x bsz with values [0..k-1]
             chosen = joint_scores.argmax(-1)
