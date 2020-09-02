@@ -5,6 +5,7 @@ import torch
 from torch import nn
 from torch.autograd import Variable
 
+from models.attention_layers import StructuredTemporalAttentionLayer
 from models.utils import bit_to_int_array, int_to_bit_array
 
 
@@ -165,6 +166,8 @@ class ReferencePredictor(object):
             log_likelihoods = temporal_dist.log_prob(gold_parts)
             losses = -log_likelihoods
         elif self.args.structured_temporal_attention_training == 'max_margin':
+            # TODO: need to do a loss-augmented decode
+            raise NotImplementedError("max_margin")
             gold_scores = temporal_dist.score(gold_parts)
             pred_scores = temporal_dist.score(temporal_dist.argmax)
             # hinge loss with a structured margin
@@ -235,7 +238,7 @@ class PragmaticReferencePredictor(ReferencePredictor):
         )
         return self._logit_to_full_einsum_str
 
-    def logits_to_full(self, logits):
+    def marginal_logits_to_full_logits(self, logits):
         num_ent = logits.size(-1)
         einsum_str = self.logit_to_full_einsum_str(logits)
 
@@ -276,11 +279,20 @@ class PragmaticReferencePredictor(ReferencePredictor):
         candidate_l0_scores = torch.zeros(N, bsz, k).to(ref_out_logits.device)
         candidate_indices = torch.zeros(N, bsz, k).long().to(ref_out_logits.device)
 
-        if ref_dist is not None:
-            assert not self.args.l1_sample
+        use_temporal = num_markables > 1
 
-            use_temporal = num_markables > 1
+        ## get scores and candidates for batch items where use_temporal == False
+        if ref_out_full is None:
+            ref_out_full = self.marginal_logits_to_full_logits(ref_out_logits).contiguous()
 
+        if ref_dist is None and N > 1:
+            ref_dist = StructuredTemporalAttentionLayer.make_distribution(
+                ref_out_full, num_markables, transition_potentials=None
+            )
+
+        assert not self.args.l1_sample
+
+        if N > 1:
             # k x bsz x N-1 x C x C
             candidate_edges = ref_dist.topk(k)
             # (k*bsz) x N
@@ -295,17 +307,11 @@ class PragmaticReferencePredictor(ReferencePredictor):
             candidate_l0_scores_multi = ref_dist.log_prob(candidate_edges)
             # bsz x k
             candidate_l0_scores_multi = candidate_l0_scores_multi.transpose(0,1)
-            # tile across mention dimension
+            # tile across the mention dimension N, which will allow us to argmax independently over the k dimension
+            # to recover the joint argmax
             # N x bsz x k
             candidate_l0_scores_multi = candidate_l0_scores_multi.unsqueeze(0).repeat_interleave(N, dim=0)
             candidate_l0_scores[:,use_temporal] = candidate_l0_scores_multi[:,use_temporal]
-
-        else:
-            use_temporal = torch.zeros_like(num_markables).bool()
-
-        ## get scores and candidates for batch items where use_temporal == False
-        if ref_out_full is None:
-            ref_out_full = self.logits_to_full(ref_out_logits).contiguous()
 
         # num_mentions x bsz x
         assert ref_out_full.dim() == 2 + num_dots
@@ -395,6 +401,9 @@ class PragmaticReferencePredictor(ReferencePredictor):
             # TODO: fix this so that we don't have to pass at inference time
             if vars(self.args).get('l1_loss_weight', 0.0) != 0.0:
                 assert self.args.l1_renormalize
+
+            # N x bsz x k
+            # p(u | d_1, d_N)
             candidate_l1_scores = scoring_function(candidate_dots, normalize_over_candidates=self.args.l1_renormalize)
             assert candidate_l1_scores.size() == candidate_l0_scores.size()
 

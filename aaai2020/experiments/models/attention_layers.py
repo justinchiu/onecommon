@@ -214,7 +214,8 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         else:
             raise NotImplementedError(f"--structured_temporal_attention_transitions={args.structured_temporal_attention_transitions}")
 
-    def build_temporal_contraction_string(self, num_ent):
+    @staticmethod
+    def build_temporal_contraction_string(num_ent):
         assert num_ent * 2 < len(string.ascii_lowercase)
         var_names_1 = string.ascii_lowercase[:num_ent]
         var_names_2 = string.ascii_lowercase[num_ent:2*num_ent]
@@ -232,7 +233,6 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         return '{}->{}'.format(','.join(binary_factor_names), output_factor_name)
 
     def forward(self, lang_input, input, ctx_differences, num_markables):
-        from torch_struct import LinearChainNoScanCRF
         marginal_log_probs, joint_logits, _ = super().forward(lang_input, input, ctx_differences, num_markables, normalize_joint=False)
         N, bsz, *dot_dims = joint_logits.size()
         assert N == num_markables.max()
@@ -246,16 +246,29 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
 
         num_dots = len(dot_dims)
         exp_num_dots = 2**num_dots
+        # N-1 x bsz x exp_num_dots x exp_num_dots
+        transition_potentials = self.make_transitions(lang_input, bsz, num_dots, ctx_differences)
+        dist = StructuredTemporalAttentionLayer.make_distribution(joint_logits, transition_potentials)
+        return marginal_log_probs, joint_log_probs, dist
+
+    @staticmethod
+    def make_distribution(joint_logits, num_markables, transition_potentials=None):
+        from torch_struct import LinearChainNoScanCRF
+        N, bsz, *dot_dims = joint_logits.size()
+        num_dots = len(dot_dims)
+        exp_num_dots = 2**num_dots
+
         # batch x num_markables x exp_num_dots
         emission_potentials = joint_logits.view(N, bsz, exp_num_dots).transpose(0, 1)
 
-        # N-1 x bsz x exp_num_dots x exp_num_dots
-        transition_potentials = self.make_transitions(lang_input, bsz, num_dots, ctx_differences)
+        if transition_potentials is None:
+            transition_potentials = torch.zeros(N-1, bsz, exp_num_dots, exp_num_dots, device=joint_logits.device)
+
         # bsz x N-1 x exp_num_dots x exp_num_dots
         transition_potentials = transition_potentials.transpose(0,1)
-        edge_potentials = self.make_potentials(transition_potentials, emission_potentials)
+        edge_potentials = StructuredTemporalAttentionLayer.make_potentials(transition_potentials, emission_potentials)
         dist = LinearChainNoScanCRF(edge_potentials, lengths=num_markables)
-        return marginal_log_probs, joint_log_probs, dist
+        return dist
 
     def make_transitions(self, lang_input, batch_size, num_dots, ctx_differences):
         N = lang_input.size(0)
@@ -312,7 +325,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         # transpose the batch and dot-pair dimension so that we can unpack along dot-pairs
         binary_factors = binary_potentials.transpose(0,1)
 
-        contraction_string = self.build_temporal_contraction_string(self.num_ent)
+        contraction_string = StructuredTemporalAttentionLayer.build_temporal_contraction_string(self.num_ent)
         # bsz x 2 x 2 x ... [num_ent*2 2s]
         output_factor = pyro.ops.contract.einsum(
             contraction_string,
@@ -323,7 +336,8 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         transition_potentials = output_factor.contiguous().view(N-1, batch_size, 2**self.num_ent, 2**self.num_ent)
         return transition_potentials
 
-    def make_potentials(self, transition_potentials, emission_potentials):
+    @staticmethod
+    def make_potentials(transition_potentials, emission_potentials):
         # following https://github.com/harvardnlp/pytorch-struct/blob/b6816a4d436136c6711fe2617995b556d5d4d300/torch_struct/linearchain.py#L137
         # transition_mat: batch x N x (2**num_dots) x (2**num_dots)
         # emission_potentials: bsz x num_markables x 2 x 2 x ... [num_dots 2s]

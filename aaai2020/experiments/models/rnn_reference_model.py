@@ -735,8 +735,6 @@ class RnnReferenceModel(nn.Module):
             # candidate_dots_mentioned: max_num_mentions x bsz x num_candidates x num_dots
             candidate_dots_mentioned_per_ref_rearrange = einops.rearrange(candidate_dots_mentioned_per_ref, "nm b c d->b c nm d")
 
-            # TODO: fix ordering
-
             # TODO: do search over joint mention configurations using the scores
             if temporally_structured_candidates:
                 candidate_dots_mentioned = (candidate_dots_mentioned_per_ref.sum(0) > 0)
@@ -760,7 +758,8 @@ class RnnReferenceModel(nn.Module):
                 s0_probs = torch.stack(s0_probs_per_mention, dim=0)
 
             unnormed_l1_probs = s0_probs
-            if self.args.l1_prior == 'next_mention':
+            l1_prior = vars(self.args).get('l1_prior', 'uniform')
+            if l1_prior == 'next_mention':
                 assert self.args.next_mention_prediction
                 if self.args.max_mentions_in_generation_training != 1:
                     raise NotImplementedError("need to implement a hierarchical next-mention model for the prior")
@@ -769,7 +768,7 @@ class RnnReferenceModel(nn.Module):
                     # TODO: refactor this to move logits_to_full elsewhere
                     predictor = PragmaticReferencePredictor(self.args)
                     # 1 x bsz x 2 x ...
-                    next_mention_out_full = predictor.logits_to_full(next_mention_out_logits).contiguous()
+                    next_mention_out_full = predictor.marginal_logits_to_full_logits(next_mention_out_logits).contiguous()
                 # \log p(d). squeeze to remove the *num mention* dimension
 
                 # TODO: deal with a hierarchical next_mention model which predicts distributions over multiple mentions
@@ -784,11 +783,12 @@ class RnnReferenceModel(nn.Module):
                 candidate_dots_mentioned_indices = bit_to_int_array(candidate_dots_mentioned)
 
                 # select values for the candidates
+                # bsz x num_candidates
                 candidate_prior_probs = prior_probs.gather(-1, candidate_dots_mentioned_indices)
 
                 # \log p(u | d) + \log p(d)
                 unnormed_l1_probs += candidate_prior_probs
-            elif self.args.l1_prior == 'uniform':
+            elif l1_prior == 'uniform':
                 pass
             else:
                 raise ValueError(f"invalid --l1_prior={self.args.l1_prior}")
