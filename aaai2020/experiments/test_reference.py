@@ -453,63 +453,64 @@ def main():
                     ref_tgt = ref_tgt.transpose(0,1).contiguous()
 
                     # compute more details of reference resolution
-                    for j in range(bsz): # batch idx
-                        chat_id = chat_ids[j]
-                        markables = markables_by_sentence_by_batch[j][sentence_ix]
-                        this_num_markables = sentence_num_markables[j].item()
-                        assert len(markables) == this_num_markables
+                    if ref_predictions is not None:
+                        for j in range(bsz): # batch idx
+                            chat_id = chat_ids[j]
+                            markables = markables_by_sentence_by_batch[j][sentence_ix]
+                            this_num_markables = sentence_num_markables[j].item()
+                            assert len(markables) == this_num_markables
 
-                        # add chat level details if not exists
-                        # TODO: fix this
-                        if chat_id not in reference_correct:
-                            reference_correct[chat_id] = _ref_stats['correct']
-                        if chat_id not in reference_total:
-                            reference_total[chat_id] = _ref_stats['num_dots']
-                        if chat_id not in model_referent_annotation:
-                            model_referent_annotation[chat_id] = {}
+                            # add chat level details if not exists
+                            # TODO: fix this
+                            if chat_id not in reference_correct:
+                                reference_correct[chat_id] = _ref_stats['correct']
+                            if chat_id not in reference_total:
+                                reference_total[chat_id] = _ref_stats['num_dots']
+                            if chat_id not in model_referent_annotation:
+                                model_referent_annotation[chat_id] = {}
 
-                        for i in range(this_num_markables): # markable idx
-                            # fixed a typo (?) here that was autobroadcasting, but it shouldn't affect correctness
-                            correct_result = (ref_predictions.long() == ref_tgt.long())[i,j].sum().item()
-                            exact_match_result = torch.equal(ref_predictions.long()[i][j], ref_tgt.long()[i][j])
+                            for i in range(this_num_markables): # markable idx
+                                # fixed a typo (?) here that was autobroadcasting, but it shouldn't affect correctness
+                                correct_result = (ref_predictions.long() == ref_tgt.long())[i,j].sum().item()
+                                exact_match_result = torch.equal(ref_predictions.long()[i][j], ref_tgt.long()[i][j])
 
-                            """
-                                Add information to variables
-                            """
-                            total_num_markables += 1
-                            num_markables_counter[ref_tgt.long()[i][j].sum().item()] += 1
-                            num_markables_correct[ref_tgt.long()[i][j].sum().item()] += correct_result
+                                """
+                                    Add information to variables
+                                """
+                                total_num_markables += 1
+                                num_markables_counter[ref_tgt.long()[i][j].sum().item()] += 1
+                                num_markables_correct[ref_tgt.long()[i][j].sum().item()] += correct_result
 
-                            # compute exact match
-                            if exact_match_result:
-                                exact_match += 1
-                                exact_match_counter[ref_tgt.long()[i][j].sum().item()] += 1
-                                text_correct[markables[i]["text"].lower()] += 1
-
-                            location_correct[i] += correct_result
-                            if exact_match_result:
-                                location_exact_match[i] += 1
-                            location_counter[i] += 1
-
-                            text_counter[markables[i]["text"].lower()] += 1
-
-                            # test anaphora
-                            if markables[i]["text"].lower() in anaphora_list:
-                                total_anaphora += 1
+                                # compute exact match
                                 if exact_match_result:
-                                    correct_anaphora += 1
+                                    exact_match += 1
+                                    exact_match_counter[ref_tgt.long()[i][j].sum().item()] += 1
+                                    text_correct[markables[i]["text"].lower()] += 1
 
-                            # keep track of model predictions for later visualization
-                            chat = [chat for chat in dialog_corpus if chat['uuid'] == chat_id]
-                            chat = chat[0]
-                            if markables[i]['markable_id'] not in model_referent_annotation[chat_id]:
-                                model_referent_annotation[chat_id][markables[i]['markable_id']] = {}
-                                model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'] = []
-                                model_referent_annotation[chat_id][markables[i]['markable_id']]['ambiguous'] = False
-                                model_referent_annotation[chat_id][markables[i]['markable_id']]['unidentifiable'] = False
-                                for ent, is_referent in zip(chat['scenario']['kbs'][agents[j]], ref_predictions.long()[i][j].tolist()):
-                                    if is_referent:
-                                        model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'].append("agent_{}_{}".format(agents[j], ent['id']))
+                                location_correct[i] += correct_result
+                                if exact_match_result:
+                                    location_exact_match[i] += 1
+                                location_counter[i] += 1
+
+                                text_counter[markables[i]["text"].lower()] += 1
+
+                                # test anaphora
+                                if markables[i]["text"].lower() in anaphora_list:
+                                    total_anaphora += 1
+                                    if exact_match_result:
+                                        correct_anaphora += 1
+
+                                # keep track of model predictions for later visualization
+                                chat = [chat for chat in dialog_corpus if chat['uuid'] == chat_id]
+                                chat = chat[0]
+                                if markables[i]['markable_id'] not in model_referent_annotation[chat_id]:
+                                    model_referent_annotation[chat_id][markables[i]['markable_id']] = {}
+                                    model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'] = []
+                                    model_referent_annotation[chat_id][markables[i]['markable_id']]['ambiguous'] = False
+                                    model_referent_annotation[chat_id][markables[i]['markable_id']]['unidentifiable'] = False
+                                    for ent, is_referent in zip(chat['scenario']['kbs'][agents[j]], ref_predictions.long()[i][j].tolist()):
+                                        if is_referent:
+                                            model_referent_annotation[chat_id][markables[i]['markable_id']]['referents'].append("agent_{}_{}".format(agents[j], ent['id']))
 
                     # moved these here to fix a bug; previously some batches were getting double-counted if the batch afterward had no referents
                     test_reference_correct += _ref_stats['correct']
@@ -587,10 +588,17 @@ def main():
         add_metrics(flat_stats, metrics, 'ref')
         if model.args.partner_reference_prediction:
             add_metrics(flat_stats, metrics, 'partner_ref')
+        if args.l1_speaker_weights:
+            for weight in args.l1_speaker_weights:
+                add_metrics(flat_stats, metrics, f'ref_sw-{weight:.2f}')
+
         for num_markables in [1]:
             add_metrics(flat_stats, metrics, f'ref_nm-{num_markables}')
             if model.args.partner_reference_prediction:
                 add_metrics(flat_stats, metrics, f'partner_ref_nm-{num_markables}')
+            if args.l1_speaker_weights:
+                for weight in args.l1_speaker_weights:
+                    add_metrics(flat_stats, metrics, f'ref_sw-{weight:.2f}_nm-{num_markables}')
         pprint.pprint(metrics)
 
         # Main results:

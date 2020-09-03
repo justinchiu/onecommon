@@ -213,6 +213,7 @@ class PragmaticReferencePredictor(ReferencePredictor):
         parser.add_argument('--l1_sample', action='store_true', help='l1 listener should sample (otherwise top-k)')
         parser.add_argument('--l1_candidates', type=int, default=10, help='number of dot configurations for l1 to consider')
         parser.add_argument('--l1_speaker_weight', type=float, default=1.0, help='(1 - lambda) * l0_log_prob + (lambda) * s0_log_prob')
+        parser.add_argument('--l1_speaker_weights', type=float, nargs='*', help='compute stats for multiple weights')
         parser.add_argument('--l1_oracle', action='store_true')
         parser.add_argument('--l1_exhaustive_single', action='store_true', help='search over all possible candidates for a single mention (should only compare nm-1 scores)')
         parser.add_argument('--l1_renormalize', action='store_true', help='normalize l1 to be over all candidates')
@@ -318,6 +319,22 @@ class PragmaticReferencePredictor(ReferencePredictor):
 
         k = candidate_dots.size(-1)
 
+        stats_by_weight = {}
+
+        def get_stats(chosen):
+            chosen_indices = candidate_indices.gather(-1, chosen.unsqueeze(-1)).squeeze(-1)
+
+            # convert indices to bits
+            ref_pred = int_to_bit_array(chosen_indices, num_bits=num_dots)
+
+            if self.args.l1_candidates == 1 and self.args.l1_speaker_weight == 0.0:
+                ref_pred_l0 = super().forward(ref_inpt, ref_tgt, ref_out, num_markables)[1]
+                assert (ref_pred == ref_pred_l0).all()
+
+            stats = self.compute_stats(ref_mask, ref_tgt_p, ref_pred=ref_pred,
+                                       by_num_markables=by_num_markables, num_markables=num_markables)
+            return ref_pred, stats
+
         if self.args.l1_oracle:
             # want to be able to take candidates over entire sequence of mentions
             assert self.args.structured_temporal_attention
@@ -373,23 +390,24 @@ class PragmaticReferencePredictor(ReferencePredictor):
             candidate_l1_scores = candidate_l1_scores.unsqueeze(0).expand_as(candidate_l0_scores)
             # assert candidate_l1_scores.size() == candidate_l0_scores.size()
 
-            lmbd = self.args.l1_speaker_weight
+            weight = self.args.l1_speaker_weight
             # N x bsz x k
-            joint_scores = (1 - lmbd) * candidate_l0_scores + lmbd * candidate_l1_scores
+            joint_scores = (1 - weight) * candidate_l0_scores + weight * candidate_l1_scores
 
             # N x bsz with values [0..k-1]
             chosen = joint_scores.argmax(-1)
 
-        chosen_indices = candidate_indices.gather(-1, chosen.unsqueeze(-1)).squeeze(-1)
+            if self.args.l1_speaker_weights:
+                for weight in self.args.l1_speaker_weights:
+                    joint_scores = (1 - weight) * candidate_l0_scores + weight * candidate_l1_scores
+                    _, stats_weight = get_stats(joint_scores.argmax(-1))
+                    stats_by_weight[weight] = stats_weight
 
-        # convert indices to bits
-        ref_pred = int_to_bit_array(chosen_indices, num_bits=num_dots)
+        ref_pred, stats = get_stats(chosen)
 
-        if self.args.l1_candidates == 1 and self.args.l1_speaker_weight == 0.0:
-            ref_pred_l0 = super().forward(ref_inpt, ref_tgt, ref_out, num_markables)[1]
-            assert (ref_pred == ref_pred_l0).all()
+        for weight, stats_weight in stats_by_weight.items():
+            for k, v in stats_weight.items():
+                stats[f'sw-{weight:.2f}_{k}'] = v
 
-        stats = self.compute_stats(ref_mask, ref_tgt_p, ref_pred=ref_pred,
-                                   by_num_markables=by_num_markables, num_markables=num_markables)
         ref_loss = 0.0
         return ref_loss, ref_pred, stats
