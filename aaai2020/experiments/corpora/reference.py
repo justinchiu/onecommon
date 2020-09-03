@@ -23,12 +23,14 @@ ReferenceInstance = namedtuple(
     "ctx inpt tgt ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids agents chat_ids sel_idxs lens partner_ref_inpt partner_ref_tgt_our_view partner_num_markables".split()
 )
 
-def process_referents(batch_of_referents):
+def process_referents(batch_of_referents, max_mentions=None):
     ref_inpt = []
     ref_tgt = []
     num_markables = []
     for j in range(len(batch_of_referents)):
         this_num_markables = len(batch_of_referents[j]) // 10
+        if max_mentions is not None:
+            this_num_markables = min(this_num_markables, max_mentions)
         num_markables.append(this_num_markables)
         if this_num_markables == 0:
             ref_inpt.append(torch.zeros(0,3).long())
@@ -62,8 +64,9 @@ class ReferenceCorpus(object):
 
     def __init__(self, domain, path, freq_cutoff=2, train='train_reference.txt',
                  valid='valid_reference.txt', test='test_reference.txt', verbose=False, word_dict=None,
-                 max_instances_per_split=None):
+                 max_instances_per_split=None, max_mentions_per_utterance=None):
         self.verbose = verbose
+        self.max_mentions_per_utterance = max_mentions_per_utterance
         if word_dict is None:
             self.word_dict = Dictionary.from_file(
                 os.path.join(path, train), freq_cutoff=freq_cutoff)
@@ -129,6 +132,8 @@ class ReferenceCorpus(object):
 
     def _split_into_batches(self, dataset, bsz, shuffle=True, device=None, name="unknown"):
         """Splits given dataset into batches."""
+        if self.max_mentions_per_utterance is not None:
+            raise NotImplementedError("--max_mentions_per_utterance for ReferenceCorpus")
         if shuffle:
             random.shuffle(dataset)
 

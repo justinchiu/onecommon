@@ -201,7 +201,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 tgts.append(tgt)
 
                 ref_inpt, ref_tgt, num_markables = process_referents(
-                    [this_refs[s] for this_refs in refs]
+                    [this_refs[s] for this_refs in refs],
+                    max_mentions=self.max_mentions_per_utterance
                 )
                 ref_inpts.append(ref_inpt)
                 ref_tgts.append(ref_tgt)
@@ -214,10 +215,12 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                             assert torch.all(sentence == sentence[0])
 
                 partner_ref_inpt, partner_ref_tgt_our_view, partner_num_markables = process_referents(
-                    [this_refs[s] for this_refs in partner_refs_our_view]
+                    [this_refs[s] for this_refs in partner_refs_our_view],
+                    max_mentions=self.max_mentions_per_utterance,
                 )
                 partner_ref_inpt_, partner_ref_tgt, _ = process_referents(
-                    [this_refs[s] for this_refs in partner_refs]
+                    [this_refs[s] for this_refs in partner_refs],
+                    max_mentions=self.max_mentions_per_utterance,
                 )
                 assert (partner_ref_inpt is None and partner_ref_inpt_ is None) or torch.allclose(partner_ref_inpt, partner_ref_inpt_)
 

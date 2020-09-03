@@ -285,7 +285,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         exp_num_dots = 2**num_dots
         # N-1 x bsz x exp_num_dots x exp_num_dots
         transition_potentials = self.make_transitions(lang_input, bsz, num_dots, ctx_differences)
-        dist = StructuredTemporalAttentionLayer.make_distribution(joint_logits, transition_potentials)
+        dist = StructuredTemporalAttentionLayer.make_distribution(joint_logits, num_markables, transition_potentials)
         return marginal_log_probs, joint_log_probs, dist
 
     @staticmethod
