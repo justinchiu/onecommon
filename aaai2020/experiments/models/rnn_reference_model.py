@@ -1160,6 +1160,7 @@ class RnnReferenceModel(nn.Module):
 
         ctx_attn_probs = []
         top_words = []
+        top_indices = []
         for word_ix in range(max_words):
             # embed
             inpt_emb = self.embed_dialogue(inpt)
@@ -1200,6 +1201,8 @@ class RnnReferenceModel(nn.Module):
                 out_emb = self.hid2output(torch.cat([writer_lang_h.squeeze(0), ctx_h_lang], -1))
             out = F.linear(out_emb, self.word_embed.weight)
 
+            logprob_no_temp = F.log_softmax(out, dim=-1)
+
             scores = out.div(temperature)
             scores = scores.sub(scores.max().item())
 
@@ -1209,7 +1212,9 @@ class RnnReferenceModel(nn.Module):
             prob = F.softmax(scores, dim=-1)
             logprob = F.log_softmax(scores, dim=-1)
 
-            top_words.append(logprob.topk(5, dim=-1))
+            this_top_indices = logprob_no_temp.topk(5, dim=-1)
+            top_indices.append(this_top_indices)
+            top_words.append(list(zip(self.word_dict.i2w(this_top_indices.indices.flatten().cpu()), this_top_indices.values.flatten().cpu())))
 
             if force_words is not None:
                 inpt = []
@@ -1249,6 +1254,7 @@ class RnnReferenceModel(nn.Module):
             'feed_ctx_attn_prob': feed_ctx_attn_prob,
             'word_ctx_attn_probs': ctx_attn_probs,
             'top_words': top_words,
+            'top_indices': top_indices,
         }
         if ctx_attn_probs:
             extra['word_ctx_attn_prob_mean'] = torch.mean(torch.stack(ctx_attn_probs, 0), 0)
@@ -1387,7 +1393,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     # max_num_mentions x bsz x num_candidates
                     candidate_indices = noised_logits.topk(num_candidates, dim=-1).indices
                 elif self.args.l1_normalizer_sampling == 'next_mention':
-                    pass
+                    raise NotImplementedError("need a hierarchical next mention model")
                 else:
                     raise ValueError(f"invalid --l1_normalizer_sampling={self.args.l1_normalizer_sampling}")
 

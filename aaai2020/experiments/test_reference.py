@@ -193,6 +193,8 @@ def main():
             max_instances_per_split=args.max_instances_per_split
         )
 
+        assert model.args.unk_threshold == unk_threshold
+
         with open(os.path.join(args.data, args.transcript_file), "r") as f:
             dialog_corpus = json.load(f)
         with open(os.path.join(args.data, args.markable_file), "r") as f:

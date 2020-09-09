@@ -177,6 +177,7 @@ class BeliefConstructor(_BeliefConstructor):
                                     for m in mentions]
                 else:
                     assert belief_to_use in ['partner_mentioned_predicted', 'partner_primary_mentioned_predicted']
+                    from models.reference_predictor import ReferencePredictor
                     reference_predictor = ReferencePredictor(self.args)
                     preds = [
                         reference_predictor.forward(partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables)[1]
