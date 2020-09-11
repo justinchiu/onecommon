@@ -18,6 +18,7 @@ BELIEF_TYPES = [
 
     # partner mentions
     'this_partner_mentioned', 'this_partner_mentioned_predicted', 'this_partner_mentioned_noised',
+    'this_partner_primary_mentioned', 'this_partner_primary_mentioned_predicted',
     'last_partner_mentioned', 'last_partner_mentioned_predicted',
     'last_partner_primary_mentioned', 'last_partner_primary_mentioned_predicted',
     't-2_partner_mentioned',
