@@ -493,8 +493,6 @@ class RnnReferenceModel(nn.Module):
         #inpt: batch_size x num_refs x 3
         assert inpt.size(-1) == 3
         bsz = inpt.size(0)
-        inpt = torch.transpose(inpt, 0, 2).contiguous().view(-1, bsz)
-        inpt = inpt.view(-1, bsz).unsqueeze(2)
 
         # (3 * num_refs) x batch_size
         inpt = torch.transpose(inpt, 0, 2).contiguous().view(-1, bsz)
