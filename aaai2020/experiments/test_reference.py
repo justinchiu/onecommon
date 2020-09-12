@@ -330,6 +330,7 @@ def main():
                     num_markables, partner_num_markables,
                     lens, dots_mentioned, dots_mentioned_per_ref, belief_constructor,
                     partner_ref_inpts=partner_ref_inpts,
+                    ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
@@ -343,6 +344,7 @@ def main():
                     lens[0], dots_mentioned, belief_constructor,
                     # partner_ref_inpt is used in training if partner reference prediction is supervised
                     partner_ref_inpt=partner_ref_inpts[0],
+                    ref_tgts=ref_tgts[0], partner_ref_tgts=partner_ref_tgts_our_view[0],
                 )
                 outs, ref_outs = [out], [ref_out]
             else:

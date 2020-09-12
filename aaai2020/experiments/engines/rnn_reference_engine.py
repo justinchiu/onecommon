@@ -561,7 +561,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             partner_ref_inpts=partner_ref_inpts,
             compute_l1_probs=compute_l1_loss,
             tgts=tgts,
-            ref_tgts=ref_tgts,
+            ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
         )
 
         sel_tgt = Variable(sel_tgt)

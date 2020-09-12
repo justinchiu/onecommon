@@ -124,6 +124,7 @@ class RnnReferenceModel(nn.Module):
         # dot recurrence beliefs
         parser.add_argument('--dot_recurrence', nargs='+', choices=['self', 'partner'])
         parser.add_argument('--dot_recurrence_dim', type=int, default=32)
+        parser.add_argument('--dot_recurrence_oracle', action='store_true')
         parser.add_argument('--dot_recurrence_in',
                             nargs='+',
                             choices=['selection', 'next_mention', 'generation', 'ref', 'partner_ref'],
@@ -837,7 +838,8 @@ class RnnReferenceModel(nn.Module):
 
         return score_refs
 
-    def _update_dot_h_single(self, dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, pooling_weights, transform):
+    def _update_dot_h_single(self, dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, ref_tgt,
+                             pooling_weights, transform):
         dot_h = dot_h.clone()
         indices_to_update = num_markables > 0
         # predictor.forward(ref_inpt[indices_to_update], ref)
@@ -856,8 +858,13 @@ class RnnReferenceModel(nn.Module):
         mention_mean /= mention_mean.sum(0, keepdim=True).clamp_min(1)
 
         # max_num_mentions x filtered_bsz x num_dots
-        attention_probs = ref_marginal_logits[:,indices_to_update].sigmoid()
-        attention_probs = attention_probs.detach()
+        if self.args.dot_recurrence_oracle:
+            # ref_tgt: bsz x max_num_mentions x num_dots
+            # attention_probs: max_num_mentions x filtered_bsz x num_dots
+            attention_probs = ref_tgt[indices_to_update].transpose(0,1).float()
+        else:
+            attention_probs = ref_marginal_logits[:,indices_to_update].sigmoid()
+            attention_probs = attention_probs.detach()
         h_attended = torch.einsum("nbh,nbd,nb->bdh", (h_pooled, attention_probs, mention_mean))
         h_attended = einops.rearrange(h_attended, "b d h -> (b d) h")
         inputs = transform(h_attended)
@@ -875,7 +882,11 @@ class RnnReferenceModel(nn.Module):
         else:
             return None
 
-    def _update_dot_h(self, dot_h, reader_lang_hs, ref_inpt, partner_ref_inpt, num_markables, partner_num_markables, ref_out, partner_ref_out):
+    def _update_dot_h(self, dot_h, reader_lang_hs,
+                      ref_inpt, partner_ref_inpt,
+                      num_markables, partner_num_markables,
+                      ref_out, partner_ref_out,
+                      ref_tgt, partner_ref_tgt):
         if not self.args.dot_recurrence:
             return dot_h
         assert not ((num_markables > 0) & (partner_num_markables > 0)).any()
@@ -883,15 +894,15 @@ class RnnReferenceModel(nn.Module):
         if 'self' in self.args.dot_recurrence:
             if ref_out is not None:
                 dot_h = self._update_dot_h_single(
-                    dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out,
-                    self.dot_rec_ref_pooling_weights, self.dot_rec_ref_transform
+                    dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, ref_tgt,
+                    self.dot_rec_ref_pooling_weights, self.dot_rec_ref_transform,
                 )
         if 'partner' in self.args.dot_recurrence:
             assert self.args.partner_reference_prediction
             # partner_ref_out can be none if there are no markables in the batch
             if partner_ref_out is not None:
                 dot_h = self._update_dot_h_single(
-                    dot_h, reader_lang_hs, partner_ref_inpt, partner_num_markables, partner_ref_out,
+                    dot_h, reader_lang_hs, partner_ref_inpt, partner_num_markables, partner_ref_out, partner_ref_tgt,
                     self.dot_rec_partner_ref_pooling_weights, self.dot_rec_partner_ref_transform
                 )
         return dot_h
@@ -910,7 +921,7 @@ class RnnReferenceModel(nn.Module):
                  dots_mentioned=None,
                  dots_mentioned_per_ref=None,
                  belief_constructor: Union[BeliefConstructor, None]=None, partner_ref_inpt=None,
-                 timestep=0, partner_ref_outs=None, ref_outs=None, dot_h=None):
+                 timestep=0, partner_ref_outs=None, ref_outs=None, dot_h=None, ref_tgt=None, partner_ref_tgt=None):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
         # dot_h: None or bsz x num_dots x dot_recurrence_dim
@@ -1002,7 +1013,8 @@ class RnnReferenceModel(nn.Module):
             dot_h = self._update_dot_h(dot_h, reader_lang_hs,
                                        ref_inpt, partner_ref_inpt,
                                        num_markables, partner_num_markables,
-                                       ref_out, partner_ref_out)
+                                       ref_out, partner_ref_out,
+                                       ref_tgt, partner_ref_tgt)
 
         if vars(self.args).get('next_mention_prediction', False):
             assert lens is not None
@@ -1039,7 +1051,8 @@ class RnnReferenceModel(nn.Module):
 
     def forward(self, ctx, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
-                belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt, compute_l1_scores=False):
+                belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt, compute_l1_scores=False,
+                ref_tgt=None, partner_ref_tgt=None):
         # belief_function:
         # timestep 0
         if belief_constructor is not None:
@@ -1067,7 +1080,7 @@ class RnnReferenceModel(nn.Module):
             dots_mentioned=dots_mentioned, dots_mentioned_per_ref=dots_mentioned_per_ref,
             belief_constructor=belief_constructor,
             partner_ref_inpt=partner_ref_inpt, timestep=0, partner_ref_outs=[],
-            dot_h=dot_h,
+            dot_h=dot_h, ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt,
         )
         return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, reader_and_writer_lang_h, ctx_h, ctx_differences
 
@@ -1434,7 +1447,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 dots_mentioned, dots_mentioned_per_ref,
                 belief_constructor: Union[BeliefConstructor, None],
                 partner_ref_inpts,
-                compute_l1_probs=False, tgts=None, ref_tgts=None,
+                compute_l1_probs=False, tgts=None, ref_tgts=None, partner_ref_tgts=None,
                 ):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
@@ -1490,6 +1503,9 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             ref_inpt = ref_inpts[i]
             is_last = i == len(inpts) - 1
             this_lens = lens[i]
+            assert ref_tgts is not None
+            ref_tgt = ref_tgts[i] if ref_tgts is not None else None
+            partner_ref_tgt = partner_ref_tgts[i] if partner_ref_tgts is not None else None
             outs, ref_out_and_partner_ref_out, sel_out, reader_and_writer_lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, dot_h = self._forward(
                 ctx, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx,
                 num_markables=num_markables[i],
@@ -1502,15 +1518,13 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 belief_constructor=belief_constructor,
                 timestep=i,
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
-                partner_ref_outs=partner_ref_outs,
-                ref_outs=ref_outs,
+                partner_ref_outs=partner_ref_outs, ref_outs=ref_outs,
                 dot_h=dot_h,
+                ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt,
             )
             if compute_l1_probs and ref_inpt is not None:
                 assert tgts is not None
                 tgt = tgts[i]
-                assert ref_tgts is not None
-                ref_tgt = ref_tgts[i]
                 # TODO: consider filtering down the inputs here using the mask (but needs filtering belief_constructor parameters too, or running without beliefs)
                 # mask = is_self[i]
                 # if self.args.max_mentions_in_generation_training is not None:
