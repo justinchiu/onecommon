@@ -230,7 +230,11 @@ class RnnReferenceModel(nn.Module):
             self.dot_rec_ref_pooling_weights = nn.Parameter(torch.zeros(3), requires_grad=True)
             self.dot_rec_partner_ref_pooling_weights = copy.deepcopy(self.dot_rec_ref_pooling_weights)
 
-            self.dot_rec_ref_transform = nn.Linear(args.nhid_lang, args.nhid_lang)
+            ref_transform_input_dim = args.nhid_lang
+            if args.bidirectional_reader:
+                ref_transform_input_dim *= 2
+
+            self.dot_rec_ref_transform = nn.Linear(ref_transform_input_dim, args.nhid_lang)
             self.dot_rec_partner_ref_transform = copy.deepcopy(self.dot_rec_ref_transform)
 
         # nhid_lang
@@ -895,12 +899,11 @@ class RnnReferenceModel(nn.Module):
         return dot_h
 
     def _maybe_add_dot_h_to_beliefs(self, dot_h, beliefs, name):
-        if self.args.dot_recurrence:
-            if name in self.args.dot_recurrence_in:
-                if beliefs is None:
-                    return dot_h
-                else:
-                    return torch.cat((beliefs, dot_h), -1)
+        if self.args.dot_recurrence and name in self.args.dot_recurrence_in:
+            if beliefs is None:
+                return dot_h
+            else:
+                return torch.cat((beliefs, dot_h), -1)
         else:
             return beliefs
 
