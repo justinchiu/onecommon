@@ -325,7 +325,7 @@ def main():
                     dots_mentioned = None
                     dots_mentioned_per_ref = None
                     belief_constructor = None
-                outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_hs, writer_lang_hs), ctx_h, ctx_differences, l1_scores = model.forward(
+                state, outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_hs, writer_lang_hs), l1_scores = model.forward(
                     ctx, inpts, ref_inpts, sel_idx,
                     num_markables, partner_num_markables,
                     lens, dots_mentioned, dots_mentioned_per_ref, belief_constructor,
@@ -338,7 +338,7 @@ def main():
                 dots_mentioned = None
                 selection_beliefs = None
                 generation_beliefs = None
-                out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, (reader_lang_h, writer_lang_h), ctx_h, ctx_differences = model.forward(
+                state, out, ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, (reader_lang_h, writer_lang_h) = model.forward(
                     ctx, inpts[0], ref_inpts[0], sel_idx,
                     num_markables[0], partner_num_markables[0],
                     lens[0], dots_mentioned, belief_constructor,
@@ -436,7 +436,7 @@ def main():
                 if ref_inpt is not None:
                     if args.reference_prediction == 'l1':
                         scoring_function = model.make_l1_scoring_function(
-                            ctx, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
+                            state, inpt, tgt, ref_inpt,
                             num_markables[sentence_ix], partner_num_markables[sentence_ix],
                             lens[sentence_ix], reader_and_writer_lang_h,
                             belief_constructor=belief_constructor, partner_ref_inpt=partner_ref_inpts[sentence_ix],

@@ -80,29 +80,29 @@ class BeliefConstructor(_BeliefConstructor):
 
     def make_beliefs(self, belief_type, timestep, partner_ref_outs, ref_outs):
         assert belief_type in [
-            'selection_beliefs', 'generation_beliefs', 'mention_beliefs', 'ref_beliefs', 'partner_ref_beliefs',
+            'selection', 'generation', 'mention', 'ref', 'partner_ref',
         ]
 
-        if belief_type in ['ref_beliefs', 'partner_ref_beliefs'] and self.epoch is not None:
-            if belief_type == 'ref_beliefs':
+        if belief_type in ['ref', 'partner_ref'] and self.epoch is not None:
+            if belief_type == 'ref':
                 if self.args.ref_beliefs_warmup_epochs is not None and self.epoch <= self.args.ref_beliefs_warmup_epochs:
                     beliefs_names = self.args.ref_beliefs_warmup
                 else:
                     beliefs_names = self.args.ref_beliefs
-            if belief_type == 'partner_ref_beliefs':
+            if belief_type == 'partner_ref':
                 if self.args.partner_ref_beliefs_warmup_epochs is not None and self.epoch <= self.args.partner_ref_beliefs_warmup_epochs:
                     beliefs_names = self.args.partner_ref_beliefs_warmup
                 else:
                     beliefs_names = self.args.partner_ref_beliefs
         else:
-            beliefs_names = vars(self.args)[belief_type]
+            beliefs_names = vars(self.args)[f'{belief_type}_beliefs']
 
         if timestep >= 0:
-            if belief_type in ['generation_beliefs', 'ref_beliefs', 'partner_ref_beliefs']:
+            if belief_type in ['generation', 'ref', 'partner_ref']:
                 assert len(partner_ref_outs) == timestep
                 assert len(ref_outs) == timestep
             else:
-                assert belief_type in ['mention_beliefs', 'selection_beliefs']
+                assert belief_type in ['mention', 'selection']
                 assert len(partner_ref_outs) == timestep + 1
                 assert len(ref_outs) == timestep + 1
 

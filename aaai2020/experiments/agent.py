@@ -17,7 +17,8 @@ from collections import Counter
 
 from nltk.parse import CoreNLPParser, CoreNLPDependencyParser
 
-from models import RnnReferenceModel
+from models import RnnReferenceModel, HierarchicalRnnReferenceModel
+from models.rnn_reference_model import State
 from models.ctx_encoder import pairwise_differences
 
 
@@ -43,7 +44,7 @@ class Agent(object):
 
 
 class RnnAgent(Agent):
-    def __init__(self, model, args, name='Alice', train=False):
+    def __init__(self, model: RnnReferenceModel, args, name='Alice', train=False):
         super(RnnAgent, self).__init__()
         self.model: RnnReferenceModel = model
         self.args = args
@@ -52,6 +53,7 @@ class RnnAgent(Agent):
         self.domain = domain.get_domain(args.domain)
         self.train = train
         if train:
+            raise NotImplementedError("fix optimization")
             self.model.train()
             self.opt = optim.RMSprop(
             self.model.parameters(),
@@ -69,47 +71,86 @@ class RnnAgent(Agent):
     def _decode(self, out, dictionary):
         return dictionary.i2w(out.data.squeeze(1).cpu())
 
-    def feed_context(self, context):
+    def feed_context(self, context, belief_constructor=None):
         self.reader_lang_hs = []
         self.logprobs = []
         self.sents = []
         self.words = []
         self.context = context
-        self.ctx = torch.Tensor([float(x) for x in context]).float().unsqueeze(0) # add batch size of 1
-        self.ctx_h = self.model.ctx_encoder(self.ctx)
-        self.ctx_differences = self.model.ctx_differences(self.ctx)
-        # self.lang_h = self.model.init_h.unsqueeze(0) # get batch size of 1
-        # TODO: writer_lang_h
-        self.reader_and_writer_lang_h = self.model._init_h(1) # get batch size of 1
+        ctx = torch.Tensor([float(x) for x in context]).float().unsqueeze(0) # add batch size of 1
+        self.state: State = self.model.initialize_state(ctx, belief_constructor)
+        self.timesteps = 0
+        # for use with the belief constructor
+        self.ref_outs = []
+        self.partner_ref_outs = []
+        self.next_mention_outs = [self.model.first_mention(self.state)]
         self.extras = []
 
     def feed_partner_context(self, partner_context):
         pass
 
-    def read(self, inpt, dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,start_token='THEM:'):
+    def predict_referents(self, ref_inpt, num_markables):
+        ref_beliefs = self.state.make_beliefs('ref', self.timesteps, self.partner_ref_outs, self.ref_outs)
+        ref_out = self.model.reference_resolution(
+            self.state, self.reader_lang_hs[-1], ref_inpt, num_markables,
+            for_self=True, ref_beliefs=ref_beliefs
+        )
+        self.ref_outs.append(ref_out)
+        return ref_out
+
+    def predict_partner_referents(self, partner_ref_inpt, partner_num_markables):
+        partner_ref_beliefs = self.state.make_beliefs('partner_ref', self.timesteps, self.partner_ref_outs, self.ref_outs)
+        partner_ref_out = self.model.reference_resolution(
+            self.state, self.reader_lang_hs[-1], partner_ref_inpt, partner_num_markables,
+            for_self=False, ref_beliefs=partner_ref_beliefs
+        )
+        self.partner_ref_outs.append(partner_ref_out)
+        return partner_ref_out
+
+    def update_dot_h(self, ref_inpt, partner_ref_inpt, num_markables, partner_num_markables):
+        self.state = self.model._update_dot_h(
+            self.state, self.reader_lang_hs[-1],
+            ref_inpt, partner_ref_inpt,
+            num_markables, partner_num_markables,
+            self.ref_outs[-1], self.partner_ref_outs[-1],
+            None, None
+        )
+
+    def read(self, inpt, dots_mentioned=None, dots_mentioned_per_ref=None,
+             num_markables=None,
+             start_token='THEM:',
+             partner_ref_inpt=None, partner_num_markables=None,
+             ):
         self.sents.append(Variable(self._encode([start_token] + inpt, self.model.word_dict)))
         inpt = self._encode(inpt, self.model.word_dict)
-        (reader_lang_hs, writer_lang_hs), reader_and_writer_lang_h = self.model.read(
-            self.ctx, self.ctx_differences, self.ctx_h, Variable(inpt), self.reader_and_writer_lang_h,
+        (reader_lang_hs, writer_lang_hs), self.state = self.model.read(
+            self.state, Variable(inpt),
             prefix_token=start_token,
             dots_mentioned=dots_mentioned,
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
         )
-        self.reader_and_writer_lang_h = reader_and_writer_lang_h
-        self.reader_lang_hs.append(reader_lang_hs.squeeze(1))
+        self.reader_lang_hs.append(reader_lang_hs)
+        if partner_ref_inpt is not None and partner_num_markables is not None:
+            self.predict_partner_referents(partner_ref_inpt, partner_num_markables)
+        else:
+            self.partner_ref_outs.append(None)
+        self.ref_outs.append(None)
         self.words.append(self.model.word2var(start_token).unsqueeze(0))
         self.words.append(Variable(inpt))
+        self.update_dot_h(ref_inpt=None, partner_ref_inpt=partner_ref_inpt,
+                          num_markables=None, partner_num_markables=partner_num_markables)
+        self.timesteps += 1
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
     def write(self, max_words=100, force_words=None, start_token='YOU:',
               dots_mentioned=None, dots_mentioned_per_ref=None,
-              num_markables=None,
-              temperature_override=None, generation_beliefs=None):
+              num_markables=None, ref_inpt=None,
+              temperature_override=None):
         temperature = temperature_override if temperature_override is not None else self.args.temperature
-        outs, logprobs, self.reader_and_writer_lang_h, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
-            self.ctx, self.ctx_differences, self.ctx_h, self.reader_and_writer_lang_h,
-            max_words, temperature,
+        generation_beliefs = self.state.make_beliefs('generation', self.timesteps, self.partner_ref_outs, self.ref_outs)
+        outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
+            self.state, max_words, temperature,
             start_token=start_token,
             force_words=force_words,
             dots_mentioned=dots_mentioned,
@@ -119,10 +160,18 @@ class RnnAgent(Agent):
         )
         self.logprobs.extend(logprobs)
         self.reader_lang_hs.append(reader_lang_hs)
+        if ref_inpt is not None and num_markables is not None:
+            self.predict_referents(ref_inpt, num_markables)
+        else:
+            self.ref_outs.append(None)
+        self.partner_ref_outs.append(None)
         #self.words.append(self.model.word2var('YOU:').unsqueeze(0))
         self.words.append(outs)
         self.sents.append(torch.cat([self.model.word2var(start_token).unsqueeze(1), outs], 0))
         self.extras.append(extra)
+        self.update_dot_h(ref_inpt=ref_inpt, partner_ref_inpt=None,
+                          num_markables=num_markables, partner_num_markables=None)
+        self.timesteps += 1
 
         """if self.args.visualize_referents:
             #utterance = self._decode(outs, self.model.word_dict)[1:-1]
@@ -140,19 +189,23 @@ class RnnAgent(Agent):
         # outs = outs.narrow(0, 1, outs.size(0) - 1)
         return self._decode(outs, self.model.word_dict)
 
-    def predict_referents(self, ref_inpt, ref_beliefs):
-        # TODO: pass ref_beliefs
-        if len(ref_inpt) == 0:
-            ref_inpt = None
-        else:
-            ref_inpt = torch.Tensor(ref_inpt).long().unsqueeze(0)
-        ref_out = self.model.reference_resolution(
-            self.ctx_h, torch.cat(self.lang_hs, 0).unsqueeze(1), ref_inpt, ref_beliefs=ref_beliefs
+    def next_mention(self, lens):
+        mention_beliefs = self.state.make_beliefs(
+            'mention', self.timestep, self.partner_ref_outs, self.ref_outs,
         )
-        if ref_out is not None:
-            return ref_out.squeeze(1)
-        else:
-            return None
+        next_mention_out = self.model.next_mention_prediction(
+            self.state, self.writer_lang_hs, lens, mention_beliefs
+        )
+        self.next_mention_outs.append(next_mention_out)
+        return next_mention_out
+
+    def selection(self, sel_idx):
+        selection_beliefs = self.state.make_beliefs(
+            'selection', self.timestep, self.partner_ref_outs, self.ref_outs,
+        )
+        sel_out = self.selection(self.state, self.reader_lang_hs, sel_idx, beliefs=selection_beliefs)
+        self.sel_outs.append(sel_out)
+        return sel_out
 
     def _make_idxs(self, sents):
         lens, rev_idxs, hid_idxs = [], [], []

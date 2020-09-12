@@ -552,7 +552,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         compute_l1_loss = self.args.l1_loss_weight > 0
 
-        outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_h, writer_lang_h), ctx_h, ctx_differences, l1_log_probs = self.model.forward(
+        state, outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
             lens,
@@ -819,4 +819,3 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             next_mention_stats=next_mention_stats,
             l1_loss=l1_loss,
         )
-

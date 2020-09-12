@@ -1,5 +1,5 @@
 import copy
-from collections import defaultdict
+from collections import defaultdict, namedtuple
 from typing import Union
 
 import torch.nn.init
@@ -24,6 +24,31 @@ from torch.distributions import Gumbel
 
 BIG_NEG = -1e6
 
+_State = namedtuple('_State', [
+    'args', 'bsz', 'ctx', 'ctx_h', 'ctx_differences', 'reader_and_writer_lang_h', 'dot_h', 'belief_constructor'
+])
+
+class State(_State):
+    def _maybe_add_dot_h_to_beliefs(self, dot_h, beliefs, name):
+        if self.args.dot_recurrence and name in self.args.dot_recurrence_in:
+            if beliefs is None:
+                return dot_h
+            else:
+                return torch.cat((beliefs, dot_h), -1)
+        else:
+            return beliefs
+
+    def make_beliefs(self, name, timestep, partner_ref_outs, ref_outs):
+        if self.belief_constructor is not None:
+            beliefs = self.belief_constructor.make_beliefs(name, timestep, partner_ref_outs, ref_outs)
+        else:
+            beliefs = None
+        add_name = name
+        # TODO: fix naming mismatch
+        if add_name == 'mention':
+            add_name = 'next_mention'
+        beliefs = self._maybe_add_dot_h_to_beliefs(self.dot_h, beliefs, add_name)
+        return beliefs
 
 class RnnReferenceModel(nn.Module):
     corpus_ty = corpora.reference.ReferenceCorpus
@@ -231,9 +256,7 @@ class RnnReferenceModel(nn.Module):
             self.dot_rec_ref_pooling_weights = nn.Parameter(torch.zeros(3), requires_grad=True)
             self.dot_rec_partner_ref_pooling_weights = copy.deepcopy(self.dot_rec_ref_pooling_weights)
 
-            ref_transform_input_dim = args.nhid_lang
-            if args.bidirectional_reader:
-                ref_transform_input_dim *= 2
+            ref_transform_input_dim = args.nhid_lang * self.num_reader_directions
 
             self.dot_rec_ref_transform = nn.Linear(ref_transform_input_dim, args.nhid_lang)
             self.dot_rec_partner_ref_transform = copy.deepcopy(self.dot_rec_ref_transform)
@@ -432,6 +455,15 @@ class RnnReferenceModel(nn.Module):
         #     init_cont(self.sel_attn, args.init_range)
         #     init_cont(self.ref_attn, args.init_range)
 
+    def initialize_state(self, ctx, belief_constructor) -> State:
+        ctx_h = self.ctx_encoder(ctx)
+        ctx_differences = self.ctx_differences(ctx)
+
+        bsz = ctx_h.size(0)
+        reader_and_writer_lang_h = self._init_h(bsz)
+        dot_h = self._init_dot_h(bsz)
+        return State(self.args, bsz, ctx, ctx_h, ctx_differences, reader_and_writer_lang_h, dot_h, belief_constructor)
+
     @property
     def num_reader_directions(self):
         if vars(self.args).get('bidirectional_reader', False):
@@ -508,10 +540,13 @@ class RnnReferenceModel(nn.Module):
         inpt = inpt.view(3, -1, inpt.size(1), inpt.size(2))
         return inpt
 
-    def reference_resolution(self, ctx_differences, ctx_h, outs_emb, ref_inpt, num_markables, for_self=True, ref_beliefs=None):
+    def reference_resolution(self, state: _State, outs_emb, ref_inpt, num_markables, for_self=True, ref_beliefs=None):
         # ref_inpt: bsz x num_refs x 3
         if ref_inpt is None:
             return None
+
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
 
         bsz = ctx_h.size(0)
         num_dots = ctx_h.size(1)
@@ -548,7 +583,9 @@ class RnnReferenceModel(nn.Module):
         )
         return outs
 
-    def next_mention_prediction(self, ctx_differences, ctx_h, outs_emb, lens, mention_beliefs):
+    def next_mention_prediction(self, state: _State, outs_emb, lens, mention_beliefs):
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
         bsz = ctx_h.size(0)
         num_dots = ctx_h.size(1)
 
@@ -581,8 +618,10 @@ class RnnReferenceModel(nn.Module):
                                      torch.cat([states_expand, ctx_h], -1), ctx_differences, num_markables
                                      )
 
-    def selection(self, ctx_differences, ctx_h, outs_emb, sel_idx, beliefs=None):
+    def selection(self, state: _State, outs_emb, sel_idx, beliefs=None):
         # outs_emb: length x batch_size x dim
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
 
         if self.args.selection_attention:
             # batch_size x entity_dim
@@ -701,12 +740,16 @@ class RnnReferenceModel(nn.Module):
         return attn_prob
 
     def make_l1_scoring_function(
-        self, ctx, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
+        self, state: _State, inpt, tgt, ref_inpt,
         num_markables, partner_num_markables,
-        lens, reader_and_writer_lang_h, belief_constructor=None,
+        lens, belief_constructor=None,
         partner_ref_inpt=None, timestep=0, partner_ref_outs=None, ref_outs=None,
         next_mention_out=None,
     ):
+        ctx = state.ctx
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
+        reader_and_writer_lang_h = state.reader_and_writer_lang_h
         # sel_idx isn't needed b/c we'll pass compute_sel_idx = False
         crit_no_reduce = Criterion(self.word_dict, bad_toks=['<pad>'], reduction='none')
 
@@ -734,21 +777,22 @@ class RnnReferenceModel(nn.Module):
                 new_dims = tensor.size[:batch_dim] + (bsz, num_candidates) + tensor.size[batch_dim+1:]
                 return tensor.view(new_dims)
 
-            ctx_t = tile(ctx)
-            ctx_differences_t = tile(ctx_differences)
-            ctx_h_t = tile(ctx_h)
+            def tile_state(state: _State):
+                reader_lang_h, writer_lang_h = state.reader_and_writer_lang_h
+                reader_lang_h_t = tile(reader_lang_h, batch_dim=1)
+                writer_lang_h_t = tile(writer_lang_h, batch_dim=1)
+                reader_and_writer_lang_h_t = (reader_lang_h_t, writer_lang_h_t)
+                return state._replace(
+                    ctx=tile(state.ctx),
+                    ctx_differences=tile(state.ctx_differences),
+                    ctx_h=tile(state.ctx_h),
+                    reader_and_writer_lang_h=reader_and_writer_lang_h_t
+                )
+
             inpt_t = tile(inpt, batch_dim=1)
             tgt_t = tile(tgt.view(T, bsz), batch_dim=1).flatten()
             ref_inpt_t = tile(ref_inpt)
             lens_t = tile(lens)
-
-            if reader_and_writer_lang_h is not None:
-                reader_lang_h, writer_lang_h = reader_and_writer_lang_h
-                reader_lang_h_t = tile(reader_lang_h, batch_dim=1)
-                writer_lang_h_t = tile(writer_lang_h, batch_dim=1)
-                reader_and_writer_lang_h_t = (reader_lang_h_t, writer_lang_h_t)
-            else:
-                reader_and_writer_lang_h_t = None
 
             partner_ref_inpt_t = tile(partner_ref_inpt)
             num_markables_t = tile(num_markables)
@@ -776,15 +820,15 @@ class RnnReferenceModel(nn.Module):
 
                 raise NotImplementedError("dot h")
 
-                outs, *_ = self._forward(
-                    ctx_t, ctx_differences_t, ctx_h_t, inpt_t, ref_inpt_t, sel_idx=None,
+                state, outs, *_ = self._forward(
+                    state_t, inpt_t, lens_t,
+                    ref_inpt=ref_inpt_t, partner_ref_inpt=partner_ref_inpt_t,
+                    compute_sel_out=False, sel_idx=None,
                     num_markables=num_markables_t,
                     partner_num_markables=partner_num_markables_t,
-                    lens=lens_t, reader_and_writer_lang_h=reader_and_writer_lang_h_t,
-                    compute_sel_out=False, pack=True,
                     dots_mentioned=this_mentions_t,
                     dots_mentioned_per_ref=this_mentions_per_ref_t,
-                    belief_constructor=belief_constructor, timestep=timestep, partner_ref_inpt=partner_ref_inpt_t,
+                    belief_constructor=belief_constructor, timestep=timestep,
                     partner_ref_outs=partner_ref_outs_t[:timestep] if partner_ref_outs_t is not None else None,
                     ref_outs=ref_outs_t[:timestep] if ref_outs_t is not None else None,
                 )
@@ -858,7 +902,7 @@ class RnnReferenceModel(nn.Module):
         mention_mean /= mention_mean.sum(0, keepdim=True).clamp_min(1)
 
         # max_num_mentions x filtered_bsz x num_dots
-        if self.args.dot_recurrence_oracle:
+        if vars(self.args).get('dot_recurrence_oracle', False):
             # ref_tgt: bsz x max_num_mentions x num_dots
             # attention_probs: max_num_mentions x filtered_bsz x num_dots
             attention_probs = ref_tgt[indices_to_update].transpose(0,1).float()
@@ -875,21 +919,23 @@ class RnnReferenceModel(nn.Module):
         return dot_h
 
     def _init_dot_h(self, bsz):
-        if self.args.dot_recurrence:
+        if vars(self.args).get('dot_recurrence', False):
             dot_h = self.dot_rec_init.unsqueeze(0).repeat_interleave(bsz, dim=0)
             # bsz x num_dots x hidden
             return dot_h.unsqueeze(1).repeat_interleave(self.num_ent, dim=1)
         else:
             return None
 
-    def _update_dot_h(self, dot_h, reader_lang_hs,
+    def _update_dot_h(self, state: _State, reader_lang_hs,
                       ref_inpt, partner_ref_inpt,
                       num_markables, partner_num_markables,
                       ref_out, partner_ref_out,
                       ref_tgt, partner_ref_tgt):
         if not self.args.dot_recurrence:
-            return dot_h
-        assert not ((num_markables > 0) & (partner_num_markables > 0)).any()
+            return state
+        dot_h = state.dot_h
+        if ref_out is not None and partner_ref_out is not None:
+            assert not ((num_markables > 0) & (partner_num_markables > 0)).any()
         # ref_out can be none if there are no markables in the batch
         if 'self' in self.args.dot_recurrence:
             if ref_out is not None:
@@ -905,62 +951,23 @@ class RnnReferenceModel(nn.Module):
                     dot_h, reader_lang_hs, partner_ref_inpt, partner_num_markables, partner_ref_out, partner_ref_tgt,
                     self.dot_rec_partner_ref_pooling_weights, self.dot_rec_partner_ref_transform
                 )
-        return dot_h
+        return state._replace(dot_h=dot_h)
 
-    def _maybe_add_dot_h_to_beliefs(self, dot_h, beliefs, name):
-        if self.args.dot_recurrence and name in self.args.dot_recurrence_in:
-            if beliefs is None:
-                return dot_h
-            else:
-                return torch.cat((beliefs, dot_h), -1)
-        else:
-            return beliefs
-
-    def _forward(self, ctx, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables,
-                 lens=None, reader_and_writer_lang_h=None, compute_sel_out=False, pack=False,
-                 dots_mentioned=None,
-                 dots_mentioned_per_ref=None,
-                 belief_constructor: Union[BeliefConstructor, None]=None, partner_ref_inpt=None,
-                 timestep=0, partner_ref_outs=None, ref_outs=None, dot_h=None, ref_tgt=None, partner_ref_tgt=None):
-        # ctx_h: bsz x num_dots x nembed_ctx
-        # lang_h: num_layers*num_directions x bsz x nhid_lang
-        # dot_h: None or bsz x num_dots x dot_recurrence_dim
-        bsz = ctx_h.size(0)
-        seq_len = inpt.size(0)
-
-        # dots_mentioned_per_ref: bsz x max_num_mentions x num_dots
-
-        # print('inpt size: {}'.format(inpt.size()))
-
-        if belief_constructor is not None:
-            generation_beliefs = belief_constructor.make_beliefs('generation_beliefs', timestep, partner_ref_outs, ref_outs)
-        else:
-            generation_beliefs = None
-        generation_beliefs = self._maybe_add_dot_h_to_beliefs(dot_h, generation_beliefs, 'generation')
-
-        (reader_lang_hs, writer_lang_hs), reader_and_writer_lang_h, feed_ctx_attn_prob = self._read(
-            ctx, ctx_differences, ctx_h, inpt, reader_and_writer_lang_h=reader_and_writer_lang_h,
-            lens=lens, pack=pack,
-            dots_mentioned=dots_mentioned,
-            dots_mentioned_per_ref=dots_mentioned_per_ref,
-            num_markables=num_markables,
-            generation_beliefs=generation_beliefs,
-        )
-
+    def language_output(self, state: _State, writer_lang_hs, dots_mentioned, dots_mentioned_per_ref, generation_beliefs):
         # compute language output
         if vars(self.args).get('no_word_attention', False):
             outs = self.hid2output(writer_lang_hs)
             ctx_attn_prob = None
         else:
             ctx_attn_prob = self._language_conditioned_dot_attention(
-                ctx_differences, ctx_h, writer_lang_hs, attention_type='lang',
+                state.ctx_differences, state.ctx_h, writer_lang_hs, attention_type='lang',
                 dots_mentioned=dots_mentioned,
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
                 generation_beliefs=generation_beliefs
             )
-            ctx_h_to_expand = ctx_h
+            ctx_h_to_expand = state.ctx_h
             if vars(self.args).get('marks_in_word_prediction', False):
-                to_cat = [ctx_h]
+                to_cat = [state.ctx_h]
                 if vars(self.args).get('mark_dots_mentioned', False):
                     assert dots_mentioned is not None
                     to_cat.append(dots_mentioned.float().unsqueeze(-1))
@@ -970,7 +977,7 @@ class RnnReferenceModel(nn.Module):
                     ctx_h_to_expand = torch.cat(to_cat, dim=-1)
                 else:
                     ctx_h_to_expand = to_cat[0]
-            ctx_h_expand = ctx_h_to_expand.unsqueeze(0).expand(seq_len, -1, -1, -1)
+            ctx_h_expand = ctx_h_to_expand.unsqueeze(0).expand(writer_lang_hs.size(0), -1, -1, -1)
 
             ctx_h_lang = torch.einsum("tbnd,tbn->tbd", (ctx_h_expand,ctx_attn_prob))
             # ctx_h_lang = torch.sum(torch.mul(ctx_h_expand, lang_prob.unsqueeze(-1)), 2)
@@ -978,39 +985,62 @@ class RnnReferenceModel(nn.Module):
             outs = self.hid2output(torch.cat([writer_lang_hs, ctx_h_lang], 2))
         outs = F.linear(outs, self.word_embed.weight)
         outs = outs.view(-1, outs.size(2))
+        return outs, ctx_attn_prob
 
-        if belief_constructor is not None:
-            ref_beliefs = belief_constructor.make_beliefs(
-                'ref_beliefs', timestep, partner_ref_outs, ref_outs
-            )
-            partner_ref_beliefs = belief_constructor.make_beliefs(
-                'partner_ref_beliefs', timestep, partner_ref_outs, ref_outs
-            )
-        else:
-            ref_beliefs = None
-            partner_ref_beliefs = None
+    def _forward(self, state: State, inpt, lens,
+                 ref_inpt=None, partner_ref_inpt=None,
+                 num_markables=None, partner_num_markables=None,
+                 compute_sel_out=False, sel_idx=None,
+                 dots_mentioned=None, dots_mentioned_per_ref=None,
+                 timestep=0,
+                 # needed for generation beliefs
+                 ref_outs=None, partner_ref_outs=None,
+                 # needed for dot_recurrence_oracle
+                 ref_tgt=None, partner_ref_tgt=None
+                 ):
+        # ctx_h: bsz x num_dots x nembed_ctx
+        # lang_h: num_layers*num_directions x bsz x nhid_lang
+        # dot_h: None or bsz x num_dots x dot_recurrence_dim
+        ctx = state.ctx
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
+        bsz = ctx_h.size(0)
+        seq_len = inpt.size(0)
 
-        ref_beliefs = self._maybe_add_dot_h_to_beliefs(dot_h, ref_beliefs, 'ref')
-        partner_ref_beliefs = self._maybe_add_dot_h_to_beliefs(dot_h, partner_ref_beliefs, 'partner_ref')
+        # dots_mentioned_per_ref: bsz x max_num_mentions x num_dots
 
-        # compute referents output
-        # print('ref_inpt.size(): {}'.format(ref_inpt.size()))
-        # print('outs_emb.size(): {}'.format(outs_emb.size()))
+        # print('inpt size: {}'.format(inpt.size()))
+
+        generation_beliefs = state.make_beliefs('generation', timestep, partner_ref_outs, ref_outs)
+        (reader_lang_hs, writer_lang_hs), state, feed_ctx_attn_prob = self._read(
+            state, inpt, lens,
+            pack=True,
+            dots_mentioned=dots_mentioned,
+            dots_mentioned_per_ref=dots_mentioned_per_ref,
+            num_markables=num_markables,
+            generation_beliefs=generation_beliefs,
+        )
+
+        outs, ctx_attn_prob = self.language_output(state, writer_lang_hs, dots_mentioned, dots_mentioned_per_ref, generation_beliefs)
+
+        ref_beliefs = state.make_beliefs('ref', timestep, partner_ref_outs, ref_outs)
+        partner_ref_beliefs = state.make_beliefs('partner_ref', timestep, partner_ref_outs, ref_outs)
+
         ref_out = self.reference_resolution(
-            ctx_differences, ctx_h, reader_lang_hs, ref_inpt, for_self=True, ref_beliefs=ref_beliefs,
+            state, reader_lang_hs, ref_inpt, for_self=True, ref_beliefs=ref_beliefs,
             num_markables=num_markables,
         )
 
         if vars(self.args).get('partner_reference_prediction', False):
             partner_ref_out = self.reference_resolution(
-                ctx_differences, ctx_h, reader_lang_hs, partner_ref_inpt, for_self=False, ref_beliefs=partner_ref_beliefs,
+                state, reader_lang_hs, partner_ref_inpt, for_self=False, ref_beliefs=partner_ref_beliefs,
                 num_markables=partner_num_markables,
             )
         else:
             partner_ref_out = None
 
         if self.args.dot_recurrence:
-            dot_h = self._update_dot_h(dot_h, reader_lang_hs,
+            state = self._update_dot_h(state, reader_lang_hs,
                                        ref_inpt, partner_ref_inpt,
                                        num_markables, partner_num_markables,
                                        ref_out, partner_ref_out,
@@ -1018,17 +1048,12 @@ class RnnReferenceModel(nn.Module):
 
         if vars(self.args).get('next_mention_prediction', False):
             assert lens is not None
-            if belief_constructor is not None:
-                mention_beliefs = belief_constructor.make_beliefs(
-                    'mention_beliefs', timestep, partner_ref_outs + [partner_ref_out], ref_outs + [ref_out]
-                )
-            else:
-                mention_beliefs = None
-
-            mention_beliefs = self._maybe_add_dot_h_to_beliefs(dot_h, mention_beliefs, 'next_mention')
+            mention_beliefs = state.make_beliefs(
+                'mention', timestep, partner_ref_outs + [partner_ref_out], ref_outs + [ref_out]
+            )
             # TODO: consider using reader_lang_hs for this
             next_mention_out = self.next_mention_prediction(
-                ctx_differences, ctx_h, writer_lang_hs, lens, mention_beliefs
+                state, writer_lang_hs, lens, mention_beliefs
             )
             assert next_mention_out is not None
         else:
@@ -1037,22 +1062,20 @@ class RnnReferenceModel(nn.Module):
         if compute_sel_out:
             # compute selection
             # print('sel_idx size: {}'.format(sel_idx.size()))
-            if belief_constructor is not None:
-                selection_beliefs = belief_constructor.make_beliefs(
-                    'selection_beliefs', timestep, partner_ref_outs + [partner_ref_out], ref_outs + [ref_out]
-                )
-            else:
-                selection_beliefs = None
-            selection_beliefs = self._maybe_add_dot_h_to_beliefs(dot_h, selection_beliefs, 'selection')
-            sel_out = self.selection(ctx_differences, ctx_h, reader_lang_hs, sel_idx, beliefs=selection_beliefs)
+            selection_beliefs = state.make_beliefs(
+                'selection', timestep, partner_ref_outs + [partner_ref_out], ref_outs + [ref_out]
+            )
+            sel_out = self.selection(state, reader_lang_hs, sel_idx, beliefs=selection_beliefs)
         else:
             sel_out = None
-        return outs, (ref_out, partner_ref_out), sel_out, reader_and_writer_lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, dot_h
+
+        return state, outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
 
     def forward(self, ctx, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
                 belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt, compute_l1_scores=False,
                 ref_tgt=None, partner_ref_tgt=None):
+        raise NotImplementedError("make this use _State")
         # belief_function:
         # timestep 0
         if belief_constructor is not None:
@@ -1076,7 +1099,7 @@ class RnnReferenceModel(nn.Module):
         outs, (ref_out, partner_ref_out), sel_out, reader_and_writer_lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, dot_h = self._forward(
             ctx, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx,
             num_markables, partner_num_markables,
-            lens=lens, reader_and_writer_lang_h=reader_and_writer_lang_h, compute_sel_out=True, pack=False,
+            lens=lens, reader_and_writer_lang_h=reader_and_writer_lang_h, compute_sel_out=True,
             dots_mentioned=dots_mentioned, dots_mentioned_per_ref=dots_mentioned_per_ref,
             belief_constructor=belief_constructor,
             partner_ref_inpt=partner_ref_inpt, timestep=0, partner_ref_outs=[],
@@ -1221,20 +1244,20 @@ class RnnReferenceModel(nn.Module):
         return writer_lang_h
 
 
-    def _read(self, ctx, ctx_differences, ctx_h, inpt, reader_and_writer_lang_h, lens=None, pack=False,
-              dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None, generation_beliefs=None):
+    # -> (reader_lang_hs, writer_lang_hs), state, feed_ctx_attn_prob
+    def _read(self, state: _State, inpt, lens=None, pack=False, dots_mentioned=None, dots_mentioned_per_ref=None,
+              num_markables=None, generation_beliefs=None):
         # lang_h: num_layers * num_directions x batch x nhid_lang
+        ctx = state.ctx
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
         bsz = ctx_h.size(0)
         seq_len = inpt.size(0)
         num_dots = ctx_h.size(1)
 
         untie_grus = vars(self.args).get('untie_grus', False)
 
-        if reader_and_writer_lang_h is None:
-            # lang_h = self._zero(1, bsz, self.args.nhid_lang)
-            reader_lang_h, writer_lang_h = self._init_h(bsz)
-        else:
-            reader_lang_h, writer_lang_h = reader_and_writer_lang_h
+        reader_lang_h, writer_lang_h = state.reader_and_writer_lang_h
 
         writer_lang_h = self._add_hidden_context(
             ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
@@ -1267,37 +1290,45 @@ class RnnReferenceModel(nn.Module):
         else:
             writer_lang_hs, writer_last_h = self.reader_forward_hs(reader_lang_hs), self.reader_forward_last_h(reader_last_h)
 
-        return (reader_lang_hs, writer_lang_hs), (reader_last_h, writer_last_h), feed_ctx_attn_prob
+        state = state._replace(reader_and_writer_lang_h=(reader_last_h, writer_last_h))
+        return (reader_lang_hs, writer_lang_hs), state, feed_ctx_attn_prob
 
-    def read(self, ctx, ctx_differences, ctx_h, inpt, reader_and_writer_lang_h, prefix_token='THEM:',
+    # a wrapper for _read that makes sure 'THEM:' or 'YOU:' is at the beginning
+    # -> (reader_lang_hs, writer_lang_hs), state,
+    def read(self, state, inpt, prefix_token='THEM:',
              dots_mentioned=None, dots_mentioned_per_ref=None,
              num_markables=None,
              generation_beliefs=None):
         # Add a 'THEM:' token to the start of the message
         prefix = self.word2var(prefix_token).unsqueeze(0)
         inpt = torch.cat([prefix, inpt])
-        reader_and_writer_lang_hs, reader_and_writer_lang_h, feed_ctx_attn_prob = self._read(
-            ctx, ctx_differences, ctx_h, inpt, reader_and_writer_lang_h,
-            lens=None, pack=False,
+        reader_and_writer_lang_hs, state, feed_ctx_attn_prob = self._read(
+            state, inpt, lens=None, pack=False,
             dots_mentioned=dots_mentioned,
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
             generation_beliefs=generation_beliefs,
 
         )
-        return reader_and_writer_lang_hs, reader_and_writer_lang_h
+        return reader_and_writer_lang_hs, state
 
     def word2var(self, word):
         x = torch.Tensor(1).fill_(self.word_dict.get_idx(word)).long()
         return Variable(x)
 
-    def write(self, ctx, ctx_differences, ctx_h, reader_and_writer_lang_h, max_words, temperature,
+    def words2var(self, words):
+        return torch.Tensor([self.word_dict.get_idx(word) for word in words]).long()
+
+    def write(self, state, max_words, temperature,
               start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None,
               dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
               generation_beliefs=None):
         # ctx_h: batch x num_dots x nembed_ctx
         # lang_h: batch x hidden
-        reader_lang_h, writer_lang_h = reader_and_writer_lang_h
+        ctx = state.ctx
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
+        reader_lang_h, writer_lang_h = state.reader_and_writer_lang_h
         num_directions, bsz, _ = reader_lang_h.size()
         bsz_, num_dots, _ = ctx_h.size()
         assert bsz == bsz_
@@ -1411,8 +1442,8 @@ class RnnReferenceModel(nn.Module):
         # TODO: consider swapping in partner context
 
         # read the output utterance
-        (reader_lang_hs, writer_lang_hs), reader_and_writer_lang_h = self.read(
-            ctx, ctx_differences, ctx_h, outs, reader_and_writer_lang_h,
+        (reader_lang_hs, writer_lang_hs), state = self.read(
+            state, outs,
             dots_mentioned=dots_mentioned,
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
@@ -1431,7 +1462,7 @@ class RnnReferenceModel(nn.Module):
             extra['word_ctx_attn_prob_mean'] = torch.mean(torch.stack(ctx_attn_probs, 0), 0)
 
         # lang_hs: list of tensors [1 x bsz x hidden_dim, ...]
-        return outs, logprobs, reader_and_writer_lang_h, (reader_lang_hs, writer_lang_hs), extra
+        return outs, logprobs, state, (reader_lang_hs, writer_lang_hs), extra
 
 
 class HierarchicalRnnReferenceModel(RnnReferenceModel):
@@ -1443,6 +1474,15 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
+    def first_mention(self, state):
+        mention_beliefs = state.make_beliefs('mention', -1, [], [])
+        return self.next_mention_prediction(
+                state,
+                outs_emb=state.reader_and_writer_lang_h[0], # TODO: fix this to use the writer instead
+                lens=torch.full((state.bsz,), 1.0, device=state.ctx_h.device).long(),
+                mention_beliefs=mention_beliefs
+            )
+
     def forward(self, ctx, inpts, ref_inpts, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
                 belief_constructor: Union[BeliefConstructor, None],
@@ -1453,12 +1493,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # ref_inpts also a list, one per sentence
         # sel_idx is index into the last sentence in the dialogue
 
-        ctx_h = self.ctx_encoder(ctx)
-        ctx_differences = self.ctx_differences(ctx)
-
-        bsz = ctx_h.size(0)
-        reader_and_writer_lang_h = None
-        dot_h = self._init_dot_h(bsz)
+        state = self.initialize_state(ctx, belief_constructor)
 
         all_outs = []
         all_ref_outs = []
@@ -1483,17 +1518,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         ref_outs = []
 
         if vars(self.args).get('next_mention_prediction', False):
-            reader_init_h, _ = self._init_h(bsz)
-            if belief_constructor is None:
-                mention_beliefs = None
-            else:
-                mention_beliefs = belief_constructor.make_beliefs('mention_beliefs', -1, partner_ref_outs, ref_outs)
-            mention_beliefs = self._maybe_add_dot_h_to_beliefs(dot_h, mention_beliefs, 'next_mention')
-            all_next_mention_outs.append(
-                self.next_mention_prediction(
-                    ctx_differences, ctx_h, reader_init_h, torch.full((bsz,), 1.0, device=ctx_h.device).long(), mention_beliefs
-                )
-            )
+            next_mention_out = self._first_mention(state)
+            all_next_mention_outs.append(next_mention_out)
 
         l1_log_probs = []
         assert len(inpts) == len(ref_inpts)
@@ -1506,20 +1532,17 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             assert ref_tgts is not None
             ref_tgt = ref_tgts[i] if ref_tgts is not None else None
             partner_ref_tgt = partner_ref_tgts[i] if partner_ref_tgts is not None else None
-            outs, ref_out_and_partner_ref_out, sel_out, reader_and_writer_lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, dot_h = self._forward(
-                ctx, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx,
+            state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
+                state, inpt, this_lens,
+                ref_inpt=ref_inpt,
+                partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
                 num_markables=num_markables[i],
                 partner_num_markables=partner_num_markables[i],
-                lens=this_lens, reader_and_writer_lang_h=reader_and_writer_lang_h, compute_sel_out=is_last, pack=True,
+                compute_sel_out=is_last, sel_idx=sel_idx,
                 dots_mentioned=dots_mentioned[i] if dots_mentioned is not None else None,
                 dots_mentioned_per_ref=dots_mentioned_per_ref[i] if dots_mentioned_per_ref is not None else None,
-                # selection_beliefs=selection_beliefs if is_last else None,
-                # generation_beliefs=generation_beliefs[i] if generation_beliefs is not None else None,
-                belief_constructor=belief_constructor,
                 timestep=i,
-                partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
-                partner_ref_outs=partner_ref_outs, ref_outs=ref_outs,
-                dot_h=dot_h,
+                ref_outs=ref_outs, partner_ref_outs=partner_ref_outs,
                 ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt,
             )
             if compute_l1_probs and ref_inpt is not None:
@@ -1530,8 +1553,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 # if self.args.max_mentions_in_generation_training is not None:
                 #     mask = mask & (num_markables[i] <= self.args.max_mentions_in_generation_training)
                 scoring_function = self.make_l1_scoring_function(
-                    ctx, ctx_differences, ctx_h, inpt, tgt, ref_inpt,
-                    num_markables[i], partner_num_markables[i], this_lens, reader_and_writer_lang_h,
+                    state, inpt, tgt, ref_inpt,
+                    num_markables[i], partner_num_markables[i], this_lens,
                     belief_constructor=belief_constructor,
                     partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
                     timestep=i,
@@ -1561,7 +1584,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                         # max_num_mentions x bsz x_num_mentions x 2**7
                         joint_logits = joint_logits.view(joint_logits.size(0), joint_logits.size(1), -1)
                     elif self.args.l1_normalizer_sampling == 'uniform':
-                        joint_logits = torch.zeros(max_num_mentions, bsz, 2**self.num_ent)
+                        joint_logits = torch.zeros(max_num_mentions, state.bsz, 2**self.num_ent)
                     # max_num_mentions x bsz x 2**7
                     noised_logits = Gumbel(joint_logits, scale=1.0).sample()
                     # sample each mention independently
@@ -1599,7 +1622,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     mnm=max_num_mentions, d=self.num_ent,
                 )
 
-                assert candidates.size() == (max_num_mentions, bsz, num_candidates, self.num_ent)
+                assert candidates.size() == (max_num_mentions, state.bsz, num_candidates, self.num_ent)
 
                 # log p(d | u)
                 # bsz x num_candidates
@@ -1619,7 +1642,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             all_feed_ctx_attn_prob.append(feed_ctx_attn_prob)
             all_next_mention_outs.append(next_mention_out)
 
-            reader_lang_h, writer_lang_h = reader_and_writer_lang_h
+            reader_lang_h, writer_lang_h = state.reader_and_writer_lang_h
             all_reader_lang_h.append(reader_lang_h)
             all_writer_lang_h.append(writer_lang_h)
 
@@ -1629,4 +1652,4 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         assert sel_out is not None
 
-        return all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, (all_reader_lang_h, all_writer_lang_h), ctx_h, ctx_differences, l1_log_probs
+        return state, all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs
