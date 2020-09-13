@@ -354,6 +354,8 @@ class RnnReferenceEngine(EngineBase):
         add_metrics(metrics, aggregate_metrics, "ref")
         add_metrics(metrics, aggregate_metrics, "partner_ref")
         add_metrics(metrics, aggregate_metrics, "next_mention")
+        if self.args.next_mention_prediction_type == 'multi_reference':
+            add_metrics(metrics, aggregate_metrics, "next_mention_expanded")
         return aggregate_metrics
 
     def train_pass(self, trainset, trainset_stats, epoch):
@@ -401,8 +403,14 @@ class RnnReferenceEngine(EngineBase):
                     ['next_mention_loss', 'next_mention_stop_loss',
                      'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall',
                      'next_mention_f1', 'next_mention_exact_match'],
-                    ['l1_loss']
                 ]
+                if self.args.next_mention_prediction_type == 'multi_reference':
+                    quantities.append(
+                        ['next_mention_expanded_accuracy', 'next_mention_expanded_precision',
+                         'next_mention_expanded_recall', 'next_mention_expanded_f1',
+                         'next_mention_expanded_exact_match']
+                    )
+                quantities.append(['l1_loss'])
                 for line_metrics in quantities:
                     print('epoch {:03d} \t '.format(epoch) + ' \t '.join(
                         ('%s_%s {%s:.4f}' % (split_name, metric, metric)).format(**metrics)
@@ -513,8 +521,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         hid_idxs.append(torch.Tensor(1, bsz, 1).fill_(0).long())
         return inpts, ref_inpts, tgts, ref_tgts, lens, rev_idxs, hid_idxs, num_markables
 
-    def _ref_loss(self, *args):
-        return self.ref_loss.forward(*args)
+    def _ref_loss(self, *args, **kwargs):
+        return self.ref_loss.forward(*args, **kwargs)
 
     def _forward(self, batch, epoch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
@@ -813,7 +821,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 if pred_dots_mentioned is not None:
                     # hack; pass True for inpt because this method only uses it to ensure it's not null
                     _loss, _pred, _stats = self._ref_loss(
-                        True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions
+                        True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions,
+                        collapse=self.args.next_mention_prediction_type == 'multi_reference'
                     )
                     next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
                     # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))

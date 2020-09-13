@@ -26,7 +26,7 @@ class ReferencePredictor(object):
         }
 
     def compute_stats(self, ref_mask, ref_tgt, ref_tgt_ix=None, ref_pred=None, ref_pred_ix=None, sum=True,
-                      by_num_markables=False, num_markables=None):
+                      by_num_markables=False, num_markables=None, collapse=False):
         assert ref_pred is not None or ref_pred_ix is not None
 
         num_dots = ref_tgt.size(-1)
@@ -74,9 +74,23 @@ class ReferencePredictor(object):
                     ref_mask[:,mask], ref_tgt[:,mask], ref_tgt_ix[:,mask],
                     ref_pred[:,mask], ref_pred_ix[:,mask], sum=sum,
                     by_num_markables=False, num_markables=num_markables[mask],
+                    collapse=False,
                 )
                 for k, v in nm_stats.items():
                     stats[f'nm-{num_markable}_{k}'] = v
+
+        if collapse:
+            c_stats = self.compute_stats(
+                ref_mask.bool().any(dim=0, keepdim=True).type(ref_mask.dtype),
+                ref_tgt=ref_tgt.bool().any(dim=0, keepdim=True).type(ref_tgt.dtype),
+                ref_pred=ref_pred.bool().any(dim=0, keepdim=True).type(ref_pred.dtype),
+                by_num_markables=False,
+                num_markables=num_markables.clamp_max(1)
+            )
+            new_stats = {f'expanded_{k}': v for k, v in stats.items()}
+            for k, v in c_stats.items():
+                new_stats[f'{k}'] = v
+            stats = new_stats
 
         return stats
 
@@ -183,7 +197,7 @@ class ReferencePredictor(object):
         ref_loss += ref_loss_multi
         return ref_loss, ref_pred, ref_pred_ix
 
-    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, by_num_markables=False):
+    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, by_num_markables=False, collapse=False):
         if ref_inpt is None or ref_out is None:
             return None, None, self.empty_stats()
 
@@ -202,7 +216,7 @@ class ReferencePredictor(object):
             ref_loss, ref_pred, ref_pred_ix = self._forward_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables)
 
         stats = self.compute_stats(ref_mask, ref_tgt, ref_tgt_ix, ref_pred, ref_pred_ix,
-                                   by_num_markables=by_num_markables, num_markables=num_markables)
+                                   by_num_markables=by_num_markables, num_markables=num_markables, collapse=collapse)
 
         return ref_loss, ref_pred, stats
 
@@ -306,7 +320,7 @@ class PragmaticReferencePredictor(ReferencePredictor):
         candidate_dots = candidate_dots.view(N, bsz, k, num_dots)
         return candidate_indices, candidate_dots, candidate_l0_scores
 
-    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, scoring_function, by_num_markables=False):
+    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, scoring_function, by_num_markables=False, collapse=False):
         if ref_inpt is None or ref_out is None:
             return None, None, self.empty_stats()
 
@@ -332,7 +346,7 @@ class PragmaticReferencePredictor(ReferencePredictor):
                 assert (ref_pred == ref_pred_l0).all()
 
             stats = self.compute_stats(ref_mask, ref_tgt_p, ref_pred=ref_pred,
-                                       by_num_markables=by_num_markables, num_markables=num_markables)
+                                       by_num_markables=by_num_markables, num_markables=num_markables, collapse=collapse)
             return ref_pred, stats
 
         if self.args.l1_oracle:
@@ -347,7 +361,8 @@ class PragmaticReferencePredictor(ReferencePredictor):
                 # N x k x 7
                 b_candidates = candidate_dots[:, batch_index]
                 b_stats = self.compute_stats(b_ref_mask, b_ref_tgt_p, ref_pred=b_candidates, sum=False,
-                                             by_num_markables=by_num_markables, num_markables=num_markables)
+                                             by_num_markables=by_num_markables, num_markables=num_markables,
+                                             collapse=collapse)
 
                 # sum over num mentions and dots
                 # k
