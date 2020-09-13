@@ -645,7 +645,7 @@ class RnnReferenceModel(nn.Module):
             ctx_h = ctx_h.unsqueeze(0)
             states = lang_states.unsqueeze(0)
             num_markables = torch.full((bsz,), 1).long()
-            stop_loss = torch.Tensor(0.0, requires_grad=True, device=states.device)
+            stop_loss = torch.tensor(0.0, requires_grad=True, device=states.device)
         else:
             raise ValueError(f"--next_mention_prediction_type={self.args.next_mention_prediction}")
 
