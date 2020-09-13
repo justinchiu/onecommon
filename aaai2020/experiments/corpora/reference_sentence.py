@@ -117,6 +117,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             'self_n': 0, # for only those utterances spoken by this agent
             'nonpadn': 0, # for all utterances
             'self_nonpadn': 0, # for only those utterances spoken by this agent
+            'max_num_mentions': 0,
         }
 
         i = 0
@@ -204,6 +205,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                     [this_refs[s] for this_refs in refs],
                     max_mentions=self.max_mentions_per_utterance
                 )
+                if ref_tgt is not None:
+                    stats['max_num_mentions'] = max(stats['max_num_mentions'], ref_tgt.size(1))
                 ref_inpts.append(ref_inpt)
                 ref_tgts.append(ref_tgt)
                 all_num_markables.append(num_markables)

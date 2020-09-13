@@ -27,7 +27,7 @@ ForwardRet = namedtuple(
      # 'attn_ref_stats',
      'partner_ref_loss', 'partner_ref_stats',
      # 'partner_ref_correct', 'partner_ref_gold_positive', 'partner_ref_pred_positive', 'partner_ref_true_positive', 'partner_ref_num_dots', 'partner_ref_em_num', 'partner_ref_em_denom',
-     'next_mention_loss', 'next_mention_stats',
+     'next_mention_loss', 'next_mention_stop_loss', 'next_mention_stats',
      # 'next_mention_correct', 'next_mention_gold_positive', 'next_mention_pred_positive',
      # 'next_mention_true_positive', 'next_mention_num_dots', 'next_mention_em_num', 'next_mention_em_denom',
      'l1_loss',
@@ -46,6 +46,8 @@ def add_loss_args(parser):
                        help='selection loss weight')
     group.add_argument('--next_mention_weight', type=float, default=1.0,
                        help='next mention loss weight')
+    group.add_argument('--next_mention_stop_weight', type=float, default=1.0,
+                       help='next mention stop loss weight')
     group.add_argument('--next_mention_start_epoch', type=int,
                        help='only supervise next mention in this epoch onward (to allow pretraining)')
     group.add_argument('--selection_start_epoch', type=int,
@@ -252,6 +254,7 @@ class RnnReferenceEngine(EngineBase):
             partner_ref_stats=partner_ref_stats,
             # TODO
             next_mention_loss=None,
+            next_mention_stop_loss=None,
             next_mention_stats={},
         )
 
@@ -287,6 +290,9 @@ class RnnReferenceEngine(EngineBase):
         if self.args.next_mention_weight > 0 and forward_ret.next_mention_loss is not None:
             if not self.args.next_mention_start_epoch or (epoch >= self.args.next_mention_start_epoch):
                 loss += self.args.next_mention_weight * forward_ret.next_mention_loss
+        if self.args.next_mention_stop_weight > 0 and forward_ret.next_mention_stop_loss is not None:
+            if not self.args.next_mention_start_epoch or (epoch >= self.args.next_mention_start_epoch):
+                loss += self.args.next_mention_stop_weight * forward_ret.next_mention_stop_loss
 
         if self.args.l1_loss_weight > 0 and forward_ret.l1_loss is not None:
             loss += self.args.l1_loss_weight * forward_ret.l1_loss
@@ -337,6 +343,7 @@ class RnnReferenceEngine(EngineBase):
             'ref_loss': metrics['ref_loss'] / len(dataset),
             'partner_ref_loss': metrics['partner_ref_loss'] / len(dataset),
             'next_mention_loss': metrics['next_mention_loss'] / len(dataset),
+            'next_mention_stop_loss': metrics['next_mention_stop_loss'] / len(dataset),
             'select_loss': metrics['sel_loss'] / len(dataset),
             # do select_accuracy here b/c we won't call add_metrics on select
             'select_accuracy': metrics['sel_correct'] / metrics['sel_num_dots'],
@@ -382,6 +389,7 @@ class RnnReferenceEngine(EngineBase):
                 metrics['ref_loss'] *= self.args.ref_weight
                 metrics['partner_ref_loss'] *= self.args.partner_ref_weight
                 metrics['next_mention_loss'] *= self.args.next_mention_weight
+                metrics['next_mention_stop_loss'] *= self.args.next_mention_stop_weight
                 metrics['l1_loss'] *= self.args.l1_loss_weight
 
                 quantities = [
@@ -390,7 +398,8 @@ class RnnReferenceEngine(EngineBase):
                     ['ref_loss', 'ref_accuracy', 'ref_precision', 'ref_recall', 'ref_f1', 'ref_exact_match'],
                     ['partner_ref_loss', 'partner_ref_accuracy', 'partner_ref_precision', 'partner_ref_recall',
                      'partner_ref_f1', 'partner_ref_exact_match'],
-                    ['next_mention_loss', 'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall',
+                    ['next_mention_loss', 'next_mention_stop_loss',
+                     'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall',
                      'next_mention_f1', 'next_mention_exact_match'],
                     ['l1_loss']
                 ]
@@ -434,6 +443,7 @@ class RnnReferenceEngine(EngineBase):
                + metrics['ref_loss'] * self.args.ref_weight \
                + metrics['partner_ref_loss'] * self.args.partner_ref_weight \
                + metrics['next_mention_loss'] * self.args.next_mention_weight \
+               + metrics['next_mention_stop_loss'] * self.args.next_mention_stop_weight \
                + metrics['l1_loss'] * self.args.l1_loss_weight
 
     def train(self, corpus, model_filename_fn):
@@ -460,7 +470,11 @@ class RnnReferenceEngine(EngineBase):
                     f"update best model -- valid combined: {combined_valid_loss:.4f}\t" +
                     '\t'.join(
                         f'{name} {metrics["valid"][name]:.4f}'
-                        for name in ['lang_loss', 'select_loss', 'select_accuracy', 'ref_loss', 'partner_ref_loss', 'next_mention_loss', 'l1_loss']
+                        for name in ['lang_loss',
+                                     'select_loss', 'select_accuracy',
+                                     'ref_loss', 'partner_ref_loss',
+                                     'next_mention_loss', 'next_mention_stop_loss',
+                                     'l1_loss']
                     )
                 )
                 best_combined_valid_loss = combined_valid_loss
@@ -562,6 +576,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             compute_l1_probs=compute_l1_loss,
             tgts=tgts,
             ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
+            force_next_mention_num_markables=True,
         )
 
         sel_tgt = Variable(sel_tgt)
@@ -632,10 +647,10 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         # TODO: just index into the lists; the safety check isn't worth it
         for ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt,\
             this_num_markables,this_partner_num_markables, this_ctx_attn_prob, this_feed_ctx_attn_prob, \
-            this_dots_mentioned, inpt, tgt in utils.safe_zip(
+            this_dots_mentioned, this_dots_mentioned_per_ref, inpt, tgt in utils.safe_zip(
             ref_inpts, partner_ref_inpts, ref_outs_and_partner_ref_outs, ref_tgts, partner_ref_tgts_our_view,
             num_markables, partner_num_markables, ctx_attn_prob, feed_ctx_attn_prob,
-            dots_mentioned, inpts, tgts
+            dots_mentioned, dots_mentioned_per_ref, inpts, tgts
         ):
             if (this_num_markables == 0).all() or ref_tgt is None:
                 continue
@@ -775,25 +790,35 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             feed_attn_loss = None
 
         next_mention_losses = []
+        next_mention_stop_losses = []
         next_mention_stats = defaultdict(lambda: 0.0)
         # next_mention_stats = {'num_dots': 0}
 
         if self.args.next_mention_prediction:
             assert len(dots_mentioned) + 1 == len(next_mention_outs)
             for i in range(len(dots_mentioned)):
-                # supervise only for self, so pseudo_num_mentions = 1 iff is_self; 0 otherwise
-                pseudo_num_mentions = is_self[i].long()
-                gold_dots_mentioned = dots_mentioned[i].long().unsqueeze(1)
-                pred_dots_mentioned_logits = next_mention_outs[i]
 
-                # hack; pass True for inpt because this method only uses it to ensure it's not null
-                _loss, _pred, _stats = self._ref_loss(
-                    True, gold_dots_mentioned, pred_dots_mentioned_logits, pseudo_num_mentions
-                )
-                next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
-                # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
-                # print("{} / {}".format(_correct, _total))
-                next_mention_losses.append(_loss)
+                pred_dots_mentioned, next_mention_stop_loss = next_mention_outs[i]
+                if self.args.next_mention_prediction_type == 'multi_reference':
+                    gold_num_mentions = num_markables[i].long()
+                    gold_dots_mentioned = dots_mentioned_per_ref[i].long()
+                    next_mention_stop_losses.append(next_mention_stop_loss)
+                elif self.args.next_mention_prediction_type == 'collapsed':
+                    # supervise only for self, so pseudo_num_mentions = 1 iff is_self; 0 otherwise
+                    gold_num_mentions = is_self[i].long()
+                    gold_dots_mentioned = dots_mentioned[i].long().unsqueeze(1)
+                else:
+                    raise ValueError(f"--next_mention_prediction_type={self.args.next_mention_prediction}")
+
+                if pred_dots_mentioned is not None:
+                    # hack; pass True for inpt because this method only uses it to ensure it's not null
+                    _loss, _pred, _stats = self._ref_loss(
+                        True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions
+                    )
+                    next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
+                    # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
+                    # print("{} / {}".format(_correct, _total))
+                    next_mention_losses.append(_loss)
 
         if next_mention_stats['num_dots'] == 0 or (not next_mention_losses):
             # not sure why I had this assert, it seems it can be tripped if you have a batch with no *next* mentions
@@ -801,6 +826,11 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             next_mention_loss = None
         else:
             next_mention_loss = sum(next_mention_losses) / next_mention_stats['num_dots']
+
+        if not next_mention_stop_losses:
+            next_mention_stop_loss = None
+        else:
+            next_mention_stop_loss = sum(next_mention_stop_losses) / next_mention_stats['exact_match_denom']
 
         return ForwardRet(
             lang_loss=lang_loss,
@@ -816,6 +846,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             partner_ref_loss=partner_ref_loss,
             partner_ref_stats=partner_ref_stats,
             next_mention_loss=next_mention_loss,
+            next_mention_stop_loss=next_mention_stop_loss,
             next_mention_stats=next_mention_stats,
             l1_loss=l1_loss,
         )

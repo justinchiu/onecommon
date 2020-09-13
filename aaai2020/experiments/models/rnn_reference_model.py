@@ -160,6 +160,7 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--partner_reference_prediction', action='store_true')
 
         parser.add_argument('--next_mention_prediction', action='store_true')
+        parser.add_argument('--next_mention_prediction_type', choices=['collapsed', 'multi_reference'], default='collapsed')
 
         AttentionLayer.add_args(parser)
         StructuredAttentionLayer.add_args(parser)
@@ -326,12 +327,21 @@ class RnnReferenceModel(nn.Module):
         if args.mention_beliefs:
             assert args.next_mention_prediction
 
+        if args.next_mention_prediction_type == 'multi_reference':
+            self.next_mention_cell = nn.GRUCell(
+                args.nhid_lang, args.nhid_lang, bias=True
+            )
+            self.next_mention_transform = nn.Linear(args.nhid_lang, args.nhid_lang)
+            self.next_mention_stop = nn.Linear(args.nhid_lang, 1)
+
         if args.structured_attention or args.structured_temporal_attention:
             assert not args.share_attn
             attention_constructors = {
                 'ref': StructuredTemporalAttentionLayer if args.structured_temporal_attention else StructuredAttentionLayer,
                 'ref_partner': StructuredTemporalAttentionLayer if args.structured_temporal_attention else StructuredAttentionLayer,
-                'next_mention': StructuredAttentionLayer,
+                'next_mention': StructuredTemporalAttentionLayer \
+                    if args.structured_temporal_attention and args.next_mention_prediction_type == 'multi_reference' \
+                    else StructuredAttentionLayer,
                 'sel': AttentionLayer,
                 'lang': AttentionLayer, # todo: consider structured attention with sigmoids here
                 'feed': AttentionLayer,
@@ -583,40 +593,68 @@ class RnnReferenceModel(nn.Module):
         )
         return outs
 
-    def next_mention_prediction(self, state: _State, outs_emb, lens, mention_beliefs):
+    def next_mention_prediction(self, state: _State, outs_emb, lens, mention_beliefs,
+                                num_markables_to_force=None, max_num_mentions=12):
         ctx_h = state.ctx_h
         ctx_differences = state.ctx_differences
         bsz = ctx_h.size(0)
         num_dots = ctx_h.size(1)
 
         if mention_beliefs is not None:
-            # TODO: delete these zeroings
-            # ctx_h = torch.zeros_like(ctx_h)
             ctx_h = torch.cat((ctx_h, mention_beliefs), -1)
-            # outs_emb = torch.zeros_like(outs_emb)
 
-        # 1 x batch_size x 1
-        lens = lens.unsqueeze(0).unsqueeze(2)
         # 1 x batch_size x hidden_dim
-        lens = lens.expand(-1, -1, outs_emb.size(2))
-        states = torch.gather(outs_emb, 0, lens-1)
+        lens_expand = lens.unsqueeze(0).unsqueeze(2).expand(-1, -1, outs_emb.size(2))
+        # 1 x batch_size x hidden_dim
+        states = torch.gather(outs_emb, 0, lens_expand-1)
 
         # batch_size x hidden_dim
-        states = states.squeeze(0)
-        # add a dummy time dimension for attention
-        # 1 x batch_size x num_dots x hidden_dim
-        ctx_h = ctx_h.unsqueeze(0)
-        states = states.unsqueeze(0)
+        lang_states = states.squeeze(0)
+        if self.args.next_mention_prediction_type == 'multi_reference':
+            is_finished = torch.zeros_like(lens).bool()
+            num_markables = torch.zeros_like(lens).long()
+            h = self.next_mention_transform(lang_states)
+            hs = []
+            stop_losses = torch.zeros_like(lens).float()
+            while not is_finished.all():
+                stop_logits = self.next_mention_stop(h).squeeze(-1)
+                if num_markables_to_force is not None:
+                    should_stop = num_markables >= num_markables_to_force
+                    stop_losses -= ((stop_logits * (should_stop.float() * 2 - 1)).sigmoid().log() * (~is_finished).float())
+                    is_finished = num_markables >= num_markables_to_force
+                else:
+                    is_finished |= (stop_logits > 0)
+                is_finished |= (num_markables >= max_num_mentions)
+                num_markables += (~is_finished).long()
+                if not is_finished.all():
+                    h = self.next_mention_cell(lang_states, h)
+                    hs.append(h)
+            assert len(hs) == num_markables.max().item()
+            if num_markables_to_force is not None:
+                assert (num_markables == num_markables_to_force).all()
+            stop_loss = stop_losses.sum()
+            if hs:
+                states = torch.stack(hs, dim=0)
+            else:
+                states = torch.zeros((0, bsz, lang_states.size(-1)))
+                return None, stop_loss
+            ctx_h = ctx_h.unsqueeze(0).repeat_interleave(states.size(0), dim=0)
+        elif self.args.next_mention_prediction_type == 'collapsed':
+            # add a dummy time dimension for attention
+            # 1 x batch_size x num_dots x hidden_dim
+            ctx_h = ctx_h.unsqueeze(0)
+            states = lang_states.unsqueeze(0)
+            num_markables = torch.full((bsz,), 1).long()
+            stop_loss = torch.Tensor(0.0, requires_grad=True, device=states.device)
+        else:
+            raise ValueError(f"--next_mention_prediction_type={self.args.next_mention_prediction}")
 
-        # 1(T) x batch_size x num_dots x hidden_dim
+        # T x batch_size x num_dots x hidden_dim
         states_expand = states.unsqueeze(2).expand(-1, -1, num_dots, -1)
-
-        num_markables = torch.full((bsz,), 1).long()
-
         return self._apply_attention('next_mention',
                                      states,
                                      torch.cat([states_expand, ctx_h], -1), ctx_differences, num_markables
-                                     )
+                                     ), stop_loss
 
     def selection(self, state: _State, outs_emb, sel_idx, beliefs=None):
         # outs_emb: length x batch_size x dim
@@ -996,7 +1034,9 @@ class RnnReferenceModel(nn.Module):
                  # needed for generation beliefs
                  ref_outs=None, partner_ref_outs=None,
                  # needed for dot_recurrence_oracle
-                 ref_tgt=None, partner_ref_tgt=None
+                 ref_tgt=None, partner_ref_tgt=None,
+                 force_next_mention_num_markables=False,
+                 next_num_markables=None,
                  ):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
@@ -1053,7 +1093,8 @@ class RnnReferenceModel(nn.Module):
             )
             # TODO: consider using reader_lang_hs for this
             next_mention_out = self.next_mention_prediction(
-                state, writer_lang_hs, lens, mention_beliefs
+                state, writer_lang_hs, lens, mention_beliefs,
+                num_markables_to_force=next_num_markables if force_next_mention_num_markables else None,
             )
             assert next_mention_out is not None
         else:
@@ -1474,20 +1515,22 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def first_mention(self, state):
+    def first_mention(self, state, num_markables, force_next_mention_num_markables):
         mention_beliefs = state.make_beliefs('mention', -1, [], [])
         return self.next_mention_prediction(
-                state,
-                outs_emb=state.reader_and_writer_lang_h[0], # TODO: fix this to use the writer instead
-                lens=torch.full((state.bsz,), 1.0, device=state.ctx_h.device).long(),
-                mention_beliefs=mention_beliefs
-            )
+            state,
+            outs_emb=state.reader_and_writer_lang_h[0], # TODO: fix this to use the writer instead
+            lens=torch.full((state.bsz,), 1.0, device=state.ctx_h.device).long(),
+            mention_beliefs=mention_beliefs,
+            num_markables_to_force=num_markables if force_next_mention_num_markables else None,
+        )
 
     def forward(self, ctx, inpts, ref_inpts, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
                 belief_constructor: Union[BeliefConstructor, None],
                 partner_ref_inpts,
                 compute_l1_probs=False, tgts=None, ref_tgts=None, partner_ref_tgts=None,
+                force_next_mention_num_markables=False,
                 ):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
@@ -1518,7 +1561,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         ref_outs = []
 
         if vars(self.args).get('next_mention_prediction', False):
-            next_mention_out = self._first_mention(state)
+            next_mention_out = self.first_mention(state, num_markables[0], force_next_mention_num_markables)
             all_next_mention_outs.append(next_mention_out)
 
         l1_log_probs = []
@@ -1544,6 +1587,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 timestep=i,
                 ref_outs=ref_outs, partner_ref_outs=partner_ref_outs,
                 ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt,
+                force_next_mention_num_markables=force_next_mention_num_markables,
+                next_num_markables=num_markables[i+1] if i < len(num_markables) - 1 else None
             )
             if compute_l1_probs and ref_inpt is not None:
                 assert tgts is not None
