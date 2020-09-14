@@ -637,7 +637,7 @@ class RnnReferenceModel(nn.Module):
                 states = torch.stack(hs, dim=0)
             else:
                 states = torch.zeros((0, bsz, lang_states.size(-1)))
-                return None, stop_loss
+                return None, stop_loss, num_markables
             ctx_h = ctx_h.unsqueeze(0).repeat_interleave(states.size(0), dim=0)
         elif self.args.next_mention_prediction_type == 'collapsed':
             # add a dummy time dimension for attention
@@ -654,7 +654,7 @@ class RnnReferenceModel(nn.Module):
         return self._apply_attention('next_mention',
                                      states,
                                      torch.cat([states_expand, ctx_h], -1), ctx_differences, num_markables
-                                     ), stop_loss
+                                     ), stop_loss, num_markables
 
     def selection(self, state: _State, outs_emb, sel_idx, beliefs=None):
         # outs_emb: length x batch_size x dim
@@ -1515,7 +1515,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def first_mention(self, state, num_markables, force_next_mention_num_markables):
+    def first_mention(self, state, num_markables=None, force_next_mention_num_markables=False):
         mention_beliefs = state.make_beliefs('mention', -1, [], [])
         return self.next_mention_prediction(
             state,

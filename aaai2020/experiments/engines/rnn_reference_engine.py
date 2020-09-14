@@ -806,7 +806,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             assert len(dots_mentioned) + 1 == len(next_mention_outs)
             for i in range(len(dots_mentioned)):
 
-                pred_dots_mentioned, next_mention_stop_loss = next_mention_outs[i]
+                pred_dots_mentioned, next_mention_stop_loss, next_mention_num_markables = next_mention_outs[i]
                 if self.args.next_mention_prediction_type == 'multi_reference':
                     gold_num_mentions = num_markables[i].long()
                     gold_dots_mentioned = dots_mentioned_per_ref[i].long()

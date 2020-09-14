@@ -44,7 +44,7 @@ class Agent(object):
 
 
 class RnnAgent(Agent):
-    def __init__(self, model: RnnReferenceModel, args, name='Alice', train=False):
+    def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False):
         super(RnnAgent, self).__init__()
         self.model: RnnReferenceModel = model
         self.args = args
@@ -71,8 +71,9 @@ class RnnAgent(Agent):
     def _decode(self, out, dictionary):
         return dictionary.i2w(out.data.squeeze(1).cpu())
 
-    def feed_context(self, context, belief_constructor=None):
+    def feed_context(self, context, belief_constructor=None, num_markables_to_force=None):
         self.reader_lang_hs = []
+        self.writer_lang_hs = []
         self.logprobs = []
         self.sents = []
         self.words = []
@@ -83,7 +84,11 @@ class RnnAgent(Agent):
         # for use with the belief constructor
         self.ref_outs = []
         self.partner_ref_outs = []
-        self.next_mention_outs = [self.model.first_mention(self.state)]
+        self.next_mention_outs = [self.model.first_mention(
+            self.state,
+            num_markables=num_markables_to_force,
+            force_next_mention_num_markables=num_markables_to_force is not None
+        )]
         self.extras = []
 
     def feed_partner_context(self, partner_context):
@@ -120,6 +125,7 @@ class RnnAgent(Agent):
              num_markables=None,
              start_token='THEM:',
              partner_ref_inpt=None, partner_num_markables=None,
+             next_num_markables_to_force=None
              ):
         self.sents.append(Variable(self._encode([start_token] + inpt, self.model.word_dict)))
         inpt = self._encode(inpt, self.model.word_dict)
@@ -131,6 +137,7 @@ class RnnAgent(Agent):
             num_markables=num_markables,
         )
         self.reader_lang_hs.append(reader_lang_hs)
+        self.writer_lang_hs.append(writer_lang_hs)
         if partner_ref_inpt is not None and partner_num_markables is not None:
             self.predict_partner_referents(partner_ref_inpt, partner_num_markables)
         else:
@@ -140,6 +147,8 @@ class RnnAgent(Agent):
         self.words.append(Variable(inpt))
         self.update_dot_h(ref_inpt=None, partner_ref_inpt=partner_ref_inpt,
                           num_markables=None, partner_num_markables=partner_num_markables)
+        self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]),
+                          num_markables_to_force=next_num_markables_to_force)
         self.timesteps += 1
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
@@ -160,6 +169,7 @@ class RnnAgent(Agent):
         )
         self.logprobs.extend(logprobs)
         self.reader_lang_hs.append(reader_lang_hs)
+        self.writer_lang_hs.append(writer_lang_hs)
         if ref_inpt is not None and num_markables is not None:
             self.predict_referents(ref_inpt, num_markables)
         else:
@@ -171,6 +181,8 @@ class RnnAgent(Agent):
         self.extras.append(extra)
         self.update_dot_h(ref_inpt=ref_inpt, partner_ref_inpt=None,
                           num_markables=num_markables, partner_num_markables=None)
+        self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]),
+                          num_markables_to_force=torch.LongTensor([0]))
         self.timesteps += 1
 
         """if self.args.visualize_referents:
@@ -189,12 +201,13 @@ class RnnAgent(Agent):
         # outs = outs.narrow(0, 1, outs.size(0) - 1)
         return self._decode(outs, self.model.word_dict)
 
-    def next_mention(self, lens):
+    def next_mention(self, lens, num_markables_to_force=None):
         mention_beliefs = self.state.make_beliefs(
-            'mention', self.timestep, self.partner_ref_outs, self.ref_outs,
+            'mention', self.timesteps, self.partner_ref_outs, self.ref_outs,
         )
         next_mention_out = self.model.next_mention_prediction(
-            self.state, self.writer_lang_hs, lens, mention_beliefs
+            self.state, self.writer_lang_hs[-1], lens, mention_beliefs,
+            num_markables_to_force=num_markables_to_force,
         )
         self.next_mention_outs.append(next_mention_out)
         return next_mention_out
