@@ -113,7 +113,7 @@ class RnnAgent(Agent):
         return partner_ref_out
 
     def update_dot_h(self, ref_inpt, partner_ref_inpt, num_markables, partner_num_markables):
-        self.state = self.model._update_dot_h(
+        self.state = self.model._update_dot_h_maybe_multi(
             self.state, self.reader_lang_hs[-1],
             ref_inpt, partner_ref_inpt,
             num_markables, partner_num_markables,

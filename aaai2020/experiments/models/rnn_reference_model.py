@@ -25,11 +25,16 @@ from torch.distributions import Gumbel
 BIG_NEG = -1e6
 
 _State = namedtuple('_State', [
-    'args', 'bsz', 'ctx', 'ctx_h', 'ctx_differences', 'reader_and_writer_lang_h', 'dot_h', 'belief_constructor'
+    'args', 'bsz', 'ctx', 'ctx_h', 'ctx_differences', 'reader_and_writer_lang_h', 'dot_h_maybe_multi', 'belief_constructor'
 ])
 
 class State(_State):
-    def _maybe_add_dot_h_to_beliefs(self, dot_h, beliefs, name):
+    def _maybe_add_dot_h_to_beliefs(self, dot_h_maybe_multi, beliefs, name):
+        if vars(self.args).get('dot_recurrence_split', False):
+            assert isinstance(dot_h_maybe_multi, tuple)
+            dot_h = torch.cat(dot_h_maybe_multi, -1)
+        else:
+            dot_h = dot_h_maybe_multi
         if self.args.dot_recurrence and name in self.args.dot_recurrence_in:
             if beliefs is None:
                 return dot_h
@@ -47,7 +52,7 @@ class State(_State):
         # TODO: fix naming mismatch
         if add_name == 'mention':
             add_name = 'next_mention'
-        beliefs = self._maybe_add_dot_h_to_beliefs(self.dot_h, beliefs, add_name)
+        beliefs = self._maybe_add_dot_h_to_beliefs(self.dot_h_maybe_multi, beliefs, add_name)
         return beliefs
 
 class RnnReferenceModel(nn.Module):
@@ -154,6 +159,7 @@ class RnnReferenceModel(nn.Module):
                             nargs='+',
                             choices=['selection', 'next_mention', 'generation', 'ref', 'partner_ref'],
                             default=[])
+        parser.add_argument('--dot_recurrence_split', action='store_true')
 
 
         # auxiliary models
@@ -254,6 +260,16 @@ class RnnReferenceModel(nn.Module):
                 hidden_size=args.dot_recurrence_dim,
                 bias=True)
             self.dot_rec_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
+            if self.args.dot_recurrence_split:
+                self.dot_rec_partner_cell = nn.GRUCell(
+                    input_size=args.nhid_lang,
+                    hidden_size=args.dot_recurrence_dim,
+                    bias=True)
+                self.dot_rec_partner_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
+                self.dot_recurrence_embeddings = 2
+            else:
+                self.dot_recurrence_embeddings = 1
+
             self.dot_rec_ref_pooling_weights = nn.Parameter(torch.zeros(3), requires_grad=True)
             self.dot_rec_partner_ref_pooling_weights = copy.deepcopy(self.dot_rec_ref_pooling_weights)
 
@@ -378,28 +394,28 @@ class RnnReferenceModel(nn.Module):
                     if args.selection_beliefs:
                         input_dim += len(args.selection_beliefs)
                     if args.dot_recurrence and 'selection' in args.dot_recurrence_in:
-                        input_dim += args.dot_recurrence_dim
+                        input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
                 if attn_name in lang_attn_names:
                     if args.generation_beliefs:
                         input_dim += len(args.generation_beliefs)
                     if args.dot_recurrence and 'generation' in args.dot_recurrence_in:
-                        input_dim += args.dot_recurrence_dim
+                        input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
                 if attn_name == 'next_mention':
                     if args.mention_beliefs:
                         input_dim += len(args.mention_beliefs)
                     if args.dot_recurrence and 'next_mention' in args.dot_recurrence_in:
-                        input_dim += args.dot_recurrence_dim
+                        input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
                 if attn_name == 'ref':
                     if args.ref_beliefs:
                         input_dim += len(args.ref_beliefs)
                     if args.dot_recurrence and 'ref' in args.dot_recurrence_in:
-                        input_dim += args.dot_recurrence_dim
+                        input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
                 if attn_name == 'ref_partner':
                     if args.partner_ref_beliefs:
                         input_dim += len(args.partner_ref_beliefs)
                     # TODO: fix ref_partner vs partner_ref naming
                     if args.dot_recurrence and 'partner_ref' in args.dot_recurrence_in:
-                        input_dim += args.dot_recurrence_dim
+                        input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
                 setattr(
                     self,
                     self._attention_name(attn_name),
@@ -471,8 +487,8 @@ class RnnReferenceModel(nn.Module):
 
         bsz = ctx_h.size(0)
         reader_and_writer_lang_h = self._init_h(bsz)
-        dot_h = self._init_dot_h(bsz)
-        return State(self.args, bsz, ctx, ctx_h, ctx_differences, reader_and_writer_lang_h, dot_h, belief_constructor)
+        dot_h_maybe_multi = self._init_dot_h_maybe_multi(bsz)
+        return State(self.args, bsz, ctx, ctx_h, ctx_differences, reader_and_writer_lang_h, dot_h_maybe_multi, belief_constructor)
 
     @property
     def num_reader_directions(self):
@@ -921,7 +937,7 @@ class RnnReferenceModel(nn.Module):
         return score_refs
 
     def _update_dot_h_single(self, dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, ref_tgt,
-                             pooling_weights, transform):
+                             pooling_weights, transform, cell):
         dot_h = dot_h.clone()
         indices_to_update = num_markables > 0
         # predictor.forward(ref_inpt[indices_to_update], ref)
@@ -946,32 +962,47 @@ class RnnReferenceModel(nn.Module):
             attention_probs = ref_tgt[indices_to_update].transpose(0,1).float()
         else:
             attention_probs = ref_marginal_logits[:,indices_to_update].sigmoid()
-            attention_probs = attention_probs.detach()
+            if self.args.detach_beliefs:
+                attention_probs = attention_probs.detach()
         h_attended = torch.einsum("nbh,nbd,nb->bdh", (h_pooled, attention_probs, mention_mean))
         h_attended = einops.rearrange(h_attended, "b d h -> (b d) h")
         inputs = transform(h_attended)
         dot_h_flat = einops.rearrange(dot_h[indices_to_update], "b d h -> (b d) h")
-        dot_h_update = self.dot_rec_cell(inputs, dot_h_flat)
+        dot_h_update = cell(inputs, dot_h_flat)
         dot_h_update = einops.rearrange(dot_h_update, "(b d) h -> b d h", b=indices_to_update.sum())
         dot_h[indices_to_update] = dot_h_update
         return dot_h
 
-    def _init_dot_h(self, bsz):
+    def _init_dot_h_maybe_multi(self, bsz):
+        def _repeat(dot_h):
+            dot_h = dot_h.unsqueeze(0).repeat_interleave(bsz, dim=0)
+            dot_h = dot_h.unsqueeze(1).repeat_interleave(self.num_ent, dim=1)
+            return dot_h
         if vars(self.args).get('dot_recurrence', False):
-            dot_h = self.dot_rec_init.unsqueeze(0).repeat_interleave(bsz, dim=0)
             # bsz x num_dots x hidden
-            return dot_h.unsqueeze(1).repeat_interleave(self.num_ent, dim=1)
+            dot_h = _repeat(self.dot_rec_init)
+            if vars(self.args).get('dot_recurrence_split'):
+                dot_partner_h = _repeat(self.dot_rec_partner_init)
+                return dot_h, dot_partner_h
+            else:
+                return dot_h
         else:
             return None
 
-    def _update_dot_h(self, state: _State, reader_lang_hs,
-                      ref_inpt, partner_ref_inpt,
-                      num_markables, partner_num_markables,
-                      ref_out, partner_ref_out,
-                      ref_tgt, partner_ref_tgt):
+    def _update_dot_h_maybe_multi(self, state: _State, reader_lang_hs,
+                                  ref_inpt, partner_ref_inpt,
+                                  num_markables, partner_num_markables,
+                                  ref_out, partner_ref_out,
+                                  ref_tgt, partner_ref_tgt):
         if not self.args.dot_recurrence:
             return state
-        dot_h = state.dot_h
+
+        is_split = vars(self.args).get('dot_recurrence_split')
+        if is_split:
+            dot_h, partner_dot_h = state.dot_h_maybe_multi
+        else:
+            dot_h = state.dot_h_maybe_multi
+
         if ref_out is not None and partner_ref_out is not None:
             assert not ((num_markables > 0) & (partner_num_markables > 0)).any()
         # ref_out can be none if there are no markables in the batch
@@ -980,16 +1011,24 @@ class RnnReferenceModel(nn.Module):
                 dot_h = self._update_dot_h_single(
                     dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, ref_tgt,
                     self.dot_rec_ref_pooling_weights, self.dot_rec_ref_transform,
+                    self.dot_rec_cell,
                 )
         if 'partner' in self.args.dot_recurrence:
             assert self.args.partner_reference_prediction
             # partner_ref_out can be none if there are no markables in the batch
             if partner_ref_out is not None:
-                dot_h = self._update_dot_h_single(
-                    dot_h, reader_lang_hs, partner_ref_inpt, partner_num_markables, partner_ref_out, partner_ref_tgt,
-                    self.dot_rec_partner_ref_pooling_weights, self.dot_rec_partner_ref_transform
+                partner_dot_h = self._update_dot_h_single(
+                    partner_dot_h if is_split else dot_h, reader_lang_hs, partner_ref_inpt, partner_num_markables, partner_ref_out, partner_ref_tgt,
+                    self.dot_rec_partner_ref_pooling_weights, self.dot_rec_partner_ref_transform,
+                    self.dot_rec_cell if (not is_split) else self.dot_rec_partner_cell
                 )
-        return state._replace(dot_h=dot_h)
+                if not is_split:
+                    dot_h = partner_dot_h
+        if is_split:
+            dot_h_maybe_multi = (dot_h, partner_dot_h)
+        else:
+            dot_h_maybe_multi = dot_h
+        return state._replace(dot_h_maybe_multi=dot_h_maybe_multi)
 
     def language_output(self, state: _State, writer_lang_hs, dots_mentioned, dots_mentioned_per_ref, generation_beliefs):
         # compute language output
@@ -1080,11 +1119,11 @@ class RnnReferenceModel(nn.Module):
             partner_ref_out = None
 
         if self.args.dot_recurrence:
-            state = self._update_dot_h(state, reader_lang_hs,
-                                       ref_inpt, partner_ref_inpt,
-                                       num_markables, partner_num_markables,
-                                       ref_out, partner_ref_out,
-                                       ref_tgt, partner_ref_tgt)
+            state = self._update_dot_h_maybe_multi(state, reader_lang_hs,
+                                                   ref_inpt, partner_ref_inpt,
+                                                   num_markables, partner_num_markables,
+                                                   ref_out, partner_ref_out,
+                                                   ref_tgt, partner_ref_tgt)
 
         if vars(self.args).get('next_mention_prediction', False):
             assert lens is not None
@@ -1135,7 +1174,7 @@ class RnnReferenceModel(nn.Module):
 
         reader_and_writer_lang_h = None
         bsz = ctx.size(0)
-        dot_h = self._init_dot_h(bsz)
+        dot_h = self._init_dot_h_maybe_multi(bsz)
 
         outs, (ref_out, partner_ref_out), sel_out, reader_and_writer_lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, dot_h = self._forward(
             ctx, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx,
