@@ -834,12 +834,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             # assert next_mention_stats['num_dots'] == 0 and (not next_mention_losses)
             next_mention_loss = None
         else:
-            next_mention_loss = sum(next_mention_losses) / next_mention_stats['num_dots']
+            next_mention_loss = sum(next_mention_losses) / next_mention_stats['expanded_num_dots']
 
         if not next_mention_stop_losses:
             next_mention_stop_loss = None
         else:
-            next_mention_stop_loss = sum(next_mention_stop_losses) / next_mention_stats['exact_match_denom']
+            next_mention_stop_loss = sum(next_mention_stop_losses) / next_mention_stats['expanded_exact_match_denom']
 
         return ForwardRet(
             lang_loss=lang_loss,
