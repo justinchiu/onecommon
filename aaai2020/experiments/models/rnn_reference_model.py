@@ -1522,7 +1522,7 @@ class RnnReferenceModel(nn.Module):
         # TODO: consider swapping in partner context
 
         # read the output utterance
-        (reader_lang_hs, writer_lang_hs), state = self.read(
+        (reader_lang_hs, writer_lang_hs), state_new = self.read(
             state, outs,
             dots_mentioned=dots_mentioned,
             dots_mentioned_per_ref=dots_mentioned_per_ref,
@@ -1542,7 +1542,136 @@ class RnnReferenceModel(nn.Module):
             extra['word_ctx_attn_prob_mean'] = torch.mean(torch.stack(ctx_attn_probs, 0), 0)
 
         # lang_hs: list of tensors [1 x bsz x hidden_dim, ...]
-        return outs, logprobs, state, (reader_lang_hs, writer_lang_hs), extra
+        return outs, logprobs, state_new, (reader_lang_hs, writer_lang_hs), extra
+
+    def write_beam(self, state, beam_size, max_words,
+                   start_token='YOU:', stop_tokens=data.STOP_TOKENS,
+                   dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
+                   generation_beliefs=None, gumbel_noise=False, temperature=1.0):
+        # NOTE: gumbel_noise=True *does not* sample without replacement at the sequence level, for the reasons
+        # outlined in https://arxiv.org/pdf/1903.06059.pdf, and so should just be viewed as a randomized beam search
+
+        # ctx_h: batch x num_dots x nembed_ctx
+        # lang_h: batch x hidden
+        ctx = state.ctx
+        device = ctx.device
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
+        reader_lang_h, writer_lang_h = state.reader_and_writer_lang_h
+        num_directions, bsz, _ = reader_lang_h.size()
+        bsz_, num_dots, _ = ctx_h.size()
+        assert bsz == bsz_
+        # autoregress starting from start_token
+
+        assert bsz == 1
+
+        writer_lang_h = self._add_hidden_context(
+            ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
+            num_markables, generation_beliefs
+        )
+
+        if self.args.feed_context:
+            ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(
+                ctx_differences, ctx_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref, generation_beliefs
+            )
+        else:
+            ctx_emb, feed_ctx_attn_prob = None, None
+
+        writer_lang_h = writer_lang_h.expand(1, beam_size, -1)
+        ctx_h = ctx_h.expand(beam_size, -1, -1)
+        ctx_differences = ctx_differences.expand(beam_size, -1, -1)
+        dots_mentioned = dots_mentioned.expand(beam_size, -1)
+        dots_mentioned_per_ref = dots_mentioned_per_ref.expand(beam_size, -1, -1)
+        if generation_beliefs is not None:
+            raise NotImplementedError("todo: check the size of generation_beliefs and expand")
+
+        outputs = self.word2var(start_token).view(1,1).expand(beam_size, 1)
+        is_finished = torch.zeros(beam_size).bool().to(device)
+        # prevent the beam from filling with identical copies of the same hypothesis, by breaking ties
+        total_scores = torch.full((beam_size,), BIG_NEG).float().to(device)
+        total_scores[0] = 0
+        lens = torch.zeros(beam_size).long().to(device)
+
+        force_pad_mask = -make_mask(len(self.word_dict), [self.word_dict.get_idx(w) for w in ['<pad>']])
+
+        for word_ix in range(max_words):
+            if is_finished.all():
+                break
+            # embed
+            # bsz x hidden
+            inpt_emb = self.embed_dialogue(outputs[:,-1])
+            if ctx_emb is not None:
+                # bsz x (nembed_word+nembed_ctx)
+                inpt_emb = torch.cat((inpt_emb, ctx_emb), dim=-1)
+
+            this_beam_size = inpt_emb.size(0)
+
+            # we'll use dim 0 for both num_directions (on initialization) and time (in lang_hs, and the _language_conditioned_dot_attention, etc methods)
+            # this_beam_size x hidden_dim
+            writer_lang_h = self.writer_cell(inpt_emb, writer_lang_h.squeeze(0)).unsqueeze(0)
+
+            # compute language output
+            if vars(self.args).get('no_word_attention', False):
+                out_emb = self.hid2output(writer_lang_h.squeeze(0))
+            else:
+                ctx_attn_prob = self._language_conditioned_dot_attention(
+                    ctx_differences, ctx_h, writer_lang_h, attention_type='lang',
+                    dots_mentioned=dots_mentioned,
+                    dots_mentioned_per_ref=dots_mentioned_per_ref,
+                    generation_beliefs=generation_beliefs,
+                )
+                # remove the time dimension
+                ctx_attn_prob = ctx_attn_prob.squeeze(0)
+                # lang_prob = dot_attention2.expand_as(ctx_h)
+                # ctx_h_lang = torch.sum(torch.mul(ctx_h, dot_attention2.expand_as(ctx_h)), 1)
+                ctx_h_lang = torch.einsum("bnd,bn->bd", (ctx_h, ctx_attn_prob))
+                out_emb = self.hid2output(torch.cat([writer_lang_h.squeeze(0), ctx_h_lang], -1))
+
+            out = F.linear(out_emb, self.word_embed.weight)
+            mask = self.special_token_mask.to(out.device)
+            word_scores = out.add(mask.unsqueeze(0))
+
+            word_scores = torch.where(is_finished.unsqueeze(1), force_pad_mask.unsqueeze(0), word_scores)
+
+            # this_beam_size x vocab
+            word_logprobs = word_scores.log_softmax(dim=-1)
+            if temperature != 1.0:
+                word_logprobs = (word_logprobs / temperature).log_softmax(-1)
+
+            # (this_beam_size * vocab)
+            candidate_scores = (total_scores.unsqueeze(1) + word_logprobs)
+            if gumbel_noise:
+                candidate_scores = Gumbel(candidate_scores, scale=1.0).sample()
+
+            vocab_size = word_logprobs.size(-1)
+
+            top_scores, top_indices = candidate_scores.view(-1).topk(beam_size, dim=-1)
+            top_beam_indices = top_indices // vocab_size
+            top_vocab_indices = top_indices % vocab_size
+
+            outputs = outputs[top_beam_indices]
+            lens = lens[top_beam_indices]
+            is_finished = is_finished[top_beam_indices]
+            writer_lang_h = writer_lang_h[:,top_beam_indices]
+
+            total_scores = top_scores
+            outputs = torch.cat((outputs, top_vocab_indices.unsqueeze(-1)), -1)
+            lens[~is_finished] += 1
+            is_finished |= torch.BoolTensor(
+                [self.word_dict.get_word(ix.item()) in stop_tokens for ix in top_vocab_indices],
+                device=device
+            )
+
+        # remove start token for consistency with write()
+        outputs = outputs[:,1:]
+        lens -= 1
+
+        decoded = [
+            [self.word_dict.get_word(ix.item()) for ix in sent[:l]]
+            for sent, l in zip(outputs, lens)
+        ]
+
+        return outputs, lens, decoded
 
 
 class HierarchicalRnnReferenceModel(RnnReferenceModel):
