@@ -42,7 +42,7 @@ class AttentionLayer(nn.Module):
         self.args = args
         self.feedforward = FeedForward(n_hidden_layers, input_dim, hidden_dim, output_dim=1, dropout_p=dropout_p)
 
-    def forward(self, lang_input, input, ctx_differences, num_markables):
+    def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs):
         # takes ctx_differences and num_markables as an argument for compatibility with StructuredAttentionLayer
         return self.feedforward(input).squeeze(-1), None, None
 
@@ -92,6 +92,19 @@ class StructuredAttentionLayer(nn.Module):
             dropout_p=args.structured_attention_dropout,
         )
 
+        if self.args.dot_recurrence_structured:
+            multiplier = 2 if self.args.dot_recurrence_split else 1
+            if self.args.dot_recurrence_structured_layers == 0:
+                self.joint_factor_encoder = nn.Linear(args.dot_recurrence_dim * multiplier, 1)
+            else:
+                self.joint_factor_encoder = FeedForward(
+                    n_hidden_layers=self.args.dot_recurrence_structured_layers,
+                    input_dim=args.dot_recurrence_dim * multiplier,
+                    hidden_dim=args.structured_attention_hidden_dim,
+                    output_dim=1,
+                    dropout_p=args.structured_attention_dropout,
+                )
+
         # self.contraction_string = self.build_contraction_string(self.num_ent)
 
     @staticmethod
@@ -136,9 +149,14 @@ class StructuredAttentionLayer(nn.Module):
         joint = '{}{}'.format(batch_name, ''.join(var_names))
         output_factor_names = '{},{}'.format(joint,marginals)
 
-        return '{}->{}'.format(','.join(unary_factor_names+binary_factor_names), output_factor_names)
+        input_factors = unary_factor_names+binary_factor_names
 
-    def forward(self, lang_input, input, ctx_differences, num_markables, normalize_joint=True):
+        if self.args.dot_recurrence_structured:
+            input_factors.append(joint)
+
+        return '{}->{}'.format(','.join(input_factors), output_factor_names)
+
+    def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs, normalize_joint=True):
         # takes num_markables as an argument for compatibility with StructuredTemporalAttentionLayer
         # max instances per batch (aka N) x batch_size x num_dots x hidden_dim
         contraction_string = self.build_contraction_string(self.num_ent)
@@ -192,10 +210,24 @@ class StructuredAttentionLayer(nn.Module):
         # transpose the batch and dot-pair dimension so that we can unpack along dot-pairs
         binary_factors = binary_potentials.transpose(0,1)
 
+        input_factors = list(unary_factors) + list(binary_factors)
+        if self.args.dot_recurrence_structured:
+            assert joint_factor_inputs is not None
+            # (N*bsz) x 2 x 2 x ...
+            if self.args.dot_recurrence_split:
+                assert isinstance(joint_factor_inputs, tuple)
+                inputs = torch.cat(joint_factor_inputs, -1)
+            else:
+                inputs = joint_factor_inputs
+            assert inputs.size(0) == bsz
+            assert inputs.size(1) == 2**self.num_ent
+            size = (N*bsz,) + (2,) * self.num_ent
+            joint_factors = self.joint_factor_encoder(inputs).unsqueeze(0).repeat_interleave(N).view(*size)
+            input_factors.append(joint_factors)
+
         outputs = pyro.ops.contract.einsum(
             contraction_string,
-            *unary_factors,
-            *binary_factors,
+            *input_factors,
             modulo_total=True,
             backend='pyro.ops.einsum.torch_log',
         )
@@ -269,8 +301,10 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         output_factor_name = batch_name+var_names_1+var_names_2
         return '{}->{}'.format(','.join(binary_factor_names), output_factor_name)
 
-    def forward(self, lang_input, input, ctx_differences, num_markables):
-        marginal_log_probs, joint_logits, _ = super().forward(lang_input, input, ctx_differences, num_markables, normalize_joint=False)
+    def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs):
+        marginal_log_probs, joint_logits, _ = super().forward(
+            lang_input, input, ctx_differences, num_markables, joint_factor_inputs, normalize_joint=False
+        )
         N, bsz, *dot_dims = joint_logits.size()
         assert N == num_markables.max()
         assert num_markables.dim() == 1 and num_markables.size(0) == bsz

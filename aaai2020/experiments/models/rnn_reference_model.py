@@ -25,7 +25,8 @@ from torch.distributions import Gumbel
 BIG_NEG = -1e6
 
 _State = namedtuple('_State', [
-    'args', 'bsz', 'ctx', 'ctx_h', 'ctx_differences', 'reader_and_writer_lang_h', 'dot_h_maybe_multi', 'belief_constructor'
+    'args', 'bsz', 'ctx', 'ctx_h', 'ctx_differences', 'reader_and_writer_lang_h',
+    'dot_h_maybe_multi', 'dot_h_maybe_multi_structured', 'belief_constructor'
 ])
 
 class State(_State):
@@ -155,6 +156,8 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--dot_recurrence', nargs='+', choices=['self', 'partner'])
         parser.add_argument('--dot_recurrence_dim', type=int, default=32)
         parser.add_argument('--dot_recurrence_oracle', action='store_true')
+        parser.add_argument('--dot_recurrence_structured', action='store_true')
+        parser.add_argument('--dot_recurrence_structured_layers', type=int, default=0)
         parser.add_argument('--dot_recurrence_in',
                             nargs='+',
                             choices=['selection', 'next_mention', 'generation', 'ref', 'partner_ref'],
@@ -260,12 +263,16 @@ class RnnReferenceModel(nn.Module):
                 hidden_size=args.dot_recurrence_dim,
                 bias=True)
             self.dot_rec_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
+            if self.args.dot_recurrence_structured:
+                self.dot_rec_structured_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
             if self.args.dot_recurrence_split:
                 self.dot_rec_partner_cell = nn.GRUCell(
                     input_size=args.nhid_lang,
                     hidden_size=args.dot_recurrence_dim,
                     bias=True)
                 self.dot_rec_partner_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
+                if self.args.dot_recurrence_structured:
+                    self.dot_rec_partner_structured_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
                 self.dot_recurrence_embeddings = 2
             else:
                 self.dot_recurrence_embeddings = 1
@@ -487,8 +494,12 @@ class RnnReferenceModel(nn.Module):
 
         bsz = ctx_h.size(0)
         reader_and_writer_lang_h = self._init_h(bsz)
-        dot_h_maybe_multi = self._init_dot_h_maybe_multi(bsz)
-        return State(self.args, bsz, ctx, ctx_h, ctx_differences, reader_and_writer_lang_h, dot_h_maybe_multi, belief_constructor)
+        dot_h_maybe_multi = self._init_dot_h_maybe_multi(bsz, False)
+        dot_h_maybe_multi_structured = self._init_dot_h_maybe_multi(bsz, True)
+        return State(
+            self.args, bsz, ctx, ctx_h, ctx_differences, reader_and_writer_lang_h,
+            dot_h_maybe_multi, dot_h_maybe_multi_structured, belief_constructor,
+        )
 
     @property
     def num_reader_directions(self):
@@ -516,15 +527,15 @@ class RnnReferenceModel(nn.Module):
     def _attention_name(self, name):
         return '{}_attn'.format(name)
 
-    def _apply_attention(self, name, lang_input, input, ctx_differences, num_markables):
+    def _apply_attention(self, name, lang_input, input, ctx_differences, num_markables, joint_factor_input):
         if self.args.share_attn:
-            return self.attn(lang_input, input, ctx_differences, num_markables)
+            return self.attn(lang_input, input, ctx_differences, num_markables, joint_factor_input)
         elif self.args.separate_attn:
             attn_module = getattr(self, self._attention_name(name))
-            return attn_module(lang_input, input, ctx_differences, num_markables)
+            return attn_module(lang_input, input, ctx_differences, num_markables, joint_factor_input)
         else:
             attn_module = getattr(self, self._attention_name(name))
-            return attn_module(lang_input, self.attn_prefix(input), ctx_differences, num_markables)
+            return attn_module(lang_input, self.attn_prefix(input), ctx_differences, num_markables, joint_factor_input)
 
     def _zero(self, *sizes):
         h = torch.Tensor(*sizes).fill_(0)
@@ -566,7 +577,8 @@ class RnnReferenceModel(nn.Module):
         inpt = inpt.view(3, -1, inpt.size(1), inpt.size(2))
         return inpt
 
-    def reference_resolution(self, state: _State, outs_emb, ref_inpt, num_markables, for_self=True, ref_beliefs=None):
+    def reference_resolution(self, state: _State, outs_emb, ref_inpt, num_markables, for_self=True,
+                             ref_beliefs=None):
         # ref_inpt: bsz x num_refs x 3
         if ref_inpt is None:
             return None
@@ -605,7 +617,8 @@ class RnnReferenceModel(nn.Module):
         else:
             attention_params_name = 'ref'
         outs = self._apply_attention(
-            attention_params_name, emb_gathered, torch.cat([emb_gathered_expand, ctx_h], -1), ctx_differences, num_markables
+            attention_params_name, emb_gathered, torch.cat([emb_gathered_expand, ctx_h], -1), ctx_differences, num_markables,
+            joint_factor_input=state.dot_h_maybe_multi_structured,
         )
         return outs
 
@@ -669,7 +682,8 @@ class RnnReferenceModel(nn.Module):
         states_expand = states.unsqueeze(2).expand(-1, -1, num_dots, -1)
         return self._apply_attention('next_mention',
                                      states,
-                                     torch.cat([states_expand, ctx_h], -1), ctx_differences, num_markables
+                                     torch.cat([states_expand, ctx_h], -1), ctx_differences, num_markables,
+                                     joint_factor_input=state.dot_h_maybe_multi_structured,
                                      ), stop_loss, num_markables
 
     def selection(self, state: _State, outs_emb, sel_idx, beliefs=None):
@@ -704,10 +718,14 @@ class RnnReferenceModel(nn.Module):
         if beliefs is not None:
             to_cat.append(beliefs)
         # TODO: pass something for num_markables for consistency; right now it relies on selection not using StructuredTemporalAttention
-        return self._apply_attention('sel', sel_inpt, torch.cat(to_cat, 2), ctx_differences, num_markables=None)
+        return self._apply_attention(
+            'sel', sel_inpt, torch.cat(to_cat, 2), ctx_differences, num_markables=None,
+            joint_factor_input=state.dot_h_maybe_multi_structured,
+        )
 
     def _language_conditioned_dot_attention(self, ctx_differences, ctx_h, lang_hs, attention_type,
-                                            dots_mentioned, dots_mentioned_per_ref, generation_beliefs):
+                                            dots_mentioned, dots_mentioned_per_ref, generation_beliefs,
+                                            structured_generation_beliefs=None):
         # lang_hs: seq_len x batch_size x hidden
         # ctx_h: batch_size x num_dots x nembed_ctx
         # dots_mentioned: batch_size x num_dots, binary tensor of which dots to allow attention on. if all zero, output zeros
@@ -766,6 +784,7 @@ class RnnReferenceModel(nn.Module):
             torch.cat([lang_h_expand, ctx_h_expand], 3),
             ctx_differences,
             num_markables=None,
+            joint_factor_input=structured_generation_beliefs,
         )
 
         if constrain_attention:
@@ -937,7 +956,8 @@ class RnnReferenceModel(nn.Module):
         return score_refs
 
     def _update_dot_h_single(self, dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, ref_tgt,
-                             pooling_weights, transform, cell):
+                             pooling_weights, transform, cell, structured):
+        # TODO: implement structured
         dot_h = dot_h.clone()
         indices_to_update = num_markables > 0
         # predictor.forward(ref_inpt[indices_to_update], ref)
@@ -947,7 +967,7 @@ class RnnReferenceModel(nn.Module):
         h_pooled = torch.einsum("tnbh,t->nbh", (h_gathered, pooling_weights.softmax(-1)))
 
         # todo: use the structured distribution rather than the dot marginals?
-        ref_marginal_logits, _, _ = ref_out
+        ref_marginal_logits, ref_joint_logits, _ = ref_out
 
         # max_num_mentions x filtered_bsz
         mention_mean = torch.zeros((h_pooled.size(0), h_pooled.size(1)), device=h_pooled.device)
@@ -960,8 +980,13 @@ class RnnReferenceModel(nn.Module):
             # ref_tgt: bsz x max_num_mentions x num_dots
             # attention_probs: max_num_mentions x filtered_bsz x num_dots
             attention_probs = ref_tgt[indices_to_update].transpose(0,1).float()
+            assert not structured
         else:
-            attention_probs = ref_marginal_logits[:,indices_to_update].sigmoid()
+            if structured:
+                attention_probs = ref_joint_logits[:,indices_to_update]
+                attention_probs = attention_probs.view(attention_probs.size(0), attention_probs.size(1), -1).softmax(-1)
+            else:
+                attention_probs = ref_marginal_logits[:,indices_to_update].sigmoid()
             if self.args.detach_beliefs:
                 attention_probs = attention_probs.detach()
         h_attended = torch.einsum("nbh,nbd,nb->bdh", (h_pooled, attention_probs, mention_mean))
@@ -973,16 +998,21 @@ class RnnReferenceModel(nn.Module):
         dot_h[indices_to_update] = dot_h_update
         return dot_h
 
-    def _init_dot_h_maybe_multi(self, bsz):
+    def _init_dot_h_maybe_multi(self, bsz, structured):
         def _repeat(dot_h):
             dot_h = dot_h.unsqueeze(0).repeat_interleave(bsz, dim=0)
-            dot_h = dot_h.unsqueeze(1).repeat_interleave(self.num_ent, dim=1)
+            if structured:
+                dot_h = dot_h.unsqueeze(1).repeat_interleave(2**self.num_ent, dim=1)
+            else:
+                dot_h = dot_h.unsqueeze(1).repeat_interleave(self.num_ent, dim=1)
             return dot_h
         if vars(self.args).get('dot_recurrence', False):
             # bsz x num_dots x hidden
-            dot_h = _repeat(self.dot_rec_init)
+            if structured and not vars(self.args).get('dot_recurrence_structured', False):
+                return None
+            dot_h = _repeat(self.dot_rec_structured_init if structured else self.dot_rec_init)
             if vars(self.args).get('dot_recurrence_split'):
-                dot_partner_h = _repeat(self.dot_rec_partner_init)
+                dot_partner_h = _repeat(self.dot_rec_partner_structured_init if structured else self.dot_rec_partner_init)
                 return dot_h, dot_partner_h
             else:
                 return dot_h
@@ -997,40 +1027,52 @@ class RnnReferenceModel(nn.Module):
         if not self.args.dot_recurrence:
             return state
 
+        # TODO: make this not ugly
+        structured_and_fields = [
+            (False, 'dot_h_maybe_multi')
+        ]
+        if self.args.dot_recurrence_structured:
+            structured_and_fields.append((True, 'dot_h_maybe_multi_structured'))
+
         is_split = vars(self.args).get('dot_recurrence_split')
-        if is_split:
-            dot_h, partner_dot_h = state.dot_h_maybe_multi
-        else:
-            dot_h = state.dot_h_maybe_multi
 
-        if ref_out is not None and partner_ref_out is not None:
-            assert not ((num_markables > 0) & (partner_num_markables > 0)).any()
-        # ref_out can be none if there are no markables in the batch
-        if 'self' in self.args.dot_recurrence:
-            if ref_out is not None:
-                dot_h = self._update_dot_h_single(
-                    dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, ref_tgt,
-                    self.dot_rec_ref_pooling_weights, self.dot_rec_ref_transform,
-                    self.dot_rec_cell,
-                )
-        if 'partner' in self.args.dot_recurrence:
-            assert self.args.partner_reference_prediction
-            # partner_ref_out can be none if there are no markables in the batch
-            if partner_ref_out is not None:
-                partner_dot_h = self._update_dot_h_single(
-                    partner_dot_h if is_split else dot_h, reader_lang_hs, partner_ref_inpt, partner_num_markables, partner_ref_out, partner_ref_tgt,
-                    self.dot_rec_partner_ref_pooling_weights, self.dot_rec_partner_ref_transform,
-                    self.dot_rec_cell if (not is_split) else self.dot_rec_partner_cell
-                )
-                if not is_split:
-                    dot_h = partner_dot_h
-        if is_split:
-            dot_h_maybe_multi = (dot_h, partner_dot_h)
-        else:
-            dot_h_maybe_multi = dot_h
-        return state._replace(dot_h_maybe_multi=dot_h_maybe_multi)
+        for structured, field in structured_and_fields:
+            if is_split:
+                dot_h, partner_dot_h = getattr(state, field)
+            else:
+                dot_h = getattr(state, field)
 
-    def language_output(self, state: _State, writer_lang_hs, dots_mentioned, dots_mentioned_per_ref, generation_beliefs):
+            if ref_out is not None and partner_ref_out is not None:
+                assert not ((num_markables > 0) & (partner_num_markables > 0)).any()
+            # ref_out can be none if there are no markables in the batch
+            if 'self' in self.args.dot_recurrence:
+                if ref_out is not None:
+                    dot_h = self._update_dot_h_single(
+                        dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, ref_tgt,
+                        self.dot_rec_ref_pooling_weights, self.dot_rec_ref_transform,
+                        self.dot_rec_cell, structured
+                    )
+            if 'partner' in self.args.dot_recurrence:
+                assert self.args.partner_reference_prediction
+                # partner_ref_out can be none if there are no markables in the batch
+                if partner_ref_out is not None:
+                    partner_dot_h = self._update_dot_h_single(
+                        partner_dot_h if is_split else dot_h, reader_lang_hs, partner_ref_inpt, partner_num_markables, partner_ref_out, partner_ref_tgt,
+                        self.dot_rec_partner_ref_pooling_weights, self.dot_rec_partner_ref_transform,
+                        self.dot_rec_cell if (not is_split) else self.dot_rec_partner_cell,
+                        structured
+                    )
+                    if not is_split:
+                        dot_h = partner_dot_h
+            if is_split:
+                dot_h_maybe_multi = (dot_h, partner_dot_h)
+            else:
+                dot_h_maybe_multi = dot_h
+            state = state._replace(**{field: dot_h_maybe_multi})
+        return state
+
+    def language_output(self, state: _State, writer_lang_hs, dots_mentioned, dots_mentioned_per_ref,
+                        generation_beliefs):
         # compute language output
         if vars(self.args).get('no_word_attention', False):
             outs = self.hid2output(writer_lang_hs)
@@ -1040,7 +1082,8 @@ class RnnReferenceModel(nn.Module):
                 state.ctx_differences, state.ctx_h, writer_lang_hs, attention_type='lang',
                 dots_mentioned=dots_mentioned,
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
-                generation_beliefs=generation_beliefs
+                generation_beliefs=generation_beliefs,
+                structured_generation_beliefs=state.dot_h_maybe_multi_structured,
             )
             ctx_h_to_expand = state.ctx_h
             if vars(self.args).get('marks_in_word_prediction', False):
@@ -1100,7 +1143,9 @@ class RnnReferenceModel(nn.Module):
             generation_beliefs=generation_beliefs,
         )
 
-        outs, ctx_attn_prob = self.language_output(state, writer_lang_hs, dots_mentioned, dots_mentioned_per_ref, generation_beliefs)
+        outs, ctx_attn_prob = self.language_output(
+            state, writer_lang_hs, dots_mentioned, dots_mentioned_per_ref, generation_beliefs,
+        )
 
         ref_beliefs = state.make_beliefs('ref', timestep, partner_ref_outs, ref_outs)
         partner_ref_beliefs = state.make_beliefs('partner_ref', timestep, partner_ref_outs, ref_outs)
@@ -1174,7 +1219,8 @@ class RnnReferenceModel(nn.Module):
 
         reader_and_writer_lang_h = None
         bsz = ctx.size(0)
-        dot_h = self._init_dot_h_maybe_multi(bsz)
+        dot_h = self._init_dot_h_maybe_multi(bsz, False)
+        dot_h_structured = self._init_dot_h_maybe_multi(bsz, True)
 
         outs, (ref_out, partner_ref_out), sel_out, reader_and_writer_lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, dot_h = self._forward(
             ctx, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx,
@@ -1187,7 +1233,8 @@ class RnnReferenceModel(nn.Module):
         )
         return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, reader_and_writer_lang_h, ctx_h, ctx_differences
 
-    def _context_for_feeding(self, ctx_differences, ctx_h, lang_hs, dots_mentioned, dots_mentioned_per_ref, generation_beliefs):
+    def _context_for_feeding(self, ctx_differences, ctx_h, lang_hs, dots_mentioned, dots_mentioned_per_ref,
+                             generation_beliefs, structured_generation_beliefs):
         if self.args.feed_context_attend:
             # bsz x num_dots
             feed_ctx_attn_prob = self._language_conditioned_dot_attention(
@@ -1195,7 +1242,8 @@ class RnnReferenceModel(nn.Module):
                 attention_type='feed',
                 dots_mentioned=dots_mentioned,
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
-                generation_beliefs=generation_beliefs
+                generation_beliefs=generation_beliefs,
+                structured_generation_beliefs=structured_generation_beliefs,
             ).squeeze(0).squeeze(-1)
             # bsz x num_dots x nembed_ctx
             ctx_emb = self.feed_ctx_layer(ctx_h)
@@ -1206,7 +1254,8 @@ class RnnReferenceModel(nn.Module):
             feed_ctx_attn_prob = None
         return ctx_emb, feed_ctx_attn_prob
 
-    def _context_for_hidden(self, ctx, ctx_differences, ctx_h, lang_hs, dots_mentioned, dots_mentioned_per_ref, num_markables, generation_beliefs):
+    def _context_for_hidden(self, ctx, ctx_differences, ctx_h, lang_hs, dots_mentioned, dots_mentioned_per_ref,
+                            num_markables, generation_beliefs, structured_generation_beliefs):
         # bsz x num_dots
         if self.args.hidden_context_mention_encoder:
             bsz = ctx_h.size(0)
@@ -1277,7 +1326,8 @@ class RnnReferenceModel(nn.Module):
                 attention_type='hidden',
                 dots_mentioned=dots_mentioned,
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
-                generation_beliefs=generation_beliefs
+                generation_beliefs=generation_beliefs,
+                structured_generation_beliefs=structured_generation_beliefs,
             ).squeeze(0).squeeze(-1)
             # bsz x num_dots x nembed_ctx
             ctx_emb = self.hidden_ctx_layer(ctx_h)
@@ -1300,14 +1350,15 @@ class RnnReferenceModel(nn.Module):
 
     def _add_hidden_context(
         self, ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-        num_markables, generation_beliefs
+        num_markables, generation_beliefs, structured_generation_beliefs,
     ):
         if vars(self.args).get('hidden_context', False):
             ctx_emb_for_hidden, _ = self._context_for_hidden(
                 ctx, ctx_differences, ctx_h, writer_lang_h,
                 dots_mentioned=dots_mentioned, dots_mentioned_per_ref=dots_mentioned_per_ref,
                 num_markables=num_markables,
-                generation_beliefs=generation_beliefs
+                generation_beliefs=generation_beliefs,
+                structured_generation_beliefs=structured_generation_beliefs,
             )
             gate_weights = self.hidden_ctx_gate(
                 # TODO: modify this if more than 1 layer
@@ -1341,7 +1392,7 @@ class RnnReferenceModel(nn.Module):
 
         writer_lang_h = self._add_hidden_context(
             ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-            num_markables, generation_beliefs
+            num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
         )
 
         # seq_len x batch_size x nembed_word
@@ -1350,7 +1401,8 @@ class RnnReferenceModel(nn.Module):
             # seq_len x bsz x (nembed_word+nembed_ctx)
             ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(
                 ctx_differences, ctx_h, writer_lang_h,
-                dots_mentioned=dots_mentioned, dots_mentioned_per_ref=dots_mentioned_per_ref, generation_beliefs=generation_beliefs
+                dots_mentioned=dots_mentioned, dots_mentioned_per_ref=dots_mentioned_per_ref,
+                generation_beliefs=generation_beliefs, structured_generation_beliefs=state.dot_h_maybe_multi_structured,
             )
             dialog_emb = torch.cat((dialog_emb, ctx_emb.expand(seq_len, -1, -1)), dim=-1)
         else:
@@ -1375,7 +1427,7 @@ class RnnReferenceModel(nn.Module):
 
     # a wrapper for _read that makes sure 'THEM:' or 'YOU:' is at the beginning
     # -> (reader_lang_hs, writer_lang_hs), state,
-    def read(self, state, inpt, prefix_token='THEM:',
+    def read(self, state: State, inpt, prefix_token='THEM:',
              dots_mentioned=None, dots_mentioned_per_ref=None,
              num_markables=None,
              generation_beliefs=None):
@@ -1388,6 +1440,7 @@ class RnnReferenceModel(nn.Module):
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
             generation_beliefs=generation_beliefs,
+            structured_generation_beliefs=state.dot_h_maybe_multi_structured,
 
         )
         return reader_and_writer_lang_hs, state
@@ -1399,7 +1452,7 @@ class RnnReferenceModel(nn.Module):
     def words2var(self, words):
         return torch.Tensor([self.word_dict.get_idx(word) for word in words]).long()
 
-    def write(self, state, max_words, temperature,
+    def write(self, state: State, max_words, temperature,
               start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None,
               dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
               generation_beliefs=None):
@@ -1430,12 +1483,13 @@ class RnnReferenceModel(nn.Module):
 
         writer_lang_h = self._add_hidden_context(
             ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-            num_markables, generation_beliefs
+            num_markables, generation_beliefs, state.dot_h_maybe_multi_structured
         )
 
         if self.args.feed_context:
             ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(
-                ctx_differences, ctx_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref, generation_beliefs
+                ctx_differences, ctx_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
+                generation_beliefs, state.dot_h_maybe_multi_structured,
             )
         else:
             ctx_emb, feed_ctx_attn_prob = None, None
@@ -1473,6 +1527,7 @@ class RnnReferenceModel(nn.Module):
                     dots_mentioned=dots_mentioned,
                     dots_mentioned_per_ref=dots_mentioned_per_ref,
                     generation_beliefs=generation_beliefs,
+                    structured_generation_beliefs=state.dot_h_maybe_multi_structured,
                 )
                 # remove the time dimension
                 ctx_attn_prob = ctx_attn_prob.squeeze(0)
@@ -1567,12 +1622,13 @@ class RnnReferenceModel(nn.Module):
 
         writer_lang_h = self._add_hidden_context(
             ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-            num_markables, generation_beliefs
+            num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
         )
 
         if self.args.feed_context:
             ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(
-                ctx_differences, ctx_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref, generation_beliefs
+                ctx_differences, ctx_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
+                generation_beliefs, state.dot_h_maybe_multi_structured,
             )
         else:
             ctx_emb, feed_ctx_attn_prob = None, None
@@ -1583,6 +1639,8 @@ class RnnReferenceModel(nn.Module):
         dots_mentioned = dots_mentioned.expand(beam_size, -1)
         dots_mentioned_per_ref = dots_mentioned_per_ref.expand(beam_size, -1, -1)
         if generation_beliefs is not None:
+            raise NotImplementedError("todo: check the size of generation_beliefs and expand")
+        if state.dot_h_maybe_multi_structured is not None:
             raise NotImplementedError("todo: check the size of generation_beliefs and expand")
 
         outputs = self.word2var(start_token).view(1,1).expand(beam_size, 1)
@@ -1619,6 +1677,7 @@ class RnnReferenceModel(nn.Module):
                     dots_mentioned=dots_mentioned,
                     dots_mentioned_per_ref=dots_mentioned_per_ref,
                     generation_beliefs=generation_beliefs,
+                    structured_generation_beliefs=state.dot_h_maybe_multi_structured,
                 )
                 # remove the time dimension
                 ctx_attn_prob = ctx_attn_prob.squeeze(0)
