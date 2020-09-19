@@ -52,6 +52,7 @@ class RnnAgent(Agent):
         self.human = False
         self.domain = domain.get_domain(args.domain)
         self.train = train
+        self.selection_word_index = self.model.word_dict.get_idx('<selection>')
         if train:
             raise NotImplementedError("fix optimization")
             self.model.train()
@@ -89,6 +90,7 @@ class RnnAgent(Agent):
             num_markables=num_markables_to_force,
             force_next_mention_num_markables=num_markables_to_force is not None
         )]
+        self.sel_outs = []
         self.extras = []
 
     def feed_partner_context(self, partner_context):
@@ -149,6 +151,11 @@ class RnnAgent(Agent):
                           num_markables=None, partner_num_markables=partner_num_markables)
         self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]),
                           num_markables_to_force=next_num_markables_to_force)
+        if (self.selection_word_index == inpt).any():
+            sel_idx = (self.selection_word_index == inpt.flatten()).nonzero()
+            assert len(sel_idx) == 1
+            # add one to offset from the start_token
+            self.selection(sel_idx[0] + 1)
         self.timesteps += 1
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
@@ -183,6 +190,11 @@ class RnnAgent(Agent):
                           num_markables=num_markables, partner_num_markables=None)
         self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]),
                           num_markables_to_force=torch.LongTensor([0]))
+        if (self.selection_word_index == outs).any():
+            sel_idx = (self.selection_word_index == outs.flatten()).nonzero()
+            assert len(sel_idx) == 1
+            # add one to offset from the start_token
+            self.selection(sel_idx[0] + 1)
         self.timesteps += 1
 
         """if self.args.visualize_referents:
@@ -214,9 +226,9 @@ class RnnAgent(Agent):
 
     def selection(self, sel_idx):
         selection_beliefs = self.state.make_beliefs(
-            'selection', self.timestep, self.partner_ref_outs, self.ref_outs,
+            'selection', self.timesteps, self.partner_ref_outs, self.ref_outs,
         )
-        sel_out = self.selection(self.state, self.reader_lang_hs, sel_idx, beliefs=selection_beliefs)
+        sel_out = self.model.selection(self.state, self.reader_lang_hs[-1], sel_idx, beliefs=selection_beliefs)
         self.sel_outs.append(sel_out)
         return sel_out
 
@@ -237,7 +249,7 @@ class RnnAgent(Agent):
     def _choose(self, sample=False):
         outs_emb = torch.cat(self.reader_lang_hs).unsqueeze(1)
         sel_idx = torch.Tensor(1).fill_(outs_emb.size(0) - 1).long()
-        choice_logit = self.model.selection(self.ctx_differences, self.ctx_h, outs_emb, sel_idx)
+        choice_logit = self.model.selection(self.state.ctx_differences, self.state.ctx_h, outs_emb, sel_idx)
 
         prob = F.softmax(choice_logit, dim=1)
         if sample:

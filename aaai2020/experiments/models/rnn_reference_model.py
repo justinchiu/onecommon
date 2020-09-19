@@ -156,14 +156,17 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--dot_recurrence', nargs='+', choices=['self', 'partner'])
         parser.add_argument('--dot_recurrence_dim', type=int, default=32)
         parser.add_argument('--dot_recurrence_oracle', action='store_true')
-        parser.add_argument('--dot_recurrence_structured', action='store_true')
+        parser.add_argument('--dot_recurrence_mention_attention', action='store_true')
+        parser.add_argument('--dot_recurrence_structured',
+                            action='store_true', help='use one hidden state for each of the 2^7 configurations')
         parser.add_argument('--dot_recurrence_structured_layers', type=int, default=0)
+        parser.add_argument('--dot_recurrence_uniform',
+                            action='store_true', help='all dots get the same update from language features (i.e. uniform attention weights)')
         parser.add_argument('--dot_recurrence_in',
                             nargs='+',
                             choices=['selection', 'next_mention', 'generation', 'ref', 'partner_ref'],
                             default=[])
         parser.add_argument('--dot_recurrence_split', action='store_true')
-
 
         # auxiliary models
         parser.add_argument('--partner_reference_prediction', action='store_true')
@@ -263,7 +266,7 @@ class RnnReferenceModel(nn.Module):
                 hidden_size=args.dot_recurrence_dim,
                 bias=True)
             self.dot_rec_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
-            if self.args.dot_recurrence_structured:
+            if vars(self.args).get('dot_recurrence_structured', False):
                 self.dot_rec_structured_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
             if self.args.dot_recurrence_split:
                 self.dot_rec_partner_cell = nn.GRUCell(
@@ -271,7 +274,7 @@ class RnnReferenceModel(nn.Module):
                     hidden_size=args.dot_recurrence_dim,
                     bias=True)
                 self.dot_rec_partner_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
-                if self.args.dot_recurrence_structured:
+                if vars(self.args).get('dot_recurrence_structured', False):
                     self.dot_rec_partner_structured_init = nn.Parameter(torch.zeros(args.dot_recurrence_dim))
                 self.dot_recurrence_embeddings = 2
             else:
@@ -284,6 +287,9 @@ class RnnReferenceModel(nn.Module):
 
             self.dot_rec_ref_transform = nn.Linear(ref_transform_input_dim, args.nhid_lang)
             self.dot_rec_partner_ref_transform = copy.deepcopy(self.dot_rec_ref_transform)
+
+            if args.dot_recurrence_mention_attention:
+                self.dot_recurrence_mention_attention = nn.Linear(ref_transform_input_dim, 1)
 
         # nhid_lang
         # TODO: pass these
@@ -969,11 +975,17 @@ class RnnReferenceModel(nn.Module):
         # todo: use the structured distribution rather than the dot marginals?
         ref_marginal_logits, ref_joint_logits, _ = ref_out
 
-        # max_num_mentions x filtered_bsz
-        mention_mean = torch.zeros((h_pooled.size(0), h_pooled.size(1)), device=h_pooled.device)
-        for i, nm in enumerate(num_markables[indices_to_update]):
-            mention_mean[:nm, i] = 1
-        mention_mean /= mention_mean.sum(0, keepdim=True).clamp_min(1)
+        if vars(self.args).get('dot_recurrence_mention_attention'):
+            # max_num_mentions x filtered_bsz
+            mention_weights = self.dot_recurrence_mention_attention(h_pooled).squeeze(-1).softmax(0)
+        else:
+            # max_num_mentions x filtered_bsz
+            mention_weights = torch.zeros((h_pooled.size(0), h_pooled.size(1)), device=h_pooled.device)
+            for i, nm in enumerate(num_markables[indices_to_update]):
+                mention_weights[:nm, i] = 1
+            mention_weights /= mention_weights.sum(0, keepdim=True).clamp_min(1)
+
+        uniform_over_dots = vars(self.args).get('dot_recurrence_uniform')
 
         # max_num_mentions x filtered_bsz x num_dots
         if vars(self.args).get('dot_recurrence_oracle', False):
@@ -981,6 +993,9 @@ class RnnReferenceModel(nn.Module):
             # attention_probs: max_num_mentions x filtered_bsz x num_dots
             attention_probs = ref_tgt[indices_to_update].transpose(0,1).float()
             assert not structured
+            assert not uniform_over_dots
+        elif uniform_over_dots:
+            attention_probs = torch.ones_like(ref_marginal_logits[:,indices_to_update])
         else:
             if structured:
                 attention_probs = ref_joint_logits[:,indices_to_update]
@@ -989,7 +1004,7 @@ class RnnReferenceModel(nn.Module):
                 attention_probs = ref_marginal_logits[:,indices_to_update].sigmoid()
             if self.args.detach_beliefs:
                 attention_probs = attention_probs.detach()
-        h_attended = torch.einsum("nbh,nbd,nb->bdh", (h_pooled, attention_probs, mention_mean))
+        h_attended = torch.einsum("nbh,nbd,nb->bdh", (h_pooled, attention_probs, mention_weights))
         h_attended = einops.rearrange(h_attended, "b d h -> (b d) h")
         inputs = transform(h_attended)
         dot_h_flat = einops.rearrange(dot_h[indices_to_update], "b d h -> (b d) h")
@@ -1031,7 +1046,7 @@ class RnnReferenceModel(nn.Module):
         structured_and_fields = [
             (False, 'dot_h_maybe_multi')
         ]
-        if self.args.dot_recurrence_structured:
+        if vars(self.args).get('dot_recurrence_structured', False):
             structured_and_fields.append((True, 'dot_h_maybe_multi_structured'))
 
         is_split = vars(self.args).get('dot_recurrence_split')
@@ -1440,8 +1455,6 @@ class RnnReferenceModel(nn.Module):
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
             generation_beliefs=generation_beliefs,
-            structured_generation_beliefs=state.dot_h_maybe_multi_structured,
-
         )
         return reader_and_writer_lang_hs, state
 

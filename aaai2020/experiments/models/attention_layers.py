@@ -92,7 +92,7 @@ class StructuredAttentionLayer(nn.Module):
             dropout_p=args.structured_attention_dropout,
         )
 
-        if self.args.dot_recurrence_structured:
+        if vars(self.args).get('dot_recurrence_structured', False):
             multiplier = 2 if self.args.dot_recurrence_split else 1
             if self.args.dot_recurrence_structured_layers == 0:
                 self.joint_factor_encoder = nn.Linear(args.dot_recurrence_dim * multiplier, 1)
@@ -151,7 +151,7 @@ class StructuredAttentionLayer(nn.Module):
 
         input_factors = unary_factor_names+binary_factor_names
 
-        if self.args.dot_recurrence_structured:
+        if vars(self.args).get('dot_recurrence_structured', False):
             input_factors.append(joint)
 
         return '{}->{}'.format(','.join(input_factors), output_factor_names)
@@ -211,7 +211,7 @@ class StructuredAttentionLayer(nn.Module):
         binary_factors = binary_potentials.transpose(0,1)
 
         input_factors = list(unary_factors) + list(binary_factors)
-        if self.args.dot_recurrence_structured:
+        if vars(self.args).get('dot_recurrence_structured', False):
             assert joint_factor_inputs is not None
             # (N*bsz) x 2 x 2 x ...
             if self.args.dot_recurrence_split:
