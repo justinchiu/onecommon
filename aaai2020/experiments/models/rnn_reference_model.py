@@ -1736,7 +1736,8 @@ class RnnReferenceModel(nn.Module):
 
         # remove start token for consistency with write()
         outputs = outputs[:,1:]
-        lens -= 1
+        # this would remove <eos>
+        # lens -= 1
 
         decoded = [
             [self.word_dict.get_word(ix.item()) for ix in sent[:l]]

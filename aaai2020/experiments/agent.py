@@ -114,20 +114,22 @@ class RnnAgent(Agent):
         self.partner_ref_outs.append(partner_ref_out)
         return partner_ref_out
 
-    def update_dot_h(self, ref_inpt, partner_ref_inpt, num_markables, partner_num_markables):
+    def update_dot_h(self, ref_inpt, partner_ref_inpt, num_markables, partner_num_markables,
+                     ref_tgt=None, partner_ref_tgt=None):
         self.state = self.model._update_dot_h_maybe_multi(
             self.state, self.reader_lang_hs[-1],
             ref_inpt, partner_ref_inpt,
             num_markables, partner_num_markables,
             self.ref_outs[-1], self.partner_ref_outs[-1],
-            None, None
+            ref_tgt, partner_ref_tgt,
         )
 
     def read(self, inpt, dots_mentioned=None, dots_mentioned_per_ref=None,
              num_markables=None,
              start_token='THEM:',
              partner_ref_inpt=None, partner_num_markables=None,
-             next_num_markables_to_force=None
+             next_num_markables_to_force=None,
+             ref_tgt=None, partner_ref_tgt=None,
              ):
         self.sents.append(Variable(self._encode([start_token] + inpt, self.model.word_dict)))
         inpt = self._encode(inpt, self.model.word_dict)
@@ -148,7 +150,8 @@ class RnnAgent(Agent):
         self.words.append(self.model.word2var(start_token).unsqueeze(0))
         self.words.append(Variable(inpt))
         self.update_dot_h(ref_inpt=None, partner_ref_inpt=partner_ref_inpt,
-                          num_markables=None, partner_num_markables=partner_num_markables)
+                          num_markables=None, partner_num_markables=partner_num_markables,
+                          ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
         self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]),
                           num_markables_to_force=next_num_markables_to_force)
         if (self.selection_word_index == inpt).any():
@@ -162,7 +165,8 @@ class RnnAgent(Agent):
     def write(self, max_words=100, force_words=None, start_token='YOU:',
               dots_mentioned=None, dots_mentioned_per_ref=None,
               num_markables=None, ref_inpt=None,
-              temperature_override=None):
+              temperature_override=None,
+              ref_tgt=None, partner_ref_tgt=None):
         temperature = temperature_override if temperature_override is not None else self.args.temperature
         generation_beliefs = self.state.make_beliefs('generation', self.timesteps, self.partner_ref_outs, self.ref_outs)
         outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
@@ -187,7 +191,8 @@ class RnnAgent(Agent):
         self.sents.append(torch.cat([self.model.word2var(start_token).unsqueeze(1), outs], 0))
         self.extras.append(extra)
         self.update_dot_h(ref_inpt=ref_inpt, partner_ref_inpt=None,
-                          num_markables=num_markables, partner_num_markables=None)
+                          num_markables=num_markables, partner_num_markables=None,
+                          ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
         self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]),
                           num_markables_to_force=torch.LongTensor([0]))
         if (self.selection_word_index == outs).any():
