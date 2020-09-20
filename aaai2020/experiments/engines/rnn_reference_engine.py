@@ -802,6 +802,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         next_mention_stats = defaultdict(lambda: 0.0)
         # next_mention_stats = {'num_dots': 0}
 
+        expanded_next_mention_loss = self.args.next_mention_prediction_type == 'multi_reference'
+
         if self.args.next_mention_prediction:
             assert len(dots_mentioned) + 1 == len(next_mention_outs)
             for i in range(len(dots_mentioned)):
@@ -822,7 +824,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                     # hack; pass True for inpt because this method only uses it to ensure it's not null
                     _loss, _pred, _stats = self._ref_loss(
                         True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions,
-                        collapse=self.args.next_mention_prediction_type == 'multi_reference'
+                        # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
+                        collapse=expanded_next_mention_loss,
                     )
                     next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
                     # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
@@ -834,12 +837,16 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             # assert next_mention_stats['num_dots'] == 0 and (not next_mention_losses)
             next_mention_loss = None
         else:
-            next_mention_loss = sum(next_mention_losses) / next_mention_stats['expanded_num_dots']
+            loss_normalizer_name = 'expanded_num_dots' if expanded_next_mention_loss else 'num_dots'
+            assert next_mention_stats[loss_normalizer_name] != 0
+            next_mention_loss = sum(next_mention_losses) / next_mention_stats[loss_normalizer_name]
 
         if not next_mention_stop_losses:
             next_mention_stop_loss = None
         else:
-            next_mention_stop_loss = sum(next_mention_stop_losses) / next_mention_stats['expanded_exact_match_denom']
+            loss_normalizer_name = 'expanded_exact_match_denom' if expanded_next_mention_loss else 'exact_match_denom'
+            assert next_mention_stats[loss_normalizer_name] != 0
+            next_mention_stop_loss = sum(next_mention_stop_losses) / next_mention_stats[loss_normalizer_name]
 
         return ForwardRet(
             lang_loss=lang_loss,
