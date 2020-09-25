@@ -109,6 +109,8 @@ class RnnReferenceModel(nn.Module):
             'full','filtered-separate','filtered-shared'
         ], default='full')
         parser.add_argument('--hidden_context_mention_encoder_diffs', action='store_true')
+        parser.add_argument('--hidden_context_mention_encoder_dot_recurrence', action='store_true')
+        parser.add_argument('--hidden_context_mention_encoder_count_features', action='store_true')
 
         parser.add_argument('--untie_grus',
                             action='store_true',
@@ -161,12 +163,17 @@ class RnnReferenceModel(nn.Module):
                             action='store_true', help='use one hidden state for each of the 2^7 configurations')
         parser.add_argument('--dot_recurrence_structured_layers', type=int, default=0)
         parser.add_argument('--dot_recurrence_uniform',
-                            action='store_true', help='all dots get the same update from language features (i.e. uniform attention weights)')
+                            action='store_true',
+                            help='all dots get the same update from language features (i.e. uniform attention weights) [seems to hurt performance]')
         parser.add_argument('--dot_recurrence_in',
                             nargs='+',
                             choices=['selection', 'next_mention', 'generation', 'ref', 'partner_ref'],
                             default=[])
         parser.add_argument('--dot_recurrence_split', action='store_true')
+        parser.add_argument('--dot_recurrence_inputs',
+                            nargs='+',
+                            choices=['weighted_hidden', 'weights_average', 'weights_max'],
+                            default='weighted_hidden')
 
         # auxiliary models
         parser.add_argument('--partner_reference_prediction', action='store_true')
@@ -231,6 +238,13 @@ class RnnReferenceModel(nn.Module):
                     self.hidden_ctx_encoder_diff_pad = nn.Parameter(
                         torch.zeros(args.nembed_ctx), requires_grad=True,
                     )
+                if self.args.hidden_context_mention_encoder_dot_recurrence:
+                    dr_dim = args.dot_recurrence_dim * (2 if self.args.dot_recurrence_split else 1)
+                else:
+                    dr_dim = 0
+                hce_input_dim += dr_dim
+                if self.args.hidden_context_mention_encoder_count_features:
+                    hce_input_dim += 1
                 self.hidden_ctx_encoder = nn.LSTM(
                     hce_input_dim, args.nembed_ctx, 1, batch_first=True
                 )
@@ -238,7 +252,7 @@ class RnnReferenceModel(nn.Module):
                     torch.zeros(args.nembed_ctx), requires_grad=True
                 )
                 self.hidden_ctx_encoder_no_dots = nn.Parameter(
-                    torch.zeros(args.nembed_ctx), requires_grad=True
+                    torch.zeros(args.nembed_ctx + dr_dim), requires_grad=True
                 )
                 if self.args.hidden_context_mention_encoder_type == 'filtered-separate':
                     ctx_encoder_ty = models.get_ctx_encoder_type(args.ctx_encoder_type)
@@ -261,6 +275,7 @@ class RnnReferenceModel(nn.Module):
             bias=True)
 
         if self.args.dot_recurrence:
+
             self.dot_rec_cell = nn.GRUCell(
                 input_size=args.nhid_lang,
                 hidden_size=args.dot_recurrence_dim,
@@ -283,7 +298,13 @@ class RnnReferenceModel(nn.Module):
             self.dot_rec_ref_pooling_weights = nn.Parameter(torch.zeros(3), requires_grad=True)
             self.dot_rec_partner_ref_pooling_weights = copy.deepcopy(self.dot_rec_ref_pooling_weights)
 
-            ref_transform_input_dim = args.nhid_lang * self.num_reader_directions
+            ref_transform_input_dim = 0
+            if 'weighted_hidden' in self.args.dot_recurrence_inputs:
+                ref_transform_input_dim += args.nhid_lang * self.num_reader_directions
+            if 'weights_average' in self.args.dot_recurrence_inputs:
+                ref_transform_input_dim += 1
+            if 'weights_max' in self.args.dot_recurrence_inputs:
+                ref_transform_input_dim += 1
 
             self.dot_rec_ref_transform = nn.Linear(ref_transform_input_dim, args.nhid_lang)
             self.dot_rec_partner_ref_transform = copy.deepcopy(self.dot_rec_ref_transform)
@@ -987,6 +1008,7 @@ class RnnReferenceModel(nn.Module):
 
         uniform_over_dots = vars(self.args).get('dot_recurrence_uniform')
 
+        input_names = vars(self.args).get('dot_recurrence_inputs', ['weighted_hidden'])
         # max_num_mentions x filtered_bsz x num_dots
         if vars(self.args).get('dot_recurrence_oracle', False):
             # ref_tgt: bsz x max_num_mentions x num_dots
@@ -1004,11 +1026,17 @@ class RnnReferenceModel(nn.Module):
                 attention_probs = ref_marginal_logits[:,indices_to_update].sigmoid()
             if self.args.detach_beliefs:
                 attention_probs = attention_probs.detach()
-        h_attended = torch.einsum("nbh,nbd,nb->bdh", (h_pooled, attention_probs, mention_weights))
-        h_attended = einops.rearrange(h_attended, "b d h -> (b d) h")
-        inputs = transform(h_attended)
+        to_cat = []
+        if 'weighted_hidden' in input_names:
+            to_cat.append(torch.einsum("nbh,nbd,nb->bdh", (h_pooled, attention_probs, mention_weights)))
+        if 'weights_average' in input_names:
+            to_cat.append(torch.einsum("nbd,nb->bd", (attention_probs, mention_weights)).unsqueeze(-1))
+        if 'weights_max' in input_names:
+            to_cat.append(einops.reduce(attention_probs, "n b d -> b d", 'max').unsqueeze(-1))
+        inputs = einops.rearrange(torch.cat(to_cat, -1), "b d h -> (b d) h")
+        transformed_inputs = transform(inputs)
         dot_h_flat = einops.rearrange(dot_h[indices_to_update], "b d h -> (b d) h")
-        dot_h_update = cell(inputs, dot_h_flat)
+        dot_h_update = cell(transformed_inputs, dot_h_flat)
         dot_h_update = einops.rearrange(dot_h_update, "(b d) h -> b d h", b=indices_to_update.sum())
         dot_h[indices_to_update] = dot_h_update
         return dot_h
@@ -1269,8 +1297,11 @@ class RnnReferenceModel(nn.Module):
             feed_ctx_attn_prob = None
         return ctx_emb, feed_ctx_attn_prob
 
-    def _context_for_hidden(self, ctx, ctx_differences, ctx_h, lang_hs, dots_mentioned, dots_mentioned_per_ref,
+    def _context_for_hidden(self, state: State, lang_hs, dots_mentioned, dots_mentioned_per_ref,
                             num_markables, generation_beliefs, structured_generation_beliefs):
+        ctx = state.ctx
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
         # bsz x num_dots
         if self.args.hidden_context_mention_encoder:
             bsz = ctx_h.size(0)
@@ -1307,7 +1338,18 @@ class RnnReferenceModel(nn.Module):
 
                 # select the embeddings for the dots mentioned in each utterance
                 # filtered_bsz x max_num_markables x num_dots x ctx_dim
-                dots_selected = ctx_h_filtered.unsqueeze(1).repeat_interleave(max_num_markables, dim=1) * dmpr_filtered.unsqueeze(-1)
+                to_select = ctx_h_filtered
+                if vars(self.args).get('hidden_context_mention_encoder_dot_recurrence', False):
+                    if self.args.dot_recurrence_split:
+                        assert isinstance(state.dot_h_maybe_multi, tuple)
+                        dot_h = torch.cat(state.dot_h_maybe_multi, -1)
+                    else:
+                        dot_h = state.dot_h_maybe_multi
+                    dot_h = dot_h[num_markables > 0]
+                    assert dot_h.size(0) == dmpr_filtered.size(0)
+                    to_select = torch.cat((to_select, dot_h), -1)
+
+                dots_selected = to_select.unsqueeze(1).repeat_interleave(max_num_markables, dim=1) * dmpr_filtered.unsqueeze(-1)
                 dots_selected = einops.reduce(dots_selected, "b mnm nd c -> b mnm c", 'sum')
 
                 # filtered_bsz x max_num_mentions
@@ -1317,6 +1359,9 @@ class RnnReferenceModel(nn.Module):
                 dots_selected /= torch.clamp(num_dots_mentioned_per_ref.unsqueeze(-1), min=1.0)
                 # use self.hidden_ctx_encoder_no_dots for any others: use this outer-product hack because we can't masked_fill with a vector-valued fill
                 dots_selected += torch.einsum("bm,h->bmh", ((num_dots_mentioned_per_ref == 0).float(), self.hidden_ctx_encoder_no_dots))
+                to_encode = dots_selected
+                if vars(self.args).get('hidden_context_mention_encoder_count_features', False):
+                    to_encode = torch.cat((to_encode, num_dots_mentioned_per_ref.float().unsqueeze(-1)), -1)
                 if self.args.hidden_context_mention_encoder_diffs:
                     # filtered_bsz x max_num_mentions x nembed_ctx
                     dots_selected_pad = dots_selected.clone()
@@ -1326,13 +1371,14 @@ class RnnReferenceModel(nn.Module):
                     for bix, nm in enumerate(num_markables_filtered):
                         dots_selected_pad[bix,nm:] = self.hidden_ctx_encoder_diff_pad.unsqueeze(0)
                     dots_selected_diffs = dots_selected_pad[:,:-1] - dots_selected_pad[:,1:]
-                    dots_selected = torch.cat((dots_selected, dots_selected_diffs), -1)
+                    to_encode = torch.cat((to_encode, dots_selected_diffs), -1)
 
                 with set_temporary_default_tensor_type(torch.FloatTensor):
                     # need this since the default tensor type is cuda, and pack_padded_sequence does things on cpu
-                    dots_selected = pack_padded_sequence(dots_selected, num_markables_filtered.cpu().long(), batch_first=True, enforce_sorted=False)
+                    to_encode = pack_padded_sequence(to_encode, num_markables_filtered.cpu().long(),
+                                                     batch_first=True, enforce_sorted=False)
                 # h: 1 x filtered_bsz x hidden_dim
-                encoded, (h, c) = self.hidden_ctx_encoder(dots_selected)
+                encoded, (h, c) = self.hidden_ctx_encoder(to_encode)
                 ctx_emb[num_markables > 0] = h.squeeze(0)
             return ctx_emb, None
         else:
@@ -1364,12 +1410,12 @@ class RnnReferenceModel(nn.Module):
         return reader_lang_h, writer_lang_h
 
     def _add_hidden_context(
-        self, ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
+        self, state: State, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
         num_markables, generation_beliefs, structured_generation_beliefs,
     ):
         if vars(self.args).get('hidden_context', False):
             ctx_emb_for_hidden, _ = self._context_for_hidden(
-                ctx, ctx_differences, ctx_h, writer_lang_h,
+                state, writer_lang_h,
                 dots_mentioned=dots_mentioned, dots_mentioned_per_ref=dots_mentioned_per_ref,
                 num_markables=num_markables,
                 generation_beliefs=generation_beliefs,
@@ -1406,7 +1452,7 @@ class RnnReferenceModel(nn.Module):
         reader_lang_h, writer_lang_h = state.reader_and_writer_lang_h
 
         writer_lang_h = self._add_hidden_context(
-            ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
+            state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
             num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
         )
 
@@ -1495,7 +1541,7 @@ class RnnReferenceModel(nn.Module):
         lang_hs = []
 
         writer_lang_h = self._add_hidden_context(
-            ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
+            state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
             num_markables, generation_beliefs, state.dot_h_maybe_multi_structured
         )
 
@@ -1634,7 +1680,7 @@ class RnnReferenceModel(nn.Module):
         assert bsz == 1
 
         writer_lang_h = self._add_hidden_context(
-            ctx, ctx_differences, ctx_h, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
+            state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
             num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
         )
 
