@@ -90,7 +90,7 @@ def main():
                 best_model.to(device)
             best_model.eval()
         else:
-            model = BiLSTM_CRF(len(corpus.word_dict), corpus.bio_dict, args.nembed_word, args.nhid_lang)
+            model = BiLSTM_CRF(corpus.word_dict, corpus.bio_dict, args.nembed_word, args.nhid_lang)
             optimizer = optim.Adam(
                     model.parameters(),
                     lr=args.lr)

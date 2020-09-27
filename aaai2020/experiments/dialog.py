@@ -8,6 +8,8 @@ from metric import MetricsContainer
 from corpora import data
 import domain
 
+from models.markable_detector import detect_markables
+
 class DialogLogger(object):
     def __init__(self, verbose=False, log_file=None, append=False, scenarios=None):
         self.logs = []
@@ -125,6 +127,7 @@ class DialogSelfTrainLogger(DialogLogger):
                         self.name2example[name] += ' ' + self.name2choice[name]
                         self.name2example[name] += ' ' + self.name2choice[other_name]
                         self._dump(self.name2example[name])
+
 
 
 class Dialog(object):
@@ -272,7 +275,6 @@ class Dialog(object):
             for agent in [0, 1]:
                 dialog_tokens = []
                 dialog_text = ""
-                markables = []
                 for spkr, uttr in zip(speaker, conv):
                     if spkr == agent:
                         dialog_tokens.append("YOU:")
@@ -281,61 +283,26 @@ class Dialog(object):
                     dialog_tokens += uttr
                     dialog_text += str(spkr) + ": " + " ".join(uttr[:-1]) + "\n"
 
-                    words = self.markable_detector_corpus.word_dict.w2i(dialog_tokens)
-                    words = torch.Tensor(words).long().cuda()
-                    score, tag_seq = self.markable_detector(words)
-                    referent_inpt = []
+                    referent_inputs = []
+                    markables = []
                     markable_ids = []
-                    my_utterance = None
-                    current_text = ""
-                    for i, word in enumerate(words):
-                        if word.item() == self.markable_detector_corpus.word_dict.word2idx["YOU:"]:
-                            my_utterance = True
-                            current_speaker = agent
-                        elif word.item() == self.markable_detector_corpus.word_dict.word2idx["THEM:"]:
-                            my_utterance = False
-                            current_speaker = 1 - agent
-                        if my_utterance:
-                            if tag_seq[i].item() == self.markable_detector_corpus.bio_dict["B"]:
-                                start_idx = i
-                                for j in range(i + 1, len(tag_seq)):
-                                    if tag_seq[j].item() != self.markable_detector_corpus.bio_dict["I"]:
-                                        end_idx = j - 1
-                                        break
-                                for j in range(i + 1, len(tag_seq)):
-                                    if tag_seq[j].item() in self.markable_detector_corpus.word_dict.w2i(["<eos>", "<selection>"]):
-                                        end_uttr = j
-                                        break
+                    # TODO: fix this; detect_markables should probably only be run once per dialogue
+                    for markable, referent_inp in detect_markables(
+                        self.markable_detector,
+                        dialog_tokens,
+                        dialog_text=dialog_text,
+                        device=torch.device('cuda') if self.args.cuda else None,
+                    ):
+                        if not markable['is_self']:
+                            continue
+                        markable['speaker'] = agent
+                        markable_id = len(markable_list)
+                        markable['markable_id'] = markable_id
+                        markable_list.append(markable)
+                        markable_ids.append(markable_id)
+                        referent_inputs.append(referent_inp)
 
-                                markable_start = len(current_text + " ")
-                                if markable_start not in markable_starts:
-                                    referent_inpt.append([start_idx, end_idx, end_uttr])
-                                    markable_ids.append(len(markable_starts))
-
-                                    # add markable
-                                    markable = {}
-                                    markable["start"] = markable_start
-                                    markable["end"] = len(current_text + " " + " ".join(dialog_tokens[start_idx:end_idx + 1]))
-                                    #markable["start"] = len(str(spkr) + ": " + " ".join(dialog_tokens[1:start_idx]) + " ")
-                                    #markable["end"] = len(str(spkr) + ": " + " ".join(dialog_tokens[1:end_idx + 1]))
-                                    markable["markable_id"] = len(markable_starts)
-                                    markable["speaker"] = current_speaker
-                                    markable["text"] = " ".join(dialog_tokens[start_idx:end_idx + 1])
-                                    markable_starts.append(markable["start"])
-                                    markable_list.append(markable)
-
-                        if word.item() == self.markable_detector_corpus.word_dict.word2idx["YOU:"]:
-                            current_text += "{}:".format(current_speaker)
-                        elif word.item() == self.markable_detector_corpus.word_dict.word2idx["THEM:"]:
-                            current_text += "{}:".format(current_speaker)
-                        elif word.item() in self.markable_detector_corpus.word_dict.w2i(["<eos>", "<selection>"]):
-                            current_text += "\n"
-                        else:
-                            current_text += " " + self.markable_detector_corpus.word_dict.idx2word[word.item()]
-
-                    assert len(current_text) == len(dialog_text)
-
-                    ref_out = self.agents[agent].predict_referents(referent_inpt)
+                    ref_out = self.agents[agent].predict_referents(referent_inputs)
 
                     if ref_out is not None:
                         for i, markable_id in enumerate(markable_ids):
