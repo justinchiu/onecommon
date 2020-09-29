@@ -14,7 +14,7 @@ ReferenceSentenceInstance = namedtuple(
     "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids \
     agents chat_ids sel_idxs lens rev_idxs hid_idxs num_markables is_self \
     partner_ref_inpt partner_ref_tgt_our_view partner_num_markables \
-    referent_disagreements partner_referent_disagreements".split()
+    referent_disagreements partner_referent_disagreements partner_ref_tgt".split()
 )
 
 
@@ -159,6 +159,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             inpts, lens, tgts = [], [], []
             ref_inpts, ref_tgts, all_num_markables = [], [], []
             partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables = [], [], []
+            partner_ref_tgts = []
             is_self = []
             for s in range(dial_len):
                 batch = []
@@ -229,6 +230,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
 
                 partner_ref_inpts.append(partner_ref_inpt)
                 partner_ref_tgts_our_view.append(partner_ref_tgt_our_view)
+                partner_ref_tgts.append(partner_ref_tgt)
                 all_partner_num_markables.append(partner_num_markables)
 
             # # pad all the dialogues to match the longest dialogue
@@ -269,7 +271,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs,
                 lens, rev_idxs, hid_idxs, all_num_markables, is_self,
                 partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables,
-                ref_disagreements, partner_ref_disagreements
+                ref_disagreements, partner_ref_disagreements,
+                partner_ref_tgts,
             ))
 
         pbar.close()

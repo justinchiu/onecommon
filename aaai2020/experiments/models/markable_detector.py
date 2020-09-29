@@ -23,58 +23,6 @@ def log_sum_exp(vec):
     return max_score + \
         torch.log(torch.sum(torch.exp(vec - max_score_broadcast)))
 
-def detect_markables(markable_detector, dialog_tokens, dialog_text=None, device=None):
-    word_indices = markable_detector.word_dict.w2i(dialog_tokens)
-    word_indices = torch.Tensor(word_indices).long()
-    if device is not None:
-        word_indices = word_indices.to(device)
-
-    score, tag_seq = markable_detector(word_indices)
-    current_text = ""
-    is_self = None
-    for i, word in enumerate(word_indices):
-        if word.item() == markable_detector.word_dict.word2idx["YOU:"]:
-            my_utterance = True
-            # agent
-            is_self = True
-        elif word.item() == markable_detector.word_dict.word2idx["THEM:"]:
-            my_utterance = False
-            # 1 - agent
-            is_self = False
-        if tag_seq[i].item() == markable_detector.tag_to_ix["B"]:
-            start_idx = i
-            for j in range(i + 1, len(tag_seq)):
-                if tag_seq[j].item() != markable_detector.tag_to_ix["I"]:
-                    end_idx = j - 1
-                    break
-            for j in range(i + 1, len(tag_seq)):
-                if tag_seq[j].item() in markable_detector.word_dict.w2i(["<eos>", "<selection>"]):
-                    end_uttr = j
-                    break
-
-            markable_start = len(current_text + " ")
-            markable = {
-                'start': markable_start,
-                'end': len(current_text + " " + " ".join(dialog_tokens[start_idx:end_idx + 1])),
-                'is_self': is_self,
-                'text': " ".join(dialog_tokens[start_idx:end_idx + 1])
-            }
-            referent_inpt = (start_idx, end_idx, end_uttr)
-            yield markable, referent_inpt
-
-        if word.item() == markable_detector.word_dict.word2idx["YOU:"]:
-            # current_text += "{}:".format(current_speaker)
-            current_text += "X:"
-        elif word.item() == markable_detector.word_dict.word2idx["THEM:"]:
-            # current_text += "{}:".format(current_speaker)
-            current_text += "X:"
-        elif word.item() in markable_detector.word_dict.w2i(["<eos>", "<selection>"]):
-            current_text += "\n"
-        else:
-            current_text += " " + markable_detector.word_dict.idx2word[word.item()]
-
-    if dialog_text is not None:
-        assert len(current_text) == len(dialog_text)
 
 class BiLSTM_CRF(nn.Module):
     corpus_ty = corpora.markable.MarkableCorpus
@@ -218,6 +166,59 @@ class BiLSTM_CRF(nn.Module):
         # Find the best path, given the features.
         score, tag_seq = self._viterbi_decode(lstm_feats)
         return score, tag_seq
+
+    def detect_markables(self, dialog_tokens, dialog_text=None, device=None):
+        word_indices = self.word_dict.w2i(dialog_tokens)
+        word_indices = torch.Tensor(word_indices).long()
+        if device is not None:
+            word_indices = word_indices.to(device)
+
+        score, tag_seq = self(word_indices)
+        current_text = ""
+        is_self = None
+        for i, word in enumerate(word_indices):
+            if word.item() == self.word_dict.word2idx["YOU:"]:
+                my_utterance = True
+                # agent
+                is_self = True
+            elif word.item() == self.word_dict.word2idx["THEM:"]:
+                my_utterance = False
+                # 1 - agent
+                is_self = False
+            if tag_seq[i].item() == self.tag_to_ix["B"]:
+                start_idx = i
+                for j in range(i + 1, len(tag_seq)):
+                    if tag_seq[j].item() != self.tag_to_ix["I"]:
+                        end_idx = j - 1
+                        break
+                for j in range(i + 1, len(tag_seq)):
+                    if tag_seq[j].item() in self.word_dict.w2i(["<eos>", "<selection>"]):
+                        end_uttr = j
+                        break
+
+                markable_start = len(current_text + " ")
+                markable = {
+                    'start': markable_start,
+                    'end': len(current_text + " " + " ".join(dialog_tokens[start_idx:end_idx + 1])),
+                    'is_self': is_self,
+                    'text': " ".join(dialog_tokens[start_idx:end_idx + 1])
+                }
+                referent_inpt = (start_idx, end_idx, end_uttr)
+                yield markable, referent_inpt
+
+            if word.item() == self.word_dict.word2idx["YOU:"]:
+                # current_text += "{}:".format(current_speaker)
+                current_text += "X:"
+            elif word.item() == self.word_dict.word2idx["THEM:"]:
+                # current_text += "{}:".format(current_speaker)
+                current_text += "X:"
+            elif word.item() in self.word_dict.w2i(["<eos>", "<selection>"]):
+                current_text += "\n"
+            else:
+                current_text += " " + self.word_dict.idx2word[word.item()]
+
+        if dialog_text is not None:
+            assert len(current_text) == len(dialog_text)
 
 #####################################################################
 # Create model (batch training)

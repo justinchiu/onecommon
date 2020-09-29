@@ -527,7 +527,9 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _forward(self, batch, epoch):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
-        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _, sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables, ref_disagreements, partner_ref_disagreements = batch
+        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _,\
+        sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view,\
+        partner_num_markables, ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)

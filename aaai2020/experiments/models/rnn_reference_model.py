@@ -650,7 +650,7 @@ class RnnReferenceModel(nn.Module):
         return outs
 
     def next_mention_prediction(self, state: _State, outs_emb, lens, mention_beliefs,
-                                num_markables_to_force=None, max_num_mentions=12):
+                                num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
         ctx_h = state.ctx_h
         ctx_differences = state.ctx_differences
         bsz = ctx_h.size(0)
@@ -681,6 +681,9 @@ class RnnReferenceModel(nn.Module):
                 else:
                     is_finished |= (stop_logits > 0)
                 is_finished |= (num_markables >= max_num_mentions)
+                if min_num_mentions > 0:
+                    # if num_markables < min_num_mentions then is_finished = False
+                    is_finished &= num_markables >= min_num_mentions
                 num_markables += (~is_finished).long()
                 if not is_finished.all():
                     h = self.next_mention_cell(lang_states, h)
@@ -1802,7 +1805,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def first_mention(self, state, num_markables=None, force_next_mention_num_markables=False):
+    def first_mention(self, state, num_markables=None, force_next_mention_num_markables=False, min_num_mentions=0, max_num_mentions=12):
         mention_beliefs = state.make_beliefs('mention', -1, [], [])
         return self.next_mention_prediction(
             state,
@@ -1810,6 +1813,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             lens=torch.full((state.bsz,), 1.0, device=state.ctx_h.device).long(),
             mention_beliefs=mention_beliefs,
             num_markables_to_force=num_markables if force_next_mention_num_markables else None,
+            min_num_mentions=min_num_mentions,
+            max_num_mentions=max_num_mentions,
         )
 
     def forward(self, ctx, inpts, ref_inpts, sel_idx, num_markables, partner_num_markables, lens,

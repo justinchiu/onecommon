@@ -8,8 +8,6 @@ from metric import MetricsContainer
 from corpora import data
 import domain
 
-from models.markable_detector import detect_markables
-
 class DialogLogger(object):
     def __init__(self, verbose=False, log_file=None, append=False, scenarios=None):
         self.logs = []
@@ -287,8 +285,7 @@ class Dialog(object):
                     markables = []
                     markable_ids = []
                     # TODO: fix this; detect_markables should probably only be run once per dialogue
-                    for markable, referent_inp in detect_markables(
-                        self.markable_detector,
+                    for markable, referent_inp in self.markable_detector.detect_markables(
                         dialog_tokens,
                         dialog_text=dialog_text,
                         device=torch.device('cuda') if self.args.cuda else None,
