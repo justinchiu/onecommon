@@ -181,6 +181,8 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--next_mention_prediction', action='store_true')
         parser.add_argument('--next_mention_prediction_type', choices=['collapsed', 'multi_reference'], default='collapsed')
 
+        parser.add_argument('--is_selection_prediction', action='store_true')
+
         AttentionLayer.add_args(parser)
         StructuredAttentionLayer.add_args(parser)
 
@@ -514,6 +516,10 @@ class RnnReferenceModel(nn.Module):
         #     init_cont(self.lang_attn, args.init_range)
         #     init_cont(self.sel_attn, args.init_range)
         #     init_cont(self.ref_attn, args.init_range)
+
+        # TODO: MLP?
+        if args.is_selection_prediction:
+            self.is_selection_layer = nn.Linear(args.nhid_lang, 1)
 
     def initialize_state(self, ctx, belief_constructor) -> State:
         ctx_h = self.ctx_encoder(ctx)
@@ -1153,6 +1159,13 @@ class RnnReferenceModel(nn.Module):
         outs = outs.view(-1, outs.size(2))
         return outs, ctx_attn_prob
 
+    def is_selection_prediction(self, state: State):
+        _, writer_lang_h = state.reader_and_writer_lang_h
+        # bsz
+        logits = self.is_selection_layer(writer_lang_h.squeeze(0)).squeeze(-1)
+        # TODO: use beliefs here
+        return logits
+
     def _forward(self, state: State, inpt, lens,
                  ref_inpt=None, partner_ref_inpt=None,
                  num_markables=None, partner_num_markables=None,
@@ -1164,7 +1177,7 @@ class RnnReferenceModel(nn.Module):
                  # needed for dot_recurrence_oracle
                  ref_tgt=None, partner_ref_tgt=None,
                  force_next_mention_num_markables=False,
-                 next_num_markables=None,
+                 next_num_markables=None, is_selection=None,
                  ):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
@@ -1180,6 +1193,7 @@ class RnnReferenceModel(nn.Module):
         # print('inpt size: {}'.format(inpt.size()))
 
         generation_beliefs = state.make_beliefs('generation', timestep, partner_ref_outs, ref_outs)
+
         (reader_lang_hs, writer_lang_hs), state, feed_ctx_attn_prob = self._read(
             state, inpt, lens,
             pack=True,
@@ -1268,6 +1282,8 @@ class RnnReferenceModel(nn.Module):
         dot_h = self._init_dot_h_maybe_multi(bsz, False)
         dot_h_structured = self._init_dot_h_maybe_multi(bsz, True)
 
+        is_selection_out = None
+
         outs, (ref_out, partner_ref_out), sel_out, reader_and_writer_lang_h, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, dot_h = self._forward(
             ctx, ctx_differences, ctx_h, inpt, ref_inpt, sel_idx,
             num_markables, partner_num_markables,
@@ -1277,7 +1293,7 @@ class RnnReferenceModel(nn.Module):
             partner_ref_inpt=partner_ref_inpt, timestep=0, partner_ref_outs=[],
             dot_h=dot_h, ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt,
         )
-        return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, reader_and_writer_lang_h, ctx_h, ctx_differences
+        return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, is_selection_out, reader_and_writer_lang_h, ctx_h, ctx_differences
 
     def _context_for_feeding(self, ctx_differences, ctx_h, lang_hs, dots_mentioned, dots_mentioned_per_ref,
                              generation_beliefs, structured_generation_beliefs):
@@ -1840,6 +1856,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         all_next_mention_outs = []
 
+        all_is_selection_outs = []
+
         all_reader_lang_h = [None]
         all_writer_lang_h = [None]
 
@@ -1867,6 +1885,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             assert ref_tgts is not None
             ref_tgt = ref_tgts[i] if ref_tgts is not None else None
             partner_ref_tgt = partner_ref_tgts[i] if partner_ref_tgts is not None else None
+            is_selection_out = self.is_selection_prediction(state)
+            all_is_selection_outs.append(is_selection_out)
             state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
                 state, inpt, this_lens,
                 ref_inpt=ref_inpt,
@@ -1989,4 +2009,4 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         assert sel_out is not None
 
-        return state, all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs
+        return state, all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs

@@ -14,7 +14,7 @@ ReferenceSentenceInstance = namedtuple(
     "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids \
     agents chat_ids sel_idxs lens rev_idxs hid_idxs num_markables is_self \
     partner_ref_inpt partner_ref_tgt_our_view partner_num_markables \
-    referent_disagreements partner_referent_disagreements partner_ref_tgt".split()
+    referent_disagreements partner_referent_disagreements partner_ref_tgt is_selection".split()
 )
 
 
@@ -266,13 +266,19 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
 
             assert len(inpts) == len(ref_inpts)
 
+            is_selection = [
+                # bsz is maximum batch size, so read the actual batch size off the inpt tensor
+                torch.Tensor([ix == len(inpts) - 1 for _ in range(inpts[0].size(-1))]).bool().to(device)
+                for ix in range(len(inpts))
+            ]
+
             batches.append(ReferenceSentenceInstance(
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt,
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs,
                 lens, rev_idxs, hid_idxs, all_num_markables, is_self,
                 partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables,
                 ref_disagreements, partner_ref_disagreements,
-                partner_ref_tgts,
+                partner_ref_tgts, is_selection,
             ))
 
         pbar.close()

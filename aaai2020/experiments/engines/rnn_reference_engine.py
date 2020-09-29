@@ -30,6 +30,7 @@ ForwardRet = namedtuple(
      'next_mention_loss', 'next_mention_stop_loss', 'next_mention_stats',
      # 'next_mention_correct', 'next_mention_gold_positive', 'next_mention_pred_positive',
      # 'next_mention_true_positive', 'next_mention_num_dots', 'next_mention_em_num', 'next_mention_em_denom',
+     'is_selection_loss', 'is_selection_stats',
      'l1_loss',
      ],
 )
@@ -46,6 +47,8 @@ def add_loss_args(parser):
                        help='selection loss weight')
     group.add_argument('--next_mention_weight', type=float, default=1.0,
                        help='next mention loss weight')
+    group.add_argument('--is_selection_weight', type=float, default=1.0,
+                       help='is selection loss weight')
     group.add_argument('--next_mention_stop_weight', type=float, default=1.0,
                        help='next mention stop loss weight')
     group.add_argument('--next_mention_start_epoch', type=int,
@@ -104,15 +107,12 @@ def make_dots_mentioned_per_ref_multi(refs, args, bsz, num_dots):
         dots_mentioned_per_ref.append(ref_tgt > 0)
     return dots_mentioned_per_ref
 
-def add_metrics(metric_dict_src, metric_dict_tgt, prefix):
+def add_metrics(metric_dict_src, metric_dict_tgt, prefix, compute_em=True, compute_baseline=False):
     gold_positive = metric_dict_src['{}_gold_positive'.format(prefix)]
     pred_positive = metric_dict_src['{}_pred_positive'.format(prefix)]
     true_positive = metric_dict_src['{}_true_positive'.format(prefix)]
     correct = metric_dict_src['{}_correct'.format(prefix)]
     num_dots = metric_dict_src['{}_num_dots'.format(prefix)]
-
-    em_num = metric_dict_src['{}_exact_match_num'.format(prefix)]
-    em_denom = metric_dict_src['{}_exact_match_denom'.format(prefix)]
 
     precision = true_positive / pred_positive if pred_positive > 0 else 0
     recall = true_positive / gold_positive if gold_positive > 0 else 0
@@ -123,7 +123,14 @@ def add_metrics(metric_dict_src, metric_dict_tgt, prefix):
     metric_dict_tgt['{}_recall'.format(prefix)] = recall
     metric_dict_tgt['{}_f1'.format(prefix)] = f1
 
-    metric_dict_tgt['{}_exact_match'.format(prefix)] = em_num / em_denom if em_denom > 0 else 0
+    if compute_em:
+        em_num = metric_dict_src['{}_exact_match_num'.format(prefix)]
+        em_denom = metric_dict_src['{}_exact_match_denom'.format(prefix)]
+        metric_dict_tgt['{}_exact_match'.format(prefix)] = em_num / em_denom if em_denom > 0 else 0
+
+    if compute_baseline:
+        baseline_correct = metric_dict_src['{}_baseline_correct'.format(prefix)]
+        metric_dict_tgt['{}_baseline_accuracy'.format(prefix)] = baseline_correct / num_dots if num_dots > 0 else 0
 
 def flatten_metrics(metrics):
     flattened = {}
@@ -297,6 +304,9 @@ class RnnReferenceEngine(EngineBase):
         if self.args.l1_loss_weight > 0 and forward_ret.l1_loss is not None:
             loss += self.args.l1_loss_weight * forward_ret.l1_loss
 
+        if self.args.is_selection_weight > 0 and forward_ret.is_selection_loss is not None:
+            loss += self.args.is_selection_weight * forward_ret.is_selection_loss
+
         if forward_ret.word_attn_loss is not None:
             loss = loss + forward_ret.word_attn_loss
 
@@ -345,6 +355,7 @@ class RnnReferenceEngine(EngineBase):
             'next_mention_loss': metrics['next_mention_loss'] / len(dataset),
             'next_mention_stop_loss': metrics['next_mention_stop_loss'] / len(dataset),
             'select_loss': metrics['sel_loss'] / len(dataset),
+            'is_selection_loss': metrics['is_selection_loss'] / len(dataset),
             # do select_accuracy here b/c we won't call add_metrics on select
             'select_accuracy': metrics['sel_correct'] / metrics['sel_num_dots'],
             'time': time_elapsed,
@@ -356,6 +367,7 @@ class RnnReferenceEngine(EngineBase):
         add_metrics(metrics, aggregate_metrics, "next_mention")
         if self.args.next_mention_prediction_type == 'multi_reference':
             add_metrics(metrics, aggregate_metrics, "next_mention_expanded")
+        add_metrics(metrics, aggregate_metrics, "is_selection", compute_em=False, compute_baseline=True)
         return aggregate_metrics
 
     def train_pass(self, trainset, trainset_stats, epoch):
@@ -392,6 +404,7 @@ class RnnReferenceEngine(EngineBase):
                 metrics['partner_ref_loss'] *= self.args.partner_ref_weight
                 metrics['next_mention_loss'] *= self.args.next_mention_weight
                 metrics['next_mention_stop_loss'] *= self.args.next_mention_stop_weight
+                metrics['is_selection_loss'] *= self.args.is_selection_weight
                 metrics['l1_loss'] *= self.args.l1_loss_weight
 
                 quantities = [
@@ -403,6 +416,8 @@ class RnnReferenceEngine(EngineBase):
                     ['next_mention_loss', 'next_mention_stop_loss',
                      'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall',
                      'next_mention_f1', 'next_mention_exact_match'],
+                    ['is_selection_baseline_accuracy'],
+                    ['is_selection_loss', 'is_selection_accuracy', 'is_selection_precision', 'is_selection_recall', 'is_selection_f1'],
                 ]
                 if self.args.next_mention_prediction_type == 'multi_reference':
                     quantities.append(
@@ -452,6 +467,7 @@ class RnnReferenceEngine(EngineBase):
                + metrics['partner_ref_loss'] * self.args.partner_ref_weight \
                + metrics['next_mention_loss'] * self.args.next_mention_weight \
                + metrics['next_mention_stop_loss'] * self.args.next_mention_stop_weight \
+               + metrics['is_selection_loss'] * self.args.is_selection_weight \
                + metrics['l1_loss'] * self.args.l1_loss_weight
 
     def train(self, corpus, model_filename_fn):
@@ -482,6 +498,7 @@ class RnnReferenceEngine(EngineBase):
                                      'select_loss', 'select_accuracy',
                                      'ref_loss', 'partner_ref_loss',
                                      'next_mention_loss', 'next_mention_stop_loss',
+                                     'is_selection_loss',
                                      'l1_loss']
                     )
                 )
@@ -529,12 +546,16 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             assert self.args.lang_only_self
         ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _,\
         sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view,\
-        partner_num_markables, ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view = batch
+        partner_num_markables, ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view,\
+        is_selection = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)
         num_dots = int(ctx.size(1) / 4)
         assert num_dots == 7
+
+        assert is_selection[0].size(0) == bsz
+
 
         inpts = [Variable(inpt) for inpt in inpts]
         ref_inpts = [Variable(ref_inpt) if ref_inpt is not None else None
@@ -576,7 +597,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         compute_l1_loss = self.args.l1_loss_weight > 0
 
-        state, outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs = self.model.forward(
+        state, outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, is_selection_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
             lens,
@@ -834,6 +855,27 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                     # print("{} / {}".format(_correct, _total))
                     next_mention_losses.append(_loss)
 
+        is_selection_losses = []
+        is_selection_stats = defaultdict(lambda: 0.0)
+
+        if self.args.is_selection_prediction:
+            for is_sel, is_sel_out in utils.safe_zip(is_selection,is_selection_outs):
+                is_sel_loss = self.is_sel_crit(is_sel_out, is_sel.float())
+                is_selection_losses.append(is_sel_loss)
+                is_sel_preds = is_sel_out > 0
+                is_selection_stats['correct'] += (is_sel_preds == is_sel).sum()
+                is_selection_stats['baseline_correct'] += (~is_sel).sum()
+                # not really dots, but for compatibility with add_metrics
+                is_selection_stats['num_dots'] += is_sel.flatten().size(0)
+                is_selection_stats['gold_positive'] += is_sel.sum()
+                is_selection_stats['pred_positive'] += is_sel_preds.sum()
+                is_selection_stats['true_positive'] += (is_sel & is_sel_preds).sum()
+
+        if is_selection_losses:
+            is_selection_loss = sum(is_selection_losses) / len(is_selection_losses)
+        else:
+            is_selection_loss = None
+
         if next_mention_stats['num_dots'] == 0 or (not next_mention_losses):
             # not sure why I had this assert, it seems it can be tripped if you have a batch with no *next* mentions
             # assert next_mention_stats['num_dots'] == 0 and (not next_mention_losses)
@@ -866,5 +908,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             next_mention_loss=next_mention_loss,
             next_mention_stop_loss=next_mention_stop_loss,
             next_mention_stats=next_mention_stats,
+            is_selection_loss=is_selection_loss,
+            is_selection_stats=is_selection_stats,
             l1_loss=l1_loss,
         )

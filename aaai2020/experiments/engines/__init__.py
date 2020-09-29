@@ -129,6 +129,7 @@ class EngineBase(object):
         self.crit = Criterion(self.model.word_dict, bad_toks=['<pad>'])
         self.crit_no_reduce = Criterion(self.model.word_dict, bad_toks=['<pad>'], reduction='none')
         self.sel_crit = nn.CrossEntropyLoss(reduction='mean')
+        self.is_sel_crit = nn.BCEWithLogitsLoss(reduction='mean')
         self.ref_crit = nn.BCEWithLogitsLoss(reduction='mean')
         self.ref_crit_no_reduce = nn.BCEWithLogitsLoss(reduction='none')
         if args.tensorboard_log:
