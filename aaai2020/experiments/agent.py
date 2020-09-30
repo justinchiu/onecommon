@@ -217,6 +217,7 @@ class RnnAgent(Agent):
             assert len(sel_idx) == 1
             # add one to offset from the start_token
             self.selection(sel_idx[0] + 1)
+        self.state = self.state._replace(turn=self.state.turn+1)
         self.timesteps += 1
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
@@ -271,6 +272,7 @@ class RnnAgent(Agent):
             assert len(sel_idx) == 1
             # add one to offset from the start_token
             self.selection(sel_idx[0] + 1)
+        self.state = self.state._replace(turn=self.state.turn+1)
         self.timesteps += 1
 
         """if self.args.visualize_referents:

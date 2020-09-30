@@ -6,7 +6,7 @@ STATS = [
     '{}_{}'.format(split, stat)
     for split in ['train', 'valid']
     for stat in ['correct_ppl', 
-                 'select_acc', 
+                 'select_acc', 'is_selection_acc', 'is_selection_precision', 'is_selection_recall', 'is_selection_f1',
                  'ref_acc', 'ref_f1', 'ref_exact_match', 
                  'partner_ref_acc', 'partner_ref_f1', 'partner_ref_exact_match',
                  'next_mention_acc', 'next_mention_f1', 'next_mention_exact_match',

@@ -26,17 +26,23 @@ BIG_NEG = -1e6
 
 _State = namedtuple('_State', [
     'args', 'bsz', 'ctx', 'ctx_h', 'ctx_differences', 'reader_and_writer_lang_h',
-    'dot_h_maybe_multi', 'dot_h_maybe_multi_structured', 'belief_constructor'
+    'dot_h_maybe_multi', 'dot_h_maybe_multi_structured', 'belief_constructor',
+    'turn',
 ])
 
 class State(_State):
-    def _maybe_add_dot_h_to_beliefs(self, dot_h_maybe_multi, beliefs, name):
+
+    def dot_h(self):
         if vars(self.args).get('dot_recurrence_split', False):
-            assert isinstance(dot_h_maybe_multi, tuple)
-            dot_h = torch.cat(dot_h_maybe_multi, -1)
+            assert isinstance(self.dot_h_maybe_multi, tuple)
+            dot_h = torch.cat(self.dot_h_maybe_multi, -1)
         else:
-            dot_h = dot_h_maybe_multi
+            dot_h = self.dot_h_maybe_multi
+        return dot_h
+
+    def _maybe_add_dot_h_to_beliefs(self, beliefs, name):
         if self.args.dot_recurrence and name in self.args.dot_recurrence_in:
+            dot_h = self.dot_h()
             if beliefs is None:
                 return dot_h
             else:
@@ -53,7 +59,7 @@ class State(_State):
         # TODO: fix naming mismatch
         if add_name == 'mention':
             add_name = 'next_mention'
-        beliefs = self._maybe_add_dot_h_to_beliefs(self.dot_h_maybe_multi, beliefs, add_name)
+        beliefs = self._maybe_add_dot_h_to_beliefs(beliefs, add_name)
         return beliefs
 
 class RnnReferenceModel(nn.Module):
@@ -158,6 +164,7 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--dot_recurrence', nargs='+', choices=['self', 'partner'])
         parser.add_argument('--dot_recurrence_dim', type=int, default=32)
         parser.add_argument('--dot_recurrence_oracle', action='store_true')
+        parser.add_argument('--dot_recurrence_oracle_for', nargs='+', choices=['self', 'partner'], default=['self', 'partner'])
         parser.add_argument('--dot_recurrence_mention_attention', action='store_true')
         parser.add_argument('--dot_recurrence_structured',
                             action='store_true', help='use one hidden state for each of the 2^7 configurations')
@@ -167,7 +174,7 @@ class RnnReferenceModel(nn.Module):
                             help='all dots get the same update from language features (i.e. uniform attention weights) [seems to hurt performance]')
         parser.add_argument('--dot_recurrence_in',
                             nargs='+',
-                            choices=['selection', 'next_mention', 'generation', 'ref', 'partner_ref'],
+                            choices=['selection', 'next_mention', 'generation', 'ref', 'partner_ref', 'is_selection'],
                             default=[])
         parser.add_argument('--dot_recurrence_split', action='store_true')
         parser.add_argument('--dot_recurrence_inputs',
@@ -180,8 +187,11 @@ class RnnReferenceModel(nn.Module):
 
         parser.add_argument('--next_mention_prediction', action='store_true')
         parser.add_argument('--next_mention_prediction_type', choices=['collapsed', 'multi_reference'], default='collapsed')
+        parser.add_argument('--next_mention_prediction_no_lang', action='store_true')
 
         parser.add_argument('--is_selection_prediction', action='store_true')
+        parser.add_argument('--is_selection_prediction_layers', type=int, default=0)
+        parser.add_argument('--is_selection_prediction_turn_feature', action='store_true')
 
         AttentionLayer.add_args(parser)
         StructuredAttentionLayer.add_args(parser)
@@ -370,6 +380,8 @@ class RnnReferenceModel(nn.Module):
 
         if args.next_mention_prediction:
             ref_attn_names.append('next_mention')
+            if self.args.next_mention_prediction_no_lang:
+                self.next_mention_start_emb = nn.Parameter(torch.zeros(args.nhid_lang), requires_grad=True)
 
         lang_attn_names = ['lang', 'feed']
 
@@ -519,7 +531,17 @@ class RnnReferenceModel(nn.Module):
 
         # TODO: MLP?
         if args.is_selection_prediction:
-            self.is_selection_layer = nn.Linear(args.nhid_lang, 1)
+            input_dim = args.nhid_lang
+            if args.dot_recurrence and 'is_selection' in args.dot_recurrence_in:
+                input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
+            if args.is_selection_prediction_turn_feature:
+                input_dim += 1
+            if args.is_selection_prediction_layers == 0:
+                self.is_selection_layer = nn.Linear(input_dim, 1)
+            else:
+                self.is_selection_layer = FeedForward(
+                    args.is_selection_prediction_layers, input_dim, 128, 1, dropout_p=args.dropout
+                )
 
     def initialize_state(self, ctx, belief_constructor) -> State:
         ctx_h = self.ctx_encoder(ctx)
@@ -532,6 +554,7 @@ class RnnReferenceModel(nn.Module):
         return State(
             self.args, bsz, ctx, ctx_h, ctx_differences, reader_and_writer_lang_h,
             dot_h_maybe_multi, dot_h_maybe_multi_structured, belief_constructor,
+            turn=0,
         )
 
     @property
@@ -665,13 +688,16 @@ class RnnReferenceModel(nn.Module):
         if mention_beliefs is not None:
             ctx_h = torch.cat((ctx_h, mention_beliefs), -1)
 
-        # 1 x batch_size x hidden_dim
-        lens_expand = lens.unsqueeze(0).unsqueeze(2).expand(-1, -1, outs_emb.size(2))
-        # 1 x batch_size x hidden_dim
-        states = torch.gather(outs_emb, 0, lens_expand-1)
+        if vars(self.args).get('next_mention_prediction_no_lang', False):
+            lang_states = self.next_mention_start_emb.unsqueeze(0).repeat_interleave(bsz, dim=0)
+        else:
+            # 1 x batch_size x hidden_dim
+            lens_expand = lens.unsqueeze(0).unsqueeze(2).expand(-1, -1, outs_emb.size(2))
+            # 1 x batch_size x hidden_dim
+            states = torch.gather(outs_emb, 0, lens_expand-1)
+            # batch_size x hidden_dim
+            lang_states = states.squeeze(0)
 
-        # batch_size x hidden_dim
-        lang_states = states.squeeze(0)
         if self.args.next_mention_prediction_type == 'multi_reference':
             is_finished = torch.zeros_like(lens).bool()
             num_markables = torch.zeros_like(lens).long()
@@ -992,7 +1018,7 @@ class RnnReferenceModel(nn.Module):
         return score_refs
 
     def _update_dot_h_single(self, dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, ref_tgt,
-                             pooling_weights, transform, cell, structured):
+                             pooling_weights, transform, cell, structured, oracle_ref_tgts):
         # TODO: implement structured
         dot_h = dot_h.clone()
         indices_to_update = num_markables > 0
@@ -1019,7 +1045,7 @@ class RnnReferenceModel(nn.Module):
 
         input_names = vars(self.args).get('dot_recurrence_inputs', ['weighted_hidden'])
         # max_num_mentions x filtered_bsz x num_dots
-        if vars(self.args).get('dot_recurrence_oracle', False):
+        if oracle_ref_tgts:
             # ref_tgt: bsz x max_num_mentions x num_dots
             # attention_probs: max_num_mentions x filtered_bsz x num_dots
             attention_probs = ref_tgt[indices_to_update].transpose(0,1).float()
@@ -1099,20 +1125,25 @@ class RnnReferenceModel(nn.Module):
             # ref_out can be none if there are no markables in the batch
             if 'self' in self.args.dot_recurrence:
                 if ref_out is not None:
+                    oracle_refs = vars(self.args).get('dot_recurrence_oracle', False) and \
+                                  'self' in vars(self.args).get('dot_recurrence_oracle_for', ['self', 'partner'])
                     dot_h = self._update_dot_h_single(
                         dot_h, reader_lang_hs, ref_inpt, num_markables, ref_out, ref_tgt,
                         self.dot_rec_ref_pooling_weights, self.dot_rec_ref_transform,
-                        self.dot_rec_cell, structured
+                        self.dot_rec_cell, structured, oracle_refs
                     )
             if 'partner' in self.args.dot_recurrence:
                 assert self.args.partner_reference_prediction
                 # partner_ref_out can be none if there are no markables in the batch
                 if partner_ref_out is not None:
+                    oracle_refs = vars(self.args).get('dot_recurrence_oracle', False) and \
+                                  'partner' in vars(self.args).get('dot_recurrence_oracle_for', ['self', 'partner'])
                     partner_dot_h = self._update_dot_h_single(
-                        partner_dot_h if is_split else dot_h, reader_lang_hs, partner_ref_inpt, partner_num_markables, partner_ref_out, partner_ref_tgt,
+                        partner_dot_h if is_split else dot_h, reader_lang_hs, partner_ref_inpt, partner_num_markables,
+                        partner_ref_out, partner_ref_tgt,
                         self.dot_rec_partner_ref_pooling_weights, self.dot_rec_partner_ref_transform,
                         self.dot_rec_cell if (not is_split) else self.dot_rec_partner_cell,
-                        structured
+                        structured, oracle_refs
                     )
                     if not is_split:
                         dot_h = partner_dot_h
@@ -1162,8 +1193,18 @@ class RnnReferenceModel(nn.Module):
     def is_selection_prediction(self, state: State):
         _, writer_lang_h = state.reader_and_writer_lang_h
         # bsz
-        logits = self.is_selection_layer(writer_lang_h.squeeze(0)).squeeze(-1)
-        # TODO: use beliefs here
+        inputs = writer_lang_h.squeeze(0)
+        bsz = inputs.size(0)
+        if not vars(self.args).get('is_selection_prediction', False):
+            return torch.zeros(bsz).to(inputs.device)
+        if self.args.dot_recurrence and 'is_selection' in self.args.dot_recurrence_in:
+            dot_h = state.dot_h()
+            dot_h_pooled = dot_h.max(-2).values
+            inputs = torch.cat((inputs, dot_h_pooled), -1)
+        if self.args.is_selection_prediction_turn_feature:
+            turn_scalar = torch.full((bsz, 1), state.turn).float().to(inputs.device)
+            inputs = torch.cat((inputs, turn_scalar / 10), -1)
+        logits = self.is_selection_layer(inputs).squeeze(-1)
         return logits
 
     def _forward(self, state: State, inpt, lens,
@@ -1253,6 +1294,8 @@ class RnnReferenceModel(nn.Module):
             sel_out = self.selection(state, reader_lang_hs, sel_idx, beliefs=selection_beliefs)
         else:
             sel_out = None
+
+        state = state._replace(turn=state.turn+1)
 
         return state, outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
 
