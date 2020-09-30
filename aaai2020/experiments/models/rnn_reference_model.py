@@ -110,6 +110,7 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--feed_context_attend_separate', action='store_true')
 
         parser.add_argument('--hidden_context', action='store_true')
+        parser.add_argument('--hidden_context_is_selection', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder_type', choices=[
             'full','filtered-separate','filtered-shared'
@@ -269,6 +270,10 @@ class RnnReferenceModel(nn.Module):
                 if self.args.hidden_context_mention_encoder_type == 'filtered-separate':
                     ctx_encoder_ty = models.get_ctx_encoder_type(args.ctx_encoder_type)
                     self.hidden_ctx_encoder_relational = ctx_encoder_ty(domain, args)
+
+            if self.args.hidden_context_is_selection:
+                self.hidden_ctx_is_selection_embeddings = nn.Embedding(2, args.nhid_lang)
+                self.hidden_ctx_is_selection_weight = nn.Parameter(torch.zeros((1,)))
 
 
         self.reader = nn.GRU(
@@ -1242,6 +1247,7 @@ class RnnReferenceModel(nn.Module):
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
             generation_beliefs=generation_beliefs,
+            is_selection=is_selection,
         )
 
         outs, ctx_attn_prob = self.language_output(
@@ -1473,7 +1479,7 @@ class RnnReferenceModel(nn.Module):
 
     def _add_hidden_context(
         self, state: State, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-        num_markables, generation_beliefs, structured_generation_beliefs,
+        num_markables, generation_beliefs, structured_generation_beliefs, is_selection,
     ):
         if vars(self.args).get('hidden_context', False):
             ctx_emb_for_hidden, _ = self._context_for_hidden(
@@ -1493,6 +1499,12 @@ class RnnReferenceModel(nn.Module):
                 assert torch.allclose(reader_lang_h, writer_lang_h)
             writer_lang_h = gate_weights * writer_lang_h + (1 - gate_weights) * addition
             assert self.args.untie_grus
+            if vars(self.args).get('hidden_context_is_selection', False):
+                assert is_selection is not None
+                sig_weight = self.hidden_ctx_is_selection_weight.sigmoid()
+                # 1 x bsz x nhid_lang
+                is_sel_embs = self.hidden_ctx_is_selection_embeddings(is_selection.long()).unsqueeze(0)
+                writer_lang_h = (1-sig_weight) * writer_lang_h + sig_weight * is_sel_embs
             # if not self.args.untie_grus:
             #     reader_lang_h = writer_lang_h
         return writer_lang_h
@@ -1500,7 +1512,7 @@ class RnnReferenceModel(nn.Module):
 
     # -> (reader_lang_hs, writer_lang_hs), state, feed_ctx_attn_prob
     def _read(self, state: _State, inpt, lens=None, pack=False, dots_mentioned=None, dots_mentioned_per_ref=None,
-              num_markables=None, generation_beliefs=None):
+              num_markables=None, generation_beliefs=None, is_selection=None):
         # lang_h: num_layers * num_directions x batch x nhid_lang
         ctx = state.ctx
         ctx_h = state.ctx_h
@@ -1516,6 +1528,7 @@ class RnnReferenceModel(nn.Module):
         writer_lang_h = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
             num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
+            is_selection,
         )
 
         # seq_len x batch_size x nembed_word
@@ -1553,7 +1566,7 @@ class RnnReferenceModel(nn.Module):
     def read(self, state: State, inpt, prefix_token='THEM:',
              dots_mentioned=None, dots_mentioned_per_ref=None,
              num_markables=None,
-             generation_beliefs=None):
+             generation_beliefs=None, is_selection=None):
         # Add a 'THEM:' token to the start of the message
         prefix = self.word2var(prefix_token).unsqueeze(0)
         inpt = torch.cat([prefix, inpt])
@@ -1563,6 +1576,7 @@ class RnnReferenceModel(nn.Module):
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
             generation_beliefs=generation_beliefs,
+            is_selection=is_selection,
         )
         return reader_and_writer_lang_hs, state
 
@@ -1576,7 +1590,7 @@ class RnnReferenceModel(nn.Module):
     def write(self, state: State, max_words, temperature,
               start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None,
               dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
-              generation_beliefs=None):
+              generation_beliefs=None, is_selection=None):
         # ctx_h: batch x num_dots x nembed_ctx
         # lang_h: batch x hidden
         ctx = state.ctx
@@ -1604,7 +1618,8 @@ class RnnReferenceModel(nn.Module):
 
         writer_lang_h = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-            num_markables, generation_beliefs, state.dot_h_maybe_multi_structured
+            num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
+            is_selection,
         )
 
         if self.args.feed_context:
@@ -1723,7 +1738,8 @@ class RnnReferenceModel(nn.Module):
     def write_beam(self, state, beam_size, max_words,
                    start_token='YOU:', stop_tokens=data.STOP_TOKENS,
                    dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
-                   generation_beliefs=None, gumbel_noise=False, temperature=1.0):
+                   generation_beliefs=None, gumbel_noise=False, temperature=1.0,
+                   is_selection=None):
         # NOTE: gumbel_noise=True *does not* sample without replacement at the sequence level, for the reasons
         # outlined in https://arxiv.org/pdf/1903.06059.pdf, and so should just be viewed as a randomized beam search
 
@@ -1744,6 +1760,7 @@ class RnnReferenceModel(nn.Module):
         writer_lang_h = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
             num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
+            is_selection,
         )
 
         if self.args.feed_context:
@@ -1882,6 +1899,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 partner_ref_inpts,
                 compute_l1_probs=False, tgts=None, ref_tgts=None, partner_ref_tgts=None,
                 force_next_mention_num_markables=False,
+                is_selection=None,
                 ):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
@@ -1943,7 +1961,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 ref_outs=ref_outs, partner_ref_outs=partner_ref_outs,
                 ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt,
                 force_next_mention_num_markables=force_next_mention_num_markables,
-                next_num_markables=num_markables[i+1] if i < len(num_markables) - 1 else None
+                next_num_markables=num_markables[i+1] if i < len(num_markables) - 1 else None,
+                is_selection=is_selection[i],
             )
             if compute_l1_probs and ref_inpt is not None:
                 assert tgts is not None

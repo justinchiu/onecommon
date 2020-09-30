@@ -209,6 +209,7 @@ class RnnReferenceEngine(EngineBase):
 
         raise NotImplementedError("dots_mentioned_per_ref, num_markables")
 
+        # TODO: initialize is_selection from batch
         out, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, (reader_lang_h, writer_lang_h) = \
             self.model.forward(
                 ctx, inpt, ref_inpt, sel_idx,
@@ -218,6 +219,7 @@ class RnnReferenceEngine(EngineBase):
                 dots_mentioned=dots_mentioned,
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
                 belief_constructor=None, partner_ref_inpt=partner_ref_inpt,
+                is_selection=is_selection,
             )
 
         tgt = Variable(tgt)
@@ -608,6 +610,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             tgts=tgts,
             ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
             force_next_mention_num_markables=True,
+            is_selection=is_selection,
         )
 
         sel_tgt = Variable(sel_tgt)
