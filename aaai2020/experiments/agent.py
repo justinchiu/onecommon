@@ -106,6 +106,7 @@ class RnnAgent(Agent):
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
         )]
+        self.is_selection_outs = [self.model.is_selection_prediction(self.state)]
         self.sel_outs = []
         self.extras = []
 
@@ -172,6 +173,7 @@ class RnnAgent(Agent):
              detect_markables=False,
              min_num_mentions=0,
              max_num_mentions=12,
+             is_selection=None,
              ):
         self.sents.append(Variable(self._encode([start_token] + inpt_words, self.model.word_dict)))
         inpt = self._encode(inpt_words, self.model.word_dict)
@@ -184,6 +186,7 @@ class RnnAgent(Agent):
             dots_mentioned=dots_mentioned,
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
+            is_selection=is_selection,
         )
         self.reader_lang_hs.append(reader_lang_hs)
         self.writer_lang_hs.append(writer_lang_hs)
@@ -219,6 +222,7 @@ class RnnAgent(Agent):
             self.selection(sel_idx[0] + 1)
         self.state = self.state._replace(turn=self.state.turn+1)
         self.timesteps += 1
+        self.is_selection()
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
     def write(self, max_words=100, force_words=None, detect_markables=True, start_token=YOU_TOKEN,
@@ -226,7 +230,9 @@ class RnnAgent(Agent):
               num_markables=None, ref_inpt=None,
               temperature_override=None,
               # used for oracle beliefs
-              ref_tgt=None, partner_ref_tgt=None):
+              ref_tgt=None, partner_ref_tgt=None,
+              is_selection=None,
+              ):
         temperature = temperature_override if temperature_override is not None else self.args.temperature
         generation_beliefs = self.state.make_beliefs('generation', self.timesteps, self.partner_ref_outs, self.ref_outs)
         outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
@@ -237,6 +243,7 @@ class RnnAgent(Agent):
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
             generation_beliefs=generation_beliefs,
+            is_selection=is_selection,
         )
         self.logprobs.extend(logprobs)
         self.reader_lang_hs.append(reader_lang_hs)
@@ -274,6 +281,7 @@ class RnnAgent(Agent):
             self.selection(sel_idx[0] + 1)
         self.state = self.state._replace(turn=self.state.turn+1)
         self.timesteps += 1
+        self.is_selection()
 
         """if self.args.visualize_referents:
             #utterance = self._decode(outs, self.model.word_dict)[1:-1]
@@ -303,6 +311,9 @@ class RnnAgent(Agent):
         )
         self.next_mention_outs.append(next_mention_out)
         return next_mention_out
+
+    def is_selection(self):
+        self.is_selection_outs.append(self.model.is_selection_prediction(self.state))
 
     def selection(self, sel_idx):
         selection_beliefs = self.state.make_beliefs(

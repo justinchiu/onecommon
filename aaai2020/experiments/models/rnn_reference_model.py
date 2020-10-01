@@ -192,7 +192,10 @@ class RnnReferenceModel(nn.Module):
 
         parser.add_argument('--is_selection_prediction', action='store_true')
         parser.add_argument('--is_selection_prediction_layers', type=int, default=0)
-        parser.add_argument('--is_selection_prediction_turn_feature', action='store_true')
+        # parser.add_argument('--is_selection_prediction_turn_feature', action='store_true')
+        # parser.add_argument('--is_selection_prediction_dot_context', action='store_true')
+        parser.add_argument('--is_selection_prediction_features', nargs='*',
+                            choices=['language_state', 'dot_context', 'turn'], default=[])
 
         AttentionLayer.add_args(parser)
         StructuredAttentionLayer.add_args(parser)
@@ -534,13 +537,16 @@ class RnnReferenceModel(nn.Module):
         #     init_cont(self.sel_attn, args.init_range)
         #     init_cont(self.ref_attn, args.init_range)
 
-        # TODO: MLP?
         if args.is_selection_prediction:
-            input_dim = args.nhid_lang
+            input_dim = 0
             if args.dot_recurrence and 'is_selection' in args.dot_recurrence_in:
                 input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
-            if args.is_selection_prediction_turn_feature:
+            if 'language_state' in args.is_selection_prediction_features:
+                input_dim += args.nhid_lang
+            if 'turn' in args.is_selection_prediction_features:
                 input_dim += 1
+            if 'dot_context' in args.is_selection_prediction_features:
+                input_dim += args.nembed_ctx
             if args.is_selection_prediction_layers == 0:
                 self.is_selection_layer = nn.Linear(input_dim, 1)
             else:
@@ -1197,19 +1203,24 @@ class RnnReferenceModel(nn.Module):
 
     def is_selection_prediction(self, state: State):
         _, writer_lang_h = state.reader_and_writer_lang_h
-        # bsz
-        inputs = writer_lang_h.squeeze(0)
-        bsz = inputs.size(0)
+        bsz = writer_lang_h.size(1)
+        num_dots = state.ctx_h.size(1)
+        device = writer_lang_h.device
         if not vars(self.args).get('is_selection_prediction', False):
-            return torch.zeros(bsz).to(inputs.device)
+            return torch.zeros(bsz).to(device)
+        to_cat = []
+        if 'language_state' in self.args.is_selection_prediction_features:
+            # bsz x num_dots x hidden
+            to_cat.append(writer_lang_h.squeeze(0).unsqueeze(1).repeat_interleave(num_dots, dim=1))
         if self.args.dot_recurrence and 'is_selection' in self.args.dot_recurrence_in:
-            dot_h = state.dot_h()
-            dot_h_pooled = dot_h.max(-2).values
-            inputs = torch.cat((inputs, dot_h_pooled), -1)
-        if self.args.is_selection_prediction_turn_feature:
-            turn_scalar = torch.full((bsz, 1), state.turn).float().to(inputs.device)
-            inputs = torch.cat((inputs, turn_scalar / 10), -1)
-        logits = self.is_selection_layer(inputs).squeeze(-1)
+            to_cat.append(state.dot_h())
+        if 'turn' in self.args.is_selection_prediction_features:
+            turn_scalar = torch.full((bsz, num_dots, 1), state.turn).float().to(device)
+            to_cat.append(turn_scalar / 10)
+        if 'dot_context' in self.args.is_selection_prediction_features:
+            to_cat.append(state.ctx_h)
+        inputs = torch.cat(to_cat, dim=-1)
+        logits = self.is_selection_layer(inputs).max(1).values.squeeze(-1)
         return logits
 
     def _forward(self, state: State, inpt, lens,
@@ -1719,6 +1730,7 @@ class RnnReferenceModel(nn.Module):
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
             prefix_token=start_token,
+            is_selection=is_selection,
         )
 
         assert torch.allclose(writer_lang_hs, torch.cat(lang_hs, 0), atol=1e-6)

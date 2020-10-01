@@ -3,6 +3,7 @@ import string
 import pyro.ops
 import torch
 from torch import nn
+import einops
 
 import functools
 
@@ -67,6 +68,7 @@ class StructuredAttentionLayer(nn.Module):
         parser.add_argument('--structured_attention_marginalize', dest='structured_attention_marginalize', action='store_true')
         parser.add_argument('--structured_attention_no_marginalize', dest='structured_attention_marginalize', action='store_false')
         parser.add_argument('--structured_attention_language_conditioned', action='store_true')
+        parser.add_argument('--structured_attention_configuration_features', nargs='*', choices=['count'])
         parser.set_defaults(structured_attention_marginalize=True)
 
     def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p, language_dim):
@@ -95,9 +97,9 @@ class StructuredAttentionLayer(nn.Module):
         if vars(self.args).get('dot_recurrence_structured', False):
             multiplier = 2 if self.args.dot_recurrence_split else 1
             if self.args.dot_recurrence_structured_layers == 0:
-                self.joint_factor_encoder = nn.Linear(args.dot_recurrence_dim * multiplier, 1)
+                self.structured_dot_recurrence_layer = nn.Linear(args.dot_recurrence_dim * multiplier, 1)
             else:
-                self.joint_factor_encoder = FeedForward(
+                self.structured_dot_recurrence_layer = FeedForward(
                     n_hidden_layers=self.args.dot_recurrence_structured_layers,
                     input_dim=args.dot_recurrence_dim * multiplier,
                     hidden_dim=args.structured_attention_hidden_dim,
@@ -105,7 +107,17 @@ class StructuredAttentionLayer(nn.Module):
                     dropout_p=args.structured_attention_dropout,
                 )
 
-        # self.contraction_string = self.build_contraction_string(self.num_ent)
+        if self.args.structured_attention_configuration_features:
+            assert self.args.structured_attention_language_conditioned
+            input_dim = language_dim
+            if 'count' in self.args.structured_attention_configuration_features:
+                count_embedding_dim = 40
+                self.count_embeddings = nn.Embedding(self.num_ent+1, count_embedding_dim)
+                input_dim += count_embedding_dim
+            self.configuration_encoder = FeedForward(
+                n_hidden_layers=1, input_dim=input_dim, hidden_dim=args.structured_attention_hidden_dim,
+                output_dim=1, dropout_p=args.structured_attention_dropout,
+            )
 
     @staticmethod
     def marginal_logits_to_full_logits(logits):
@@ -130,7 +142,7 @@ class StructuredAttentionLayer(nn.Module):
         assert output.dim() == 2 + num_ent
         return output
 
-    def build_contraction_string(self, num_ent):
+    def build_contraction_string(self, num_ent, num_joint_factors=0):
         var_names = string.ascii_lowercase[:num_ent]
         batch_name = 'z'
         assert batch_name not in var_names
@@ -151,15 +163,29 @@ class StructuredAttentionLayer(nn.Module):
 
         input_factors = unary_factor_names+binary_factor_names
 
-        if vars(self.args).get('dot_recurrence_structured', False):
+        for _ in range(num_joint_factors):
             input_factors.append(joint)
 
         return '{}->{}'.format(','.join(input_factors), output_factor_names)
 
+    def configuration_features(self, num_mentions, bsz, num_ents, device):
+        # should return tensor of num_mentions x bsz x 2**num_ents x d
+        feats = []
+        if 'count' in self.args.structured_attention_configuration_features:
+            ix = torch.arange(2**num_ents)
+            bit_count = torch.zeros_like(ix)
+            for _ in range(num_ents):
+                bit_count += (ix % 2)
+                ix = ix // 2
+            count_embeddings = self.count_embeddings(bit_count)
+            # num_mentions x bsz x 2**num_ents x embedding_dim
+            count_embeddings = count_embeddings.unsqueeze(0).unsqueeze(1).expand((num_mentions, bsz, -1, -1))
+            feats.append(count_embeddings)
+        return feats
+
     def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs, normalize_joint=True):
         # takes num_markables as an argument for compatibility with StructuredTemporalAttentionLayer
         # max instances per batch (aka N) x batch_size x num_dots x hidden_dim
-        contraction_string = self.build_contraction_string(self.num_ent)
 
         if input.dim() == 3:
             input = input.unsqueeze(0)
@@ -211,6 +237,9 @@ class StructuredAttentionLayer(nn.Module):
         binary_factors = binary_potentials.transpose(0,1)
 
         input_factors = list(unary_factors) + list(binary_factors)
+        joint_factors = []
+
+        joint_size = (N*bsz,) + (2,) * self.num_ent
         if vars(self.args).get('dot_recurrence_structured', False):
             assert joint_factor_inputs is not None
             # (N*bsz) x 2 x 2 x ...
@@ -221,12 +250,21 @@ class StructuredAttentionLayer(nn.Module):
                 inputs = joint_factor_inputs
             assert inputs.size(0) == bsz
             assert inputs.size(1) == 2**self.num_ent
-            size = (N*bsz,) + (2,) * self.num_ent
-            joint_factors = self.joint_factor_encoder(inputs).unsqueeze(0).repeat_interleave(N).view(*size)
-            input_factors.append(joint_factors)
+            joint_factor = self.structured_dot_recurrence_layer(inputs).unsqueeze(0).repeat_interleave(N).view(*joint_size)
+            joint_factors.append(joint_factor)
+
+        if vars(self.args).get('structured_attention_configuration_features', []):
+            config_feats = self.configuration_features(N, bsz, self.num_ent, device=input.device)
+            # each config_feat: num_mentions x bsz x 2**num_ent x dim
+            lang_input_expand = lang_input.unsqueeze(2).repeat_interleave(2**self.num_ent, dim=2)
+            config_feats.append(lang_input_expand)
+            joint_factor = self.configuration_encoder(torch.cat(config_feats, -1)).view(*joint_size)
+            joint_factors.append(joint_factor)
+
+        input_factors.extend(joint_factors)
 
         outputs = pyro.ops.contract.einsum(
-            contraction_string,
+            self.build_contraction_string(self.num_ent, len(joint_factors)),
             *input_factors,
             modulo_total=True,
             backend='pyro.ops.einsum.torch_log',
