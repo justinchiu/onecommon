@@ -89,6 +89,7 @@ class RnnReferenceModel(nn.Module):
                             help='share attention modules for selection and language output')
         parser.add_argument('--separate_attn', action='store_true', default=False,
                             help="don't share the first layer of the attention module")
+        parser.add_argument('--tie_reference_attn', action='store_true')
 
         parser.add_argument('--hid2output',
                             choices=['activation-final', '1-hidden-layer', '2-hidden-layer'],
@@ -189,6 +190,8 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--next_mention_prediction', action='store_true')
         parser.add_argument('--next_mention_prediction_type', choices=['collapsed', 'multi_reference'], default='collapsed')
         parser.add_argument('--next_mention_prediction_no_lang', action='store_true')
+
+        parser.add_argument('--selection_prediction_no_lang', action='store_true')
 
         parser.add_argument('--is_selection_prediction', action='store_true')
         parser.add_argument('--is_selection_prediction_layers', type=int, default=0)
@@ -391,6 +394,9 @@ class RnnReferenceModel(nn.Module):
             if self.args.next_mention_prediction_no_lang:
                 self.next_mention_start_emb = nn.Parameter(torch.zeros(args.nhid_lang), requires_grad=True)
 
+        if self.args.selection_prediction_no_lang:
+            self.selection_start_emb = nn.Parameter(torch.zeros(args.nhid_lang * 2), requires_grad=True)
+
         lang_attn_names = ['lang', 'feed']
 
         if args.hidden_context:
@@ -472,11 +478,16 @@ class RnnReferenceModel(nn.Module):
                     # TODO: fix ref_partner vs partner_ref naming
                     if args.dot_recurrence and 'partner_ref' in args.dot_recurrence_in:
                         input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
-                setattr(
-                    self,
-                    self._attention_name(attn_name),
-                    attention_constructors[attn_name](args, 2, input_dim, args.nhid_attn, dropout_p=args.dropout, language_dim=lang_input_dim)
-                )
+                if self.args.tie_reference_attn and attn_name == 'ref_partner':
+                    pass
+                else:
+                    setattr(
+                        self,
+                        self._attention_name(attn_name),
+                        attention_constructors[attn_name](args, 2, input_dim, args.nhid_attn, dropout_p=args.dropout, language_dim=lang_input_dim)
+                    )
+            if self.args.tie_reference_attn and self.args.partner_reference_prediction:
+                self.ref_partner_attn = self.ref_attn
         else:
             assert not args.mark_dots_mentioned
             assert not args.selection_beliefs
@@ -762,29 +773,34 @@ class RnnReferenceModel(nn.Module):
     def selection(self, state: _State, outs_emb, sel_idx, beliefs=None):
         # outs_emb: length x batch_size x dim
         ctx_h = state.ctx_h
+        bsz = outs_emb.size(1)
         ctx_differences = state.ctx_differences
 
-        if self.args.selection_attention:
-            # batch_size x entity_dim
-            transformed_ctx = self.ctx_layer(ctx_h).mean(1)
-            # length x batch_size x dim
-            #
-            text_and_transformed_ctx = torch.cat([
-                transformed_ctx.unsqueeze(0).expand(outs_emb.size(0), -1, -1),
-                outs_emb], dim=-1)
-            # TODO: add a mask
-            # length x batch_size
-            attention_logits = self.selection_attention_layer(text_and_transformed_ctx).squeeze(-1)
-            attention_probs = attention_logits.softmax(dim=0)
-            sel_inpt = torch.einsum("lb,lbd->bd", [attention_probs,outs_emb])
+        if vars(self.args).get('selection_prediction_no_lang', False):
+            sel_inpt = self.selection_start_emb.unsqueeze(0).repeat_interleave(bsz, dim=0)
         else:
-            sel_idx = sel_idx.unsqueeze(0)
-            sel_idx = sel_idx.unsqueeze(2)
-            sel_idx = sel_idx.expand(sel_idx.size(0), sel_idx.size(1), outs_emb.size(2))
-            sel_inpt = torch.gather(outs_emb, 0, sel_idx)
-            sel_inpt = sel_inpt.squeeze(0)
-        #  batch_size x hidden
+            if self.args.selection_attention:
+                # batch_size x entity_dim
+                transformed_ctx = self.ctx_layer(ctx_h).mean(1)
+                # length x batch_size x dim
+                #
+                text_and_transformed_ctx = torch.cat([
+                    transformed_ctx.unsqueeze(0).expand(outs_emb.size(0), -1, -1),
+                    outs_emb], dim=-1)
+                # TODO: add a mask
+                # length x batch_size
+                attention_logits = self.selection_attention_layer(text_and_transformed_ctx).squeeze(-1)
+                attention_probs = attention_logits.softmax(dim=0)
+                sel_inpt = torch.einsum("lb,lbd->bd", [attention_probs,outs_emb])
+            else:
+                sel_idx = sel_idx.unsqueeze(0)
+                sel_idx = sel_idx.unsqueeze(2)
+                sel_idx = sel_idx.expand(sel_idx.size(0), sel_idx.size(1), outs_emb.size(2))
+                sel_inpt = torch.gather(outs_emb, 0, sel_idx)
+                sel_inpt = sel_inpt.squeeze(0)
+            #  batch_size x hidden
         sel_inpt = sel_inpt.unsqueeze(1)
+
         # stack alongside the entity embeddings
         sel_inpt_expand = sel_inpt.expand(-1, ctx_h.size(1), -1)
         to_cat = [sel_inpt_expand, ctx_h]

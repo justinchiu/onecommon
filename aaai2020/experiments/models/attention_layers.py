@@ -168,7 +168,7 @@ class StructuredAttentionLayer(nn.Module):
 
         return '{}->{}'.format(','.join(input_factors), output_factor_names)
 
-    def configuration_features(self, num_mentions, bsz, num_ents, device):
+    def configuration_features(self, num_mentions, bsz, num_ents):
         # should return tensor of num_mentions x bsz x 2**num_ents x d
         feats = []
         if 'count' in self.args.structured_attention_configuration_features:
@@ -254,7 +254,7 @@ class StructuredAttentionLayer(nn.Module):
             joint_factors.append(joint_factor)
 
         if vars(self.args).get('structured_attention_configuration_features', []):
-            config_feats = self.configuration_features(N, bsz, self.num_ent, device=input.device)
+            config_feats = self.configuration_features(N, bsz, self.num_ent)
             # each config_feat: num_mentions x bsz x 2**num_ent x dim
             lang_input_expand = lang_input.unsqueeze(2).repeat_interleave(2**self.num_ent, dim=2)
             config_feats.append(lang_input_expand)
@@ -282,7 +282,6 @@ class StructuredAttentionLayer(nn.Module):
         marginal_log_probs = log_marginals.select(dim=-1,index=1) - log_marginals.select(dim=-1,index=0)
         assert marginal_log_probs.size() == (bsz*N, self.num_ent)
         marginal_log_probs = marginal_log_probs.view(N, bsz, self.num_ent)
-
 
         joint_log_probs = joint_logits.reshape(N, bsz, -1)
         if normalize_joint:
