@@ -181,7 +181,10 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--dot_recurrence_split', action='store_true')
         parser.add_argument('--dot_recurrence_inputs',
                             nargs='+',
-                            choices=['weighted_hidden', 'weights_average', 'weights_max'],
+                            choices=[
+                                'weighted_hidden', 'weights_average', 'weights_max',
+                                'predicted_hidden', 'predicted_average', 'predicted_max',
+                            ],
                             default='weighted_hidden')
 
         # auxiliary models
@@ -328,12 +331,20 @@ class RnnReferenceModel(nn.Module):
                 ref_transform_input_dim += 1
             if 'weights_max' in self.args.dot_recurrence_inputs:
                 ref_transform_input_dim += 1
+            if 'predicted_hidden' in self.args.dot_recurrence_inputs:
+                ref_transform_input_dim += args.nhid_lang * self.num_reader_directions
+            if 'predicted_average' in self.args.dot_recurrence_inputs:
+                ref_transform_input_dim += 1
+            if 'predicted_max' in self.args.dot_recurrence_inputs:
+                ref_transform_input_dim += 1
 
             self.dot_rec_ref_transform = nn.Linear(ref_transform_input_dim, args.nhid_lang)
             self.dot_rec_partner_ref_transform = copy.deepcopy(self.dot_rec_ref_transform)
 
             if args.dot_recurrence_mention_attention:
                 self.dot_recurrence_mention_attention = nn.Linear(ref_transform_input_dim, 1)
+
+            self.dot_recurrence_weight_temperature = 1.0
 
         # nhid_lang
         # TODO: pass these
@@ -1055,8 +1066,18 @@ class RnnReferenceModel(nn.Module):
         # max_num_mentions x filtered_bsz x hidden
         h_pooled = torch.einsum("tnbh,t->nbh", (h_gathered, pooling_weights.softmax(-1)))
 
+        input_names = vars(self.args).get('dot_recurrence_inputs', ['weighted_hidden'])
+
         # todo: use the structured distribution rather than the dot marginals?
         ref_marginal_logits, ref_joint_logits, _ = ref_out
+
+        if 'predicted_hidden' in input_names or 'predicted_average' in input_names or 'predicted_max' in input_names:
+            assert self.args.detach_beliefs
+            predictor = ReferencePredictor(self.args)
+            _, ref_pred_full, _ = predictor.forward(ref_inpt, ref_tgt, ref_out, num_markables)
+            ref_pred = ref_pred_full[:,indices_to_update].float()
+        else:
+            ref_pred = None
 
         if vars(self.args).get('dot_recurrence_mention_attention'):
             # max_num_mentions x filtered_bsz
@@ -1070,7 +1091,6 @@ class RnnReferenceModel(nn.Module):
 
         uniform_over_dots = vars(self.args).get('dot_recurrence_uniform')
 
-        input_names = vars(self.args).get('dot_recurrence_inputs', ['weighted_hidden'])
         # max_num_mentions x filtered_bsz x num_dots
         if oracle_ref_tgts:
             # ref_tgt: bsz x max_num_mentions x num_dots
@@ -1083,11 +1103,17 @@ class RnnReferenceModel(nn.Module):
         else:
             if structured:
                 attention_probs = ref_joint_logits[:,indices_to_update]
+                if self.dot_recurrence_weight_temperature != 1.0:
+                    attention_probs /= self.dot_recurrence_weight_temperature
                 attention_probs = attention_probs.view(attention_probs.size(0), attention_probs.size(1), -1).softmax(-1)
             else:
-                attention_probs = ref_marginal_logits[:,indices_to_update].sigmoid()
+                attention_probs = ref_marginal_logits[:,indices_to_update]
+                if self.dot_recurrence_weight_temperature != 1.0:
+                    attention_probs /= self.dot_recurrence_weight_temperature
+                attention_probs = attention_probs.sigmoid()
             if self.args.detach_beliefs:
                 attention_probs = attention_probs.detach()
+
         to_cat = []
         if 'weighted_hidden' in input_names:
             to_cat.append(torch.einsum("nbh,nbd,nb->bdh", (h_pooled, attention_probs, mention_weights)))
@@ -1095,6 +1121,13 @@ class RnnReferenceModel(nn.Module):
             to_cat.append(torch.einsum("nbd,nb->bd", (attention_probs, mention_weights)).unsqueeze(-1))
         if 'weights_max' in input_names:
             to_cat.append(einops.reduce(attention_probs, "n b d -> b d", 'max').unsqueeze(-1))
+        if 'predicted_hidden' in input_names:
+            to_cat.append(torch.einsum("nbh,nbd,nb->bdh", (h_pooled, ref_pred, mention_weights)))
+        if 'predicted_average' in input_names:
+            to_cat.append(torch.einsum("nbd,nb->bd", (ref_pred, mention_weights)).unsqueeze(-1))
+        if 'predicted_max' in input_names:
+            to_cat.append(einops.reduce(ref_pred, "n b d -> b d", 'max').unsqueeze(-1))
+
         inputs = einops.rearrange(torch.cat(to_cat, -1), "b d h -> (b d) h")
         transformed_inputs = transform(inputs)
         dot_h_flat = einops.rearrange(dot_h[indices_to_update], "b d h -> (b d) h")

@@ -74,6 +74,9 @@ def add_loss_args(parser):
 
     group.add_argument('--attention_supervision_method', choices=['kl', 'penalize_unmentioned'], default='kl')
 
+    group.add_argument('--anneal_dot_recurrence', action='store_true')
+    group.add_argument('--anneal_dot_recurrence_min_temperature', type=float, default=1e-2)
+
 def unwrap(loss):
     if loss is not None:
         return loss.item()
@@ -389,6 +392,11 @@ class RnnReferenceEngine(EngineBase):
     def iter(self, epoch, lr, traindata, validdata):
         trainset, trainset_stats = traindata
         validset, validset_stats = validdata
+
+        if self.args.anneal_dot_recurrence:
+            assert self.args.dot_recurrence
+            temperatures = torch.linspace(1.0, self.args.anneal_dot_recurrence_min_temperature, self.args.max_epoch)
+            self.model.dot_recurrence_weight_temperature = temperatures[epoch-1]
 
         train_metrics = self.train_pass(trainset, trainset_stats, epoch)
         valid_metrics = self.valid_pass(validset, validset_stats, epoch)
