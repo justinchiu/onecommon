@@ -282,3 +282,7 @@ class BeliefConstructor(_BeliefConstructor):
                 return all_beliefs[0]
         else:
             return None
+
+class BlankBeliefConstructor(object):
+    def make_beliefs(self, *args):
+        return None

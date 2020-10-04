@@ -2132,4 +2132,5 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         assert sel_out is not None
 
-        return state, all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs, all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs
+        return state, all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs,\
+               all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs

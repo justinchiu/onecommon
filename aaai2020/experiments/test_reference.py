@@ -33,7 +33,7 @@ import seaborn as sns
 from models.reference_predictor import ReferencePredictor, PragmaticReferencePredictor
 from engines.rnn_reference_engine import make_dots_mentioned_multi, make_dots_mentioned_per_ref_multi
 from engines.rnn_reference_engine import add_metrics, flatten_metrics
-from engines.beliefs import BeliefConstructor
+from engines.beliefs import BeliefConstructor, BlankBeliefConstructor
 
 sns.set(font_scale=1.15)
 
@@ -193,7 +193,7 @@ def main():
             max_instances_per_split=args.max_instances_per_split
         )
 
-        assert model.args.unk_threshold == unk_threshold
+        assert model.args.unk_threshold == args.unk_threshold
 
         with open(os.path.join(args.data, args.transcript_file), "r") as f:
             dialog_corpus = json.load(f)
@@ -267,13 +267,17 @@ def main():
 
         for batch in tqdm.tqdm(testset, ncols=80):
             if isinstance(corpus, ReferenceSentenceCorpus):
+                # TODO: add is_selection, and others?
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, \
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, \
-                lens, _, _, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables, ref_disagreements, partner_ref_disagreements  = batch
+                lens, _, _, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view, \
+                partner_num_markables, ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view, \
+                is_selection = batch
                 bsz = ctx.size(0)
                 multi_sentence = True
             elif isinstance(corpus, ReferenceCorpus):
                 # needs to come second since it's a subclass
+                raise NotImplementedError("add extra instance properties")
                 ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, \
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, lens, partner_ref_inpt, partner_ref_tgt_our_view, this_partner_num_markables = batch
                 bsz = ctx.size(0)
@@ -300,7 +304,6 @@ def main():
             sel_tgt = Variable(sel_tgt)
 
             if isinstance(corpus, ReferenceSentenceCorpus):
-                # don't cheat!
                 if args.allow_belief_cheating:
                     dots_mentioned = make_dots_mentioned_multi(ref_tgts, model.args, bsz, num_dots)
                     dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(ref_tgts, model.args, bsz, num_dots)
@@ -322,15 +325,23 @@ def main():
                         partner_num_markables,
                     )
                 else:
-                    dots_mentioned = None
-                    dots_mentioned_per_ref = None
-                    belief_constructor = None
-                state, outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, (reader_lang_hs, writer_lang_hs), l1_scores = model.forward(
+                    # don't cheat!
+                    # TODO: feed next mention predictions
+                    dots_mentioned_per_ref = [
+                        torch.zeros((bsz, nm.max().item(), 7)).bool().to(device)
+                        for nm in num_markables
+                    ]
+                    dots_mentioned = [torch.zeros((bsz, 7)).bool().to(device) for _ in num_markables]
+                    belief_constructor = BlankBeliefConstructor()
+
+                state, outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, is_selection_outs, \
+                (reader_lang_hs, writer_lang_hs), l1_scores = model.forward(
                     ctx, inpts, ref_inpts, sel_idx,
                     num_markables, partner_num_markables,
                     lens, dots_mentioned, dots_mentioned_per_ref, belief_constructor,
                     partner_ref_inpts=partner_ref_inpts,
                     ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
+                    is_selection=is_selection,
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
@@ -345,6 +356,7 @@ def main():
                     # partner_ref_inpt is used in training if partner reference prediction is supervised
                     partner_ref_inpt=partner_ref_inpts[0],
                     ref_tgts=ref_tgts[0], partner_ref_tgts=partner_ref_tgts_our_view[0],
+                    is_selection=is_selection,
                 )
                 outs, ref_outs = [out], [ref_out]
             else:
@@ -620,7 +632,8 @@ def main():
         test_select_accuracy = test_select_correct / test_select_total
         test_reference_accuracy = test_reference_correct / test_reference_total
         print('eval_reference_correct {} ; eval_reference_total {}'.format(test_reference_correct, test_reference_total))
-        print('eval%s %.8f | eval%s %.8f' % (lang_loss_name, test_lang_loss, lang_ppl_name, np.exp(test_lang_loss)))
+        # this is affected by --allow_belief_cheating for models that constrain attention or mark dots mentioned
+        # print('eval%s %.8f | eval%s %.8f' % (lang_loss_name, test_lang_loss, lang_ppl_name, np.exp(test_lang_loss)))
         print('evalselectloss %.8f | evalselectaccuracy %.6f' % (test_select_loss, test_select_accuracy))
         print('evalreferenceloss %.8f | evalreferenceaccuracy %.6f' % (test_reference_loss, test_reference_accuracy))
         print('reference_exact_match %.6f' % (exact_match / total_num_markables))
