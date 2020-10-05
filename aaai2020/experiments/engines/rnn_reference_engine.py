@@ -607,7 +607,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         compute_l1_loss = self.args.l1_loss_weight > 0
 
-        state, outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, is_selection_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs = self.model.forward(
+        state, outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs,\
+        is_selection_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs, next_mention_candidates = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
             lens,
@@ -855,6 +856,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                     raise ValueError(f"--next_mention_prediction_type={self.args.next_mention_prediction}")
 
                 if pred_dots_mentioned is not None:
+                    # TODO: fix this, it should check if gold dots is not empty
                     # hack; pass True for inpt because this method only uses it to ensure it's not null
                     _loss, _pred, _stats = self._ref_loss(
                         True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions,

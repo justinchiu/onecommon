@@ -30,7 +30,7 @@ from domain import get_domain
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-from models.reference_predictor import ReferencePredictor, PragmaticReferencePredictor
+from models.reference_predictor import ReferencePredictor, PragmaticReferencePredictor, RerankingMentionPredictor
 from engines.rnn_reference_engine import make_dots_mentioned_multi, make_dots_mentioned_per_ref_multi
 from engines.rnn_reference_engine import add_metrics, flatten_metrics
 from engines.beliefs import BeliefConstructor, BlankBeliefConstructor
@@ -125,6 +125,15 @@ def main():
         '--partner_reference_prediction', choices=['l0', 'l1'], default='l0'
     )
     PragmaticReferencePredictor.add_args(parser)
+
+    parser.add_argument('--next_mention_reranking', action='store_true')
+    parser.add_argument('--next_mention_reranking_score',
+                        choices=['entropy_reduction', 'log_max_probability'], default='log_max_probability')
+    parser.add_argument('--next_mention_reranking_k', type=int, default=10)
+    parser.add_argument('--next_mention_reranking_weights', type=float, nargs='*',
+                        default=[0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    parser.add_argument('--next_mention_reranking_default_weight', type=float, default=0.0)
+    parser.add_argument('--force_next_mention_num_markables', action='store_true')
 
     utils.dump_git_status(sys.stdout)
     print(' '.join(sys.argv))
@@ -262,8 +271,19 @@ def main():
         reference_predictor = make_predictor(args.reference_prediction)
         partner_reference_predictor = make_predictor(args.partner_reference_prediction)
 
+        if args.next_mention_reranking:
+            next_mention_predictor = RerankingMentionPredictor(
+                merged_args,
+                scoring_function=args.next_mention_reranking_score,
+                default_weight=args.next_mention_reranking_default_weight,
+                weights=args.next_mention_reranking_weights,
+            )
+        else:
+            next_mention_predictor = ReferencePredictor(merged_args)
+
         ref_stats = defaultdict(lambda: 0.0)
         partner_ref_stats = defaultdict(lambda: 0.0)
+        next_mention_stats = defaultdict(lambda: 0.0)
 
         for batch in tqdm.tqdm(testset, ncols=80):
             if isinstance(corpus, ReferenceSentenceCorpus):
@@ -303,16 +323,21 @@ def main():
             tgts = [Variable(tgt) for tgt in tgts]
             sel_tgt = Variable(sel_tgt)
 
+            dots_mentioned_gold = make_dots_mentioned_multi(ref_tgts, model.args, bsz, num_dots)
+            dots_mentioned_per_ref_gold = make_dots_mentioned_per_ref_multi(ref_tgts, model.args, bsz, num_dots)
+            partner_dots_mentioned_our_view_gold = make_dots_mentioned_multi(
+                partner_ref_tgts_our_view, model.args, bsz, num_dots
+            )
+            partner_dots_mentioned_our_view_per_ref_gold = make_dots_mentioned_per_ref_multi(
+                partner_ref_tgts_our_view, model.args, bsz, num_dots
+            )
+
             if isinstance(corpus, ReferenceSentenceCorpus):
                 if args.allow_belief_cheating:
-                    dots_mentioned = make_dots_mentioned_multi(ref_tgts, model.args, bsz, num_dots)
-                    dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(ref_tgts, model.args, bsz, num_dots)
-                    partner_dots_mentioned_our_view = make_dots_mentioned_multi(
-                        partner_ref_tgts_our_view, model.args, bsz, num_dots
-                    )
-                    partner_dots_mentioned_our_view_per_ref = make_dots_mentioned_per_ref_multi(
-                        partner_ref_tgts_our_view, model.args, bsz, num_dots
-                    )
+                    dots_mentioned = dots_mentioned_gold
+                    dots_mentioned_per_ref = dots_mentioned_per_ref_gold
+                    partner_dots_mentioned_our_view = partner_dots_mentioned_our_view_gold
+                    partner_dots_mentioned_our_view_per_ref = partner_dots_mentioned_our_view_per_ref_gold
 
                     belief_constructor = BeliefConstructor(
                         model.args, None,
@@ -335,13 +360,15 @@ def main():
                     belief_constructor = BlankBeliefConstructor()
 
                 state, outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, is_selection_outs, \
-                (reader_lang_hs, writer_lang_hs), l1_scores = model.forward(
+                (reader_lang_hs, writer_lang_hs), l1_scores, next_mention_rollouts = model.forward(
                     ctx, inpts, ref_inpts, sel_idx,
                     num_markables, partner_num_markables,
                     lens, dots_mentioned, dots_mentioned_per_ref, belief_constructor,
                     partner_ref_inpts=partner_ref_inpts,
                     ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
                     is_selection=is_selection,
+                    num_next_mention_candidates_to_score=args.next_mention_reranking_k if args.next_mention_reranking else None,
+                    force_next_mention_num_markables=args.force_next_mention_num_markables,
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
@@ -554,6 +581,37 @@ def main():
                 if ref_loss:
                     test_reference_loss += ref_loss.item()
 
+                if model.args.next_mention_prediction:
+                    pred_dots_mentioned, next_mention_stop_loss, pred_next_mention_num_markables = next_mention_out
+                    if model.args.next_mention_prediction_type == 'multi_reference':
+                        gold_num_mentions = num_markables[sentence_ix].long()
+                        gold_dots_mentioned = dots_mentioned_per_ref_gold[sentence_ix].long()
+                        # next_mention_stop_losses.append(next_mention_stop_loss)
+                        expanded_next_mention_loss = True
+                    elif model.args.next_mention_prediction_type == 'collapsed':
+                        # supervise only for self, so pseudo_num_mentions = 1 iff is_self; 0 otherwise
+                        gold_num_mentions = is_self[sentence_ix].long()
+                        gold_dots_mentioned = dots_mentioned_gold[sentence_ix].long().unsqueeze(1)
+                        expanded_next_mention_loss = False
+                    else:
+                        raise ValueError(f"--next_mention_prediction_type={self.args.next_mention_prediction}")
+                    if args.next_mention_reranking:
+                        # hack; pass True for inpt because this method only uses it to ensure it's not null
+                        _loss, _pred, _stats = next_mention_predictor.forward(
+                            True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions,
+                            next_mention_rollouts[sentence_ix],
+                            # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
+                            collapse=expanded_next_mention_loss,
+                        )
+                    else:
+                        # hack; pass True for inpt because this method only uses it to ensure it's not null
+                        _loss, _pred, _stats = next_mention_predictor.forward(
+                            True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions,
+                            # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
+                            collapse=expanded_next_mention_loss,
+                        )
+                    next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
+
                 # END loop over sentences
 
             sel_logits, _, _ = sel_out
@@ -600,6 +658,7 @@ def main():
         flat_stats = flatten_metrics({
             'ref_stats': ref_stats,
             'partner_ref_stats': partner_ref_stats,
+            'next_mention_stats': next_mention_stats,
         })
         add_metrics(flat_stats, metrics, 'ref')
         if model.args.partner_reference_prediction:
@@ -607,6 +666,14 @@ def main():
         if args.l1_speaker_weights:
             for weight in args.l1_speaker_weights:
                 add_metrics(flat_stats, metrics, f'ref_sw-{weight:.2f}')
+
+        if model.args.next_mention_prediction:
+            add_metrics(flat_stats, metrics, "next_mention")
+            if model.args.next_mention_prediction_type == 'multi_reference':
+                add_metrics(flat_stats, metrics, "next_mention_expanded")
+            if args.next_mention_reranking:
+                for weight in args.next_mention_reranking_weights:
+                    add_metrics(flat_stats, metrics, f'next_mention_sw-{weight:.2f}')
 
         for num_markables in [1]:
             add_metrics(flat_stats, metrics, f'ref_nm-{num_markables}')

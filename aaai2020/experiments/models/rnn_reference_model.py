@@ -14,10 +14,11 @@ from domain import get_domain
 from engines import Criterion
 from engines.beliefs import BeliefConstructor
 from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
+from models import reference_predictor
 from models.attention_layers import FeedForward, AttentionLayer, StructuredAttentionLayer, \
     StructuredTemporalAttentionLayer
 from models.ctx_encoder import *
-from models.reference_predictor import PragmaticReferencePredictor, ReferencePredictor
+from models.reference_predictor import PragmaticReferencePredictor, ReferencePredictor, make_candidates
 from utils import set_temporary_default_tensor_type
 
 from torch.distributions import Gumbel
@@ -28,6 +29,10 @@ _State = namedtuple('_State', [
     'args', 'bsz', 'ctx', 'ctx_h', 'ctx_differences', 'reader_and_writer_lang_h',
     'dot_h_maybe_multi', 'dot_h_maybe_multi_structured', 'belief_constructor',
     'turn',
+])
+
+NextMentionRollouts = namedtuple('NextMentionRollouts', [
+    'current_sel_probs', 'num_markables', 'candidate_indices', 'candidate_dots', 'candidate_nm_scores', 'rollout_sel_probs',
 ])
 
 class State(_State):
@@ -1954,6 +1959,59 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             max_num_mentions=max_num_mentions,
         )
 
+    def current_selection_probabilities(self, state: State):
+        # this may be too stringent
+        assert 'predicted_hidden' not in self.args.dot_recurrence_inputs and 'weighted_hidden' not in self.args.dot_recurrence_inputs
+        beliefs = state.make_beliefs(
+            'selection', state.turn, [None] * (state.turn + 1), [None] * (state.turn + 1),
+        )
+        device = state.ctx.device
+        dummy_reader_h = torch.zeros((1, state.bsz, self.args.nhid_lang*self.num_reader_directions)).to(device)
+        dummy_sel_idx = torch.zeros(state.bsz).long().to(device)
+        return self.selection(
+            state, dummy_reader_h, dummy_sel_idx, beliefs
+        )[0].softmax(-1)
+
+    def rollout_selection_probabilities(self, state: State, dots_mentioned_per_ref, num_markables):
+        num_mentions, bsz, num_dots = dots_mentioned_per_ref.size()
+        assert state.bsz == bsz
+        assert num_dots == 7
+        device = state.ctx.device
+
+        reader_h_dim = self.args.nhid_lang * self.num_reader_directions
+
+        if num_mentions == 0:
+            dummy_ref_inpt = None
+            ref_out = None
+        else:
+            dummy_ref_inpt = torch.zeros(bsz, num_mentions, 3).long().to(device)
+            ref_out_marginals = models.utils.unsigmoid(dots_mentioned_per_ref)
+            ref_out_joint = torch.full((num_mentions, bsz, 2**num_dots), -1e9).to(device)
+            ref_out_joint.scatter_(-1, bit_to_int_array(dots_mentioned_per_ref).unsqueeze(-1), 0)
+            ref_out_dist = None
+            ref_out = ref_out_marginals, ref_out_joint, ref_out_dist
+        partner_ref_inpt = None
+        partner_num_markables = torch.zeros(state.bsz).long().to(device)
+
+        dummy_ref_tgt = torch.zeros((bsz, num_mentions, num_dots)).long().to(device)
+        dummy_partner_ref_tgt = torch.zeros((bsz, 0, num_dots)).long().to(device)
+        dummy_reader_h = torch.zeros((1, bsz, reader_h_dim)).to(device)
+
+        # if this is True, should pass dots_mentioned_per_ref for ref_tgt (the second-to-last argument)
+        if self.args.dot_recurrence_oracle:
+            raise NotImplementedError()
+
+        new_state = self._update_dot_h_maybe_multi(
+            state, dummy_reader_h,
+            dummy_ref_inpt, partner_ref_inpt,
+            num_markables, partner_num_markables,
+            ref_out, None,
+            dummy_ref_tgt, dummy_partner_ref_tgt,
+        )
+
+        return self.current_selection_probabilities(new_state)
+
+
     def forward(self, ctx, inpts, ref_inpts, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
                 belief_constructor: Union[BeliefConstructor, None],
@@ -1961,6 +2019,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 compute_l1_probs=False, tgts=None, ref_tgts=None, partner_ref_tgts=None,
                 force_next_mention_num_markables=False,
                 is_selection=None,
+                num_next_mention_candidates_to_score=None,
+                next_mention_candidates_generation='topk',
                 ):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
@@ -1977,6 +2037,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         all_feed_ctx_attn_prob = []
 
         all_next_mention_outs = []
+        all_next_mention_candidates = []
 
         all_is_selection_outs = []
 
@@ -1992,9 +2053,50 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         partner_ref_outs = []
         ref_outs = []
 
+        def rollout_next_mention_cands(state, next_mention_out, num_markables):
+            current_sel_probs = self.current_selection_probabilities(state)
+            if num_next_mention_candidates_to_score is None:
+                return []
+            if next_mention_candidates_generation == 'topk':
+                sample = False
+            elif next_mention_candidates_generation == 'sample':
+                sample = True
+            else:
+                raise NotImplementedError(f"next_mention_candidates_generation=={next_mention_candidates_generation}")
+            if (num_markables == 0).all():
+                return NextMentionRollouts(
+                    current_sel_probs, num_markables, None, None, None, None
+                )
+            candidate_indices, candidate_dots, candidate_nm_scores = make_candidates(
+                next_mention_out, num_markables, num_next_mention_candidates_to_score, sample
+            )
+            for b in range(state.bsz):
+                nm_b = num_markables[b]
+                # scores should be tiled across num_mentions
+                for j in range(nm_b):
+                    assert torch.allclose(candidate_nm_scores[j,b], candidate_nm_scores[0,b])
+            candidate_nm_scores = candidate_nm_scores[0]
+
+            rollout_sel_probs = []
+            for k in range(candidate_dots.size(2)):
+                probs_k = self.rollout_selection_probabilities(state, candidate_dots[:,:,k], num_markables)
+                rollout_sel_probs.append(probs_k)
+
+            # bsz x candidates x num_dots
+            rollout_sel_probs = torch.stack(rollout_sel_probs, 1)
+
+            return NextMentionRollouts(
+                current_sel_probs, num_markables, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs
+            )
+
         if vars(self.args).get('next_mention_prediction', False):
-            next_mention_out = self.first_mention(state, num_markables[0], force_next_mention_num_markables)
-            all_next_mention_outs.append(next_mention_out)
+            next_mention_outs = self.first_mention(state, num_markables[0], force_next_mention_num_markables)
+            all_next_mention_outs.append(next_mention_outs)
+            if num_next_mention_candidates_to_score is not None:
+                all_next_mention_candidates.append(rollout_next_mention_cands(
+                        state, next_mention_outs[0], next_mention_outs[2]
+                ))
+
 
         l1_log_probs = []
         assert len(inpts) == len(ref_inpts)
@@ -2009,7 +2111,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             partner_ref_tgt = partner_ref_tgts[i] if partner_ref_tgts is not None else None
             is_selection_out = self.is_selection_prediction(state)
             all_is_selection_outs.append(is_selection_out)
-            state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out = self._forward(
+            state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs = self._forward(
                 state, inpt, this_lens,
                 ref_inpt=ref_inpt,
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
@@ -2040,7 +2142,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     timestep=i,
                     partner_ref_outs=partner_ref_outs,
                     ref_outs=ref_outs,
-                    next_mention_out=next_mention_out,
+                    next_mention_out=next_mention_outs,
                 )
 
                 max_num_mentions = ref_inpt.size(1)
@@ -2120,7 +2222,12 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             all_ref_outs.append(ref_out_and_partner_ref_out)
             all_ctx_attn_prob.append(ctx_attn_prob)
             all_feed_ctx_attn_prob.append(feed_ctx_attn_prob)
-            all_next_mention_outs.append(next_mention_out)
+            all_next_mention_outs.append(next_mention_outs)
+
+            if num_next_mention_candidates_to_score is not None:
+                all_next_mention_candidates.append(rollout_next_mention_cands(
+                    state, next_mention_outs[0], next_mention_outs[2]
+                ))
 
             reader_lang_h, writer_lang_h = state.reader_and_writer_lang_h
             all_reader_lang_h.append(reader_lang_h)
@@ -2133,4 +2240,4 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         assert sel_out is not None
 
         return state, all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs,\
-               all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs
+               all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs, all_next_mention_candidates

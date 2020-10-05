@@ -1,9 +1,12 @@
 import string
 
 import pyro
+import numpy as np
 import torch
 from torch import nn
 from torch.autograd import Variable
+
+from copy import deepcopy
 
 from models.attention_layers import StructuredTemporalAttentionLayer, StructuredAttentionLayer
 from models.utils import bit_to_int_array, int_to_bit_array
@@ -221,6 +224,84 @@ class ReferencePredictor(object):
         return ref_loss, ref_pred, stats
 
 
+def make_candidates(ref_out, num_markables, k, sample, exhaustive_single=False):
+    ref_out_logits, ref_out_full, ref_dist = ref_out
+
+    N, bsz, num_dots = ref_out_logits.size()
+
+    if exhaustive_single:
+        candidate_indices = torch.arange(2**num_dots).to(ref_out_logits.device)
+        candidate_indices = candidate_indices.unsqueeze(0).repeat_interleave(N, 0)
+        candidate_indices = candidate_indices.unsqueeze(1).repeat_interleave(bsz, 1)
+        candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_dots)
+        candidate_l0_scores = torch.zeros(N, bsz, 2**num_dots).long().to(ref_out_logits.device)
+        return candidate_indices, candidate_dots, candidate_l0_scores
+
+    candidate_l0_scores = torch.zeros(N, bsz, k).to(ref_out_logits.device)
+    candidate_indices = torch.zeros(N, bsz, k).long().to(ref_out_logits.device)
+
+    use_temporal = num_markables > 1
+
+    ## get scores and candidates for batch items where use_temporal == False
+    if ref_out_full is None:
+        ref_out_full = StructuredAttentionLayer.marginal_logits_to_full_logits(ref_out_logits).contiguous()
+
+    if ref_dist is None and N > 1:
+        ref_dist = StructuredTemporalAttentionLayer.make_distribution(
+            ref_out_full, num_markables, transition_potentials=None
+        )
+
+    assert not sample
+
+    if N > 1:
+        # k x bsz x N-1 x C x C
+        candidate_edges = ref_dist.topk(k)
+        # (k*bsz) x N
+        candidates, C = ref_dist.struct.from_parts(candidate_edges.view((-1,) + candidate_edges.size()[2:]))
+        assert C == 2**num_dots
+        candidates = candidates.view(k, bsz, N)
+        # N x bsz x k
+        candidate_indices_multi = candidates.transpose(0,2)
+        candidate_indices[:,use_temporal] = candidate_indices_multi[:,use_temporal]
+
+        # k x bsz
+        candidate_l0_scores_multi = ref_dist.log_prob(candidate_edges)
+        # bsz x k
+        candidate_l0_scores_multi = candidate_l0_scores_multi.transpose(0,1)
+        # tile across the mention dimension N, which will allow us to argmax independently over the k dimension
+        # to recover the joint argmax
+        # N x bsz x k
+        candidate_l0_scores_multi = candidate_l0_scores_multi.unsqueeze(0).repeat_interleave(N, dim=0)
+        candidate_l0_scores[:,use_temporal] = candidate_l0_scores_multi[:,use_temporal]
+
+    # num_mentions x bsz x
+    assert ref_out_full.dim() == 2 + num_dots
+
+    ref_out_full_reshape = ref_out_full.view(N, bsz, 2**num_dots)
+    l0_log_probs = ref_out_full_reshape.log_softmax(dim=-1)
+
+    if sample:
+        # sample without replacement
+        scores = torch.distributions.Gumbel(l0_log_probs, scale=1.0).sample()
+    else:
+        scores = l0_log_probs
+    tk = scores.topk(k=k, dim=-1)
+
+    # N x bsz x k
+    # l0_scores = tk.values
+    candidate_indices_single = tk.indices
+    candidate_l0_scores_single = l0_log_probs.gather(-1, candidate_indices_single)
+
+    candidate_indices[:,~use_temporal] = candidate_indices_single[:,~use_temporal]
+
+    # N x bsz x k
+    candidate_l0_scores[:,~use_temporal] = candidate_l0_scores_single[:,~use_temporal]
+
+    candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_dots)
+    candidate_dots = candidate_dots.view(N, bsz, k, num_dots)
+    return candidate_indices, candidate_dots, candidate_l0_scores
+
+
 class PragmaticReferencePredictor(ReferencePredictor):
     @staticmethod
     def add_args(parser):
@@ -241,84 +322,10 @@ class PragmaticReferencePredictor(ReferencePredictor):
         return StructuredAttentionLayer.marginal_logits_to_full_logits(logits)
 
     def make_candidates(self, ref_out, num_markables):
-
-        ref_out_logits, ref_out_full, ref_dist = ref_out
-
-        N, bsz, num_dots = ref_out_logits.size()
-
-        if self.args.l1_exhaustive_single:
-            candidate_indices = torch.arange(2**num_dots).to(ref_out_logits.device)
-            candidate_indices = candidate_indices.unsqueeze(0).repeat_interleave(N, 0)
-            candidate_indices = candidate_indices.unsqueeze(1).repeat_interleave(bsz, 1)
-            candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_dots)
-            candidate_l0_scores = torch.zeros(N, bsz, 2**num_dots).long().to(ref_out_logits.device)
-            return candidate_indices, candidate_dots, candidate_l0_scores
-
-        k = self.args.l1_candidates
-
-        candidate_l0_scores = torch.zeros(N, bsz, k).to(ref_out_logits.device)
-        candidate_indices = torch.zeros(N, bsz, k).long().to(ref_out_logits.device)
-
-        use_temporal = num_markables > 1
-
-        ## get scores and candidates for batch items where use_temporal == False
-        if ref_out_full is None:
-            ref_out_full = self.marginal_logits_to_full_logits(ref_out_logits).contiguous()
-
-        if ref_dist is None and N > 1:
-            ref_dist = StructuredTemporalAttentionLayer.make_distribution(
-                ref_out_full, num_markables, transition_potentials=None
-            )
-
-        assert not self.args.l1_sample
-
-        if N > 1:
-            # k x bsz x N-1 x C x C
-            candidate_edges = ref_dist.topk(k)
-            # (k*bsz) x N
-            candidates, C = ref_dist.struct.from_parts(candidate_edges.view((-1,) + candidate_edges.size()[2:]))
-            assert C == 2**num_dots
-            candidates = candidates.view(k, bsz, N)
-            # N x bsz x k
-            candidate_indices_multi = candidates.transpose(0,2)
-            candidate_indices[:,use_temporal] = candidate_indices_multi[:,use_temporal]
-
-            # k x bsz
-            candidate_l0_scores_multi = ref_dist.log_prob(candidate_edges)
-            # bsz x k
-            candidate_l0_scores_multi = candidate_l0_scores_multi.transpose(0,1)
-            # tile across the mention dimension N, which will allow us to argmax independently over the k dimension
-            # to recover the joint argmax
-            # N x bsz x k
-            candidate_l0_scores_multi = candidate_l0_scores_multi.unsqueeze(0).repeat_interleave(N, dim=0)
-            candidate_l0_scores[:,use_temporal] = candidate_l0_scores_multi[:,use_temporal]
-
-        # num_mentions x bsz x
-        assert ref_out_full.dim() == 2 + num_dots
-
-        ref_out_full_reshape = ref_out_full.view(N, bsz, 2**num_dots)
-        l0_log_probs = ref_out_full_reshape.log_softmax(dim=-1)
-
-        if self.args.l1_sample:
-            # sample without replacement
-            scores = torch.distributions.Gumbel(l0_log_probs, scale=1.0).sample()
-        else:
-            scores = l0_log_probs
-        tk = scores.topk(k=k, dim=-1)
-
-        # N x bsz x k
-        # l0_scores = tk.values
-        candidate_indices_single = tk.indices
-        candidate_l0_scores_single = l0_log_probs.gather(-1, candidate_indices_single)
-
-        candidate_indices[:,~use_temporal] = candidate_indices_single[:,~use_temporal]
-
-        # N x bsz x k
-        candidate_l0_scores[:,~use_temporal] = candidate_l0_scores_single[:,~use_temporal]
-
-        candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_dots)
-        candidate_dots = candidate_dots.view(N, bsz, k, num_dots)
-        return candidate_indices, candidate_dots, candidate_l0_scores
+        return make_candidates(
+            ref_out, num_markables, self.args.l1_candidates, self.args.l1_sample,
+            exhaustive_single=self.args.l1_exhaustive_single
+        )
 
     def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, scoring_function, by_num_markables=False, collapse=False):
         if ref_inpt is None or ref_out is None:
@@ -331,6 +338,7 @@ class PragmaticReferencePredictor(ReferencePredictor):
 
         candidate_indices, candidate_dots, candidate_l0_scores = self.make_candidates(ref_out, num_markables)
 
+        # TODO: wrong dimension?
         k = candidate_dots.size(-1)
 
         stats_by_weight = {}
@@ -426,3 +434,76 @@ class PragmaticReferencePredictor(ReferencePredictor):
 
         ref_loss = 0.0
         return ref_loss, ref_pred, stats
+
+def entropy(probs):
+    return -(probs * probs.log()).sum(-1)
+
+class RerankingMentionPredictor(ReferencePredictor):
+    def __init__(self, args, scoring_function, default_weight, weights):
+        super().__init__(args)
+        assert scoring_function in ['log_max_probability', 'entropy_reduction']
+        self.scoring_function = scoring_function
+        self.default_weight = default_weight
+        self.weights = weights
+
+    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, next_mention_rollouts,
+                by_num_markables=False, collapse=False):
+        ref_tgt_p, ref_mask = self.preprocess(ref_tgt, num_markables)
+
+        max_num_mentions = num_markables.max()
+        if max_num_mentions == 0:
+            return 0.0, None, {}
+
+        assert max_num_mentions == next_mention_rollouts.candidate_indices.size(0)
+
+        def get_stats(chosen):
+            # chosen: bsz
+            chosen_expanded = chosen.unsqueeze(0).expand(max_num_mentions, -1)
+            # max_num_mentions x bsz
+            chosen_indices = next_mention_rollouts.candidate_indices.gather(-1, chosen_expanded.unsqueeze(-1)).squeeze(-1)
+
+            # convert indices to bits
+            ref_pred = int_to_bit_array(chosen_indices, num_bits=7)
+
+            stats = self.compute_stats(ref_mask, ref_tgt_p, ref_pred=ref_pred,
+                                       by_num_markables=by_num_markables, num_markables=num_markables, collapse=collapse)
+            return ref_pred, stats
+
+        # rollout_sel_probs: bsz x num_candidates x 7
+        # current_sel_probs: bsz x 7
+        # candidate_dots: max_num_mentions x bsz x num_candidates x 7
+        # candidate_indices: max_num_mentions x bsz x num_candidates
+
+        if self.scoring_function == 'log_max_probability':
+            # bsz x num_candidates
+            rerank_scores = next_mention_rollouts.rollout_sel_probs.max(-1).values.log()
+        elif self.scoring_function == 'entropy_reduction':
+            # bsz
+            initial_entropy = entropy(next_mention_rollouts.current_sel_probs)
+            # bsz x num_candidates
+            rollout_entropy = entropy(next_mention_rollouts.rollout_sel_probs)
+            # bsz x num_candidates
+            rerank_scores = initial_entropy.unsqueeze(-1) - rollout_entropy
+        else:
+            raise NotImplementedError(f"scoring_function={self.scoring_function}")
+
+        stats_by_weight = {}
+        pred = None
+
+        for weight in self.weights:
+            joint_scores = (1 - weight) * next_mention_rollouts.candidate_nm_scores + weight * rerank_scores
+            chosen = joint_scores.argmax(-1)
+            this_pred, stats_weight = get_stats(chosen)
+            stats_by_weight[weight] = stats_weight
+            if weight == self.default_weight:
+                pred = this_pred
+
+        stats = deepcopy(stats_by_weight[self.default_weight])
+
+        for weight, stats_weight in stats_by_weight.items():
+            for k, v in stats_weight.items():
+                stats[f'sw-{weight:.2f}_{k}'] = v
+
+        loss = 0.0
+
+        return loss, pred, stats

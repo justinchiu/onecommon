@@ -90,3 +90,7 @@ def int_to_bit_array(int_array, num_bits=None, base=2):
     assert (remainder == 0).all()
     bits = bits.view((int_array.size()) + (num_bits,))
     return bits
+
+def unsigmoid(x):
+    # aka logit or link; unsigmoid(x).sigmoid() == x
+    return (x / (1.0 - x)).log()
