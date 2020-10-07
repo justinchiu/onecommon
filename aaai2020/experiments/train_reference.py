@@ -17,6 +17,7 @@ def main():
         help='location of the data corpus')
     parser.add_argument('--max_instances_per_split', type=int)
     parser.add_argument('--max_mentions_per_utterance', type=int)
+    parser.add_argument('--crosstalk_split', choices=[0, 1], default=None, type=int)
 
     parser.add_argument('--model_type', type=str, default='rnn_reference_model',
         help='type of model to use', choices=models.get_model_names())
@@ -85,6 +86,7 @@ def main():
             freq_cutoff=args.unk_threshold, verbose=True,
             max_instances_per_split=args.max_instances_per_split,
             max_mentions_per_utterance=args.max_mentions_per_utterance,
+            crosstalk_split=args.crosstalk_split,
         )
 
         model = model_ty(corpus.word_dict, args)

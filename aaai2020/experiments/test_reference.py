@@ -674,6 +674,7 @@ def main():
             if args.next_mention_reranking:
                 for weight in args.next_mention_reranking_weights:
                     add_metrics(flat_stats, metrics, f'next_mention_sw-{weight:.2f}')
+                    add_metrics(flat_stats, metrics, f'next_mention_sw-{weight:.2f}_expanded')
 
         for num_markables in [1]:
             add_metrics(flat_stats, metrics, f'ref_nm-{num_markables}')

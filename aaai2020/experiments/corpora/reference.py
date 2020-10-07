@@ -64,9 +64,10 @@ class ReferenceCorpus(object):
 
     def __init__(self, domain, path, freq_cutoff=2, train='train_reference.txt',
                  valid='valid_reference.txt', test='test_reference.txt', verbose=False, word_dict=None,
-                 max_instances_per_split=None, max_mentions_per_utterance=None):
+                 max_instances_per_split=None, max_mentions_per_utterance=None, crosstalk_split=None):
         self.verbose = verbose
         self.max_mentions_per_utterance = max_mentions_per_utterance
+        self.crosstalk_split = crosstalk_split
         if word_dict is None:
             self.word_dict = Dictionary.from_file(
                 os.path.join(path, train), freq_cutoff=freq_cutoff)
@@ -76,14 +77,14 @@ class ReferenceCorpus(object):
         print("freq cutoff: {}".format(freq_cutoff))
         print("vocab size: {}".format(len(self.word_dict)))
 
-        self.train = self.tokenize(os.path.join(path, train), max_instances_per_split) if train else []
-        self.valid = self.tokenize(os.path.join(path, valid), max_instances_per_split) if valid else []
-        self.test = self.tokenize(os.path.join(path, test), max_instances_per_split) if test else []
+        self.train = self.tokenize(os.path.join(path, train), max_instances_per_split, crosstalk_split) if train else []
+        self.valid = self.tokenize(os.path.join(path, valid), max_instances_per_split, crosstalk_split) if valid else []
+        self.test = self.tokenize(os.path.join(path, test), max_instances_per_split, crosstalk_split) if test else []
 
         # find out the output length from the train dataset
         self.output_length = max([len(x[1]) for x in self.train])
 
-    def tokenize(self, file_name, max_instances_per_split=None):
+    def tokenize(self, file_name, max_instances_per_split=None, crosstalk_split=None):
         """Tokenizes the file and produces a dataset."""
         lines = read_lines(file_name)
         random.shuffle(lines)
@@ -91,6 +92,7 @@ class ReferenceCorpus(object):
             lines = lines[:max_instances_per_split]
 
         unk = self.word_dict.get_idx('<unk>')
+        # instances_by_chat_id = {}
         dataset, total, unks = [], 0, 0
         for line in lines:
         # for line in tqdm.tqdm(lines, ncols=80):
@@ -108,17 +110,28 @@ class ReferenceCorpus(object):
             chat_id = get_tag(tokens, 'chat_id')[0]
             ref_disagreement = list(map(int, get_tag(tokens, 'referent_disagreements')))
             partner_ref_disagreement = list(map(int, get_tag(tokens, 'partner_referent_disagreements')))
-            dataset.append(ReferenceRaw(
+            if crosstalk_split is not None:
+                assert crosstalk_split in [0, 1]
+                include = hash(chat_id) % 2 == crosstalk_split
+            else:
+                include = True
+            instance = ReferenceRaw(
                 input_vals, word_idxs, referent_idxs, output_idx, scenario_id, real_ids, partner_real_ids, agent, chat_id,
                 partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement
-            ))
-            # compute statistics
-            total += len(word_idxs)
-            unks += np.count_nonzero([idx == unk for idx in word_idxs])
+            )
+            if include:
+                dataset.append(instance)
+                # compute statistics
+                total += len(word_idxs)
+                unks += np.count_nonzero([idx == unk for idx in word_idxs])
+
+            # if chat_id not in instances_by_chat_id:
+            #     instances_by_chat_id[chat_id] = []
+            # instances_by_chat_id[chat_id].append(instance)
 
         if self.verbose:
-            print('dataset %s, total %d, unks %s, ratio %0.2f%%' % (
-                file_name, total, unks, 100. * unks / total))
+            print('dataset %s, %d instances, total %d, unks %s, ratio %0.2f%%' % (
+                file_name, len(dataset), total, unks, 100. * unks / total))
         return dataset
 
     def train_dataset(self, bsz, shuffle=True):
