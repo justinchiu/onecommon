@@ -1,0 +1,10 @@
+#!/bin/bash
+
+./sbatch_1080ti.sh ./train_rel2_tsel_ref_dial_model_separate.sh hierarchical_mask-pad_feed-context-attend --feed_context --feed_context_attend --model_type hierarchical_rnn_reference_model
+./sbatch_1080ti.sh ./train_rel2_tsel_ref_dial_model_separate.sh hierarchical_mask-pad_feed-context-attend_no-word-attention --feed_context --feed_context_attend --model_type hierarchical_rnn_reference_model --no_word_attention
+./sbatch_1080ti.sh ./train_rel2_tsel_ref_dial_model_separate.sh hierarchical_mask-pad_rel-2_feed-context-attend --feed_context --feed_context_attend --model_type hierarchical_rnn_reference_model --relation_encoder_layers 2
+./sbatch_1080ti.sh ./train_rel2_tsel_ref_dial_model_separate.sh hierarchical_mask-pad_rel-2_feed-context-attend_no-word-attention --feed_context --feed_context_attend --model_type hierarchical_rnn_reference_model --no_word_attention --relation_encoder_layers 2
+./sbatch_1080ti.sh ./train_rel2_tsel_ref_dial_model_separate.sh hierarchical_mask-pad_max-pool_rel-2_feed-context-attend_no-word-attention --feed_context --feed_context_attend --model_type hierarchical_rnn_reference_model --no_word_attention --relation_encoder_layers 2 --relation_pooling max
+./sbatch_1080ti.sh ./train_rel2_tsel_ref_dial_model_separate.sh hierarchical_mask-pad_max-pool_rel-2_feed-context-attend --feed_context --feed_context_attend --model_type hierarchical_rnn_reference_model --relation_encoder_layers 2 --relation_pooling max
+./sbatch_1080ti.sh ./train_rel2_tsel_ref_dial_model_separate.sh hierarchical_mask-pad_max-pool_rel-2_feed-context-attend_ablate-properties --feed_context --feed_context_attend --model_type hierarchical_rnn_reference_model --relation_encoder_layers 2 --relation_pooling max --relation_ablate_properties
+./sbatch_1080ti.sh ./train_rel2_tsel_ref_dial_model_separate.sh hierarchical_mask-pad_max-pool_rel-2_feed-context-attend_no-word-attention_ablate-properties --feed_context --feed_context_attend --model_type hierarchical_rnn_reference_model --relation_encoder_layers 2 --relation_pooling max --relation_ablate_properties --no_word_attention
