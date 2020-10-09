@@ -130,6 +130,12 @@ def make_parser():
     parser.add_argument('--language_sample_temperature', type=float, default=0.25)
     parser.add_argument('--max_sentences', type=int, default=20)
 
+    parser.add_argument('--next_mention_reranking', action='store_true')
+    parser.add_argument('--next_mention_reranking_k', default=10, type=int)
+    parser.add_argument('--next_mention_reranking_score', default='log_max_probability')
+    parser.add_argument('--next_mention_reranking_weight', default=1.0, type=float)
+    parser.add_argument('--next_mention_candidate_generation', default='topk')
+
     return parser
 
 

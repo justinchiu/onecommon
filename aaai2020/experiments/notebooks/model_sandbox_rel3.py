@@ -136,7 +136,7 @@ from selfplay import make_parser
 
 
 parser = make_parser()
-args = parser.parse_args('--temperature 0.25'.split())
+args = parser.parse_args([])
 # args = parser.parse_args('--temperature 0.01'.split())
 
 

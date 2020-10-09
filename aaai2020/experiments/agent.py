@@ -51,9 +51,6 @@ THEM_TOKEN = 'THEM:'
 class RnnAgent(Agent):
 
     def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
-                 next_mention_reranking=False, next_mention_reranking_k=10,
-                 next_mention_reranking_score='log_max_probability', next_mention_reranking_weight=0.5,
-                 next_mention_candidate_generation='topk',
                  ):
         super(RnnAgent, self).__init__()
         self.model: HierarchicalRnnReferenceModel = model
@@ -65,14 +62,11 @@ class RnnAgent(Agent):
         self.device = 'cuda' if args.cuda else 'cpu'
         self.train = train
         self.selection_word_index = self.model.word_dict.get_idx('<selection>')
-        self.next_mention_reranking = next_mention_reranking
-        self.next_mention_candidate_generation = next_mention_candidate_generation
-        if next_mention_reranking:
-            self.next_mention_reranking_k = next_mention_reranking_k
+        if self.args.next_mention_reranking:
             self.next_mention_predictor = RerankingMentionPredictor(
-                args, scoring_function=next_mention_reranking_score,
-                default_weight=next_mention_reranking_weight,
-                weights=[next_mention_reranking_weight],
+                args, scoring_function=self.args.next_mention_reranking_score,
+                default_weight=self.args.next_mention_reranking_weight,
+                weights=[self.args.next_mention_reranking_weight],
             )
         else:
             self.next_mention_reranking_k = None
@@ -146,11 +140,11 @@ class RnnAgent(Agent):
         if next_mention_scores is None:
             return None, None
         dummy_gold_mentions = torch.zeros((state.bsz, nm_num_markables.max().item(), self.model.num_ent)).long()
-        if self.next_mention_reranking:
+        if self.args.next_mention_reranking:
             # hack; pass True for inpt because this method only uses it to ensure it's not null
             candidates = self.model.rollout_next_mention_cands(
-                state, next_mention_scores, nm_num_markables, num_candidates=self.next_mention_reranking_k,
-                generation_method=self.next_mention_candidate_generation
+                state, next_mention_scores, nm_num_markables, num_candidates=self.args.next_mention_reranking_k,
+                generation_method=self.args.next_mention_candidate_generation
             )
             _loss, predictions, _stats = self.next_mention_predictor.forward(
                 True, dummy_gold_mentions, next_mention_scores, nm_num_markables,
