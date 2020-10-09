@@ -1801,7 +1801,7 @@ class RnnReferenceModel(nn.Module):
         # lang_hs: list of tensors [1 x bsz x hidden_dim, ...]
         return outs, logprobs, state_new, (reader_lang_hs, writer_lang_hs), extra
 
-    def write_beam(self, state, beam_size, max_words,
+    def write_beam(self, state, max_words, beam_size,
                    start_token='YOU:', stop_tokens=data.STOP_TOKENS,
                    dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
                    generation_beliefs=None, gumbel_noise=False, temperature=1.0,
@@ -1837,11 +1837,23 @@ class RnnReferenceModel(nn.Module):
         else:
             ctx_emb, feed_ctx_attn_prob = None, None
 
-        writer_lang_h = writer_lang_h.expand(1, beam_size, -1)
-        ctx_h = ctx_h.expand(beam_size, -1, -1)
-        ctx_differences = ctx_differences.expand(beam_size, -1, -1)
-        dots_mentioned = dots_mentioned.expand(beam_size, -1)
-        dots_mentioned_per_ref = dots_mentioned_per_ref.expand(beam_size, -1, -1)
+        writer_lang_h_expanded = writer_lang_h.expand(1, beam_size, -1)
+        ctx_expanded = ctx.expand(beam_size, -1)
+        ctx_h_expanded = ctx_h.expand(beam_size, -1, -1)
+        ctx_differences_expanded = ctx_differences.expand(beam_size, -1, -1)
+        dots_mentioned_expanded = dots_mentioned.expand(beam_size, -1)
+        dots_mentioned_per_ref_expanded = dots_mentioned_per_ref.expand(beam_size, -1, -1)
+
+        # pass None for vars that really should be expanded, but not implemented for now
+        # state_expanded = state._replace(
+        #     bsz=beam_size, ctx=ctx_expanded,
+        #     ctx_h=ctx_h_expanded,
+        #     ctx_differences=ctx_differences_expanded,
+        #     reader_and_writer_lang_h=(None, writer_lang_h_expanded),
+        #     dot_h_maybe_multi=None,
+        #     dot_h_maybe_multi_structured=None,
+        # )
+
         if generation_beliefs is not None:
             raise NotImplementedError("todo: check the size of generation_beliefs and expand")
         if state.dot_h_maybe_multi_structured is not None:
@@ -1870,16 +1882,16 @@ class RnnReferenceModel(nn.Module):
 
             # we'll use dim 0 for both num_directions (on initialization) and time (in lang_hs, and the _language_conditioned_dot_attention, etc methods)
             # this_beam_size x hidden_dim
-            writer_lang_h = self.writer_cell(inpt_emb, writer_lang_h.squeeze(0)).unsqueeze(0)
+            writer_lang_h_expanded = self.writer_cell(inpt_emb, writer_lang_h_expanded.squeeze(0)).unsqueeze(0)
 
             # compute language output
             if vars(self.args).get('no_word_attention', False):
-                out_emb = self.hid2output(writer_lang_h.squeeze(0))
+                out_emb = self.hid2output(writer_lang_h_expanded.squeeze(0))
             else:
                 ctx_attn_prob = self._language_conditioned_dot_attention(
-                    ctx_differences, ctx_h, writer_lang_h, attention_type='lang',
-                    dots_mentioned=dots_mentioned,
-                    dots_mentioned_per_ref=dots_mentioned_per_ref,
+                    ctx_differences_expanded, ctx_h_expanded, writer_lang_h_expanded, attention_type='lang',
+                    dots_mentioned=dots_mentioned_expanded,
+                    dots_mentioned_per_ref=dots_mentioned_per_ref_expanded,
                     generation_beliefs=generation_beliefs,
                     structured_generation_beliefs=state.dot_h_maybe_multi_structured,
                 )
@@ -1887,8 +1899,8 @@ class RnnReferenceModel(nn.Module):
                 ctx_attn_prob = ctx_attn_prob.squeeze(0)
                 # lang_prob = dot_attention2.expand_as(ctx_h)
                 # ctx_h_lang = torch.sum(torch.mul(ctx_h, dot_attention2.expand_as(ctx_h)), 1)
-                ctx_h_lang = torch.einsum("bnd,bn->bd", (ctx_h, ctx_attn_prob))
-                out_emb = self.hid2output(torch.cat([writer_lang_h.squeeze(0), ctx_h_lang], -1))
+                ctx_h_lang = torch.einsum("bnd,bn->bd", (ctx_h_expanded, ctx_attn_prob))
+                out_emb = self.hid2output(torch.cat([writer_lang_h_expanded.squeeze(0), ctx_h_lang], -1))
 
             out = F.linear(out_emb, self.word_embed.weight)
             mask = self.special_token_mask.to(out.device)
@@ -1915,7 +1927,7 @@ class RnnReferenceModel(nn.Module):
             outputs = outputs[top_beam_indices]
             lens = lens[top_beam_indices]
             is_finished = is_finished[top_beam_indices]
-            writer_lang_h = writer_lang_h[:,top_beam_indices]
+            writer_lang_h_expanded = writer_lang_h_expanded[:,top_beam_indices]
 
             total_scores = top_scores
             outputs = torch.cat((outputs, top_vocab_indices.unsqueeze(-1)), -1)
@@ -1935,7 +1947,28 @@ class RnnReferenceModel(nn.Module):
             for sent, l in zip(outputs, lens)
         ]
 
-        return outputs, lens, decoded
+        # T x bsz
+        best_output = outputs[0][:lens[0]].unsqueeze(1)
+
+        # read the output utterance
+        (reader_lang_hs, writer_lang_hs), state_new = self.read(
+            state, best_output,
+            dots_mentioned=dots_mentioned,
+            dots_mentioned_per_ref=dots_mentioned_per_ref,
+            num_markables=num_markables,
+            prefix_token=start_token,
+            is_selection=is_selection,
+        )
+
+        extra = {
+            'outputs': outputs,
+            'lens': lens,
+            'words': decoded,
+            'output_scores': total_scores,
+        }
+
+        # None: for where write() returns logprobs
+        return best_output, None, state_new, (reader_lang_hs, writer_lang_hs), extra
 
 
 class HierarchicalRnnReferenceModel(RnnReferenceModel):
@@ -2011,6 +2044,41 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         return self.current_selection_probabilities(new_state)
 
+    def rollout_next_mention_cands(self, state, next_mention_out, num_markables, num_candidates=None, generation_method='topk'):
+        current_sel_probs = self.current_selection_probabilities(state)
+        if num_candidates is None:
+            return []
+        if generation_method == 'topk':
+            sample = False
+        elif generation_method == 'sample':
+            sample = True
+        else:
+            raise NotImplementedError(f"next_mention_candidates_generation=={generation_method}")
+        if (num_markables == 0).all():
+            return NextMentionRollouts(
+                current_sel_probs, num_markables, None, None, None, None
+            )
+        candidate_indices, candidate_dots, candidate_nm_scores = make_candidates(
+            next_mention_out, num_markables, num_candidates, sample
+        )
+        for b in range(state.bsz):
+            nm_b = num_markables[b]
+            # scores should be tiled across num_mentions
+            for j in range(nm_b):
+                assert torch.allclose(candidate_nm_scores[j,b], candidate_nm_scores[0,b])
+        candidate_nm_scores = candidate_nm_scores[0]
+
+        rollout_sel_probs = []
+        for k in range(candidate_dots.size(2)):
+            probs_k = self.rollout_selection_probabilities(state, candidate_dots[:,:,k], num_markables)
+            rollout_sel_probs.append(probs_k)
+
+        # bsz x candidates x num_dots
+        rollout_sel_probs = torch.stack(rollout_sel_probs, 1)
+
+        return NextMentionRollouts(
+            current_sel_probs, num_markables, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs
+        )
 
     def forward(self, ctx, inpts, ref_inpts, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
@@ -2053,48 +2121,13 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         partner_ref_outs = []
         ref_outs = []
 
-        def rollout_next_mention_cands(state, next_mention_out, num_markables):
-            current_sel_probs = self.current_selection_probabilities(state)
-            if num_next_mention_candidates_to_score is None:
-                return []
-            if next_mention_candidates_generation == 'topk':
-                sample = False
-            elif next_mention_candidates_generation == 'sample':
-                sample = True
-            else:
-                raise NotImplementedError(f"next_mention_candidates_generation=={next_mention_candidates_generation}")
-            if (num_markables == 0).all():
-                return NextMentionRollouts(
-                    current_sel_probs, num_markables, None, None, None, None
-                )
-            candidate_indices, candidate_dots, candidate_nm_scores = make_candidates(
-                next_mention_out, num_markables, num_next_mention_candidates_to_score, sample
-            )
-            for b in range(state.bsz):
-                nm_b = num_markables[b]
-                # scores should be tiled across num_mentions
-                for j in range(nm_b):
-                    assert torch.allclose(candidate_nm_scores[j,b], candidate_nm_scores[0,b])
-            candidate_nm_scores = candidate_nm_scores[0]
-
-            rollout_sel_probs = []
-            for k in range(candidate_dots.size(2)):
-                probs_k = self.rollout_selection_probabilities(state, candidate_dots[:,:,k], num_markables)
-                rollout_sel_probs.append(probs_k)
-
-            # bsz x candidates x num_dots
-            rollout_sel_probs = torch.stack(rollout_sel_probs, 1)
-
-            return NextMentionRollouts(
-                current_sel_probs, num_markables, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs
-            )
-
         if vars(self.args).get('next_mention_prediction', False):
             next_mention_outs = self.first_mention(state, num_markables[0], force_next_mention_num_markables)
             all_next_mention_outs.append(next_mention_outs)
             if num_next_mention_candidates_to_score is not None:
-                all_next_mention_candidates.append(rollout_next_mention_cands(
-                        state, next_mention_outs[0], next_mention_outs[2]
+                all_next_mention_candidates.append(self.rollout_next_mention_cands(
+                    state, next_mention_outs[0], next_mention_outs[2],
+                    num_next_mention_candidates_to_score, next_mention_candidates_generation,
                 ))
 
 

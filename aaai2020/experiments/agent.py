@@ -19,6 +19,7 @@ from nltk.parse import CoreNLPParser, CoreNLPDependencyParser
 
 from models import RnnReferenceModel, HierarchicalRnnReferenceModel
 from models.markable_detector import BiLSTM_CRF
+from models.reference_predictor import RerankingMentionPredictor, ReferencePredictor
 from models.rnn_reference_model import State
 from models.ctx_encoder import pairwise_differences
 
@@ -49,7 +50,11 @@ THEM_TOKEN = 'THEM:'
 
 class RnnAgent(Agent):
 
-    def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None):
+    def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
+                 next_mention_reranking=False, next_mention_reranking_k=10,
+                 next_mention_reranking_score='log_max_probability', next_mention_reranking_weight=0.5,
+                 next_mention_candidate_generation='topk',
+                 ):
         super(RnnAgent, self).__init__()
         self.model: HierarchicalRnnReferenceModel = model
         self.markable_detector: BiLSTM_CRF = markable_detector
@@ -59,13 +64,26 @@ class RnnAgent(Agent):
         self.domain = domain.get_domain(args.domain)
         self.train = train
         self.selection_word_index = self.model.word_dict.get_idx('<selection>')
+        self.next_mention_reranking = next_mention_reranking
+        self.next_mention_candidate_generation = next_mention_candidate_generation
+        if next_mention_reranking:
+            self.next_mention_reranking_k = next_mention_reranking_k
+            self.next_mention_predictor = RerankingMentionPredictor(
+                args, scoring_function=next_mention_reranking_score,
+                default_weight=next_mention_reranking_weight,
+                weights=[next_mention_reranking_weight],
+            )
+        else:
+            self.next_mention_reranking_k = None
+            self.next_mention_predictor = ReferencePredictor(args)
         if train:
             raise NotImplementedError("fix optimization")
             self.model.train()
             self.opt = optim.RMSprop(
-            self.model.parameters(),
-            lr=args.rl_lr,
-            momentum=self.args.momentum)
+                self.model.parameters(),
+                lr=args.rl_lr,
+                momentum=self.args.momentum
+            )
             self.all_rewards = []
             self.t = 0
         else:
@@ -106,12 +124,47 @@ class RnnAgent(Agent):
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
         )]
+        nm_cands, nm_preds = self.next_mention_prediction_and_candidates_from_outs(self.state, self.next_mention_outs[-1])
+        self.next_mention_candidates = [nm_cands]
+        self.next_mention_predictions = [nm_preds]
         self.is_selection_outs = [self.model.is_selection_prediction(self.state)]
         self.sel_outs = []
         self.extras = []
 
     def feed_partner_context(self, partner_context):
         pass
+
+    def next_mention_prediction_and_candidates_from_outs(self, state, next_mention_outs):
+        # candidates = self.model.rollout_next_mention_cands(
+        #     state, next_mention_out[0], next_mention_out[2],
+        #     self.num
+        # )
+        # make pseudo gold and num mentions
+        next_mention_scores, stop_loss, nm_num_markables = next_mention_outs
+        # next_mention_scores[0]: marginal logits
+        if next_mention_scores is None:
+            return None, None
+        dummy_gold_mentions = torch.zeros((state.bsz, nm_num_markables.max().item(), self.model.num_ent)).long()
+        if self.next_mention_reranking:
+            # hack; pass True for inpt because this method only uses it to ensure it's not null
+            candidates = self.model.rollout_next_mention_cands(
+                state, next_mention_scores, nm_num_markables, num_candidates=self.next_mention_reranking_k,
+                generation_method=self.next_mention_candidate_generation
+            )
+            _loss, predictions, _stats = self.next_mention_predictor.forward(
+                True, dummy_gold_mentions, next_mention_scores, nm_num_markables,
+                candidates,
+                # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
+                collapse=self.model.args.next_mention_prediction_type=='multi_reference',
+            )
+        else:
+            # hack; pass True for inpt because this method only uses it to ensure it's not null
+            _loss, predictions, _stats = self.next_mention_predictor.forward(
+                True, dummy_gold_mentions, next_mention_scores, nm_num_markables,
+                collapse=self.model.args.next_mention_prediction_type=='multi_reference',
+            )
+            candidates = None
+        return predictions, candidates
 
     def predict_referents(self, ref_inpt, num_markables):
         ref_beliefs = self.state.make_beliefs('ref', self.timesteps, self.partner_ref_outs, self.ref_outs)
@@ -230,24 +283,41 @@ class RnnAgent(Agent):
     def write(self, max_words=100, force_words=None, detect_markables=True, start_token=YOU_TOKEN,
               dots_mentioned=None, dots_mentioned_per_ref=None,
               num_markables=None, ref_inpt=None,
-              temperature_override=None,
               # used for oracle beliefs
               ref_tgt=None, partner_ref_tgt=None,
               is_selection=None,
+              inference='sample',
+              beam_size=1,
+              sample_temperature_override=None,
               ):
-        temperature = temperature_override if temperature_override is not None else self.args.temperature
         generation_beliefs = self.state.make_beliefs('generation', self.timesteps, self.partner_ref_outs, self.ref_outs)
-        outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
-            self.state, max_words, temperature,
-            start_token=start_token,
-            force_words=force_words,
-            dots_mentioned=dots_mentioned,
-            dots_mentioned_per_ref=dots_mentioned_per_ref,
-            num_markables=num_markables,
-            generation_beliefs=generation_beliefs,
-            is_selection=is_selection,
-        )
-        self.logprobs.extend(logprobs)
+        if inference == 'sample':
+            sample_temperature = sample_temperature_override if sample_temperature_override is not None else self.args.temperature
+            outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
+                self.state, max_words, sample_temperature,
+                start_token=start_token,
+                force_words=force_words,
+                dots_mentioned=dots_mentioned,
+                dots_mentioned_per_ref=dots_mentioned_per_ref,
+                num_markables=num_markables,
+                generation_beliefs=generation_beliefs,
+                is_selection=is_selection,
+            )
+        elif inference in ['beam', 'noised_beam']:
+            assert not force_words
+            outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write_beam(
+                self.state, max_words, beam_size,
+                start_token=start_token,
+                dots_mentioned=dots_mentioned,
+                dots_mentioned_per_ref=dots_mentioned_per_ref,
+                num_markables=num_markables,
+                generation_beliefs=generation_beliefs,
+                is_selection=is_selection,
+                gumbel_noise=inference == 'noised_beam',
+            )
+        if logprobs is not None:
+            self.logprobs.extend(logprobs)
+
         self.reader_lang_hs.append(reader_lang_hs)
         self.writer_lang_hs.append(writer_lang_hs)
 
@@ -314,6 +384,9 @@ class RnnAgent(Agent):
             max_num_mentions=max_num_mentions,
         )
         self.next_mention_outs.append(next_mention_out)
+        nm_preds, nm_cands = self.next_mention_prediction_and_candidates_from_outs(self.state, next_mention_out)
+        self.next_mention_candidates.append(nm_cands)
+        self.next_mention_predictions.append(nm_preds)
         return next_mention_out
 
     def is_selection(self):
