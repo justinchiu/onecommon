@@ -62,6 +62,7 @@ class RnnAgent(Agent):
         self.name = name
         self.human = False
         self.domain = domain.get_domain(args.domain)
+        self.device = 'cuda' if args.cuda else 'cpu'
         self.train = train
         self.selection_word_index = self.model.word_dict.get_idx('<selection>')
         self.next_mention_reranking = next_mention_reranking
@@ -210,10 +211,10 @@ class RnnAgent(Agent):
         return markables, ref_boundaries
 
     def markables_to_tensor(self, ref_boundaries):
-        partner_num_markables = torch.LongTensor([len(ref_boundaries)])
+        partner_num_markables = torch.LongTensor([len(ref_boundaries)]).to(self.device)
         if len(ref_boundaries) > 0:
             # add batch dimension
-            return torch.LongTensor(ref_boundaries).unsqueeze(0), partner_num_markables
+            return torch.LongTensor(ref_boundaries).unsqueeze(0).to(self.device), partner_num_markables
         else:
             return None, partner_num_markables
 
@@ -266,7 +267,7 @@ class RnnAgent(Agent):
         self.update_dot_h(ref_inpt=None, partner_ref_inpt=partner_ref_inpt,
                           num_markables=None, partner_num_markables=partner_num_markables,
                           ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
-        self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]),
+        self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]).to(self.device),
                           num_markables_to_force=next_num_markables_to_force,
                           min_num_mentions=min_num_mentions,
                           max_num_mentions=max_num_mentions,)
@@ -326,7 +327,7 @@ class RnnAgent(Agent):
             assert self.markable_detector is not None
             markables, ref_boundaries = self.detect_markables(self._decode(outs, self.model.word_dict))
             ref_inpt, num_markables = self.markables_to_tensor(ref_boundaries)
-            ref_tgt = torch.zeros((1, num_markables.item(), 7)).long()
+            ref_tgt = torch.zeros((1, num_markables.item(), 7)).long().to(self.device)
 
             self.ref_inpts.append(ref_inpt)
             self.markables.append(markables)
@@ -345,8 +346,8 @@ class RnnAgent(Agent):
         self.update_dot_h(ref_inpt=ref_inpt, partner_ref_inpt=None,
                           num_markables=num_markables, partner_num_markables=None,
                           ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
-        self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]),
-                          num_markables_to_force=torch.LongTensor([0]),
+        self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]).to(self.device),
+                          num_markables_to_force=torch.LongTensor([0]).to(self.device),
                           )
         if (self.selection_word_index == outs).any():
             sel_idx = (self.selection_word_index == outs.flatten()).nonzero()
@@ -418,6 +419,11 @@ class RnnAgent(Agent):
         # outs_emb = torch.cat(self.reader_lang_hs).unsqueeze(1)
         # sel_idx = torch.Tensor(1).fill_(outs_emb.size(0) - 1).long()
         # choice_logit = self.model.selection(self.state.ctx_differences, self.state.ctx_h, outs_emb, sel_idx)
+        if not self.sel_outs:
+            # force selection using the last utterance
+            sel_idx = self.reader_lang_hs[-1].size(0) - 1
+            self.selection(torch.tensor([sel_idx]).long().to(self.device))
+
         choice_logit, _, _ = self.sel_outs[-1]
 
         prob = F.softmax(choice_logit, dim=-1)

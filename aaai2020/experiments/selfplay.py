@@ -14,7 +14,7 @@ import torch.nn as nn
 from agent import *
 import utils
 from utils import ContextGenerator
-from dialog import Dialog, DialogLogger
+from dialog import Dialog, DialogLogger, HierarchicalDialog
 from models.rnn_reference_model import RnnReferenceModel
 import domain
 
@@ -42,6 +42,7 @@ class SelfPlay(object):
             if self.args.smart_alice and n > 1000:
                 break
             self.logger.dump('=' * 80)
+            self.logger.dump(f'dialog {n}')
             _, agree, _ = self.dialog.run(ctxs, self.logger)
             if agree:
                 success += 1
@@ -73,10 +74,10 @@ def make_parser():
                         help='Bob model file')
     parser.add_argument('--context_file', type=str,
                         help='context file')
-    parser.add_argument('--temperature', type=float, default=1.0,
-                        help='temperature')
-    parser.add_argument('--pred_temperature', type=float, default=1.0,
-                        help='temperature')
+    # parser.add_argument('--temperature', type=float, default=1.0,
+    #                     help='temperature')
+    # parser.add_argument('--pred_temperature', type=float, default=1.0,
+    #                     help='temperature')
     parser.add_argument('--log_attention', action='store_true', default=False,
                         help='log attention')
     parser.add_argument('--verbose', action='store_true', default=False,
@@ -127,6 +128,7 @@ def make_parser():
     parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample'], default='beam')
     parser.add_argument('--language_beam_size', type=int, default=1)
     parser.add_argument('--language_sample_temperature', type=float, default=0.25)
+    parser.add_argument('--max_sentences', type=int, default=20)
 
     return parser
 
@@ -134,6 +136,7 @@ def make_parser():
 def main():
     parser = make_parser()
 
+    utils.dump_git_status(sys.stdout)
     print(' '.join(sys.argv))
     args = parser.parse_args()
     pprint.pprint(vars(args))
@@ -152,37 +155,37 @@ def main():
         def model_filename_fn(model_file, name, extension):
             return '{}_{}_{}.{}'.format(model_file, seed, name, extension)
 
-        if args.record_markables:
-            if not os.path.exists(args.markable_detector_file + '_' + str(seed) + '.th'):
-                assert False
-            markable_detector = utils.load_model(args.markable_detector_file + '_' + str(seed) + '.th')
-            if args.cuda:
-                markable_detector.cuda()
-            else:
-                device = torch.device("cpu")
-                markable_detector.to(device)
-            markable_detector.eval()
-            markable_detector_corpus = markable_detector.corpus_ty(domain, args.data, train='train_markable_{}.txt'.format(seed), valid='valid_markable_{}.txt'.format(seed), test='test_markable_{}.txt'.format(seed), #test='selfplay_reference_{}.txt'.format(seed),
-                freq_cutoff=args.unk_threshold, verbose=True)
+        assert os.path.exists(args.markable_detector_file)
+        markable_detector = utils.load_model(args.markable_detector_file, prefix_dir=None, map_location='cpu')
+        if args.cuda:
+            markable_detector.cuda()
+        markable_detector.eval()
+        # markable_detector_corpus = markable_detector.corpus_ty(
+        #     domain, args.data, train='train_markable_{}.txt'.format(seed),
+        #     valid='valid_markable_{}.txt'.format(seed), test='test_markable_{}.txt'.format(seed), #test='selfplay_reference_{}.txt'.format(seed),
+        #     freq_cutoff=args.unk_threshold, verbose=True
+        # )
+
 
         # alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
-        alice_model = utils.load_model(model_filename_fn(args.alice_model_file, 'best', 'th'))
+        alice_model = utils.load_model(args.alice_model_file, prefix_dir=None, map_location='cpu')
         alice_ty = get_agent_type(alice_model, args.smart_alice)
-        alice = alice_ty(alice_model, args, name='Alice', train=False, markable_detector=markable_detector)
+        alice_merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(alice_model.args)))
+        alice = alice_ty(alice_model, alice_merged_args, name='Alice', train=False, markable_detector=markable_detector)
 
         # bob_model = utils.load_model(args.bob_model_file + '_' + str(seed) + '.th')
-        bob_model = utils.load_model(model_filename_fn(args.bob_model_file, 'best', 'th'))
+        bob_model = utils.load_model(args.bob_model_file, prefix_dir=None, map_location='cpu')
         bob_ty = get_agent_type(bob_model, args.smart_bob)
-        bob = bob_ty(bob_model, args, name='Bob', train=False, markable_detector=markable_detector)
+        bob_merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(bob_model.args)))
+        bob = bob_ty(bob_model, bob_merged_args, name='Bob', train=False, markable_detector=markable_detector)
 
         for model in [alice_model, bob_model]:
             if args.cuda:
                 model.cuda()
-            else:
-                model.cpu()
             model.eval()
 
-        dialog = Dialog([alice, bob], args, markable_detector)
+        # dialog = Dialog([alice, bob], args, markable_detector)
+        dialog = HierarchicalDialog([alice, bob], args, markable_detector)
         ctx_gen = ContextGenerator(os.path.join(args.data, args.context_file + '.txt'))
         with open(os.path.join(args.data, args.context_file + '.json'), "r") as f:
             scenario_list = json.load(f)
@@ -200,7 +203,6 @@ def main():
     dump_json(dialog.selfplay_referents, "selfplay_referents.json")
 
     print("repeat selfplay results %.8f ( %.8f )" % (np.mean(repeat_results), np.std(repeat_results)))
-
 
 
 if __name__ == '__main__':

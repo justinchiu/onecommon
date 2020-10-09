@@ -1934,8 +1934,7 @@ class RnnReferenceModel(nn.Module):
             lens[~is_finished] += 1
             is_finished |= torch.BoolTensor(
                 [self.word_dict.get_word(ix.item()) in stop_tokens for ix in top_vocab_indices],
-                device=device
-            )
+            ).to(device)
 
         # remove start token for consistency with write()
         outputs = outputs[:,1:]

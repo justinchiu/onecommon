@@ -347,8 +347,8 @@ class Dialog(object):
         return conv, agree, rewards
 
 class HierarchicalDialog(Dialog):
-    def __init__(self, agents, args, markable_detector, markable_detector_corpus):
-        super().__init__(agents, args, markable_detector, markable_detector_corpus)
+    def __init__(self, agents, args, markable_detector, markable_detector_corpus=None):
+        super().__init__(agents, args, markable_detector, markable_detector_corpus=markable_detector_corpus)
 
     def run(self, ctxs, logger, max_words=5000):
         scenario_id = ctxs[0][0]
@@ -356,7 +356,7 @@ class HierarchicalDialog(Dialog):
         min_num_mentions = 0
         max_num_mentions = 10
 
-        max_sentences = 10
+        max_sentences = self.args.max_sentences
 
         for agent in self.agents:
             assert [] == agent.model.args.ref_beliefs \
@@ -365,7 +365,6 @@ class HierarchicalDialog(Dialog):
                    == agent.model.args.selection_beliefs \
                    == agent.model.args.mention_beliefs
         belief_constructor = BlankBeliefConstructor()
-
 
         for agent, agent_id, ctx, real_ids in zip(self.agents, [0, 1], ctxs[1], ctxs[2]):
             agent.feed_context(ctx, belief_constructor, min_num_mentions=min_num_mentions, max_num_mentions=max_num_mentions)
@@ -414,6 +413,8 @@ class HierarchicalDialog(Dialog):
                     dots_mentioned = dots_mentioned_per_ref.any(1)
                 else:
                     dots_mentioned = torch.zeros((1, 7)).bool().to(device)
+            else:
+                dots_mentioned = None
 
             if is_selection_prediction:
                 is_selection_prob = writer.is_selection_outs[-1].sigmoid()
@@ -463,7 +464,8 @@ class HierarchicalDialog(Dialog):
             conv.append(out_words)
             speaker.append(writer.agent_id)
 
-            if not writer.human:
+            # if not writer.human:
+            if True:
                 logger.dump_sent(writer.name, out_words)
 
             if logger.scenarios and self.args.log_attention:
@@ -480,6 +482,7 @@ class HierarchicalDialog(Dialog):
                 break
 
             writer, reader = reader, writer
+            sentence_ix += 1
 
         choices = []
         for agent in self.agents:
