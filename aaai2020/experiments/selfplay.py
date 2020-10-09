@@ -124,6 +124,10 @@ def make_parser():
     parser.add_argument('--repeat_selfplay', action='store_true', default=False,
                         help='repeat selfplay')
 
+    parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample'], default='beam')
+    parser.add_argument('--language_beam_size', type=int, default=1)
+    parser.add_argument('--language_sample_temperature', type=float, default=0.25)
+
     return parser
 
 
@@ -160,19 +164,16 @@ def main():
             markable_detector.eval()
             markable_detector_corpus = markable_detector.corpus_ty(domain, args.data, train='train_markable_{}.txt'.format(seed), valid='valid_markable_{}.txt'.format(seed), test='test_markable_{}.txt'.format(seed), #test='selfplay_reference_{}.txt'.format(seed),
                 freq_cutoff=args.unk_threshold, verbose=True)
-        else:
-            markable_detector = None
-            markable_detector_corpus = None
 
         # alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
         alice_model = utils.load_model(model_filename_fn(args.alice_model_file, 'best', 'th'))
         alice_ty = get_agent_type(alice_model, args.smart_alice)
-        alice = alice_ty(alice_model, args, name='Alice', train=False)
+        alice = alice_ty(alice_model, args, name='Alice', train=False, markable_detector=markable_detector)
 
         # bob_model = utils.load_model(args.bob_model_file + '_' + str(seed) + '.th')
         bob_model = utils.load_model(model_filename_fn(args.bob_model_file, 'best', 'th'))
         bob_ty = get_agent_type(bob_model, args.smart_bob)
-        bob = bob_ty(bob_model, args, name='Bob', train=False)
+        bob = bob_ty(bob_model, args, name='Bob', train=False, markable_detector=markable_detector)
 
         for model in [alice_model, bob_model]:
             if args.cuda:
@@ -181,7 +182,7 @@ def main():
                 model.cpu()
             model.eval()
 
-        dialog = Dialog([alice, bob], args, markable_detector, markable_detector_corpus)
+        dialog = Dialog([alice, bob], args, markable_detector)
         ctx_gen = ContextGenerator(os.path.join(args.data, args.context_file + '.txt'))
         with open(os.path.join(args.data, args.context_file + '.json'), "r") as f:
             scenario_list = json.load(f)

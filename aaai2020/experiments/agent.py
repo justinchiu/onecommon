@@ -415,14 +415,15 @@ class RnnAgent(Agent):
         return lens, rev_idxs, hid_idxs
 
     def _choose(self, sample=False):
-        outs_emb = torch.cat(self.reader_lang_hs).unsqueeze(1)
-        sel_idx = torch.Tensor(1).fill_(outs_emb.size(0) - 1).long()
-        choice_logit = self.model.selection(self.state.ctx_differences, self.state.ctx_h, outs_emb, sel_idx)
+        # outs_emb = torch.cat(self.reader_lang_hs).unsqueeze(1)
+        # sel_idx = torch.Tensor(1).fill_(outs_emb.size(0) - 1).long()
+        # choice_logit = self.model.selection(self.state.ctx_differences, self.state.ctx_h, outs_emb, sel_idx)
+        choice_logit, _, _ = self.sel_outs[-1]
 
-        prob = F.softmax(choice_logit, dim=1)
+        prob = F.softmax(choice_logit, dim=-1)
         if sample:
             idx = prob.multinomial(1).detach()
-            logprob = F.log_softmax(choice_logit, dim=1).gather(1, idx)
+            logprob = F.log_softmax(choice_logit, dim=-1).gather(1, idx)
         else:
             _, idx = prob.max(1, keepdim=True)
             logprob = None
