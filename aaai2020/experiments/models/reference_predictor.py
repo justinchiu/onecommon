@@ -446,13 +446,14 @@ class RerankingMentionPredictor(ReferencePredictor):
         self.default_weight = default_weight
         self.weights = weights
 
-    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, next_mention_rollouts,
+    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables_per_candidate, next_mention_rollouts,
                 by_num_markables=False, collapse=False):
-        ref_tgt_p, ref_mask = self.preprocess(ref_tgt, num_markables)
 
-        max_num_mentions = num_markables.max()
+        max_num_mentions = num_markables_per_candidate.max()
         if max_num_mentions == 0:
-            return 0.0, None, {}
+            return 0.0, None, num_markables_per_candidate, {}
+
+        bsz, num_candidates = num_markables_per_candidate.size()
 
         assert max_num_mentions == next_mention_rollouts.candidate_indices.size(0)
 
@@ -462,12 +463,16 @@ class RerankingMentionPredictor(ReferencePredictor):
             # max_num_mentions x bsz
             chosen_indices = next_mention_rollouts.candidate_indices.gather(-1, chosen_expanded.unsqueeze(-1)).squeeze(-1)
 
+            num_markables = num_markables_per_candidate.gather(-1, chosen.unsqueeze(-1)).squeeze(-1)
+
+            ref_tgt_p, ref_mask = self.preprocess(ref_tgt, num_markables)
+
             # convert indices to bits
             ref_pred = int_to_bit_array(chosen_indices, num_bits=7)
 
             stats = self.compute_stats(ref_mask, ref_tgt_p, ref_pred=ref_pred,
                                        by_num_markables=by_num_markables, num_markables=num_markables, collapse=collapse)
-            return ref_pred, stats
+            return ref_pred, num_markables, stats
 
         # rollout_sel_probs: bsz x num_candidates x 7
         # current_sel_probs: bsz x 7
@@ -489,14 +494,16 @@ class RerankingMentionPredictor(ReferencePredictor):
 
         stats_by_weight = {}
         pred = None
+        num_markables = None
 
         for weight in self.weights:
             joint_scores = (1 - weight) * next_mention_rollouts.candidate_nm_scores + weight * rerank_scores
             chosen = joint_scores.argmax(-1)
-            this_pred, stats_weight = get_stats(chosen)
+            this_pred, this_num_markables, stats_weight = get_stats(chosen)
             stats_by_weight[weight] = stats_weight
             if weight == self.default_weight:
                 pred = this_pred
+                num_markables = this_num_markables
 
         stats = deepcopy(stats_by_weight[self.default_weight])
 
@@ -506,4 +513,4 @@ class RerankingMentionPredictor(ReferencePredictor):
 
         loss = 0.0
 
-        return loss, pred, stats
+        return loss, pred, num_markables, stats

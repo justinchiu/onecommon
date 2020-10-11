@@ -597,8 +597,11 @@ def main():
                         raise ValueError(f"--next_mention_prediction_type={self.args.next_mention_prediction}")
                     if args.next_mention_reranking:
                         # hack; pass True for inpt because this method only uses it to ensure it's not null
+                        num_mentions_per_candidate = gold_num_mentions.unsqueeze(1).expand(
+                            -1, self.args.next_mention_reranking_k
+                        )
                         _loss, _pred, _stats = next_mention_predictor.forward(
-                            True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions,
+                            True, gold_dots_mentioned, pred_dots_mentioned, num_mentions_per_candidate,
                             next_mention_rollouts[sentence_ix],
                             # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
                             collapse=expanded_next_mention_loss,

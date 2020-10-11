@@ -3,7 +3,7 @@ from collections import defaultdict, namedtuple
 from typing import Union
 
 import torch.nn.init
-from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence, pad_sequence
 import einops
 
 import corpora.reference
@@ -32,7 +32,11 @@ _State = namedtuple('_State', [
 ])
 
 NextMentionRollouts = namedtuple('NextMentionRollouts', [
-    'current_sel_probs', 'num_markables', 'candidate_indices', 'candidate_dots', 'candidate_nm_scores', 'rollout_sel_probs',
+    'current_sel_probs', 'num_markables_per_candidate', 'candidate_indices', 'candidate_dots', 'candidate_nm_scores', 'rollout_sel_probs',
+])
+
+NextMentionLatents = namedtuple('NextMentionLatents', [
+    'latent_states', 'num_markables', 'stop_losses', 'ctx_h_with_beliefs'
 ])
 
 class State(_State):
@@ -716,8 +720,8 @@ class RnnReferenceModel(nn.Module):
         )
         return outs
 
-    def next_mention_prediction(self, state: _State, outs_emb, lens, mention_beliefs,
-                                num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
+    def next_mention_latents(self, state: _State, outs_emb, lens, mention_beliefs,
+                             num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
         ctx_h = state.ctx_h
         ctx_differences = state.ctx_differences
         bsz = ctx_h.size(0)
@@ -732,23 +736,31 @@ class RnnReferenceModel(nn.Module):
             # 1 x batch_size x hidden_dim
             lens_expand = lens.unsqueeze(0).unsqueeze(2).expand(-1, -1, outs_emb.size(2))
             # 1 x batch_size x hidden_dim
-            states = torch.gather(outs_emb, 0, lens_expand-1)
+            latent_states = torch.gather(outs_emb, 0, lens_expand-1)
             # batch_size x hidden_dim
-            lang_states = states.squeeze(0)
+            lang_states = latent_states.squeeze(0)
 
         if self.args.next_mention_prediction_type == 'multi_reference':
             is_finished = torch.zeros_like(lens).bool()
             num_markables = torch.zeros_like(lens).long()
             h = self.next_mention_transform(lang_states)
             hs = []
-            stop_losses = torch.zeros_like(lens).float()
+            # stop_losses = torch.zeros_like(lens).float()
+            stop_losses = []
             while not is_finished.all():
                 stop_logits = self.next_mention_stop(h).squeeze(-1)
                 if num_markables_to_force is not None:
                     should_stop = num_markables >= num_markables_to_force
-                    stop_losses -= ((stop_logits * (should_stop.float() * 2 - 1)).sigmoid().log() * (~is_finished).float())
+                    # stop_logit > 0: don't stop
+                    # stop_logit < 0: stop
+                    stop_losses.append(
+                        (stop_logits * (should_stop.float() * 2 - 1)).sigmoid().log() * (~is_finished).float()
+                    )
                     is_finished = num_markables >= num_markables_to_force
                 else:
+                    stop_losses.append(
+                        stop_logits.abs().sigmoid().log() * (~is_finished).float()
+                    )
                     is_finished |= (stop_logits > 0)
                 is_finished |= (num_markables >= max_num_mentions)
                 if min_num_mentions > 0:
@@ -761,30 +773,53 @@ class RnnReferenceModel(nn.Module):
             assert len(hs) == num_markables.max().item()
             if num_markables_to_force is not None:
                 assert (num_markables == num_markables_to_force).all()
-            stop_loss = stop_losses.sum()
-            if hs:
-                states = torch.stack(hs, dim=0)
+            if len(stop_losses) != 0:
+                stop_losses = torch.stack(stop_losses, 0)
             else:
-                states = torch.zeros((0, bsz, lang_states.size(-1)))
-                return None, stop_loss, num_markables
-            ctx_h = ctx_h.unsqueeze(0).repeat_interleave(states.size(0), dim=0)
+                stop_losses = torch.zeros((1, bsz), requires_grad=True).to(latent_states.device)
+            if hs:
+                latent_states = torch.stack(hs, dim=0)
+            else:
+                latent_states = torch.zeros((0, bsz, lang_states.size(-1)))
+            ctx_h = ctx_h.unsqueeze(0).repeat_interleave(latent_states.size(0), dim=0)
         elif self.args.next_mention_prediction_type == 'collapsed':
             # add a dummy time dimension for attention
             # 1 x batch_size x num_dots x hidden_dim
             ctx_h = ctx_h.unsqueeze(0)
-            states = lang_states.unsqueeze(0)
-            num_markables = torch.full((bsz,), 1).long()
-            stop_loss = torch.tensor(0.0, requires_grad=True, device=states.device)
+            latent_states = lang_states.unsqueeze(0)
+            num_markables = torch.full((bsz,), 1).long().to(latent_states.device)
+            stop_losses = torch.zeros((1, bsz), requires_grad=True).to(latent_states.device)
         else:
             raise ValueError(f"--next_mention_prediction_type={self.args.next_mention_prediction}")
 
         # T x batch_size x num_dots x hidden_dim
-        states_expand = states.unsqueeze(2).expand(-1, -1, num_dots, -1)
-        return self._apply_attention('next_mention',
-                                     states,
-                                     torch.cat([states_expand, ctx_h], -1), ctx_differences, num_markables,
-                                     joint_factor_input=state.dot_h_maybe_multi_structured,
-                                     ), stop_loss, num_markables
+        return NextMentionLatents(
+            latent_states=latent_states, num_markables=num_markables, stop_losses=stop_losses, ctx_h_with_beliefs=ctx_h
+        )
+
+    def next_mention_prediction_from_latents(self, state: State, latents: NextMentionLatents):
+        ctx_h = state.ctx_h
+        ctx_differences = state.ctx_differences
+        num_dots = ctx_h.size(1)
+        stop_loss = latents.stop_losses.sum()
+        states_expand = latents.latent_states.unsqueeze(2).expand(-1, -1, num_dots, -1)
+        if (latents.num_markables > 0).any():
+            scores = self._apply_attention(
+                'next_mention',
+                latents.latent_states,
+                torch.cat([states_expand, latents.ctx_h_with_beliefs], -1), ctx_differences, latents.num_markables,
+                joint_factor_input=state.dot_h_maybe_multi_structured,
+            )
+        else:
+            scores = None
+        return scores, stop_loss, latents.num_markables
+
+    def next_mention_prediction(self, state: State, outs_emb, lens, mention_beliefs,
+                                num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
+        latents = self.next_mention_latents(
+            state, outs_emb, lens, mention_beliefs, num_markables_to_force, min_num_mentions, max_num_mentions
+        )
+        return self.next_mention_prediction_from_latents(state, latents)
 
     def selection(self, state: _State, outs_emb, sel_idx, beliefs=None):
         # outs_emb: length x batch_size x dim
@@ -1348,13 +1383,17 @@ class RnnReferenceModel(nn.Module):
                 'mention', timestep, partner_ref_outs + [partner_ref_out], ref_outs + [ref_out]
             )
             # TODO: consider using reader_lang_hs for this
-            next_mention_out = self.next_mention_prediction(
+            next_mention_latents = self.next_mention_latents(
                 state, writer_lang_hs, lens, mention_beliefs,
                 num_markables_to_force=next_num_markables if force_next_mention_num_markables else None,
             )
-            assert next_mention_out is not None
+            # next_mention_out = self.next_mention_prediction(
+            #     state, writer_lang_hs, lens, mention_beliefs,
+            #     num_markables_to_force=next_num_markables if force_next_mention_num_markables else None,
+            # )
+            # assert next_mention_out is not None
         else:
-            next_mention_out = None
+            next_mention_latents = None
 
         if compute_sel_out:
             # compute selection
@@ -1368,7 +1407,7 @@ class RnnReferenceModel(nn.Module):
 
         state = state._replace(turn=state.turn+1)
 
-        return state, outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out
+        return state, outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_latents
 
     def forward(self, ctx, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
@@ -1969,7 +2008,6 @@ class RnnReferenceModel(nn.Module):
         # None: for where write() returns logprobs
         return best_output, None, state_new, (reader_lang_hs, writer_lang_hs), extra
 
-
 class HierarchicalRnnReferenceModel(RnnReferenceModel):
     corpus_ty = corpora.reference_sentence.ReferenceSentenceCorpus
     engine_ty = HierarchicalRnnReferenceEngine
@@ -1979,9 +2017,10 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def first_mention(self, state, num_markables=None, force_next_mention_num_markables=False, min_num_mentions=0, max_num_mentions=12):
+    def first_mention_latents(self, state: State, num_markables=None, force_next_mention_num_markables=False,
+                              min_num_mentions=0, max_num_mentions=12):
         mention_beliefs = state.make_beliefs('mention', -1, [], [])
-        return self.next_mention_prediction(
+        return self.next_mention_latents(
             state,
             outs_emb=state.reader_and_writer_lang_h[0], # TODO: fix this to use the writer instead
             lens=torch.full((state.bsz,), 1.0, device=state.ctx_h.device).long(),
@@ -1990,6 +2029,13 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
         )
+
+    def first_mention(self, state: State, num_markables=None, force_next_mention_num_markables=False,
+                      min_num_mentions=0, max_num_mentions=12):
+        latents: NextMentionLatents = self.first_mention_latents(
+            state, num_markables, force_next_mention_num_markables, min_num_mentions, max_num_mentions
+        )
+        return self.next_mention_prediction_from_latents(state, latents)
 
     def current_selection_probabilities(self, state: State):
         # this may be too stringent
@@ -2043,40 +2089,80 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         return self.current_selection_probabilities(new_state)
 
-    def rollout_next_mention_cands(self, state, next_mention_out, num_markables, num_candidates=None, generation_method='topk'):
+    def rollout_next_mention_cands(self, state: State, next_mention_latents: NextMentionLatents,
+                                   num_candidates=None, generation_method='topk'):
         current_sel_probs = self.current_selection_probabilities(state)
         if num_candidates is None:
             return []
-        if generation_method == 'topk':
+        if generation_method in ['topk', 'topk_multi_mention']:
             sample = False
+            multi_mention = generation_method == 'topk_multi_mention'
         elif generation_method == 'sample':
             sample = True
+            multi_mention = False
         else:
             raise NotImplementedError(f"next_mention_candidates_generation=={generation_method}")
-        if (num_markables == 0).all():
+        if (next_mention_latents.num_markables == 0).all():
             return NextMentionRollouts(
-                current_sel_probs, num_markables, None, None, None, None
+                current_sel_probs, next_mention_latents.num_markables, None, None, None, None
             )
-        candidate_indices, candidate_dots, candidate_nm_scores = make_candidates(
-            next_mention_out, num_markables, num_candidates, sample
-        )
-        for b in range(state.bsz):
-            nm_b = num_markables[b]
-            # scores should be tiled across num_mentions
-            for j in range(nm_b):
-                assert torch.allclose(candidate_nm_scores[j,b], candidate_nm_scores[0,b])
-        candidate_nm_scores = candidate_nm_scores[0]
 
-        rollout_sel_probs = []
-        for k in range(candidate_dots.size(2)):
-            probs_k = self.rollout_selection_probabilities(state, candidate_dots[:,:,k], num_markables)
-            rollout_sel_probs.append(probs_k)
+        def filter_latents(next_mention_latents, max_mentions):
+            return next_mention_latents._replace(
+                num_markables=next_mention_latents.num_markables.clamp_max(max_mentions),
+                latent_states=next_mention_latents.latent_states[:max_mentions],
+                stop_losses=next_mention_latents.stop_losses[:max_mentions+1],
+                ctx_h_with_beliefs=next_mention_latents.ctx_h_with_beliefs[:max_mentions],
+            )
 
-        # bsz x candidates x num_dots
-        rollout_sel_probs = torch.stack(rollout_sel_probs, 1)
+        def process_latents(next_mention_latents):
+            # TODO: incorporate stop_losses
+            next_mention_outs = self.next_mention_prediction_from_latents(state, next_mention_latents)
+            next_mention_out, _, _ = next_mention_outs
+            candidate_indices, candidate_dots, candidate_nm_scores = make_candidates(
+                next_mention_out, next_mention_latents.num_markables, num_candidates, sample
+            )
+            for b in range(state.bsz):
+                nm_b = next_mention_latents.num_markables[b]
+                # scores should be tiled across num_mentions
+                for j in range(nm_b):
+                    assert torch.allclose(candidate_nm_scores[j,b], candidate_nm_scores[0,b])
+            candidate_nm_scores = candidate_nm_scores[0]
+
+            rollout_sel_probs = []
+            for k in range(candidate_dots.size(2)):
+                probs_k = self.rollout_selection_probabilities(state, candidate_dots[:,:,k], next_mention_latents.num_markables)
+                rollout_sel_probs.append(probs_k)
+
+            # bsz x candidates x num_dots
+            rollout_sel_probs = torch.stack(rollout_sel_probs, 1)
+
+            num_markables_per_candidate = next_mention_latents.num_markables.unsqueeze(1).expand(-1, num_candidates)
+            return num_markables_per_candidate, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs
+
+        if not multi_mention:
+            num_markables_per_candidate, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs = process_latents(next_mention_latents)
+        else:
+            all_num_markables_per_candidate, all_candidate_indices, all_candidate_dots, all_candidate_nm_scores, all_rollout_sel_probs = zip(
+                *[
+                    process_latents(filter_latents(next_mention_latents, max_mentions))
+                    for max_mentions in range(1, next_mention_latents.num_markables.max() + 1)
+                ]
+            )
+            num_markables_per_candidate = torch.cat(all_num_markables_per_candidate, dim=1)
+            candidate_indices = einops.rearrange(
+                pad_sequence(all_candidate_indices),
+                "stack mentions bsz candidates -> mentions bsz (stack candidates)"
+            )
+            candidate_dots = einops.rearrange(
+                pad_sequence(all_candidate_dots),
+                "stack mentions bsz candidates dots -> mentions bsz (stack candidates) dots"
+                )
+            candidate_nm_scores = torch.cat(all_candidate_nm_scores, dim=1)
+            rollout_sel_probs = torch.cat(all_rollout_sel_probs, dim=1)
 
         return NextMentionRollouts(
-            current_sel_probs, num_markables, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs
+            current_sel_probs, num_markables_per_candidate, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs
         )
 
     def forward(self, ctx, inpts, ref_inpts, sel_idx, num_markables, partner_num_markables, lens,
@@ -2121,13 +2207,19 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         ref_outs = []
 
         if vars(self.args).get('next_mention_prediction', False):
-            next_mention_outs = self.first_mention(state, num_markables[0], force_next_mention_num_markables)
+            # next_mention_outs = self.first_mention(state, num_markables[0], force_next_mention_num_markables)
+            next_mention_latents = self.first_mention_latents(state, num_markables[0], force_next_mention_num_markables)
+            next_mention_outs = self.next_mention_prediction_from_latents(state, next_mention_latents)
             all_next_mention_outs.append(next_mention_outs)
             if num_next_mention_candidates_to_score is not None:
                 all_next_mention_candidates.append(self.rollout_next_mention_cands(
-                    state, next_mention_outs[0], next_mention_outs[2],
-                    num_next_mention_candidates_to_score, next_mention_candidates_generation,
+                    state, next_mention_latents, num_candidates=num_next_mention_candidates_to_score,
+                    generation_method=next_mention_candidates_generation
                 ))
+                # all_next_mention_candidates.append(self.rollout_next_mention_cands(
+                #     state, next_mention_outs[0], next_mention_outs[2],
+                #     num_next_mention_candidates_to_score, next_mention_candidates_generation,
+                # ))
 
 
         l1_log_probs = []
@@ -2143,7 +2235,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             partner_ref_tgt = partner_ref_tgts[i] if partner_ref_tgts is not None else None
             is_selection_out = self.is_selection_prediction(state)
             all_is_selection_outs.append(is_selection_out)
-            state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs = self._forward(
+            new_state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_latents = self._forward(
                 state, inpt, this_lens,
                 ref_inpt=ref_inpt,
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
@@ -2159,6 +2251,10 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 next_num_markables=num_markables[i+1] if i < len(num_markables) - 1 else None,
                 is_selection=is_selection[i],
             )
+
+            next_mention_outs = self.next_mention_prediction_from_latents(state, next_mention_latents)
+
+            state = new_state
             if compute_l1_probs and ref_inpt is not None:
                 assert tgts is not None
                 tgt = tgts[i]
@@ -2257,8 +2353,11 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             all_next_mention_outs.append(next_mention_outs)
 
             if num_next_mention_candidates_to_score is not None:
-                all_next_mention_candidates.append(rollout_next_mention_cands(
-                    state, next_mention_outs[0], next_mention_outs[2]
+                # all_next_mention_candidates.append(self.rollout_next_mention_cands(
+                #     state, next_mention_outs[0], next_mention_outs[2]
+                # ))
+                all_next_mention_candidates.append(self.rollout_next_mention_cands(
+                    state, next_mention_latents,
                 ))
 
             reader_lang_h, writer_lang_h = state.reader_and_writer_lang_h

@@ -102,8 +102,7 @@ def make_parser():
                         help='path to save the final model')
     parser.add_argument('--ref_text', type=str,
                         help='file with the reference text')
-    parser.add_argument('--cuda', action='store_true', default=False,
-                        help='use CUDA')
+    parser.add_argument('--cuda', action='store_true', default=False, help='use CUDA')
     parser.add_argument('--domain', type=str, default='one_common',
                         help='domain for the dialogue')
     parser.add_argument('--visual', action='store_true', default=False,
@@ -125,16 +124,7 @@ def make_parser():
     parser.add_argument('--repeat_selfplay', action='store_true', default=False,
                         help='repeat selfplay')
 
-    parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample'], default='beam')
-    parser.add_argument('--language_beam_size', type=int, default=1)
-    parser.add_argument('--language_sample_temperature', type=float, default=0.25)
-    parser.add_argument('--max_sentences', type=int, default=20)
-
-    parser.add_argument('--next_mention_reranking', action='store_true')
-    parser.add_argument('--next_mention_reranking_k', default=10, type=int)
-    parser.add_argument('--next_mention_reranking_score', default='log_max_probability')
-    parser.add_argument('--next_mention_reranking_weight', default=1.0, type=float)
-    parser.add_argument('--next_mention_candidate_generation', default='topk')
+    RnnAgent.add_args(parser)
 
     return parser
 

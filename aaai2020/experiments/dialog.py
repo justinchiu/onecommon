@@ -401,7 +401,7 @@ class HierarchicalDialog(Dialog):
             nm_preds = writer.next_mention_predictions[-1]
             if nm_preds is not None:
                 dots_mentioned_per_ref = nm_preds.transpose(0,1)
-                this_num_markables = writer.next_mention_outs[-1][2]
+                this_num_markables = torch.LongTensor([nm_preds.size(0)]).to(device)
             else:
                 dots_mentioned_per_ref = torch.zeros((1, 0, 7)).to(device)
                 this_num_markables = torch.LongTensor([0]).to(device)
@@ -441,11 +441,10 @@ class HierarchicalDialog(Dialog):
             )
 
             # READER
-            # TODO: check start token is being properly set
             reader.read(out_words,
-                        dots_mentioned=dots_mentioned,
-                        dots_mentioned_per_ref=dots_mentioned_per_ref,
-                        num_markables=this_num_markables,
+                        dots_mentioned=None,
+                        dots_mentioned_per_ref=None,
+                        num_markables=this_partner_num_markables,
                         next_num_markables_to_force=None,
                         detect_markables=True,
                         min_num_mentions=min_num_mentions,

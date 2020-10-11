@@ -20,7 +20,7 @@ from nltk.parse import CoreNLPParser, CoreNLPDependencyParser
 from models import RnnReferenceModel, HierarchicalRnnReferenceModel
 from models.markable_detector import BiLSTM_CRF
 from models.reference_predictor import RerankingMentionPredictor, ReferencePredictor
-from models.rnn_reference_model import State
+from models.rnn_reference_model import State, NextMentionLatents
 from models.ctx_encoder import pairwise_differences
 
 
@@ -49,6 +49,21 @@ YOU_TOKEN = 'YOU:'
 THEM_TOKEN = 'THEM:'
 
 class RnnAgent(Agent):
+
+    @staticmethod
+    def add_args(parser):
+        parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample'], default='beam')
+        parser.add_argument('--language_beam_size', type=int, default=1)
+        parser.add_argument('--language_sample_temperature', type=float, default=0.25)
+        parser.add_argument('--max_sentences', type=int, default=20)
+
+        parser.add_argument('--next_mention_reranking', action='store_true')
+        parser.add_argument('--next_mention_reranking_max_mentions', type=int, default=5)
+        parser.add_argument('--next_mention_reranking_k', default=10, type=int)
+        parser.add_argument('--next_mention_reranking_score', default='log_max_probability')
+        parser.add_argument('--next_mention_reranking_weight', default=1.0, type=float)
+        parser.add_argument('--next_mention_candidate_generation',
+                            choices=['topk', 'topk_multi_mention', 'sample'], default='topk')
 
     def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
                  ):
@@ -109,19 +124,27 @@ class RnnAgent(Agent):
         self.partner_ref_inpts = []
         self.partner_markables = []
 
+        if self.args.next_mention_candidate_generation == 'topk_multi_mention':
+            assert num_markables_to_force is None
+            num_markables_to_force = torch.Tensor([self.args.next_mention_reranking_max_mentions]).to(self.device)
+
         # for use with the belief constructor
         self.ref_outs = []
         self.partner_ref_outs = []
-        self.next_mention_outs = [self.model.first_mention(
-            self.state,
-            num_markables=num_markables_to_force,
-            force_next_mention_num_markables=num_markables_to_force is not None,
-            min_num_mentions=min_num_mentions,
-            max_num_mentions=max_num_mentions,
-        )]
-        nm_cands, nm_preds = self.next_mention_prediction_and_candidates_from_outs(self.state, self.next_mention_outs[-1])
+        self.next_mention_latents = [
+            self.model.first_mention_latents(
+                self.state,
+                num_markables=num_markables_to_force,
+                force_next_mention_num_markables=num_markables_to_force is not None,
+                min_num_mentions=min_num_mentions,
+                max_num_mentions=max_num_mentions,
+            )
+        ]
+        # self.next_mention_outs = [self.model.next_mention_prediction_from_latents(self.state, self.next_mention_latents[-1])]
+        nm_preds, nm_cands = self.next_mention_prediction_and_candidates_from_latents(self.state, self.next_mention_latents[-1])
         self.next_mention_candidates = [nm_cands]
         self.next_mention_predictions = [nm_preds]
+
         self.is_selection_outs = [self.model.is_selection_prediction(self.state)]
         self.sel_outs = []
         self.extras = []
@@ -129,37 +152,40 @@ class RnnAgent(Agent):
     def feed_partner_context(self, partner_context):
         pass
 
-    def next_mention_prediction_and_candidates_from_outs(self, state, next_mention_outs):
-        # candidates = self.model.rollout_next_mention_cands(
-        #     state, next_mention_out[0], next_mention_out[2],
-        #     self.num
-        # )
-        # make pseudo gold and num mentions
-        next_mention_scores, stop_loss, nm_num_markables = next_mention_outs
-        # next_mention_scores[0]: marginal logits
-        if next_mention_scores is None:
-            return None, None
-        dummy_gold_mentions = torch.zeros((state.bsz, nm_num_markables.max().item(), self.model.num_ent)).long()
+    def next_mention_prediction_and_candidates_from_latents(self, state: State, next_mention_latents: NextMentionLatents):
+        dummy_gold_mentions = torch.zeros(
+            (state.bsz, next_mention_latents.num_markables.max().item(), self.model.num_ent)
+        ).long().to(self.device)
         if self.args.next_mention_reranking:
             # hack; pass True for inpt because this method only uses it to ensure it's not null
+            # next_mention_scores, stop_loss, nm_num_markables = self.model.next_mention_prediction_from_latents(
+            #     state, next_mention_latents
+            # )
             candidates = self.model.rollout_next_mention_cands(
-                state, next_mention_scores, nm_num_markables, num_candidates=self.args.next_mention_reranking_k,
+                state, next_mention_latents, num_candidates=self.args.next_mention_reranking_k,
                 generation_method=self.args.next_mention_candidate_generation
             )
-            _loss, predictions, _stats = self.next_mention_predictor.forward(
-                True, dummy_gold_mentions, next_mention_scores, nm_num_markables,
+            # num_markables_per_candidate = nm_num_markables.unsqueeze(1).expand(-1, self.args.next_mention_reranking_k)
+            _loss, predictions, nm_num_markables, _stats = self.next_mention_predictor.forward(
+                True, dummy_gold_mentions, None, candidates.num_markables_per_candidate,
                 candidates,
                 # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
                 collapse=self.model.args.next_mention_prediction_type=='multi_reference',
             )
         else:
+            next_mention_scores, stop_loss, nm_num_markables = self.model.next_mention_prediction_from_latents(
+                state, next_mention_latents
+            )
+            if next_mention_scores is None:
+                return None, None
             # hack; pass True for inpt because this method only uses it to ensure it's not null
             _loss, predictions, _stats = self.next_mention_predictor.forward(
                 True, dummy_gold_mentions, next_mention_scores, nm_num_markables,
                 collapse=self.model.args.next_mention_prediction_type=='multi_reference',
             )
             candidates = None
-        return predictions, candidates
+        predictions_truncated = predictions[:nm_num_markables.item()] if predictions is not None else predictions
+        return predictions_truncated, candidates
 
     def predict_referents(self, ref_inpt, num_markables):
         ref_beliefs = self.state.make_beliefs('ref', self.timesteps, self.partner_ref_outs, self.ref_outs)
@@ -228,6 +254,7 @@ class RnnAgent(Agent):
         if self.model.args.feed_context_attend:
             raise NotImplementedError("need to detect markables and pass those as dots_mentioned (if this was reading YOU:; currently not)")
 
+        generation_beliefs = self.state.make_beliefs('generation', self.timesteps, self.partner_ref_outs, self.ref_outs)
         (reader_lang_hs, writer_lang_hs), self.state = self.model.read(
             self.state, Variable(inpt),
             prefix_token=start_token,
@@ -235,6 +262,7 @@ class RnnAgent(Agent):
             dots_mentioned_per_ref=dots_mentioned_per_ref,
             num_markables=num_markables,
             is_selection=is_selection,
+            generation_beliefs=generation_beliefs,
         )
         self.reader_lang_hs.append(reader_lang_hs)
         self.writer_lang_hs.append(writer_lang_hs)
@@ -340,9 +368,11 @@ class RnnAgent(Agent):
         self.update_dot_h(ref_inpt=ref_inpt, partner_ref_inpt=None,
                           num_markables=num_markables, partner_num_markables=None,
                           ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
-        self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]).to(self.device),
-                          num_markables_to_force=torch.LongTensor([0]).to(self.device),
-                          )
+        # partner next mentions;
+        # we probably don't actually need to do this
+        # self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]).to(self.device),
+        #                   num_markables_to_force=None,
+        #                   )
         if (self.selection_word_index == outs).any():
             sel_idx = (self.selection_word_index == outs.flatten()).nonzero()
             assert len(sel_idx) == 1
@@ -372,17 +402,20 @@ class RnnAgent(Agent):
         mention_beliefs = self.state.make_beliefs(
             'mention', self.timesteps, self.partner_ref_outs, self.ref_outs,
         )
-        next_mention_out = self.model.next_mention_prediction(
+        if self.args.next_mention_candidate_generation == 'topk_multi_mention':
+            assert num_markables_to_force is None
+            num_markables_to_force = torch.Tensor([self.args.next_mention_reranking_max_mentions]).to(self.device)
+        next_mention_latents = self.model.next_mention_latents(
             self.state, self.writer_lang_hs[-1], lens, mention_beliefs,
             num_markables_to_force=num_markables_to_force,
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
         )
-        self.next_mention_outs.append(next_mention_out)
-        nm_preds, nm_cands = self.next_mention_prediction_and_candidates_from_outs(self.state, next_mention_out)
+        self.next_mention_latents.append(next_mention_latents)
+        nm_preds, nm_cands = self.next_mention_prediction_and_candidates_from_latents(self.state, next_mention_latents)
         self.next_mention_candidates.append(nm_cands)
         self.next_mention_predictions.append(nm_preds)
-        return next_mention_out
+        return nm_preds
 
     def is_selection(self):
         self.is_selection_outs.append(self.model.is_selection_prediction(self.state))
