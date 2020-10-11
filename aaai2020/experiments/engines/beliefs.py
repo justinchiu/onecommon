@@ -83,6 +83,9 @@ class BeliefConstructor(_BeliefConstructor):
         parser.add_argument('--belief_noise_neg_to_pos_probability', type=float, default=0.0)
 
     def make_beliefs(self, belief_type, timestep, partner_ref_outs, ref_outs):
+        if belief_type == 'next_mention_latents':
+            # TODO: maybe implement this; currently it's only used in the dot_recurrence
+            return None
         assert belief_type in [
             'selection', 'generation', 'mention', 'ref', 'partner_ref',
         ]

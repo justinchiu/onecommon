@@ -25,6 +25,8 @@ from torch.distributions import Gumbel
 
 BIG_NEG = -1e6
 
+MAX_NUM_MENTIONS = 12
+
 _State = namedtuple('_State', [
     'args', 'bsz', 'ctx', 'ctx_h', 'ctx_differences', 'reader_and_writer_lang_h',
     'dot_h_maybe_multi', 'dot_h_maybe_multi_structured', 'belief_constructor',
@@ -185,7 +187,10 @@ class RnnReferenceModel(nn.Module):
                             help='all dots get the same update from language features (i.e. uniform attention weights) [seems to hurt performance]')
         parser.add_argument('--dot_recurrence_in',
                             nargs='+',
-                            choices=['selection', 'next_mention', 'generation', 'ref', 'partner_ref', 'is_selection'],
+                            choices=[
+                                'selection', 'next_mention', 'generation', 'ref', 'partner_ref', 'is_selection',
+                                'next_mention_latents'
+                            ],
                             default=[])
         parser.add_argument('--dot_recurrence_split', action='store_true')
         parser.add_argument('--dot_recurrence_inputs',
@@ -201,7 +206,11 @@ class RnnReferenceModel(nn.Module):
 
         parser.add_argument('--next_mention_prediction', action='store_true')
         parser.add_argument('--next_mention_prediction_type', choices=['collapsed', 'multi_reference'], default='collapsed')
+        parser.add_argument('--next_mention_length_prediction_type',
+                            choices=['bernoulli', 'categorical'],
+                            default='bernoulli')
         parser.add_argument('--next_mention_prediction_no_lang', action='store_true')
+        parser.add_argument('--next_mention_prediction_latent_layers', type=int, default=0)
 
         parser.add_argument('--selection_prediction_no_lang', action='store_true')
 
@@ -429,8 +438,25 @@ class RnnReferenceModel(nn.Module):
             self.next_mention_cell = nn.GRUCell(
                 args.nhid_lang, args.nhid_lang, bias=True
             )
-            self.next_mention_transform = nn.Linear(args.nhid_lang, args.nhid_lang)
-            self.next_mention_stop = nn.Linear(args.nhid_lang, 1)
+            transform_and_stop_input_dim = args.nhid_lang
+            if 'next_mention_latents' in args.dot_recurrence_in:
+                transform_and_stop_input_dim += args.dot_recurrence_dim * (2 if self.args.dot_recurrence_split else 1)
+
+            def _make_layer(output_dim):
+                if args.next_mention_prediction_latent_layers == 0:
+                    return nn.Linear(transform_and_stop_input_dim, output_dim)
+                else:
+                    return FeedForward(
+                        args.next_mention_prediction_latent_layers, transform_and_stop_input_dim, 128, output_dim,
+                        dropout_p=args.dropout
+                    )
+
+            self.next_mention_transform = _make_layer(args.nhid_lang)
+            if self.args.next_mention_length_prediction_type == 'bernoulli':
+                self.next_mention_stop = _make_layer(1)
+            else:
+                self.next_mention_length = _make_layer(MAX_NUM_MENTIONS+1)
+                self.next_mention_length_crit = nn.CrossEntropyLoss(reduction='none')
 
         if args.structured_attention or args.structured_temporal_attention:
             assert not args.share_attn
@@ -720,7 +746,7 @@ class RnnReferenceModel(nn.Module):
         )
         return outs
 
-    def next_mention_latents(self, state: _State, outs_emb, lens, mention_beliefs,
+    def next_mention_latents(self, state: _State, outs_emb, lens, mention_beliefs, mention_latent_beliefs,
                              num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
         ctx_h = state.ctx_h
         ctx_differences = state.ctx_differences
@@ -743,25 +769,51 @@ class RnnReferenceModel(nn.Module):
         if self.args.next_mention_prediction_type == 'multi_reference':
             is_finished = torch.zeros_like(lens).bool()
             num_markables = torch.zeros_like(lens).long()
-            h = self.next_mention_transform(lang_states)
+            input_context = lang_states
+            if mention_latent_beliefs is not None:
+                mention_latent_beliefs_pooled = mention_latent_beliefs.mean(1)
+                input_context = torch.cat((input_context, mention_latent_beliefs_pooled), -1)
+            h = self.next_mention_transform(input_context)
             hs = []
             # stop_losses = torch.zeros_like(lens).float()
             stop_losses = []
+            # dict lookup so we throw an error if a bad argument is passed
+            predict_stop_at_each_position = {
+                'bernoulli': True,
+                'categorical': False,
+            }[vars(self.args).get('next_mention_length_prediction_type', 'bernoulli')]
+            if predict_stop_at_each_position:
+                predicted_lengths = None
+            else:
+                predicted_length_logits = self.next_mention_length(input_context)
+                predicted_lengths = predicted_length_logits.argmax(-1)
+                if num_markables_to_force is not None:
+                    stop_losses.append(self.next_mention_length_crit(predicted_length_logits, num_markables_to_force))
+                else:
+                    stop_losses.append(self.next_mention_length_crit(predicted_length_logits, predicted_lengths))
             while not is_finished.all():
-                stop_logits = self.next_mention_stop(h).squeeze(-1)
+                if predict_stop_at_each_position:
+                    stop_logits = self.next_mention_stop(h).squeeze(-1)
+                else:
+                    stop_logits = None
                 if num_markables_to_force is not None:
                     should_stop = num_markables >= num_markables_to_force
                     # stop_logit > 0: don't stop
                     # stop_logit < 0: stop
-                    stop_losses.append(
-                        (stop_logits * (should_stop.float() * 2 - 1)).sigmoid().log() * (~is_finished).float()
-                    )
+                    if predict_stop_at_each_position:
+                        stop_losses.append(
+                            -1.0 * (stop_logits * (should_stop.float() * 2 - 1)).sigmoid().log() * (~is_finished).float()
+                        )
                     is_finished = num_markables >= num_markables_to_force
                 else:
-                    stop_losses.append(
-                        stop_logits.abs().sigmoid().log() * (~is_finished).float()
-                    )
-                    is_finished |= (stop_logits > 0)
+                    if predict_stop_at_each_position:
+                        stop_losses.append(
+                            stop_logits.abs().sigmoid().log() * (~is_finished).float()
+                        )
+                        # stop_losses.append(torch.zeros(bsz).to(stop_logits.device))
+                        is_finished |= (stop_logits > 0)
+                    else:
+                        is_finished |= num_markables >= predicted_lengths
                 is_finished |= (num_markables >= max_num_mentions)
                 if min_num_mentions > 0:
                     # if num_markables < min_num_mentions then is_finished = False
@@ -814,10 +866,10 @@ class RnnReferenceModel(nn.Module):
             scores = None
         return scores, stop_loss, latents.num_markables
 
-    def next_mention_prediction(self, state: State, outs_emb, lens, mention_beliefs,
+    def next_mention_prediction(self, state: State, outs_emb, lens, mention_beliefs, mention_latent_beliefs,
                                 num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
         latents = self.next_mention_latents(
-            state, outs_emb, lens, mention_beliefs, num_markables_to_force, min_num_mentions, max_num_mentions
+            state, outs_emb, lens, mention_beliefs, mention_latent_beliefs, num_markables_to_force, min_num_mentions, max_num_mentions
         )
         return self.next_mention_prediction_from_latents(state, latents)
 
@@ -1382,9 +1434,13 @@ class RnnReferenceModel(nn.Module):
             mention_beliefs = state.make_beliefs(
                 'mention', timestep, partner_ref_outs + [partner_ref_out], ref_outs + [ref_out]
             )
+            mention_latent_beliefs = state.make_beliefs(
+                'next_mention_latents', timestep, partner_ref_outs + [partner_ref_out], ref_outs + [ref_out]
+            )
             # TODO: consider using reader_lang_hs for this
             next_mention_latents = self.next_mention_latents(
                 state, writer_lang_hs, lens, mention_beliefs,
+                mention_latent_beliefs,
                 num_markables_to_force=next_num_markables if force_next_mention_num_markables else None,
             )
             # next_mention_out = self.next_mention_prediction(
@@ -1844,7 +1900,7 @@ class RnnReferenceModel(nn.Module):
                    start_token='YOU:', stop_tokens=data.STOP_TOKENS,
                    dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
                    generation_beliefs=None, gumbel_noise=False, temperature=1.0,
-                   is_selection=None):
+                   is_selection=None, read_one_best=True):
         # NOTE: gumbel_noise=True *does not* sample without replacement at the sequence level, for the reasons
         # outlined in https://arxiv.org/pdf/1903.06059.pdf, and so should just be viewed as a randomized beam search
 
@@ -1989,14 +2045,17 @@ class RnnReferenceModel(nn.Module):
         best_output = outputs[0][:lens[0]].unsqueeze(1)
 
         # read the output utterance
-        (reader_lang_hs, writer_lang_hs), state_new = self.read(
-            state, best_output,
-            dots_mentioned=dots_mentioned,
-            dots_mentioned_per_ref=dots_mentioned_per_ref,
-            num_markables=num_markables,
-            prefix_token=start_token,
-            is_selection=is_selection,
-        )
+        if read_one_best:
+            (reader_lang_hs, writer_lang_hs), state_new = self.read(
+                state, best_output,
+                dots_mentioned=dots_mentioned,
+                dots_mentioned_per_ref=dots_mentioned_per_ref,
+                num_markables=num_markables,
+                prefix_token=start_token,
+                is_selection=is_selection,
+            )
+        else:
+            reader_lang_hs = writer_lang_hs = state_new = None
 
         extra = {
             'outputs': outputs,
@@ -2020,11 +2079,13 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
     def first_mention_latents(self, state: State, num_markables=None, force_next_mention_num_markables=False,
                               min_num_mentions=0, max_num_mentions=12):
         mention_beliefs = state.make_beliefs('mention', -1, [], [])
+        mention_latent_beliefs = state.make_beliefs('next_mention_latents', -1, [], [])
         return self.next_mention_latents(
             state,
             outs_emb=state.reader_and_writer_lang_h[0], # TODO: fix this to use the writer instead
             lens=torch.full((state.bsz,), 1.0, device=state.ctx_h.device).long(),
             mention_beliefs=mention_beliefs,
+            mention_latent_beliefs=mention_latent_beliefs,
             num_markables_to_force=num_markables if force_next_mention_num_markables else None,
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,

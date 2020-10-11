@@ -55,6 +55,7 @@ class RnnAgent(Agent):
         parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample'], default='beam')
         parser.add_argument('--language_beam_size', type=int, default=1)
         parser.add_argument('--language_sample_temperature', type=float, default=0.25)
+        parser.add_argument('--language_rerank', action='store_true')
         parser.add_argument('--max_sentences', type=int, default=20)
 
         parser.add_argument('--next_mention_reranking', action='store_true')
@@ -303,6 +304,32 @@ class RnnAgent(Agent):
         self.is_selection()
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
+    def rerank_language(self, outs, extra, dots_mentioned_per_ref):
+        target_num_markables = dots_mentioned_per_ref.size(1)
+        #best_output = outputs[0][:lens[0]].unsqueeze(1)
+        # return best_output
+
+        all_markables, all_ref_boundaries = [], []
+        all_ref_inpt, all_num_markables = [], []
+        all_ref_tgt = []
+
+        for utterance in extra['words']:
+            # TODO: batch this
+            markables, ref_boundaries = self.detect_markables(utterance)
+            ref_inpt, num_markables = self.markables_to_tensor(ref_boundaries)
+            if num_markables.item() != target_num_markables:
+                continue
+            ref_tgt = torch.zeros((1, num_markables.item(), 7)).long().to(self.device)
+            all_markables.append(markables)
+            all_ref_boundaries.append(ref_boundaries)
+            all_ref_inpt.append(ref_inpt)
+            all_num_markables.append(num_markables)
+            all_ref_tgt.append(ref_tgt)
+        if not all_markables:
+            # no utterances with the target number of referents found, revert to the 1-best candidate
+            return outs
+        print('here')
+
     def write(self, max_words=100, force_words=None, detect_markables=True, start_token=YOU_TOKEN,
               dots_mentioned=None, dots_mentioned_per_ref=None,
               num_markables=None, ref_inpt=None,
@@ -328,7 +355,7 @@ class RnnAgent(Agent):
             )
         elif inference in ['beam', 'noised_beam']:
             assert not force_words
-            outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write_beam(
+            outs, logprobs, state_new, (reader_lang_hs, writer_lang_hs), extra = self.model.write_beam(
                 self.state, max_words, beam_size,
                 start_token=start_token,
                 dots_mentioned=dots_mentioned,
@@ -337,7 +364,25 @@ class RnnAgent(Agent):
                 generation_beliefs=generation_beliefs,
                 is_selection=is_selection,
                 gumbel_noise=inference == 'noised_beam',
+                read_one_best=not self.args.language_rerank,
             )
+            if self.args.language_rerank:
+                if dots_mentioned_per_ref is None or dots_mentioned_per_ref.size(1) == 0:
+                    # outs = outs
+                    pass
+                else:
+                    outs = self.rerank_language(outs, extra, dots_mentioned_per_ref)
+                # TODO: rerank here
+                (reader_lang_hs, writer_lang_hs), state_new = self.model.read(
+                    self.state, outs,
+                    dots_mentioned=dots_mentioned,
+                    dots_mentioned_per_ref=dots_mentioned_per_ref,
+                    num_markables=num_markables,
+                    prefix_token=start_token,
+                    is_selection=is_selection,
+                )
+            self.state = state_new
+
         if logprobs is not None:
             self.logprobs.extend(logprobs)
 
@@ -402,11 +447,15 @@ class RnnAgent(Agent):
         mention_beliefs = self.state.make_beliefs(
             'mention', self.timesteps, self.partner_ref_outs, self.ref_outs,
         )
+        mention_latent_beliefs = self.state.make_beliefs(
+            'next_mention_latents', self.timesteps, self.partner_ref_outs, self.ref_outs,
+        )
         if self.args.next_mention_candidate_generation == 'topk_multi_mention':
             assert num_markables_to_force is None
             num_markables_to_force = torch.Tensor([self.args.next_mention_reranking_max_mentions]).to(self.device)
         next_mention_latents = self.model.next_mention_latents(
             self.state, self.writer_lang_hs[-1], lens, mention_beliefs,
+            mention_latent_beliefs,
             num_markables_to_force=num_markables_to_force,
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
