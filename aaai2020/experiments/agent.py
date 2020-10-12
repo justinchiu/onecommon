@@ -55,6 +55,7 @@ class RnnAgent(Agent):
     def add_args(parser):
         parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample', 'forgetful_noised_beam'], default='beam')
         parser.add_argument('--language_beam_size', type=int, default=1)
+        parser.add_argument('--language_beam_keep_all_finished', action='store_true')
         parser.add_argument('--language_sample_temperature', type=float, default=0.25)
         parser.add_argument('--language_rerank', action='store_true')
         parser.add_argument('--language_rerank_weight', type=float, default=1.0)
@@ -418,6 +419,7 @@ class RnnAgent(Agent):
                 gumbel_noise_forgetful=inference == 'forgetful_noised_beam',
                 read_one_best=not self.args.language_rerank,
                 temperature=self.args.language_sample_temperature if inference in ['noised_beam', 'forgetful_noised_beam'] else 1.0,
+                keep_all_finished=self.args.language_beam_keep_all_finished,
             )
             if self.args.language_rerank:
                 outs_beam_best = outs

@@ -1918,7 +1918,7 @@ class RnnReferenceModel(nn.Module):
                    start_token='YOU:', stop_tokens=data.STOP_TOKENS,
                    dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
                    generation_beliefs=None, gumbel_noise=False, temperature=1.0,
-                   is_selection=None, read_one_best=True, gumbel_noise_forgetful=False):
+                   is_selection=None, read_one_best=True, gumbel_noise_forgetful=False, keep_all_finished=False):
         # NOTE: gumbel_noise=True *does not* sample without replacement at the sequence level, for the reasons
         # outlined in https://arxiv.org/pdf/1903.06059.pdf, and so should just be viewed as a randomized beam search
 
@@ -1979,7 +1979,9 @@ class RnnReferenceModel(nn.Module):
         total_scores[0] = 0
         lens = torch.zeros(beam_size).long().to(device)
 
-        force_pad_mask = -make_mask(len(self.word_dict), [self.word_dict.get_idx(w) for w in ['<pad>']])
+        pad_ix = self.word_dict.get_idx('<pad>')
+
+        force_pad_mask = -make_mask(len(self.word_dict), [pad_ix])
 
         for word_ix in range(max_words):
             if is_finished.all():
@@ -2041,17 +2043,51 @@ class RnnReferenceModel(nn.Module):
             top_beam_indices = top_indices // vocab_size
             top_vocab_indices = top_indices % vocab_size
 
+            if keep_all_finished:
+                num_top_to_keep = beam_size - is_finished.sum()
+                finished_beam_indices = is_finished.nonzero().flatten()
+                finished_vocab_indices = torch.full(finished_beam_indices.size(), pad_ix).long().to(device)
+                finished_beam_indices_set = set(finished_beam_indices.tolist())
+                finished_scores = total_scores[is_finished]
+
+                top_beam_indices_to_keep = []
+                top_vocab_indices_to_keep = []
+                top_scores_to_keep = []
+
+                for beam_ix, vocab_ix, score in zip(top_beam_indices, top_vocab_indices, top_scores):
+                    if len(top_beam_indices_to_keep) >= num_top_to_keep:
+                        break
+                    if beam_ix.item() not in finished_beam_indices_set:
+                        top_beam_indices_to_keep.append(beam_ix)
+                        top_vocab_indices_to_keep.append(vocab_ix)
+                        top_scores_to_keep.append(score)
+
+                top_beam_indices_to_keep = torch.stack(top_beam_indices_to_keep, -1)
+                top_vocab_indices_to_keep = torch.stack(top_vocab_indices_to_keep, -1)
+                top_scores_to_keep = torch.stack(top_scores_to_keep, -1)
+
+                top_beam_indices = torch.cat((finished_beam_indices, top_beam_indices_to_keep), -1)
+                top_vocab_indices = torch.cat((finished_vocab_indices, top_vocab_indices_to_keep), -1)
+                total_scores = torch.cat((finished_scores, top_scores_to_keep), -1)
+
+            else:
+                total_scores = top_scores
+
             outputs = outputs[top_beam_indices]
             lens = lens[top_beam_indices]
             is_finished = is_finished[top_beam_indices]
             writer_lang_h_expanded = writer_lang_h_expanded[:,top_beam_indices]
 
-            total_scores = top_scores
             outputs = torch.cat((outputs, top_vocab_indices.unsqueeze(-1)), -1)
             lens[~is_finished] += 1
             is_finished |= torch.BoolTensor(
                 [self.word_dict.get_word(ix.item()) in stop_tokens for ix in top_vocab_indices],
             ).to(device)
+
+        sort_indices = total_scores.argsort(descending=True)
+        outputs = outputs[sort_indices]
+        lens = lens[sort_indices]
+        total_scores = total_scores[sort_indices]
 
         # remove start token for consistency with write()
         outputs = outputs[:,1:]
