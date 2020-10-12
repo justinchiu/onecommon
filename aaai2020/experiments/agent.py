@@ -53,7 +53,7 @@ class RnnAgent(Agent):
 
     @staticmethod
     def add_args(parser):
-        parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample'], default='beam')
+        parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample', 'forgetful_noised_beam'], default='beam')
         parser.add_argument('--language_beam_size', type=int, default=1)
         parser.add_argument('--language_sample_temperature', type=float, default=0.25)
         parser.add_argument('--language_rerank', action='store_true')
@@ -404,7 +404,7 @@ class RnnAgent(Agent):
                 generation_beliefs=generation_beliefs,
                 is_selection=is_selection,
             )
-        elif inference in ['beam', 'noised_beam']:
+        elif inference in ['beam', 'noised_beam', 'forgetful_noised_beam']:
             assert not force_words
             outs, logprobs, state_new, (reader_lang_hs, writer_lang_hs), extra = self.model.write_beam(
                 self.state, max_words, beam_size,
@@ -415,7 +415,9 @@ class RnnAgent(Agent):
                 generation_beliefs=generation_beliefs,
                 is_selection=is_selection,
                 gumbel_noise=inference == 'noised_beam',
+                gumbel_noise_forgetful=inference == 'forgetful_noised_beam',
                 read_one_best=not self.args.language_rerank,
+                temperature=self.args.language_sample_temperature if inference in ['noised_beam', 'forgetful_noised_beam'] else 1.0,
             )
             if self.args.language_rerank:
                 outs_beam_best = outs

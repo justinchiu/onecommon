@@ -1900,7 +1900,7 @@ class RnnReferenceModel(nn.Module):
             is_selection=is_selection,
         )
 
-        assert torch.allclose(writer_lang_hs, torch.cat(lang_hs, 0), atol=1e-6)
+        assert torch.allclose(writer_lang_hs, torch.cat(lang_hs, 0), atol=1e-4)
 
         extra = {
             'feed_ctx_attn_prob': feed_ctx_attn_prob,
@@ -1918,7 +1918,7 @@ class RnnReferenceModel(nn.Module):
                    start_token='YOU:', stop_tokens=data.STOP_TOKENS,
                    dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
                    generation_beliefs=None, gumbel_noise=False, temperature=1.0,
-                   is_selection=None, read_one_best=True):
+                   is_selection=None, read_one_best=True, gumbel_noise_forgetful=False):
         # NOTE: gumbel_noise=True *does not* sample without replacement at the sequence level, for the reasons
         # outlined in https://arxiv.org/pdf/1903.06059.pdf, and so should just be viewed as a randomized beam search
 
@@ -2027,9 +2027,13 @@ class RnnReferenceModel(nn.Module):
                 word_logprobs = (word_logprobs / temperature).log_softmax(-1)
 
             # (this_beam_size * vocab)
-            candidate_scores = (total_scores.unsqueeze(1) + word_logprobs)
-            if gumbel_noise:
-                candidate_scores = Gumbel(candidate_scores, scale=1.0).sample()
+            if gumbel_noise_forgetful:
+                assert not gumbel_noise
+                candidate_scores = Gumbel(word_logprobs, scale=1.0).sample()
+            elif gumbel_noise:
+                candidate_scores = total_scores.unsqueeze(1) + Gumbel(word_logprobs, scale=1.0).sample()
+            else:
+                candidate_scores = total_scores.unsqueeze(1) + word_logprobs
 
             vocab_size = word_logprobs.size(-1)
 
