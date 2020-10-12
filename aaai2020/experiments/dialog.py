@@ -466,6 +466,8 @@ class HierarchicalDialog(Dialog):
             # if not writer.human:
             if True:
                 logger.dump_sent(writer.name, out_words)
+                # if writer.decoded_beam_best:
+                #     logger.dump_sent(writer.name + ' beam best', writer.decoded_beam_best[-1])
 
             if logger.scenarios and self.args.log_attention:
                 attention = writer.get_attention()

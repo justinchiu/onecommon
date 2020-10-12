@@ -11,6 +11,7 @@ STATS = [
                  'ref_acc', 'ref_f1', 'ref_exact_match', 
                  'partner_ref_acc', 'partner_ref_f1', 'partner_ref_exact_match',
                  'next_mention_acc', 'next_mention_f1', 'next_mention_exact_match',
+                 'next_mention_loss', 'next_mention_stop_loss',
                  'l1_loss',
                 ]
 ]

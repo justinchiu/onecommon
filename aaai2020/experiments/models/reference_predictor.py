@@ -223,10 +223,48 @@ class ReferencePredictor(object):
 
         return ref_loss, ref_pred, stats
 
+def score_targets(ref_out, num_markables, ref_tgt):
+    ref_tgt_indices = bit_to_int_array(ref_tgt)
+    ref_out_logits, ref_out_full, ref_dist = ref_out
+    N, bsz, num_dots = ref_out_logits.size()
+    assert bsz == ref_tgt.size(0)
+
+    use_temporal = num_markables > 1
+
+    ## get scores and candidates for batch items where use_temporal == False
+    if ref_out_full is None:
+        ref_out_full = StructuredAttentionLayer.marginal_logits_to_full_logits(ref_out_logits).contiguous()
+
+    if ref_dist is None and N > 1:
+        ref_dist = StructuredTemporalAttentionLayer.make_distribution(
+            ref_out_full, num_markables, transition_potentials=None
+        )
+
+    ref_out_scores = torch.zeros(bsz).to(ref_tgt.device)
+
+    if N > 1 and use_temporal.any():
+        # subbsz x N-1 x C x C
+        candidate_edges = ref_dist.struct.to_parts(ref_tgt_indices[use_temporal], 2**num_dots, lengths=num_markables[use_temporal])
+        # subbsz
+        ref_out_scores_multi = ref_dist.log_prob(candidate_edges)
+
+        ref_out_scores[use_temporal] = ref_out_scores_multi
+
+    # num_mentions x bsz x 2 x 2 x ...
+    assert ref_out_full.dim() == 2 + num_dots
+
+    if (~use_temporal).any():
+        # subbsz x 2**num_dots
+        ref_out_full_single = ref_out_full.view(N, bsz, 2**num_dots)[0,~use_temporal]
+        ref_out_full_single_logits = ref_out_full_single.log_softmax(dim=-1)
+        ref_out_log_probs_single = ref_out_full_single_logits.gather(-1, ref_tgt_indices[~use_temporal,0].unsqueeze(-1)).squeeze(-1)
+
+        # N x bsz
+        ref_out_scores[~use_temporal] = ref_out_log_probs_single
+    return ref_out_scores
 
 def make_candidates(ref_out, num_markables, k, sample, exhaustive_single=False):
     ref_out_logits, ref_out_full, ref_dist = ref_out
-
     N, bsz, num_dots = ref_out_logits.size()
 
     if exhaustive_single:
@@ -439,9 +477,10 @@ def entropy(probs):
     return -(probs * probs.log()).sum(-1)
 
 class RerankingMentionPredictor(ReferencePredictor):
+    SCORING_FUNCTIONS = ['log_max_probability', 'entropy_reduction', 'log_max_probability_gain']
     def __init__(self, args, scoring_function, default_weight, weights):
         super().__init__(args)
-        assert scoring_function in ['log_max_probability', 'entropy_reduction']
+        assert scoring_function in RerankingMentionPredictor.SCORING_FUNCTIONS
         self.scoring_function = scoring_function
         self.default_weight = default_weight
         self.weights = weights
@@ -482,6 +521,8 @@ class RerankingMentionPredictor(ReferencePredictor):
         if self.scoring_function == 'log_max_probability':
             # bsz x num_candidates
             rerank_scores = next_mention_rollouts.rollout_sel_probs.max(-1).values.log()
+        elif self.scoring_function == 'log_max_probability_gain':
+            rerank_scores = next_mention_rollouts.rollout_sel_probs.max(-1).values.log() - next_mention_rollouts.current_sel_probs.max(-1).values.log()
         elif self.scoring_function == 'entropy_reduction':
             # bsz
             initial_entropy = entropy(next_mention_rollouts.current_sel_probs)

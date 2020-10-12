@@ -19,6 +19,7 @@ from nltk.parse import CoreNLPParser, CoreNLPDependencyParser
 
 from models import RnnReferenceModel, HierarchicalRnnReferenceModel
 from models.markable_detector import BiLSTM_CRF
+import models.reference_predictor
 from models.reference_predictor import RerankingMentionPredictor, ReferencePredictor
 from models.rnn_reference_model import State, NextMentionLatents
 from models.ctx_encoder import pairwise_differences
@@ -56,12 +57,15 @@ class RnnAgent(Agent):
         parser.add_argument('--language_beam_size', type=int, default=1)
         parser.add_argument('--language_sample_temperature', type=float, default=0.25)
         parser.add_argument('--language_rerank', action='store_true')
+        parser.add_argument('--language_rerank_weight', type=float, default=1.0)
         parser.add_argument('--max_sentences', type=int, default=20)
 
         parser.add_argument('--next_mention_reranking', action='store_true')
-        parser.add_argument('--next_mention_reranking_max_mentions', type=int, default=5)
+        parser.add_argument('--next_mention_reranking_max_mentions', type=int, default=2)
         parser.add_argument('--next_mention_reranking_k', default=10, type=int)
-        parser.add_argument('--next_mention_reranking_score', default='log_max_probability')
+        parser.add_argument('--next_mention_reranking_score',
+                            default='log_max_probability',
+                            choices=RerankingMentionPredictor.SCORING_FUNCTIONS)
         parser.add_argument('--next_mention_reranking_weight', default=1.0, type=float)
         parser.add_argument('--next_mention_candidate_generation',
                             choices=['topk', 'topk_multi_mention', 'sample'], default='topk')
@@ -113,7 +117,10 @@ class RnnAgent(Agent):
         self.writer_lang_hs = []
         self.logprobs = []
         self.sents = []
+        # self.sents_beam_best = []
         self.words = []
+        # self.words_beam_best = []
+        self.decoded_beam_best = []
         self.context = context
         ctx = torch.Tensor([float(x) for x in context]).float().unsqueeze(0) # add batch size of 1
         self.state: State = self.model.initialize_state(ctx, belief_constructor)
@@ -304,31 +311,75 @@ class RnnAgent(Agent):
         self.is_selection()
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
-    def rerank_language(self, outs, extra, dots_mentioned_per_ref):
+    def rerank_language(self, outs, extra, dots_mentioned, dots_mentioned_per_ref, is_selection, generation_beliefs):
         target_num_markables = dots_mentioned_per_ref.size(1)
         #best_output = outputs[0][:lens[0]].unsqueeze(1)
         # return best_output
 
         all_markables, all_ref_boundaries = [], []
         all_ref_inpt, all_num_markables = [], []
-        all_ref_tgt = []
+        # all_ref_tgt = []
 
-        for utterance in extra['words']:
+        indices_kept = []
+        for ix, utterance in enumerate(extra['words']):
             # TODO: batch this
             markables, ref_boundaries = self.detect_markables(utterance)
             ref_inpt, num_markables = self.markables_to_tensor(ref_boundaries)
             if num_markables.item() != target_num_markables:
                 continue
-            ref_tgt = torch.zeros((1, num_markables.item(), 7)).long().to(self.device)
+            # ref_tgt = torch.zeros((1, num_markables.item(), 7)).long().to(self.device)
             all_markables.append(markables)
             all_ref_boundaries.append(ref_boundaries)
             all_ref_inpt.append(ref_inpt)
             all_num_markables.append(num_markables)
-            all_ref_tgt.append(ref_tgt)
+            # all_ref_tgt.append(ref_tgt)
+            indices_kept.append(ix)
         if not all_markables:
             # no utterances with the target number of referents found, revert to the 1-best candidate
             return outs
-        print('here')
+        num_candidates = len(all_markables)
+        ref_inpt = torch.cat(all_ref_inpt, dim=0)
+        num_markables = torch.cat(all_num_markables, dim=0)
+        # ref_tgt = torch.cat(all_ref_tgt)
+
+        state_expanded = self.state.expand_bsz(num_candidates)
+        dots_mentioned_expanded = dots_mentioned.expand(num_candidates, -1)
+        dots_mentioned_per_ref_expanded = dots_mentioned_per_ref.expand(num_candidates, -1, -1)
+
+        if is_selection is not None:
+            raise NotImplementedError()
+        if generation_beliefs is not None:
+            raise NotImplementedError()
+
+        prefix = self.model.word2var(YOU_TOKEN).unsqueeze(-1).expand(1, num_candidates)
+        # T x num_candidates
+        inpt = torch.cat((prefix, extra['outputs'][indices_kept].transpose(0,1)), dim=0)
+        (reader_lang_hs, writer_lang_hs), new_state, _ = self.model._read(
+            state_expanded, inpt, lens=extra['lens'][indices_kept]+1, pack=True,
+            dots_mentioned=dots_mentioned_expanded,
+            dots_mentioned_per_ref=dots_mentioned_per_ref_expanded,
+            num_markables=num_markables,
+            generation_beliefs=generation_beliefs,
+            is_selection=is_selection,
+        )
+        ref_beliefs = state_expanded.make_beliefs('ref', self.timesteps, self.partner_ref_outs, self.ref_outs)
+        ref_out = self.model.reference_resolution(
+            new_state, reader_lang_hs, ref_inpt, num_markables,
+            for_self=True, ref_beliefs=ref_beliefs
+        )
+        dots_mentioned_scores = models.reference_predictor.score_targets(ref_out, num_markables, dots_mentioned_per_ref_expanded)
+        # ref_predictor = ReferencePredictor(self.args)
+        # ref_loss, ref_pred, states = ref_predictor.forward(True, dots_mentioned_per_ref_expanded, ref_out, num_markables)
+        # ref_pred_scores = models.reference_predictor.score_targets(ref_out, num_markables, ref_pred.transpose(0,1))
+        weight = self.args.language_rerank_weight
+        assert 0 <= weight <= 1.0
+        candidate_scores = extra['output_scores'][indices_kept] * (1.0 - weight) + dots_mentioned_scores * weight
+        candidate_index = candidate_scores.argmax()
+
+        candidate_chosen = extra['outputs'][indices_kept][candidate_index]
+        candidate_len = extra['lens'][indices_kept][candidate_index]
+
+        return candidate_chosen[:candidate_len].unsqueeze(1)
 
     def write(self, max_words=100, force_words=None, detect_markables=True, start_token=YOU_TOKEN,
               dots_mentioned=None, dots_mentioned_per_ref=None,
@@ -367,12 +418,18 @@ class RnnAgent(Agent):
                 read_one_best=not self.args.language_rerank,
             )
             if self.args.language_rerank:
+                outs_beam_best = outs
                 if dots_mentioned_per_ref is None or dots_mentioned_per_ref.size(1) == 0:
                     # outs = outs
                     pass
                 else:
-                    outs = self.rerank_language(outs, extra, dots_mentioned_per_ref)
-                # TODO: rerank here
+                    outs = self.rerank_language(
+                        outs, extra, dots_mentioned, dots_mentioned_per_ref, is_selection, generation_beliefs
+                    )
+                # self.words_beam_best.append(outs_beam_best)
+                # self.sents_beam_best.append(torch.cat([self.model.word2var(start_token).unsqueeze(1), outs_beam_best], 0))
+                self.decoded_beam_best.append(self._decode(outs_beam_best, self.model.word_dict))
+
                 (reader_lang_hs, writer_lang_hs), state_new = self.model.read(
                     self.state, outs,
                     dots_mentioned=dots_mentioned,

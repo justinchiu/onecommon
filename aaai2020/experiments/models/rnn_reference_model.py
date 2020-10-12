@@ -73,6 +73,24 @@ class State(_State):
         beliefs = self._maybe_add_dot_h_to_beliefs(beliefs, add_name)
         return beliefs
 
+    def expand_bsz(self, new_bsz):
+        assert self.bsz == 1
+        ctx = self.ctx.expand(new_bsz, -1)
+        ctx_h = self.ctx_h.expand(new_bsz, -1, -1)
+        ctx_differences = self.ctx_differences.expand(new_bsz, -1, -1)
+        _reader_lang_h, _writer_lang_h = self.reader_and_writer_lang_h
+        reader_lang_h = _reader_lang_h.expand(-1, new_bsz, -1)
+        writer_lang_h = _writer_lang_h.expand(-1, new_bsz, -1)
+        dot_h_maybe_multi = self.dot_h_maybe_multi.expand(new_bsz, -1, -1)
+        if self.dot_h_maybe_multi_structured is not None:
+            raise NotImplementedError()
+        dot_h_maybe_multi_structured = None
+        return self._replace(
+            bsz=new_bsz, ctx=ctx, ctx_h=ctx_h, ctx_differences=ctx_differences,
+            reader_and_writer_lang_h=(reader_lang_h, writer_lang_h), dot_h_maybe_multi=dot_h_maybe_multi,
+            dot_h_maybe_multi_structured=dot_h_maybe_multi_structured,
+        )
+
 class RnnReferenceModel(nn.Module):
     corpus_ty = corpora.reference.ReferenceCorpus
     engine_ty = RnnReferenceEngine
