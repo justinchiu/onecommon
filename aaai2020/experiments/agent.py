@@ -70,6 +70,7 @@ class RnnAgent(Agent):
         parser.add_argument('--next_mention_reranking_weight', default=1.0, type=float)
         parser.add_argument('--next_mention_candidate_generation',
                             choices=['topk', 'topk_multi_mention', 'sample'], default='topk')
+        parser.add_argument('--next_mention_reranking_use_stop_scores', action='store_true')
 
     def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
                  ):
@@ -172,7 +173,8 @@ class RnnAgent(Agent):
             # )
             candidates = self.model.rollout_next_mention_cands(
                 state, next_mention_latents, num_candidates=self.args.next_mention_reranking_k,
-                generation_method=self.args.next_mention_candidate_generation
+                generation_method=self.args.next_mention_candidate_generation,
+                use_stop_losses=self.args.next_mention_reranking_use_stop_scores,
             )
             # num_markables_per_candidate = nm_num_markables.unsqueeze(1).expand(-1, self.args.next_mention_reranking_k)
             _loss, predictions, nm_num_markables, _stats = self.next_mention_predictor.forward(
@@ -355,7 +357,7 @@ class RnnAgent(Agent):
         prefix = self.model.word2var(YOU_TOKEN).unsqueeze(-1).expand(1, num_candidates)
         # T x num_candidates
         inpt = torch.cat((prefix, extra['outputs'][indices_kept].transpose(0,1)), dim=0)
-        (reader_lang_hs, writer_lang_hs), new_state, _ = self.model._read(
+        (reader_lang_hs, writer_lang_hs), new_state, _, _ = self.model._read(
             state_expanded, inpt, lens=extra['lens'][indices_kept]+1, pack=True,
             dots_mentioned=dots_mentioned_expanded,
             dots_mentioned_per_ref=dots_mentioned_per_ref_expanded,

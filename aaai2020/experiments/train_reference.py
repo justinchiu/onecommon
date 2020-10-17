@@ -39,6 +39,7 @@ def main():
         help='log training with tensorboard')
     parser.add_argument('--repeat_train', action='store_true', default=False,
         help='repeat training n times')
+    parser.add_argument('--fold_nums', nargs='*', type=int)
     parser.add_argument('--corpus_type', choices=['full', 'uncorrelated', 'success_only'], default='full',
         help='type of training corpus to use')
 
@@ -52,10 +53,13 @@ def main():
     args = parser.parse_args()
     pprint.pprint(vars(args))
 
-    if args.repeat_train:
-        fold_nums = list(range(10))
+    if args.fold_nums:
+        fold_nums = args.fold_nums
     else:
-        fold_nums = [1]
+        if args.repeat_train:
+            fold_nums = list(range(10))
+        else:
+            fold_nums = [1]
 
     if args.output_dir:
         model_output_dir = os.path.join(args.output_dir, args.model_file)

@@ -94,3 +94,7 @@ def int_to_bit_array(int_array, num_bits=None, base=2):
 def unsigmoid(x):
     # aka logit or link; unsigmoid(x).sigmoid() == x
     return (x / (1.0 - x)).log()
+
+def lengths_to_mask(max_length, lengths):
+    # 1 for positions up to the length; 0 for others
+    return torch.arange(max_length, device=lengths.device).unsqueeze(0).expand(lengths.size(0), -1) < lengths.unsqueeze(1)

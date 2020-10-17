@@ -88,6 +88,10 @@ def make_parser():
                         help='maximum number of turns in a dialog')
     parser.add_argument('--log_file', type=str, default='selfplay.log',
                         help='log dialogs to file')
+    parser.add_argument('--markables_file', type=str, default='selfplay_markables.json',
+                        help='log markables to file')
+    parser.add_argument('--referents_file', type=str, default='selfplay_referents.json',
+                        help='log referents to file')
     parser.add_argument('--smart_alice', action='store_true', default=False,
                         help='make Alice smart again')
     parser.add_argument('--rollout_bsz', type=int, default=3,
@@ -193,10 +197,12 @@ def main():
         repeat_results.append(result)
 
 
-    print("dump selfplay_markables.json")
-    dump_json(dialog.selfplay_markables, "selfplay_markables.json")
-    print("dump selfplay_referents.json")
-    dump_json(dialog.selfplay_referents, "selfplay_referents.json")
+    if args.markables_file:
+        print(f"dump {args.markables_file}")
+        dump_json(dialog.selfplay_markables, args.markables_file)
+    if args.referents_file:
+        print(f"dump {args.referents_file}")
+        dump_json(dialog.selfplay_referents, args.referents_file)
 
     print("repeat selfplay results %.8f ( %.8f )" % (np.mean(repeat_results), np.std(repeat_results)))
 

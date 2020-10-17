@@ -263,7 +263,7 @@ def score_targets(ref_out, num_markables, ref_tgt):
         ref_out_scores[~use_temporal] = ref_out_log_probs_single
     return ref_out_scores
 
-def make_candidates(ref_out, num_markables, k, sample, exhaustive_single=False):
+def make_candidates(ref_out, num_markables, k, sample, exhaustive_single=False, additional_scores=None):
     ref_out_logits, ref_out_full, ref_dist = ref_out
     N, bsz, num_dots = ref_out_logits.size()
 
@@ -334,6 +334,11 @@ def make_candidates(ref_out, num_markables, k, sample, exhaustive_single=False):
 
     # N x bsz x k
     candidate_l0_scores[:,~use_temporal] = candidate_l0_scores_single[:,~use_temporal]
+
+    if additional_scores:
+        old_shape = candidate_l0_scores.size()
+        candidate_l0_scores = candidate_l0_scores + additional_scores.unsqueeze(0).unsqueeze(2)
+        assert candidate_l0_scores.size() == old_shape
 
     candidate_dots = int_to_bit_array(candidate_indices, num_bits=num_dots)
     candidate_dots = candidate_dots.view(N, bsz, k, num_dots)
