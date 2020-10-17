@@ -134,7 +134,7 @@ class RnnAgent(Agent):
         self.partner_ref_inpts = []
         self.partner_markables = []
 
-        if self.args.next_mention_candidate_generation == 'topk_multi_mention':
+        if self.args.next_mention_reranking and self.args.next_mention_candidate_generation == 'topk_multi_mention':
             assert num_markables_to_force is None
             num_markables_to_force = torch.Tensor([self.args.next_mention_reranking_max_mentions]).to(self.device)
 
@@ -513,7 +513,7 @@ class RnnAgent(Agent):
         mention_latent_beliefs = self.state.make_beliefs(
             'next_mention_latents', self.timesteps, self.partner_ref_outs, self.ref_outs,
         )
-        if self.args.next_mention_candidate_generation == 'topk_multi_mention':
+        if self.args.next_mention_reranking and self.args.next_mention_candidate_generation == 'topk_multi_mention':
             assert num_markables_to_force is None
             num_markables_to_force = torch.Tensor([self.args.next_mention_reranking_max_mentions]).to(self.device)
         next_mention_latents = self.model.next_mention_latents(

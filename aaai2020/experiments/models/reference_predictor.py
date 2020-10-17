@@ -335,7 +335,7 @@ def make_candidates(ref_out, num_markables, k, sample, exhaustive_single=False, 
     # N x bsz x k
     candidate_l0_scores[:,~use_temporal] = candidate_l0_scores_single[:,~use_temporal]
 
-    if additional_scores:
+    if additional_scores is not None:
         old_shape = candidate_l0_scores.size()
         candidate_l0_scores = candidate_l0_scores + additional_scores.unsqueeze(0).unsqueeze(2)
         assert candidate_l0_scores.size() == old_shape
