@@ -1529,7 +1529,7 @@ class RnnReferenceModel(nn.Module):
     def forward(self, ctx, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables, lens,
                 dots_mentioned, dots_mentioned_per_ref,
                 belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt, compute_l1_scores=False,
-                ref_tgt=None, partner_ref_tgt=None):
+                ref_tgt=None, partner_ref_tgt=None, return_all_selection_outs=False):
         raise NotImplementedError("make this use _State")
         # belief_function:
         # timestep 0
@@ -2326,6 +2326,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 is_selection=None,
                 num_next_mention_candidates_to_score=None,
                 next_mention_candidates_generation='topk',
+                return_all_selection_outs=False,
                 ):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
@@ -2336,7 +2337,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         all_outs = []
         all_ref_outs = []
 
-        sel_out = None
+        sel_outs = []
 
         all_ctx_attn_prob = []
         all_feed_ctx_attn_prob = []
@@ -2393,7 +2394,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
                 num_markables=num_markables[i],
                 partner_num_markables=partner_num_markables[i],
-                compute_sel_out=is_last, sel_idx=sel_idx,
+                compute_sel_out=is_last or return_all_selection_outs, sel_idx=sel_idx,
                 dots_mentioned=dots_mentioned[i] if dots_mentioned is not None else None,
                 dots_mentioned_per_ref=dots_mentioned_per_ref[i] if dots_mentioned_per_ref is not None else None,
                 timestep=i,
@@ -2403,6 +2404,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 next_num_markables=num_markables[i+1] if i < len(num_markables) - 1 else None,
                 is_selection=is_selection[i],
             )
+            sel_outs.append(sel_out)
 
             next_mention_outs = self.next_mention_prediction_from_latents(state, next_mention_latents)
 
@@ -2520,7 +2522,11 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             ref_outs.append(ref_out)
             partner_ref_outs.append(partner_ref_out)
 
-        assert sel_out is not None
+        assert len(sel_outs) > 0
+        if return_all_selection_outs:
+            sel_to_return = sel_outs
+        else:
+            sel_to_return = sel_outs[-1]
 
-        return state, all_outs, all_ref_outs, sel_out, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs,\
+        return state, all_outs, all_ref_outs, sel_to_return, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs,\
                all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs, all_next_mention_candidates

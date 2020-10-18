@@ -33,6 +33,7 @@ import seaborn as sns
 from models.reference_predictor import ReferencePredictor, PragmaticReferencePredictor, RerankingMentionPredictor
 from engines.rnn_reference_engine import make_dots_mentioned_multi, make_dots_mentioned_per_ref_multi
 from engines.rnn_reference_engine import add_metrics, flatten_metrics
+from engines.rnn_reference_engine import add_selection_stats
 from engines.beliefs import BeliefConstructor, BlankBeliefConstructor
 
 sns.set(font_scale=1.15)
@@ -135,6 +136,10 @@ def main():
     parser.add_argument('--next_mention_reranking_default_weight', type=float, default=0.0)
     parser.add_argument('--force_next_mention_num_markables', action='store_true')
 
+    parser.add_argument('--selection_confidence', action='store_true')
+    parser.add_argument('--selection_confidence_weight', type=float, default=1.0)
+    parser.add_argument('--selection_confidence_threshold', type=float, default=0.5)
+
     utils.dump_git_status(sys.stdout)
     print(' '.join(sys.argv))
     args = parser.parse_args()
@@ -193,6 +198,11 @@ def main():
             model.cuda()
         model.eval()
 
+        if vars(model.args).get('next_mention_prediction') and vars(model.args).get('next_mention_prediction_type') == 'multi_reference':
+            if not args.force_next_mention_num_markables:
+                raise NotImplementedError("implement an eval that allows different numbers of gold and predicted mentions")
+
+
         corpus = model.corpus_ty(
             domain, args.data,
             train='train_reference_{}.txt'.format(split),
@@ -218,6 +228,7 @@ def main():
         sel_crit = nn.CrossEntropyLoss()
         ref_crit = nn.BCEWithLogitsLoss()
         ref_crit_no_reduce = nn.BCEWithLogitsLoss(reduction='none')
+        is_sel_crit = nn.BCEWithLogitsLoss(reduction='mean')
 
         if args.eval_split == 'dev':
             testset, testset_stats = corpus.valid_dataset(args.bsz)
@@ -284,6 +295,7 @@ def main():
         ref_stats = defaultdict(lambda: 0.0)
         partner_ref_stats = defaultdict(lambda: 0.0)
         next_mention_stats = defaultdict(lambda: 0.0)
+        is_selection_stats = defaultdict(lambda: 0.0)
 
         for batch in tqdm.tqdm(testset, ncols=80):
             if isinstance(corpus, ReferenceSentenceCorpus):
@@ -359,7 +371,7 @@ def main():
                     dots_mentioned = [torch.zeros((bsz, 7)).bool().to(device) for _ in num_markables]
                     belief_constructor = BlankBeliefConstructor()
 
-                state, outs, ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, is_selection_outs, \
+                state, outs, ref_outs, sel_outs, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, is_selection_outs, \
                 (reader_lang_hs, writer_lang_hs), l1_scores, next_mention_rollouts = model.forward(
                     ctx, inpts, ref_inpts, sel_idx,
                     num_markables, partner_num_markables,
@@ -369,6 +381,7 @@ def main():
                     is_selection=is_selection,
                     num_next_mention_candidates_to_score=args.next_mention_reranking_k if args.next_mention_reranking else None,
                     force_next_mention_num_markables=args.force_next_mention_num_markables,
+                    return_all_selection_outs=True
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
@@ -454,8 +467,8 @@ def main():
             my_ref_outs, partner_ref_outs = zip(*ref_outs)
 
             # next_mention_outs[i]: dots predicted to be mentioned in sentence i (TODO: rename this)
-            for sentence_ix, (inpt, out, tgt, ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt, next_mention_out) in enumerate(
-                utils.safe_zip(inpts, outs, tgts, ref_inpts, partner_ref_inpts, ref_outs, ref_tgts, partner_ref_tgts_our_view, next_mention_outs[:-1])
+            for sentence_ix, (inpt, out, tgt, ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt, next_mention_out, this_is_selection, is_selection_out) in enumerate(
+                utils.safe_zip(inpts, outs, tgts, ref_inpts, partner_ref_inpts, ref_outs, ref_tgts, partner_ref_tgts_our_view, next_mention_outs[:-1], is_selection, is_selection_outs)
             ):
                 sentence_num_markables = num_markables[sentence_ix]
                 tgt = Variable(tgt)
@@ -615,9 +628,19 @@ def main():
                         )
                     next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
 
+                if model.args.is_selection_prediction:
+                    if args.selection_confidence and sentence_ix > 0:
+                        max_selection_log_probs = sel_outs[sentence_ix-1][0].log_softmax(-1).max(-1).values
+                        combined_scores = max_selection_log_probs * args.selection_confidence_weight + is_selection_out.sigmoid().log() * (1 - args.selection_confidence_weight)
+                        scores_to_choose = combined_scores - torch.tensor(args.selection_confidence_threshold).log()
+                    else:
+                        scores_to_choose = is_selection_out
+
+                    add_selection_stats(this_is_selection, scores_to_choose, is_selection_stats)
+
                 # END loop over sentences
 
-            sel_logits, _, _ = sel_out
+            sel_logits, _, _ = sel_outs[-1]
 
             sel_loss = sel_crit(sel_logits, sel_tgt)
             sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()
@@ -662,7 +685,9 @@ def main():
             'ref_stats': ref_stats,
             'partner_ref_stats': partner_ref_stats,
             'next_mention_stats': next_mention_stats,
+            'is_selection_stats': is_selection_stats,
         })
+        pprint.pprint(flat_stats)
         add_metrics(flat_stats, metrics, 'ref')
         if model.args.partner_reference_prediction:
             add_metrics(flat_stats, metrics, 'partner_ref')
@@ -678,6 +703,9 @@ def main():
                 for weight in args.next_mention_reranking_weights:
                     add_metrics(flat_stats, metrics, f'next_mention_sw-{weight:.2f}')
                     add_metrics(flat_stats, metrics, f'next_mention_sw-{weight:.2f}_expanded')
+
+        if model.args.is_selection_prediction:
+            add_metrics(flat_stats, metrics, "is_selection", compute_em=False, compute_baseline=True)
 
         for num_markables in [1]:
             add_metrics(flat_stats, metrics, f'ref_nm-{num_markables}')

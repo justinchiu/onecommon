@@ -110,6 +110,19 @@ def make_dots_mentioned_per_ref_multi(refs, args, bsz, num_dots):
         dots_mentioned_per_ref.append(ref_tgt > 0)
     return dots_mentioned_per_ref
 
+def add_selection_stats(single_sentence_is_selection, single_sentence_is_selection_outs, is_selection_stats):
+    is_sel = single_sentence_is_selection
+    is_sel_out = single_sentence_is_selection_outs
+
+    is_sel_preds = is_sel_out > 0
+    is_selection_stats['correct'] += (is_sel_preds == is_sel).sum()
+    is_selection_stats['baseline_correct'] += (~is_sel).sum()
+    # not really dots, but for compatibility with add_metrics
+    is_selection_stats['num_dots'] += is_sel.flatten().size(0)
+    is_selection_stats['gold_positive'] += is_sel.sum()
+    is_selection_stats['pred_positive'] += is_sel_preds.sum()
+    is_selection_stats['true_positive'] += (is_sel & is_sel_preds).sum()
+
 def add_metrics(metric_dict_src, metric_dict_tgt, prefix, compute_em=True, compute_baseline=False):
     gold_positive = metric_dict_src['{}_gold_positive'.format(prefix)]
     pred_positive = metric_dict_src['{}_pred_positive'.format(prefix)]
@@ -373,6 +386,7 @@ class RnnReferenceEngine(EngineBase):
         if self.args.next_mention_prediction_type == 'multi_reference':
             add_metrics(metrics, aggregate_metrics, "next_mention_expanded")
         add_metrics(metrics, aggregate_metrics, "is_selection", compute_em=False, compute_baseline=True)
+        pprint.pprint(metrics)
         return aggregate_metrics
 
     def train_pass(self, trainset, trainset_stats, epoch):
@@ -875,14 +889,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             for is_sel, is_sel_out in utils.safe_zip(is_selection,is_selection_outs):
                 is_sel_loss = self.is_sel_crit(is_sel_out, is_sel.float())
                 is_selection_losses.append(is_sel_loss)
-                is_sel_preds = is_sel_out > 0
-                is_selection_stats['correct'] += (is_sel_preds == is_sel).sum()
-                is_selection_stats['baseline_correct'] += (~is_sel).sum()
-                # not really dots, but for compatibility with add_metrics
-                is_selection_stats['num_dots'] += is_sel.flatten().size(0)
-                is_selection_stats['gold_positive'] += is_sel.sum()
-                is_selection_stats['pred_positive'] += is_sel_preds.sum()
-                is_selection_stats['true_positive'] += (is_sel & is_sel_preds).sum()
+
+                add_selection_stats(is_sel, is_sel_out, is_selection_stats)
 
         if is_selection_losses:
             is_selection_loss = sum(is_selection_losses) / len(is_selection_losses)
