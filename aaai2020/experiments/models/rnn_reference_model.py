@@ -736,6 +736,9 @@ class RnnReferenceModel(nn.Module):
         inpt = inpt.view(3, -1, inpt.size(1), inpt.size(2))
         return inpt
 
+    def _pool_from_inpt(self, temporal_inputs, inpt):
+        pass
+
     def reference_resolution(self, state: _State, outs_emb, ref_inpt, num_markables, for_self=True,
                              ref_beliefs=None):
         # ref_inpt: bsz x num_refs x 3
@@ -1979,7 +1982,7 @@ class RnnReferenceModel(nn.Module):
 
         assert bsz == 1
 
-        writer_lang_h, ctx_seq_encoded_and_mask = self._add_hidden_context(
+        writer_lang_h, (ctx_seq_encoded, ctx_seq_mask) = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
             num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
             is_selection,
@@ -1999,6 +2002,11 @@ class RnnReferenceModel(nn.Module):
         ctx_differences_expanded = ctx_differences.expand(beam_size, -1, -1)
         dots_mentioned_expanded = dots_mentioned.expand(beam_size, -1)
         dots_mentioned_per_ref_expanded = dots_mentioned_per_ref.expand(beam_size, -1, -1)
+
+        ctx_seq_encoded_and_mask_expanded = (
+            ctx_seq_encoded.expand(beam_size, -1, -1),
+            ctx_seq_mask.expand(beam_size, -1)
+        )
 
         # pass None for vars that really should be expanded, but not implemented for now
         state_expanded = state._replace(
@@ -2044,7 +2052,7 @@ class RnnReferenceModel(nn.Module):
 
             out, _ = self.language_output(
                 state_expanded, writer_lang_h_expanded, dots_mentioned_expanded, dots_mentioned_per_ref_expanded,
-                generation_beliefs, ctx_seq_encoded_and_mask=ctx_seq_encoded_and_mask
+                generation_beliefs, ctx_seq_encoded_and_mask=ctx_seq_encoded_and_mask_expanded
             )
             # remove time dimension
             out = out.squeeze(0)

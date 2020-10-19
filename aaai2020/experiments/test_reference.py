@@ -137,6 +137,7 @@ def main():
     parser.add_argument('--force_next_mention_num_markables', action='store_true')
 
     parser.add_argument('--selection_confidence', action='store_true')
+    parser.add_argument('--selection_confidence_look_ahead', action='store_true')
     parser.add_argument('--selection_confidence_weight', type=float, default=1.0)
     parser.add_argument('--selection_confidence_threshold', type=float, default=0.5)
 
@@ -629,8 +630,9 @@ def main():
                     next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
 
                 if model.args.is_selection_prediction:
-                    if args.selection_confidence and sentence_ix > 0:
-                        max_selection_log_probs = sel_outs[sentence_ix-1][0].log_softmax(-1).max(-1).values
+                    if args.selection_confidence and (sentence_ix > 0 or args.selection_confidence_look_ahead):
+                        ix_to_use = sentence_ix if args.selection_confidence_look_ahead else sentence_ix - 1
+                        max_selection_log_probs = sel_outs[ix_to_use][0].log_softmax(-1).max(-1).values
                         combined_scores = max_selection_log_probs * args.selection_confidence_weight + is_selection_out.sigmoid().log() * (1 - args.selection_confidence_weight)
                         scores_to_choose = combined_scores - torch.tensor(args.selection_confidence_threshold).log()
                     else:

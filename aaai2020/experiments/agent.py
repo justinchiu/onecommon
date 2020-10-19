@@ -339,7 +339,7 @@ class RnnAgent(Agent):
             indices_kept.append(ix)
         if not all_markables:
             # no utterances with the target number of referents found, revert to the 1-best candidate
-            return outs
+            return outs, extra
         num_candidates = len(all_markables)
         ref_inpt = torch.cat(all_ref_inpt, dim=0)
         num_markables = torch.cat(all_num_markables, dim=0)
@@ -376,13 +376,30 @@ class RnnAgent(Agent):
         # ref_pred_scores = models.reference_predictor.score_targets(ref_out, num_markables, ref_pred.transpose(0,1))
         weight = self.args.language_rerank_weight
         assert 0 <= weight <= 1.0
-        candidate_scores = extra['output_scores'][indices_kept] * (1.0 - weight) + dots_mentioned_scores * weight
+
+        num_candidates_before_filtering = len(extra['words'])
+
+        dots_mentioned_scores_full = torch.full((num_candidates_before_filtering,), -1e9)
+        dots_mentioned_scores_full[indices_kept] = dots_mentioned_scores
+
+        candidate_scores = extra['output_scores'] * (1.0 - weight) + dots_mentioned_scores_full * weight
         candidate_index = candidate_scores.argmax()
 
-        candidate_chosen = extra['outputs'][indices_kept][candidate_index]
-        candidate_len = extra['lens'][indices_kept][candidate_index]
+        candidate_chosen = extra['outputs'][candidate_index]
+        candidate_len = extra['lens'][candidate_index]
 
-        return candidate_chosen[:candidate_len].unsqueeze(1)
+        candidate_kept = torch.zeros(num_candidates_before_filtering).bool()
+        candidate_kept[indices_kept] = True
+
+        this_extra = dict(
+            **extra,
+            was_rerankable=candidate_kept,
+            ref_resolution_scores=dots_mentioned_scores_full,
+            language_model_scores=extra['output_scores'],
+            joint_scores=candidate_scores,
+        )
+
+        return candidate_chosen[:candidate_len].unsqueeze(1), this_extra
 
     def write(self, max_words=100, force_words=None, detect_markables=True, start_token=YOU_TOKEN,
               dots_mentioned=None, dots_mentioned_per_ref=None,
@@ -429,7 +446,7 @@ class RnnAgent(Agent):
                     # outs = outs
                     pass
                 else:
-                    outs = self.rerank_language(
+                    outs, extra = self.rerank_language(
                         outs, extra, dots_mentioned, dots_mentioned_per_ref, is_selection, generation_beliefs
                     )
                 # self.words_beam_best.append(outs_beam_best)
