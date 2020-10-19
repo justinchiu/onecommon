@@ -43,7 +43,7 @@ class AttentionLayer(nn.Module):
         self.args = args
         self.feedforward = FeedForward(n_hidden_layers, input_dim, hidden_dim, output_dim=1, dropout_p=dropout_p)
 
-    def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs):
+    def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs, lang_between_mentions_input):
         # takes ctx_differences and num_markables as an argument for compatibility with StructuredAttentionLayer
         return self.feedforward(input).squeeze(-1), None, None
 
@@ -183,7 +183,7 @@ class StructuredAttentionLayer(nn.Module):
             feats.append(count_embeddings)
         return feats
 
-    def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs, normalize_joint=True):
+    def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs, lang_between_mentions_input, normalize_joint=True):
         # takes num_markables as an argument for compatibility with StructuredTemporalAttentionLayer
         # max instances per batch (aka N) x batch_size x num_dots x hidden_dim
 
@@ -300,25 +300,35 @@ class StructuredAttentionLayer(nn.Module):
 class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
     def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p, language_dim):
         super().__init__(args, n_hidden_layers, input_dim, hidden_dim, dropout_p, language_dim)
+        self._temporal_relation_potential_dim = 4 if args.structured_temporal_attention_transitions == 'relational_asymm' else 3
+
         if args.structured_temporal_attention_transitions == 'dot_id':
-            self.self_transition_params = nn.Parameter(torch.zeros(3))
+            self.self_transition_params = nn.Parameter(torch.zeros(self._temporal_relation_potential_dim))
             # TODO: consider just fixing this to zeros
-            self.other_transition_params = nn.Parameter(torch.zeros(3))
+            self.other_transition_params = nn.Parameter(torch.zeros(self._temporal_relation_potential_dim))
         elif args.structured_temporal_attention_transitions == 'none':
-            self.transition_params = nn.Parameter(torch.zeros(3), requires_grad=False)
-        elif args.structured_temporal_attention_transitions == 'relational':
-            self.self_transition_params = nn.Parameter(torch.zeros(3))
+            self.transition_params = nn.Parameter(torch.zeros(self._temporal_relation_potential_dim), requires_grad=False)
+        elif args.structured_temporal_attention_transitions in ['relational', 'relational_asymm']:
+            self.self_transition_params = nn.Parameter(torch.zeros(self._temporal_relation_potential_dim))
 
             input_dim = self.relation_dim
             if self.args.structured_attention_language_conditioned:
                 input_dim += language_dim
             self.temporal_relation_encoder = FeedForward(
                 n_hidden_layers=1, input_dim=input_dim, hidden_dim=args.structured_attention_hidden_dim,
-                output_dim=3,
+                output_dim=self._temporal_relation_potential_dim,
                 dropout_p=args.structured_attention_dropout,
             )
         else:
             raise NotImplementedError(f"--structured_temporal_attention_transitions={args.structured_temporal_attention_transitions}")
+
+    # for backward compatibility with pickled models
+    @property
+    def temporal_relation_potential_dim(self):
+        try:
+            return self._temporal_relation_potential_dim
+        except:
+            return 3
 
     @staticmethod
     def build_temporal_contraction_string(num_ent):
@@ -338,9 +348,9 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         output_factor_name = batch_name+var_names_1+var_names_2
         return '{}->{}'.format(','.join(binary_factor_names), output_factor_name)
 
-    def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs):
+    def forward(self, lang_input, input, ctx_differences, num_markables, joint_factor_inputs, lang_between_mentions_input):
         marginal_log_probs, joint_logits, _ = super().forward(
-            lang_input, input, ctx_differences, num_markables, joint_factor_inputs, normalize_joint=False
+            lang_input, input, ctx_differences, num_markables, joint_factor_inputs, lang_between_mentions_input, normalize_joint=False
         )
         N, bsz, *dot_dims = joint_logits.size()
         assert N == num_markables.max()
@@ -355,7 +365,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         num_dots = len(dot_dims)
         exp_num_dots = 2**num_dots
         # N-1 x bsz x exp_num_dots x exp_num_dots
-        transition_potentials = self.make_transitions(lang_input, bsz, num_dots, ctx_differences)
+        transition_potentials = self.make_transitions(lang_input, bsz, num_dots, ctx_differences, lang_between_mentions_input)
         dist = StructuredTemporalAttentionLayer.make_distribution(joint_logits, num_markables, transition_potentials)
         return marginal_log_probs, joint_log_probs, dist
 
@@ -378,7 +388,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         dist = LinearChainNoScanCRF(edge_potentials, lengths=num_markables)
         return dist
 
-    def make_transitions(self, lang_input, batch_size, num_dots, ctx_differences):
+    def make_transitions(self, lang_input, batch_size, num_dots, ctx_differences, lang_between_mentions_input):
         N = lang_input.size(0)
         assert batch_size == lang_input.size(1)
         # 1(N-1) x 1(batch size) x 1(num pairs) x 3
@@ -391,14 +401,17 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
                 for j in range(num_dots)
             ]
             transition_params = torch.stack(transition_params, 0).unsqueeze(0).unsqueeze(1)
-        elif self.args.structured_temporal_attention_transitions == 'relational':
-            transition_params = torch.zeros(N-1, batch_size, num_dots*num_dots, 3)
+        elif self.args.structured_temporal_attention_transitions in ['relational', 'relational_asymm']:
+            transition_params = torch.zeros(N-1, batch_size, num_dots*num_dots, self.temporal_relation_potential_dim)
             if vars(self.args).get('structured_attention_language_conditioned', False):
                 num_pairs = ctx_differences.size(1)
                 # lang_input: num_mentions x batch_size x hidden
                 # get a representation for each pair mention_i mention_{i+1} by subtracting
                 # TODO: maybe consider a symmetric rep as well? e.g. concatenation or adding
-                input_diffs = lang_input[1:] - lang_input[:-1]
+                if vars(self.args).get('structured_temporal_attention_transitions_language', 'subtract_mentions') == 'between_mentions' and lang_between_mentions_input is not None:
+                    input_diffs = torch.stack(lang_between_mentions_input, 0)
+                else:
+                    input_diffs = lang_input[1:] - lang_input[:-1]
                 input_diffs_expand = input_diffs.unsqueeze(2).repeat_interleave(num_pairs, dim=2)
                 ctx_differences_expand = ctx_differences.unsqueeze(0).repeat_interleave(N-1, dim=0)
                 rel_encoded = self.temporal_relation_encoder(torch.cat((input_diffs_expand, ctx_differences_expand), -1))
@@ -424,11 +437,15 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         # TODO: this is currently inefficient, duplicating along the batch dimension before the contractions.
         #  but will be necessary if we have the transitions depend on the dot properties
         # bsz x num_potentials x 2 x 2
-        binary_potentials = torch.einsum(
-            "nbrx,yx->nbry",
-            transition_params,
-            torch.FloatTensor([[1,0,0],[0,1,0],[0,1,0],[0,0,1]]).to(transition_params.device)
-        ).view(transition_params.size(0), transition_params.size(1), transition_params.size(2), 2, 2).expand(N-1, batch_size, num_potentials, 2, 2).view((N-1)*batch_size, num_potentials, 2, 2)
+        if self.temporal_relation_potential_dim == 3:
+            binary_potentials = torch.einsum(
+                "nbrx,yx->nbry",
+                transition_params,
+                torch.FloatTensor([[1,0,0],[0,1,0],[0,1,0],[0,0,1]]).to(transition_params.device)
+            )
+        else:
+            binary_potentials = transition_params
+        binary_potentials = binary_potentials.view(transition_params.size(0), transition_params.size(1), transition_params.size(2), 2, 2).expand(N-1, batch_size, num_potentials, 2, 2).view((N-1)*batch_size, num_potentials, 2, 2)
 
         # transpose the batch and dot-pair dimension so that we can unpack along dot-pairs
         binary_factors = binary_potentials.transpose(0,1)

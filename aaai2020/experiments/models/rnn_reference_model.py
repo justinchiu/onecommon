@@ -128,8 +128,11 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--structured_attention', action='store_true')
         parser.add_argument('--structured_temporal_attention', action='store_true')
         parser.add_argument('--structured_temporal_attention_transitions',
-                            choices=['none', 'dot_id', 'relational'],
+                            choices=['none', 'dot_id', 'relational', 'relational_asymm'],
                             default='dot_id')
+        parser.add_argument('--structured_temporal_attention_transitions_language',
+                            choices=['subtract_mentions', 'between_mentions'],
+                            default='subtract_mentions')
         parser.add_argument('--structured_temporal_attention_training',
                             choices=['likelihood', 'max_margin'],
                             default='likelihood')
@@ -646,6 +649,9 @@ class RnnReferenceModel(nn.Module):
                     args.is_selection_prediction_layers, input_dim, 128, 1, dropout_p=args.dropout
                 )
 
+        if args.structured_temporal_attention_transitions_language == 'between_mentions':
+            self.between_mention_self_attn_layer = nn.Linear(args.nhid_lang * self.num_reader_directions, 1)
+
     def initialize_state(self, ctx, belief_constructor) -> State:
         ctx_h = self.ctx_encoder(ctx)
         ctx_differences = self.ctx_differences(ctx)
@@ -686,15 +692,15 @@ class RnnReferenceModel(nn.Module):
     def _attention_name(self, name):
         return '{}_attn'.format(name)
 
-    def _apply_attention(self, name, lang_input, input, ctx_differences, num_markables, joint_factor_input):
+    def _apply_attention(self, name, lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input=None):
         if self.args.share_attn:
-            return self.attn(lang_input, input, ctx_differences, num_markables, joint_factor_input)
+            return self.attn(lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input)
         elif self.args.separate_attn:
             attn_module = getattr(self, self._attention_name(name))
-            return attn_module(lang_input, input, ctx_differences, num_markables, joint_factor_input)
+            return attn_module(lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input)
         else:
             attn_module = getattr(self, self._attention_name(name))
-            return attn_module(lang_input, self.attn_prefix(input), ctx_differences, num_markables, joint_factor_input)
+            return attn_module(lang_input, self.attn_prefix(input), ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input)
 
     def _zero(self, *sizes):
         h = torch.Tensor(*sizes).fill_(0)
@@ -736,8 +742,26 @@ class RnnReferenceModel(nn.Module):
         inpt = inpt.view(3, -1, inpt.size(1), inpt.size(2))
         return inpt
 
-    def _pool_from_inpt(self, temporal_inputs, inpt):
-        pass
+    def _pool_between_referents(self, temporal_inputs, inpt):
+        bsz = temporal_inputs.size(1)
+        device = temporal_inputs.device
+        pooled = []
+        if inpt.size(1) > 1:
+            # T x bsz
+            attn_logits = self.between_mention_self_attn_layer(temporal_inputs).squeeze(-1)
+            start_posts = inpt[:,:-1,0]
+            end_posts = inpt[:,1:,1]
+            for pair_index in range(start_posts.size(1)):
+                mask = torch.zeros(temporal_inputs.size()[:2]).to(device).bool()
+                for bix in range(bsz):
+                    start = start_posts[bix,pair_index]
+                    end = end_posts[bix,pair_index]
+                    mask[start:end+1,bix] = True
+                masked_attn_logits = torch.where(mask, attn_logits, torch.tensor(-1e9).to(device))
+                attention = masked_attn_logits.softmax(0)
+                this_pooled = torch.einsum("tb,tbd->bd", attention, temporal_inputs)
+                pooled.append(this_pooled)
+        return pooled
 
     def reference_resolution(self, state: _State, outs_emb, ref_inpt, num_markables, for_self=True,
                              ref_beliefs=None):
@@ -756,6 +780,11 @@ class RnnReferenceModel(nn.Module):
 
         # reshape
         emb_gathered = self._gather_from_inpt(outs_emb, ref_inpt)
+
+        if vars(self.args).get('structured_temporal_attention_transitions_language', 'subtract_mentions') == 'between_mentions':
+            emb_between = self._pool_between_referents(outs_emb, ref_inpt)
+        else:
+            emb_between = None
 
         # pool embeddings for the referent's start and end, as well as the end of the sentence it occurs in
         # to produce ref_inpt of size
@@ -780,7 +809,7 @@ class RnnReferenceModel(nn.Module):
             attention_params_name = 'ref'
         outs = self._apply_attention(
             attention_params_name, emb_gathered, torch.cat([emb_gathered_expand, ctx_h], -1), ctx_differences, num_markables,
-            joint_factor_input=state.dot_h_maybe_multi_structured,
+            joint_factor_input=state.dot_h_maybe_multi_structured, lang_between_mentions_input=emb_between
         )
         return outs
 
