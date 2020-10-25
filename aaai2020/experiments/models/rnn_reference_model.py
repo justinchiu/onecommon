@@ -151,6 +151,7 @@ class RnnReferenceModel(nn.Module):
             'full','filtered-separate','filtered-shared'
         ], default='full')
         parser.add_argument('--hidden_context_mention_encoder_diffs', action='store_true')
+        parser.add_argument('--hidden_context_mention_encoder_property_diffs', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder_dot_recurrence', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder_count_features', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder_attention', action='store_true')
@@ -296,11 +297,15 @@ class RnnReferenceModel(nn.Module):
                 hce_input_dim = args.nembed_ctx
                 if self.args.hidden_context_mention_encoder_diffs:
                     hce_input_dim += args.nembed_ctx
+                    diff_input_dim = args.nembed_ctx
+                    if self.args.hidden_context_mention_encoder_property_diffs:
+                        hce_input_dim += 4
+                        diff_input_dim += 4
                     self.hidden_ctx_encoder_diff_none = nn.Parameter(
-                        torch.zeros(args.nembed_ctx), requires_grad=True,
+                        torch.zeros(diff_input_dim), requires_grad=True,
                     )
                     self.hidden_ctx_encoder_diff_pad = nn.Parameter(
-                        torch.zeros(args.nembed_ctx), requires_grad=True,
+                        torch.zeros(diff_input_dim), requires_grad=True,
                     )
                 if self.args.hidden_context_mention_encoder_dot_recurrence:
                     dr_dim = args.dot_recurrence_dim * (2 if self.args.dot_recurrence_split else 1)
@@ -324,6 +329,11 @@ class RnnReferenceModel(nn.Module):
                 self.hidden_ctx_encoder_no_dots = nn.Parameter(
                     torch.zeros(args.nembed_ctx + dr_dim), requires_grad=True
                 )
+
+                if self.args.hidden_context_mention_encoder_property_diffs:
+                    self.hidden_ctx_encoder_no_dots_prop_diff = nn.Parameter(
+                        torch.zeros(4), requires_grad=True
+                    )
                 if self.args.hidden_context_mention_encoder_type == 'filtered-separate':
                     ctx_encoder_ty = models.get_ctx_encoder_type(args.ctx_encoder_type)
                     self.hidden_ctx_encoder_relational = ctx_encoder_ty(domain, args)
@@ -337,7 +347,6 @@ class RnnReferenceModel(nn.Module):
             if self.args.hidden_context_is_selection:
                 self.hidden_ctx_is_selection_embeddings = nn.Embedding(2, args.nhid_lang)
                 self.hidden_ctx_is_selection_weight = nn.Parameter(torch.zeros((1,)))
-
 
         self.reader = nn.GRU(
             input_size=gru_input_size,
@@ -1674,22 +1683,36 @@ class RnnReferenceModel(nn.Module):
                     assert dot_h.size(0) == dmpr_filtered.size(0)
                     to_select = torch.cat((to_select, dot_h), -1)
 
-                dots_selected = to_select.unsqueeze(1).repeat_interleave(max_num_markables, dim=1) * dmpr_filtered.unsqueeze(-1)
-                dots_selected = einops.reduce(dots_selected, "b mnm nd c -> b mnm c", 'sum')
+                ctx_h_selected = to_select.unsqueeze(1).repeat_interleave(max_num_markables, dim=1) * dmpr_filtered.unsqueeze(-1)
+                ctx_h_selected = einops.reduce(ctx_h_selected, "b mnm nd c -> b mnm c", 'sum')
 
                 # filtered_bsz x max_num_mentions
                 # take the mean over all mention dots, for those with non-zero dots mentioned
                 num_dots_mentioned_per_ref = einops.reduce(dmpr_filtered, "b mnm nd -> b mnm", 'sum')
                 # clamp to prevent dividing by zero
-                dots_selected /= torch.clamp(num_dots_mentioned_per_ref.unsqueeze(-1), min=1.0)
+                ctx_h_selected /= torch.clamp(num_dots_mentioned_per_ref.unsqueeze(-1), min=1.0)
                 # use self.hidden_ctx_encoder_no_dots for any others: use this outer-product hack because we can't masked_fill with a vector-valued fill
-                dots_selected += torch.einsum("bm,h->bmh", ((num_dots_mentioned_per_ref == 0).float(), self.hidden_ctx_encoder_no_dots))
-                to_encode = dots_selected
+                ctx_h_selected += torch.einsum("bm,h->bmh", ((num_dots_mentioned_per_ref == 0).float(), self.hidden_ctx_encoder_no_dots))
+                to_encode = ctx_h_selected
+
                 if vars(self.args).get('hidden_context_mention_encoder_count_features', False):
                     to_encode = torch.cat((to_encode, num_dots_mentioned_per_ref.float().unsqueeze(-1)), -1)
+
+                if vars(self.args).get('hidden_context_mention_encoder_property_diffs', False):
+                    ctx_filtered = ctx[num_markables > 0].view(-1, self.num_ent, 4)
+                    ctx_selected = ctx_filtered.unsqueeze(1).repeat_interleave(max_num_markables, dim=1) * dmpr_filtered.unsqueeze(-1)
+                    ctx_selected = einops.reduce(ctx_selected, "b mnm nd c -> b mnm c", 'sum')
+                    ctx_selected /= torch.clamp(num_dots_mentioned_per_ref.unsqueeze(-1), min=1.0)
+                    # use self.hidden_ctx_encoder_no_dots_prop_diff for any others: use this outer-product hack because we can't masked_fill with a vector-valued fill
+                    ctx_selected += torch.einsum("bm,h->bmh", ((num_dots_mentioned_per_ref == 0).float(), self.hidden_ctx_encoder_no_dots_prop_diff))
+
                 if self.args.hidden_context_mention_encoder_diffs:
                     # filtered_bsz x max_num_mentions x nembed_ctx
-                    dots_selected_pad = dots_selected.clone()
+                    dots_selected_pad = ctx_h_selected.clone()
+                    if vars(self.args).get('hidden_context_mention_encoder_property_diffs', False):
+                        dots_selected_pad = torch.cat(
+                            (dots_selected_pad, ctx_selected), -1
+                        )
                     dots_selected_pad = torch.cat(
                         (dots_selected_pad, torch.zeros((dots_selected_pad.size(0), 1, dots_selected_pad.size(-1)))),
                         1)

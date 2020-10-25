@@ -386,7 +386,7 @@ class RnnReferenceEngine(EngineBase):
         if self.args.next_mention_prediction_type == 'multi_reference':
             add_metrics(metrics, aggregate_metrics, "next_mention_expanded")
         add_metrics(metrics, aggregate_metrics, "is_selection", compute_em=False, compute_baseline=True)
-        pprint.pprint(metrics)
+        # pprint.pprint(metrics)
         return aggregate_metrics
 
     def train_pass(self, trainset, trainset_stats, epoch):

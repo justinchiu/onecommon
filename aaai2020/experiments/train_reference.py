@@ -43,6 +43,8 @@ def main():
     parser.add_argument('--corpus_type', choices=['full', 'uncorrelated', 'success_only'], default='full',
         help='type of training corpus to use')
 
+    parser.add_argument('--spatial_data_augmentation', action='store_true')
+
     engines.add_training_args(parser)
     add_loss_args(parser)
     models.add_model_args(parser)
@@ -91,6 +93,7 @@ def main():
             max_instances_per_split=args.max_instances_per_split,
             max_mentions_per_utterance=args.max_mentions_per_utterance,
             crosstalk_split=args.crosstalk_split,
+            spatial_data_augmentation_on_train=args.spatial_data_augmentation,
         )
 
         model = model_ty(corpus.word_dict, args)

@@ -62,9 +62,26 @@ class ReferenceCorpus(object):
     It has the train, valid and test datasets and corresponding dictionaries.
     """
 
+    SPATIAL_REPLACEMENTS = {
+        'above': 'below',
+        'below': 'above',
+        'left': 'right',
+        'right': 'left',
+        'top': 'bottom',
+        'bottom': 'top',
+        'high': 'low',
+        'low': 'high',
+        'lower': 'higher',
+        'higher': 'lower',
+        'lowest': 'highest',
+        'highest': 'lowest',
+    }
+
     def __init__(self, domain, path, freq_cutoff=2, train='train_reference.txt',
                  valid='valid_reference.txt', test='test_reference.txt', verbose=False, word_dict=None,
-                 max_instances_per_split=None, max_mentions_per_utterance=None, crosstalk_split=None):
+                 max_instances_per_split=None, max_mentions_per_utterance=None, crosstalk_split=None,
+                 spatial_data_augmentation_on_train=False,
+                 ):
         self.verbose = verbose
         self.max_mentions_per_utterance = max_mentions_per_utterance
         self.crosstalk_split = crosstalk_split
@@ -74,17 +91,23 @@ class ReferenceCorpus(object):
         else:
             self.word_dict = word_dict
 
+        self.spatial_replacements = {
+            self.word_dict.word2idx[k]: self.word_dict.word2idx[v]
+            for k, v in self.SPATIAL_REPLACEMENTS.items()
+        }
+
         print("freq cutoff: {}".format(freq_cutoff))
         print("vocab size: {}".format(len(self.word_dict)))
 
-        self.train = self.tokenize(os.path.join(path, train), max_instances_per_split, crosstalk_split) if train else []
+        self.train = self.tokenize(os.path.join(path, train), max_instances_per_split, crosstalk_split,
+                                   spatial_data_augmentation=spatial_data_augmentation_on_train) if train else []
         self.valid = self.tokenize(os.path.join(path, valid), max_instances_per_split, crosstalk_split) if valid else []
         self.test = self.tokenize(os.path.join(path, test), max_instances_per_split, crosstalk_split) if test else []
 
         # find out the output length from the train dataset
         self.output_length = max([len(x[1]) for x in self.train])
 
-    def tokenize(self, file_name, max_instances_per_split=None, crosstalk_split=None):
+    def tokenize(self, file_name, max_instances_per_split=None, crosstalk_split=None, spatial_data_augmentation=False):
         """Tokenizes the file and produces a dataset."""
         lines = read_lines(file_name)
         random.shuffle(lines)
@@ -115,15 +138,25 @@ class ReferenceCorpus(object):
                 include = hash(chat_id) % 2 == crosstalk_split
             else:
                 include = True
-            instance = ReferenceRaw(
+            instances = [ReferenceRaw(
                 input_vals, word_idxs, referent_idxs, output_idx, scenario_id, real_ids, partner_real_ids, agent, chat_id,
                 partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement
-            )
+            )]
+            if spatial_data_augmentation:
+                aug_input_vals = torch.tensor(input_vals).clone().view(4,7)
+                aug_input_vals[:,:2] *= -1
+                aug_input_vals = aug_input_vals.flatten().tolist()
+                aug_word_idxs = [self.spatial_replacements.get(ix, ix) for ix in word_idxs]
+                instances.append(ReferenceRaw(
+                    aug_input_vals, aug_word_idxs, referent_idxs, output_idx, scenario_id, real_ids, partner_real_ids,
+                    agent, chat_id, partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement
+                ))
             if include:
-                dataset.append(instance)
-                # compute statistics
-                total += len(word_idxs)
-                unks += np.count_nonzero([idx == unk for idx in word_idxs])
+                for instance in instances:
+                    dataset.append(instance)
+                    # compute statistics
+                    total += len(word_idxs)
+                    unks += np.count_nonzero([idx == unk for idx in word_idxs])
 
             # if chat_id not in instances_by_chat_id:
             #     instances_by_chat_id[chat_id] = []
