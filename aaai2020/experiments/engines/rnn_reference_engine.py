@@ -573,7 +573,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _,\
         sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view,\
         partner_num_markables, ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view,\
-        is_selection, non_pronoun_ref_inpts, non_pronoun_ref_tgts, non_pronoun_num_markables = batch
+        is_selection, non_pronoun_ref_inpts, non_pronoun_ref_tgts, non_pronoun_num_markables, is_augmented = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)
@@ -719,18 +719,22 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             if (this_num_markables == 0).all() or ref_tgt is None:
                 continue
             assert max(this_num_markables) == ref_tgt.size(1)
-            _ref_loss, _ref_pred, _ref_stats = self._ref_loss(
-                ref_inpt, ref_tgt, ref_out, this_num_markables
-            )
-            ref_losses.append(_ref_loss)
-            ref_stats = utils.sum_dicts(ref_stats, _ref_stats)
 
-            _partner_ref_loss, _partner_ref_pred, _partner_ref_stats = self._ref_loss(
-                partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables
-            )
-            partner_ref_stats = utils.sum_dicts(partner_ref_stats, _partner_ref_stats)
-            if _partner_ref_loss is not None:
-                partner_ref_losses.append(_partner_ref_loss)
+            if (~is_augmented).any():
+                _ref_loss, _ref_pred, _ref_stats = self._ref_loss(
+                    ref_inpt, ref_tgt, ref_out, this_num_markables,
+                    mask=~is_augmented
+                )
+                ref_losses.append(_ref_loss)
+                ref_stats = utils.sum_dicts(ref_stats, _ref_stats)
+
+                _partner_ref_loss, _partner_ref_pred, _partner_ref_stats = self._ref_loss(
+                    partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables,
+                    mask=~is_augmented
+                )
+                partner_ref_stats = utils.sum_dicts(partner_ref_stats, _partner_ref_stats)
+                if _partner_ref_loss is not None:
+                    partner_ref_losses.append(_partner_ref_loss)
 
             if this_ctx_attn_prob is not None:
                 # this_ctx_attn_prob: N x batch x num_dots
@@ -839,9 +843,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         # sel_out[1] should be None because we're not using a structured attention layer
         sel_logits, _, _ = sel_out
 
-        sel_loss = self.sel_crit(sel_logits, sel_tgt)
-        sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()
-        sel_total = sel_logits.size(0)
+        if (~is_augmented).any():
+            sel_loss = self.sel_crit(sel_logits[~is_augmented], sel_tgt[~is_augmented])
+            sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()
+            sel_total = sel_logits.size(0)
+        else:
+            sel_loss = torch.tensor(0.0, requires_grad=True)
+            sel_correct = 0.0
+            sel_total = 0.0
 
         if word_attn_losses:
             word_attn_loss = sum(word_attn_losses) / len(word_attn_losses)
@@ -868,7 +877,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 if self.args.next_mention_prediction_type == 'multi_reference':
                     gold_num_mentions = num_markables[i].long()
                     gold_dots_mentioned = dots_mentioned_per_ref[i].long()
-                    next_mention_stop_losses.append(next_mention_stop_loss)
+                    if (~is_augmented).any():
+                        next_mention_stop_losses.append(next_mention_stop_loss[~is_augmented].sum())
                 elif self.args.next_mention_prediction_type == 'collapsed':
                     # supervise only for self, so pseudo_num_mentions = 1 iff is_self; 0 otherwise
                     gold_num_mentions = is_self[i].long()
@@ -879,22 +889,24 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 if pred_dots_mentioned is not None:
                     # TODO: fix this, it should check if gold dots is not empty
                     # hack; pass True for inpt because this method only uses it to ensure it's not null
-                    _loss, _pred, _stats = self._ref_loss(
-                        True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions,
-                        # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
-                        collapse=expanded_next_mention_loss,
-                    )
-                    next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
-                    # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
-                    # print("{} / {}".format(_correct, _total))
-                    next_mention_losses.append(_loss)
+                    if (~is_augmented).any():
+                        _loss, _pred, _stats = self._ref_loss(
+                            True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions,
+                            # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
+                            collapse=expanded_next_mention_loss,
+                            mask=~is_augmented
+                        )
+                        next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
+                        # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
+                        # print("{} / {}".format(_correct, _total))
+                        next_mention_losses.append(_loss)
 
         is_selection_losses = []
         is_selection_stats = defaultdict(lambda: 0.0)
 
-        if self.args.is_selection_prediction:
+        if self.args.is_selection_prediction and (~is_augmented).any():
             for is_sel, is_sel_out in utils.safe_zip(is_selection,is_selection_outs):
-                is_sel_loss = self.is_sel_crit(is_sel_out, is_sel.float())
+                is_sel_loss = self.is_sel_crit(is_sel_out[~is_augmented], is_sel[~is_augmented].float())
                 is_selection_losses.append(is_sel_loss)
 
                 add_selection_stats(is_sel, is_sel_out, is_selection_stats)

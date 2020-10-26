@@ -14,7 +14,7 @@ from corpora.data import Dictionary, read_lines, get_tag
 
 ReferenceRaw = namedtuple(
     "ReferenceRaw",
-    "input_vals word_idxs referent_idxs output_idx scenario_id real_ids partner_real_ids agent chat_id partner_referent_idxs partner_referent_our_view_idxs referent_disagreements partner_referent_disagreements non_pronoun_referent_idxs".split()
+    "input_vals word_idxs referent_idxs output_idx scenario_id real_ids partner_real_ids agent chat_id partner_referent_idxs partner_referent_our_view_idxs referent_disagreements partner_referent_disagreements non_pronoun_referent_idxs is_augmented".split()
 )
 
 
@@ -156,7 +156,7 @@ class ReferenceCorpus(object):
             instances = [ReferenceRaw(
                 input_vals, word_idxs, referent_idxs, output_idx, scenario_id, real_ids, partner_real_ids, agent, chat_id,
                 partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement,
-                non_pronoun_referent_idxs,
+                non_pronoun_referent_idxs, False
             )]
             if spatial_data_augmentation:
                 aug_input_vals = torch.tensor(input_vals).clone().view(4,7)
@@ -166,7 +166,7 @@ class ReferenceCorpus(object):
                 instances.append(ReferenceRaw(
                     aug_input_vals, aug_word_idxs, referent_idxs, output_idx, scenario_id, real_ids, partner_real_ids,
                     agent, chat_id, partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement,
-                    non_pronoun_referent_idxs
+                    non_pronoun_referent_idxs, True
                 ))
             if include:
                 for instance in instances:

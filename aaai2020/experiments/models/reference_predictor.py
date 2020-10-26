@@ -109,19 +109,24 @@ class ReferencePredictor(object):
         ref_mask = torch.transpose(ref_mask, 0, 1).contiguous()
         return ref_tgt, ref_mask
 
-    def _forward_non_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask):
+    def _forward_non_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask, instance_mask=None):
         ref_out_logits, ref_out_full, _ = ref_out
         del ref_out
 
         N, bsz, num_dots = ref_tgt.size()
         ref_mask_instance_level = (ref_mask.sum(-1) > 0).float()
 
+
         if self.args.structured_attention_marginalize:
             assert ref_tgt.size() == ref_out_logits.size()
             assert ref_tgt.size() == ref_mask.size()
             # print('ref_out size: {}'.format(ref_out.size()))
             # print('ref_tgt size: {}'.format(ref_tgt.size()))
-            ref_loss = (self.crit(ref_out_logits, ref_tgt) * ref_mask.float()).sum()
+            ref_losses = (self.crit(ref_out_logits, ref_tgt) * ref_mask.float())
+            if instance_mask is not None:
+                ref_loss = ref_losses[instance_mask].sum()
+            else:
+                ref_loss = ref_losses.sum()
             ref_pred = (ref_out_logits > 0).long()
 
             ref_pred_ix = bit_to_int_array(ref_pred.long())
@@ -132,14 +137,19 @@ class ReferencePredictor(object):
             N_bsz = ref_tgt_reshape.size(0)
             assert N_bsz == ref_out_reshape.size(0)
 
-            ref_loss = -(ref_out_reshape[torch.arange(N_bsz), ref_tgt_ix.view(-1)] * ref_mask_instance_level.view(-1)).sum()
+            ref_losses = -(ref_out_reshape[torch.arange(N_bsz), ref_tgt_ix.view(-1)] * ref_mask_instance_level.view(-1))
+            if instance_mask is not None:
+                N_instance_mask = instance_mask.unsqueeze(0).repeat_interleave(N, dim=0).flatten()
+                ref_loss = ref_losses[N_instance_mask].sum()
+            else:
+                ref_loss = ref_losses.sum()
             # N x bsz
             ref_pred_ix = ref_out_reshape.argmax(-1).view(N, bsz)
             # N x bsz x num_dots
             ref_pred = int_to_bit_array(ref_pred_ix, num_bits=num_dots)
         return ref_loss, ref_pred, ref_pred_ix
 
-    def _forward_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables):
+    def _forward_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables, instance_mask=None):
         from torch_struct import LinearChainNoScanCRF
 
         marginal_log_probs, joint_log_probs, temporal_dist = ref_out
@@ -161,7 +171,7 @@ class ReferencePredictor(object):
             ref_loss_single, ref_pred_single, ref_pred_ix_single = self._forward_non_temporal(
                 (marginal_log_probs[:,~has_multiple], joint_log_probs[:,~has_multiple], None),
                 ref_tgt[:,~has_multiple], ref_tgt_ix[:,~has_multiple],
-                ref_mask[:,~has_multiple]
+                ref_mask[:,~has_multiple], instance_mask=instance_mask[~has_multiple] if instance_mask is not None else instance_mask
             )
             ref_loss += ref_loss_single
             ref_pred[:,~has_multiple] = ref_pred_single
@@ -196,11 +206,15 @@ class ReferencePredictor(object):
         else:
             raise NotImplementedError("--structured_temporal_attention_training={}".format(self.args.structured_temporal_attention_training))
 
-        ref_loss_multi = (losses * has_multiple).sum()
+        ref_losses_multi = (losses * has_multiple)
+        if instance_mask is not None:
+            ref_loss_multi = ref_losses_multi[instance_mask].sum()
+        else:
+            ref_loss_multi = ref_losses_multi.sum()
         ref_loss += ref_loss_multi
         return ref_loss, ref_pred, ref_pred_ix
 
-    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, by_num_markables=False, collapse=False):
+    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, by_num_markables=False, collapse=False, mask=None):
         if ref_inpt is None or ref_out is None:
             return None, None, self.empty_stats()
 
@@ -214,9 +228,9 @@ class ReferencePredictor(object):
         assert ref_tgt_ix.max().item() <= 2 ** num_dots
 
         if ref_out[2] is None:
-            ref_loss, ref_pred, ref_pred_ix = self._forward_non_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask)
+            ref_loss, ref_pred, ref_pred_ix = self._forward_non_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask, instance_mask=mask)
         else:
-            ref_loss, ref_pred, ref_pred_ix = self._forward_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables)
+            ref_loss, ref_pred, ref_pred_ix = self._forward_temporal(ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables, instance_mask=mask)
 
         stats = self.compute_stats(ref_mask, ref_tgt, ref_tgt_ix, ref_pred, ref_pred_ix,
                                    by_num_markables=by_num_markables, num_markables=num_markables, collapse=collapse)

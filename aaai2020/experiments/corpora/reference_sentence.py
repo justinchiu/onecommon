@@ -17,7 +17,7 @@ ReferenceSentenceInstance = namedtuple(
     agents chat_ids sel_idxs lens rev_idxs hid_idxs num_markables is_self \
     partner_ref_inpt partner_ref_tgt_our_view partner_num_markables \
     referent_disagreements partner_referent_disagreements partner_ref_tgt is_selection \
-    non_pronoun_ref_inpt non_pronoun_ref_tgt non_pronoun_num_markables".split()
+    non_pronoun_ref_inpt non_pronoun_ref_tgt non_pronoun_num_markables is_augmented".split()
 )
 
 class ReferenceSentenceCorpus(ReferenceCorpus):
@@ -139,6 +139,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
 
             ref_disagreements, partner_ref_disagreements = [], []
 
+            is_augmented = []
+
             for _ in range(bsz):
                 # if i >= len(dataset) or len(dataset[i][1]) != dial_len or len(dataset[i][2]) != markable_length:
                 if i >= len(dataset) or len(dataset[i][1]) != dial_len:
@@ -161,6 +163,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 non_pronoun_refs.append(dataset[i].non_pronoun_referent_idxs)
                 ref_disagreements.append(dataset[i].referent_disagreements)
                 partner_ref_disagreements.append(dataset[i].partner_referent_disagreements)
+                is_augmented.append(dataset[i].is_augmented)
                 i += 1
                 pbar.update(1)
 
@@ -289,6 +292,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 for ix in range(len(inpts))
             ]
 
+            is_augmented = torch.tensor(is_augmented).bool()
+
             batches.append(ReferenceSentenceInstance(
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt,
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs,
@@ -297,6 +302,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 ref_disagreements, partner_ref_disagreements,
                 partner_ref_tgts, is_selection,
                 non_pronoun_ref_inpts, non_pronoun_ref_tgts, all_non_pronoun_num_markables,
+                is_augmented,
             ))
 
         pbar.close()

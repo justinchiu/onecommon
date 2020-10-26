@@ -929,7 +929,8 @@ class RnnReferenceModel(nn.Module):
         ctx_h = state.ctx_h
         ctx_differences = state.ctx_differences
         num_dots = ctx_h.size(1)
-        stop_loss = latents.stop_losses.sum()
+        # sum over time dimension to get a vector of size bsz
+        stop_loss = latents.stop_losses.sum(0)
         states_expand = latents.latent_states.unsqueeze(2).expand(-1, -1, num_dots, -1)
         if (latents.dots_mentioned_num_markables > 0).any():
             scores = self._apply_attention(
