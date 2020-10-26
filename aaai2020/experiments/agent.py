@@ -76,6 +76,8 @@ class RnnAgent(Agent):
                  ):
         super(RnnAgent, self).__init__()
         self.model: HierarchicalRnnReferenceModel = model
+        if model.args.dots_mentioned_no_pronouns:
+            raise NotImplementedError()
         self.markable_detector: BiLSTM_CRF = markable_detector
         self.args = args
         self.name = name
@@ -536,7 +538,7 @@ class RnnAgent(Agent):
         next_mention_latents = self.model.next_mention_latents(
             self.state, self.writer_lang_hs[-1], lens, mention_beliefs,
             mention_latent_beliefs,
-            num_markables_to_force=num_markables_to_force,
+            dots_mentioned_num_markables_to_force=num_markables_to_force,
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
         )

@@ -14,14 +14,19 @@ from corpora.data import Dictionary, read_lines, get_tag
 
 ReferenceRaw = namedtuple(
     "ReferenceRaw",
-    "input_vals word_idxs referent_idxs output_idx scenario_id real_ids partner_real_ids agent chat_id partner_referent_idxs partner_referent_our_view_idxs referent_disagreements partner_referent_disagreements".split()
+    "input_vals word_idxs referent_idxs output_idx scenario_id real_ids partner_real_ids agent chat_id partner_referent_idxs partner_referent_our_view_idxs referent_disagreements partner_referent_disagreements non_pronoun_referent_idxs".split()
 )
 
 
 ReferenceInstance = namedtuple(
     "ReferenceInstance",
-    "ctx inpt tgt ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids agents chat_ids sel_idxs lens partner_ref_inpt partner_ref_tgt_our_view partner_num_markables".split()
+    "ctx inpt tgt ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids \
+    agents chat_ids sel_idxs lens \
+    partner_ref_inpt partner_ref_tgt_our_view partner_num_markables \
+    non_pronoun_ref_inpt non_pronoun_ref_tgt".split()
 )
+
+PRONOUNS = {'it', 'this', 'that', 'those', 'them', 'they'}
 
 def process_referents(batch_of_referents, max_mentions=None):
     ref_inpt = []
@@ -121,7 +126,8 @@ class ReferenceCorpus(object):
         # for line in tqdm.tqdm(lines, ncols=80):
             tokens = line.split()
             input_vals = [float(val) for val in get_tag(tokens, 'input')]
-            word_idxs = self.word_dict.w2i(get_tag(tokens, 'dialogue'))
+            words = get_tag(tokens, 'dialogue')
+            word_idxs = self.word_dict.w2i(words)
             referent_idxs = [int(val) for val in get_tag(tokens, 'referents')]
             partner_referent_idxs = [int(val) for val in get_tag(tokens, 'partner_referents')]
             partner_referent_our_view_idxs = [int(val) for val in get_tag(tokens, 'partner_referents_our_view')]
@@ -138,9 +144,19 @@ class ReferenceCorpus(object):
                 include = hash(chat_id) % 2 == crosstalk_split
             else:
                 include = True
+            non_pronoun_referent_idxs = [
+                row
+                for row in torch.tensor(referent_idxs).view(-1, 10)
+                if not (set(words[row[0].item():row[1].item()+1]) & PRONOUNS)
+            ]
+            if non_pronoun_referent_idxs:
+                non_pronoun_referent_idxs = torch.stack(non_pronoun_referent_idxs, 0).flatten().tolist()
+            else:
+                non_pronoun_referent_idxs = []
             instances = [ReferenceRaw(
                 input_vals, word_idxs, referent_idxs, output_idx, scenario_id, real_ids, partner_real_ids, agent, chat_id,
-                partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement
+                partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement,
+                non_pronoun_referent_idxs,
             )]
             if spatial_data_augmentation:
                 aug_input_vals = torch.tensor(input_vals).clone().view(4,7)
@@ -149,7 +165,8 @@ class ReferenceCorpus(object):
                 aug_word_idxs = [self.spatial_replacements.get(ix, ix) for ix in word_idxs]
                 instances.append(ReferenceRaw(
                     aug_input_vals, aug_word_idxs, referent_idxs, output_idx, scenario_id, real_ids, partner_real_ids,
-                    agent, chat_id, partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement
+                    agent, chat_id, partner_referent_idxs, partner_referent_our_view_idxs, ref_disagreement, partner_ref_disagreement,
+                    non_pronoun_referent_idxs
                 ))
             if include:
                 for instance in instances:
@@ -199,6 +216,7 @@ class ReferenceCorpus(object):
             markable_length = len(dataset[i][2])
 
             ctxs, dials, refs, sels, scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs = [], [], [], [], [], [], [], [], [], []
+            non_pronoun_refs = []
             lens = []
             partner_refs = []
             partner_refs_our_view = []
@@ -220,6 +238,7 @@ class ReferenceCorpus(object):
                 sel_idxs.append(len(dataset[i][1]) - 1)
                 partner_refs.append(dataset[i].partner_referent_idxs)
                 partner_refs_our_view.append(dataset[i].partner_referent_our_view_idxs)
+                non_pronoun_refs.append(dataset[i].non_pronoun_referent_idxs)
                 i += 1
                 pbar.update(1)
 
@@ -250,6 +269,8 @@ class ReferenceCorpus(object):
             partner_ref_inpt_, partner_ref_tgt, _ = process_referents(partner_refs)
             assert torch.allclose(partner_ref_inpt, partner_ref_inpt_)
 
+            non_pronoun_ref_inpt, non_pronoun_ref_tgt, _ = process_referents(non_pronoun_refs)
+
             # construct tensor for selection target
             sel_tgt = torch.Tensor(sels).long()
             if device is not None:
@@ -267,6 +288,7 @@ class ReferenceCorpus(object):
                 ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt,
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs, lens,
                 partner_ref_inpt, partner_ref_our_view_tgt, partner_num_markables_by_sent,
+                non_pronoun_ref_inpt, non_pronoun_ref_tgt
             ))
         pbar.close()
 

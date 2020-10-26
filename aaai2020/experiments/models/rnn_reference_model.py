@@ -39,7 +39,7 @@ NextMentionRollouts = namedtuple('NextMentionRollouts', [
 ])
 
 NextMentionLatents = namedtuple('NextMentionLatents', [
-    'latent_states', 'num_markables', 'stop_losses', 'ctx_h_with_beliefs'
+    'latent_states', 'dots_mentioned_num_markables', 'stop_losses', 'ctx_h_with_beliefs'
 ])
 
 class State(_State):
@@ -823,7 +823,7 @@ class RnnReferenceModel(nn.Module):
         return outs
 
     def next_mention_latents(self, state: _State, outs_emb, lens, mention_beliefs, mention_latent_beliefs,
-                             num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
+                             dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
         ctx_h = state.ctx_h
         ctx_differences = state.ctx_differences
         bsz = ctx_h.size(0)
@@ -844,7 +844,7 @@ class RnnReferenceModel(nn.Module):
 
         if self.args.next_mention_prediction_type == 'multi_reference':
             is_finished = torch.zeros_like(lens).bool()
-            num_markables = torch.zeros_like(lens).long()
+            dots_mentioned_num_markables = torch.zeros_like(lens).long()
             input_context = lang_states
             if mention_latent_beliefs is not None:
                 mention_latent_beliefs_pooled = mention_latent_beliefs.mean(1)
@@ -863,8 +863,8 @@ class RnnReferenceModel(nn.Module):
             else:
                 predicted_length_logits = self.next_mention_length(input_context)
                 predicted_lengths = predicted_length_logits.argmax(-1)
-                if num_markables_to_force is not None:
-                    stop_losses.append(self.next_mention_length_crit(predicted_length_logits, num_markables_to_force))
+                if dots_mentioned_num_markables_to_force is not None:
+                    stop_losses.append(self.next_mention_length_crit(predicted_length_logits, dots_mentioned_num_markables_to_force))
                 else:
                     stop_losses.append(self.next_mention_length_crit(predicted_length_logits, predicted_lengths))
             while not is_finished.all():
@@ -872,15 +872,15 @@ class RnnReferenceModel(nn.Module):
                     stop_logits = self.next_mention_stop(h).squeeze(-1)
                 else:
                     stop_logits = None
-                if num_markables_to_force is not None:
-                    should_stop = num_markables >= num_markables_to_force
+                if dots_mentioned_num_markables_to_force is not None:
+                    should_stop = dots_mentioned_num_markables >= dots_mentioned_num_markables_to_force
                     # stop_logit > 0: don't stop
                     # stop_logit < 0: stop
                     if predict_stop_at_each_position:
                         stop_losses.append(
                             -1.0 * (stop_logits * (should_stop.float() * 2 - 1)).sigmoid().log() * (~is_finished).float()
                         )
-                    is_finished = num_markables >= num_markables_to_force
+                    is_finished = dots_mentioned_num_markables >= dots_mentioned_num_markables_to_force
                 else:
                     if predict_stop_at_each_position:
                         stop_losses.append(
@@ -889,18 +889,18 @@ class RnnReferenceModel(nn.Module):
                         # stop_losses.append(torch.zeros(bsz).to(stop_logits.device))
                         is_finished |= (stop_logits > 0)
                     else:
-                        is_finished |= num_markables >= predicted_lengths
-                is_finished |= (num_markables >= max_num_mentions)
+                        is_finished |= dots_mentioned_num_markables >= predicted_lengths
+                is_finished |= (dots_mentioned_num_markables >= max_num_mentions)
                 if min_num_mentions > 0:
                     # if num_markables < min_num_mentions then is_finished = False
-                    is_finished &= num_markables >= min_num_mentions
-                num_markables += (~is_finished).long()
+                    is_finished &= dots_mentioned_num_markables >= min_num_mentions
+                dots_mentioned_num_markables += (~is_finished).long()
                 if not is_finished.all():
                     h = self.next_mention_cell(lang_states, h)
                     hs.append(h)
-            assert len(hs) == num_markables.max().item()
-            if num_markables_to_force is not None:
-                assert (num_markables == num_markables_to_force).all()
+            assert len(hs) == dots_mentioned_num_markables.max().item()
+            if dots_mentioned_num_markables_to_force is not None:
+                assert (dots_mentioned_num_markables == dots_mentioned_num_markables_to_force).all()
             if len(stop_losses) != 0:
                 stop_losses = torch.stack(stop_losses, 0)
             else:
@@ -915,14 +915,14 @@ class RnnReferenceModel(nn.Module):
             # 1 x batch_size x num_dots x hidden_dim
             ctx_h = ctx_h.unsqueeze(0)
             latent_states = lang_states.unsqueeze(0)
-            num_markables = torch.full((bsz,), 1).long().to(latent_states.device)
+            dots_mentioned_num_markables = torch.full((bsz,), 1).long().to(latent_states.device)
             stop_losses = torch.zeros((1, bsz), requires_grad=True).to(latent_states.device)
         else:
             raise ValueError(f"--next_mention_prediction_type={self.args.next_mention_prediction}")
 
         # T x batch_size x num_dots x hidden_dim
         return NextMentionLatents(
-            latent_states=latent_states, num_markables=num_markables, stop_losses=stop_losses, ctx_h_with_beliefs=ctx_h
+            latent_states=latent_states, dots_mentioned_num_markables=dots_mentioned_num_markables, stop_losses=stop_losses, ctx_h_with_beliefs=ctx_h
         )
 
     def next_mention_prediction_from_latents(self, state: State, latents: NextMentionLatents):
@@ -931,21 +931,21 @@ class RnnReferenceModel(nn.Module):
         num_dots = ctx_h.size(1)
         stop_loss = latents.stop_losses.sum()
         states_expand = latents.latent_states.unsqueeze(2).expand(-1, -1, num_dots, -1)
-        if (latents.num_markables > 0).any():
+        if (latents.dots_mentioned_num_markables > 0).any():
             scores = self._apply_attention(
                 'next_mention',
                 latents.latent_states,
-                torch.cat([states_expand, latents.ctx_h_with_beliefs], -1), ctx_differences, latents.num_markables,
+                torch.cat([states_expand, latents.ctx_h_with_beliefs], -1), ctx_differences, latents.dots_mentioned_num_markables,
                 joint_factor_input=state.dot_h_maybe_multi_structured,
             )
         else:
             scores = None
-        return scores, stop_loss, latents.num_markables
+        return scores, stop_loss, latents.dots_mentioned_num_markables
 
     def next_mention_prediction(self, state: State, outs_emb, lens, mention_beliefs, mention_latent_beliefs,
-                                num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
+                                dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
         latents = self.next_mention_latents(
-            state, outs_emb, lens, mention_beliefs, mention_latent_beliefs, num_markables_to_force, min_num_mentions, max_num_mentions
+            state, outs_emb, lens, mention_beliefs, mention_latent_beliefs, dots_mentioned_num_markables_to_force, min_num_mentions, max_num_mentions
         )
         return self.next_mention_prediction_from_latents(state, latents)
 
@@ -1470,13 +1470,14 @@ class RnnReferenceModel(nn.Module):
                  num_markables=None, partner_num_markables=None,
                  compute_sel_out=False, sel_idx=None,
                  dots_mentioned=None, dots_mentioned_per_ref=None,
+                 dots_mentioned_num_markables=None,
                  timestep=0,
                  # needed for generation beliefs
                  ref_outs=None, partner_ref_outs=None,
                  # needed for dot_recurrence_oracle
                  ref_tgt=None, partner_ref_tgt=None,
                  force_next_mention_num_markables=False,
-                 next_num_markables=None, is_selection=None,
+                 next_dots_mentioned_num_markables=None, is_selection=None,
                  ):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
@@ -1498,7 +1499,7 @@ class RnnReferenceModel(nn.Module):
             pack=True,
             dots_mentioned=dots_mentioned,
             dots_mentioned_per_ref=dots_mentioned_per_ref,
-            num_markables=num_markables,
+            dots_mentioned_num_markables=dots_mentioned_num_markables,
             generation_beliefs=generation_beliefs,
             is_selection=is_selection,
         )
@@ -1543,7 +1544,7 @@ class RnnReferenceModel(nn.Module):
             next_mention_latents = self.next_mention_latents(
                 state, writer_lang_hs, lens, mention_beliefs,
                 mention_latent_beliefs,
-                num_markables_to_force=next_num_markables if force_next_mention_num_markables else None,
+                dots_mentioned_num_markables_to_force=next_dots_mentioned_num_markables if force_next_mention_num_markables else None,
             )
             # next_mention_out = self.next_mention_prediction(
             #     state, writer_lang_hs, lens, mention_beliefs,
@@ -1568,7 +1569,7 @@ class RnnReferenceModel(nn.Module):
         return state, outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_latents
 
     def forward(self, ctx, inpt, ref_inpt, sel_idx, num_markables, partner_num_markables, lens,
-                dots_mentioned, dots_mentioned_per_ref,
+                dots_mentioned, dots_mentioned_per_ref, dots_mentioned_num_markables,
                 belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt, compute_l1_scores=False,
                 ref_tgt=None, partner_ref_tgt=None, return_all_selection_outs=False):
         raise NotImplementedError("make this use _State")
@@ -1628,7 +1629,7 @@ class RnnReferenceModel(nn.Module):
         return ctx_emb, feed_ctx_attn_prob
 
     def _context_for_hidden(self, state: State, lang_hs, dots_mentioned, dots_mentioned_per_ref,
-                            num_markables, generation_beliefs, structured_generation_beliefs):
+                            dots_mentioned_num_markables, generation_beliefs, structured_generation_beliefs):
         ctx = state.ctx
         ctx_h = state.ctx_h
         ctx_differences = state.ctx_differences
@@ -1643,30 +1644,30 @@ class RnnReferenceModel(nn.Module):
 
             bsz_, max_num_markables, _ = dots_mentioned_per_ref.size()
             assert bsz == bsz_
-            assert max_num_markables == num_markables.max().item()
+            assert max_num_markables == dots_mentioned_num_markables.max().item()
             # bsz x hidden_dim
             # now for utterances that have markables, summarize them
 
             encoded = torch.zeros(bsz, max_num_markables, self.args.nembed_ctx).to(device)
             encoded_masks = torch.zeros(bsz, max_num_markables).bool().to(device)
 
-            if num_markables.max() > 0:
+            if dots_mentioned_num_markables.max() > 0:
                 # bsz x max_num_mentions x num_dots
-                dmpr_filtered = dots_mentioned_per_ref[num_markables > 0]
+                dmpr_filtered = dots_mentioned_per_ref[dots_mentioned_num_markables > 0]
 
                 # bsz x num_dots
                 dm_filtered = dmpr_filtered.max(1).values.float()
-                num_markables_filtered = num_markables[num_markables > 0]
+                num_markables_filtered = dots_mentioned_num_markables[dots_mentioned_num_markables > 0]
 
                 encoder_type = vars(self.args).get('hidden_context_mention_encoder_type', 'full')
                 if encoder_type == 'filtered-shared':
-                    ctx_h_filtered = self.ctx_encoder(ctx[num_markables > 0],
+                    ctx_h_filtered = self.ctx_encoder(ctx[dots_mentioned_num_markables > 0],
                                                       relational_dot_mask=dm_filtered)
                 elif encoder_type == 'filtered-separate':
-                    ctx_h_filtered = self.hidden_ctx_encoder_relational(ctx[num_markables > 0],
+                    ctx_h_filtered = self.hidden_ctx_encoder_relational(ctx[dots_mentioned_num_markables > 0],
                                                                         relational_dot_mask=dm_filtered)
                 elif encoder_type == 'full':
-                    ctx_h_filtered = ctx_h[num_markables > 0]
+                    ctx_h_filtered = ctx_h[dots_mentioned_num_markables > 0]
                 else:
                     raise ValueError(f"invalid --hidden_context_mention_encoder_type={encoder_type}")
 
@@ -1679,10 +1680,12 @@ class RnnReferenceModel(nn.Module):
                         dot_h = torch.cat(state.dot_h_maybe_multi, -1)
                     else:
                         dot_h = state.dot_h_maybe_multi
-                    dot_h = dot_h[num_markables > 0]
+                    dot_h = dot_h[dots_mentioned_num_markables > 0]
                     assert dot_h.size(0) == dmpr_filtered.size(0)
                     to_select = torch.cat((to_select, dot_h), -1)
 
+                # to_select: filtered_bsz x 7 x dim
+                # dmpr_filtered: filtered_bsz x max_num_markables x 7
                 ctx_h_selected = to_select.unsqueeze(1).repeat_interleave(max_num_markables, dim=1) * dmpr_filtered.unsqueeze(-1)
                 ctx_h_selected = einops.reduce(ctx_h_selected, "b mnm nd c -> b mnm c", 'sum')
 
@@ -1699,7 +1702,7 @@ class RnnReferenceModel(nn.Module):
                     to_encode = torch.cat((to_encode, num_dots_mentioned_per_ref.float().unsqueeze(-1)), -1)
 
                 if vars(self.args).get('hidden_context_mention_encoder_property_diffs', False):
-                    ctx_filtered = ctx[num_markables > 0].view(-1, self.num_ent, 4)
+                    ctx_filtered = ctx[dots_mentioned_num_markables > 0].view(-1, self.num_ent, 4)
                     ctx_selected = ctx_filtered.unsqueeze(1).repeat_interleave(max_num_markables, dim=1) * dmpr_filtered.unsqueeze(-1)
                     ctx_selected = einops.reduce(ctx_selected, "b mnm nd c -> b mnm c", 'sum')
                     ctx_selected /= torch.clamp(num_dots_mentioned_per_ref.unsqueeze(-1), min=1.0)
@@ -1731,10 +1734,10 @@ class RnnReferenceModel(nn.Module):
                     h = einops.rearrange(h, "dir bsz hidden -> bsz (dir hidden)")
                 else:
                     h = h.squeeze(0)
-                ctx_emb[num_markables > 0] = h.squeeze(0)
+                ctx_emb[dots_mentioned_num_markables > 0] = h.squeeze(0)
                 encoded_hs_multi, encoded_lens_multi = pad_packed_sequence(encoded_multi, batch_first=True)
-                encoded[num_markables > 0] = encoded_hs_multi
-                encoded_masks[num_markables > 0] = lengths_to_mask(max_num_markables, encoded_lens_multi).to(encoded_masks.device)
+                encoded[dots_mentioned_num_markables > 0] = encoded_hs_multi
+                encoded_masks[dots_mentioned_num_markables > 0] = lengths_to_mask(max_num_markables, encoded_lens_multi).to(encoded_masks.device)
             return ctx_emb, None, encoded, encoded_masks
         else:
             ctx_attn_prob = self._language_conditioned_dot_attention(
@@ -1766,13 +1769,13 @@ class RnnReferenceModel(nn.Module):
 
     def _add_hidden_context(
         self, state: State, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-        num_markables, generation_beliefs, structured_generation_beliefs, is_selection,
+        dots_mentioned_num_markables, generation_beliefs, structured_generation_beliefs, is_selection,
     ):
         if vars(self.args).get('hidden_context', False):
             ctx_emb_for_hidden, _, ctx_seq_encoded, ctx_seq_mask = self._context_for_hidden(
                 state, writer_lang_h,
                 dots_mentioned=dots_mentioned, dots_mentioned_per_ref=dots_mentioned_per_ref,
-                num_markables=num_markables,
+                dots_mentioned_num_markables=dots_mentioned_num_markables,
                 generation_beliefs=generation_beliefs,
                 structured_generation_beliefs=structured_generation_beliefs,
             )
@@ -1804,7 +1807,7 @@ class RnnReferenceModel(nn.Module):
 
     # -> (reader_lang_hs, writer_lang_hs), state, feed_ctx_attn_prob
     def _read(self, state: _State, inpt, lens=None, pack=False, dots_mentioned=None, dots_mentioned_per_ref=None,
-              num_markables=None, generation_beliefs=None, is_selection=None):
+              dots_mentioned_num_markables=None, generation_beliefs=None, is_selection=None):
         # lang_h: num_layers * num_directions x batch x nhid_lang
         ctx = state.ctx
         ctx_h = state.ctx_h
@@ -1819,7 +1822,7 @@ class RnnReferenceModel(nn.Module):
 
         writer_lang_h, ctx_seq_encoded_and_mask = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-            num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
+            dots_mentioned_num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
             is_selection,
         )
 
@@ -1857,7 +1860,7 @@ class RnnReferenceModel(nn.Module):
     # -> (reader_lang_hs, writer_lang_hs), state,
     def read(self, state: State, inpt, prefix_token='THEM:',
              dots_mentioned=None, dots_mentioned_per_ref=None,
-             num_markables=None,
+             dots_mentioned_num_markables=None,
              generation_beliefs=None, is_selection=None):
         # Add a 'THEM:' token to the start of the message
         prefix = self.word2var(prefix_token).unsqueeze(0)
@@ -1866,7 +1869,7 @@ class RnnReferenceModel(nn.Module):
             state, inpt, lens=None, pack=False,
             dots_mentioned=dots_mentioned,
             dots_mentioned_per_ref=dots_mentioned_per_ref,
-            num_markables=num_markables,
+            dots_mentioned_num_markables=dots_mentioned_num_markables,
             generation_beliefs=generation_beliefs,
             is_selection=is_selection,
         )
@@ -1881,7 +1884,7 @@ class RnnReferenceModel(nn.Module):
 
     def write(self, state: State, max_words, temperature,
               start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None,
-              dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
+              dots_mentioned=None, dots_mentioned_per_ref=None, dots_mentioned_num_markables=None,
               generation_beliefs=None, is_selection=None):
         # ctx_h: batch x num_dots x nembed_ctx
         # lang_h: batch x hidden
@@ -1910,7 +1913,7 @@ class RnnReferenceModel(nn.Module):
 
         writer_lang_h, ctx_seq_encoded_and_mask = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-            num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
+            dots_mentioned_num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
             is_selection,
         )
 
@@ -1993,7 +1996,7 @@ class RnnReferenceModel(nn.Module):
             state, outs,
             dots_mentioned=dots_mentioned,
             dots_mentioned_per_ref=dots_mentioned_per_ref,
-            num_markables=num_markables,
+            dots_mentioned_num_markables=dots_mentioned_num_markables,
             prefix_token=start_token,
             is_selection=is_selection,
         )
@@ -2014,7 +2017,7 @@ class RnnReferenceModel(nn.Module):
 
     def write_beam(self, state, max_words, beam_size,
                    start_token='YOU:', stop_tokens=data.STOP_TOKENS,
-                   dots_mentioned=None, dots_mentioned_per_ref=None, num_markables=None,
+                   dots_mentioned=None, dots_mentioned_per_ref=None, dots_mentioned_num_markables=None,
                    generation_beliefs=None, gumbel_noise=False, temperature=1.0,
                    is_selection=None, read_one_best=True, gumbel_noise_forgetful=False, keep_all_finished=False):
         # NOTE: gumbel_noise=True *does not* sample without replacement at the sequence level, for the reasons
@@ -2036,7 +2039,7 @@ class RnnReferenceModel(nn.Module):
 
         writer_lang_h, (ctx_seq_encoded, ctx_seq_mask) = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-            num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
+            dots_mentioned_num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
             is_selection,
         )
 
@@ -2199,7 +2202,7 @@ class RnnReferenceModel(nn.Module):
                 state, best_output,
                 dots_mentioned=dots_mentioned,
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
-                num_markables=num_markables,
+                dots_mentioned_num_markables=dots_mentioned_num_markables,
                 prefix_token=start_token,
                 is_selection=is_selection,
             )
@@ -2225,7 +2228,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # args from RnnReferenceModel will be added separately
         pass
 
-    def first_mention_latents(self, state: State, num_markables=None, force_next_mention_num_markables=False,
+    def first_mention_latents(self, state: State, dots_mentioned_num_markables=None, force_next_mention_num_markables=False,
                               min_num_mentions=0, max_num_mentions=12):
         mention_beliefs = state.make_beliefs('mention', -1, [], [])
         mention_latent_beliefs = state.make_beliefs('next_mention_latents', -1, [], [])
@@ -2235,15 +2238,15 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             lens=torch.full((state.bsz,), 1.0, device=state.ctx_h.device).long(),
             mention_beliefs=mention_beliefs,
             mention_latent_beliefs=mention_latent_beliefs,
-            num_markables_to_force=num_markables if force_next_mention_num_markables else None,
+            dots_mentioned_num_markables_to_force=dots_mentioned_num_markables if force_next_mention_num_markables else None,
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
         )
 
-    def first_mention(self, state: State, num_markables=None, force_next_mention_num_markables=False,
+    def first_mention(self, state: State, dots_mentioned_num_markables=None, force_next_mention_num_markables=False,
                       min_num_mentions=0, max_num_mentions=12):
         latents: NextMentionLatents = self.first_mention_latents(
-            state, num_markables, force_next_mention_num_markables, min_num_mentions, max_num_mentions
+            state, dots_mentioned_num_markables, force_next_mention_num_markables, min_num_mentions, max_num_mentions
         )
         return self.next_mention_prediction_from_latents(state, latents)
 
@@ -2312,14 +2315,14 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             multi_mention = False
         else:
             raise NotImplementedError(f"next_mention_candidates_generation=={generation_method}")
-        if (next_mention_latents.num_markables == 0).all():
+        if (next_mention_latents.next_mention_num_markables == 0).all():
             return NextMentionRollouts(
-                current_sel_probs, next_mention_latents.num_markables, None, None, None, None
+                current_sel_probs, next_mention_latents.next_mention_num_markables, None, None, None, None
             )
 
         def filter_latents(next_mention_latents, max_mentions):
             return next_mention_latents._replace(
-                num_markables=next_mention_latents.num_markables.clamp_max(max_mentions),
+                dots_mentioned_num_markables=next_mention_latents.dots_mentioned_num_markables.clamp_max(max_mentions),
                 latent_states=next_mention_latents.latent_states[:max_mentions],
                 stop_losses=next_mention_latents.stop_losses[:max_mentions+1],
                 ctx_h_with_beliefs=next_mention_latents.ctx_h_with_beliefs[:max_mentions],
@@ -2331,11 +2334,11 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             next_mention_out, _, _ = next_mention_outs
             stop_scores = -1 * next_mention_latents.stop_losses.sum(0)
             candidate_indices, candidate_dots, candidate_nm_scores = make_candidates(
-                next_mention_out, next_mention_latents.num_markables, num_candidates, sample,
+                next_mention_out, next_mention_latents.dots_mentioned_num_markables, num_candidates, sample,
                 additional_scores=stop_scores if use_stop_losses else None
             )
             for b in range(state.bsz):
-                nm_b = next_mention_latents.num_markables[b]
+                nm_b = next_mention_latents.dots_mentioned_num_markables[b]
                 # scores should be tiled across num_mentions
                 for j in range(nm_b):
                     assert torch.allclose(candidate_nm_scores[j,b], candidate_nm_scores[0,b])
@@ -2343,7 +2346,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
             rollout_sel_probs = []
             for k in range(candidate_dots.size(2)):
-                probs_k = self.rollout_selection_probabilities(state, candidate_dots[:,:,k], next_mention_latents.num_markables)
+                probs_k = self.rollout_selection_probabilities(state, candidate_dots[:,:,k], next_mention_latents.dots_mentioned_num_markables)
                 rollout_sel_probs.append(probs_k)
 
             # bsz x candidates x num_dots
@@ -2358,7 +2361,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             all_num_markables_per_candidate, all_candidate_indices, all_candidate_dots, all_candidate_nm_scores, all_rollout_sel_probs = zip(
                 *[
                     process_latents(filter_latents(next_mention_latents, max_mentions))
-                    for max_mentions in range(1, next_mention_latents.num_markables.max() + 1)
+                    for max_mentions in range(1, next_mention_latents.dots_mentioned_num_markables.max() + 1)
                 ]
             )
             num_markables_per_candidate = torch.cat(all_num_markables_per_candidate, dim=1)
@@ -2378,7 +2381,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         )
 
     def forward(self, ctx, inpts, ref_inpts, sel_idx, num_markables, partner_num_markables, lens,
-                dots_mentioned, dots_mentioned_per_ref,
+                dots_mentioned, dots_mentioned_per_ref, dots_mentioned_num_markables,
                 belief_constructor: Union[BeliefConstructor, None],
                 partner_ref_inpts,
                 compute_l1_probs=False, tgts=None, ref_tgts=None, partner_ref_tgts=None,
@@ -2421,7 +2424,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         if vars(self.args).get('next_mention_prediction', False):
             # next_mention_outs = self.first_mention(state, num_markables[0], force_next_mention_num_markables)
-            next_mention_latents = self.first_mention_latents(state, num_markables[0], force_next_mention_num_markables)
+            next_mention_latents = self.first_mention_latents(state, dots_mentioned_num_markables[0], force_next_mention_num_markables)
             next_mention_outs = self.next_mention_prediction_from_latents(state, next_mention_latents)
             all_next_mention_outs.append(next_mention_outs)
             if num_next_mention_candidates_to_score is not None:
@@ -2457,11 +2460,12 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 compute_sel_out=is_last or return_all_selection_outs, sel_idx=sel_idx,
                 dots_mentioned=dots_mentioned[i] if dots_mentioned is not None else None,
                 dots_mentioned_per_ref=dots_mentioned_per_ref[i] if dots_mentioned_per_ref is not None else None,
+                dots_mentioned_num_markables=dots_mentioned_num_markables[i],
                 timestep=i,
                 ref_outs=ref_outs, partner_ref_outs=partner_ref_outs,
                 ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt,
                 force_next_mention_num_markables=force_next_mention_num_markables,
-                next_num_markables=num_markables[i+1] if i < len(num_markables) - 1 else None,
+                next_dots_mentioned_num_markables=dots_mentioned_num_markables[i + 1] if i < len(dots_mentioned_num_markables) - 1 else None,
                 is_selection=is_selection[i],
             )
             sel_outs.append(sel_out)

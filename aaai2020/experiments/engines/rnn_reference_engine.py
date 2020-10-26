@@ -77,6 +77,8 @@ def add_loss_args(parser):
     group.add_argument('--anneal_dot_recurrence', action='store_true')
     group.add_argument('--anneal_dot_recurrence_min_temperature', type=float, default=1e-2)
 
+    group.add_argument('--dots_mentioned_no_pronouns', action='store_true')
+
 def unwrap(loss):
     if loss is not None:
         return loss.item()
@@ -571,7 +573,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _,\
         sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view,\
         partner_num_markables, ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view,\
-        is_selection = batch
+        is_selection, non_pronoun_ref_inpts, non_pronoun_ref_tgts, non_pronoun_num_markables = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)
@@ -579,7 +581,6 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         assert num_dots == 7
 
         assert is_selection[0].size(0) == bsz
-
 
         inpts = [Variable(inpt) for inpt in inpts]
         ref_inpts = [Variable(ref_inpt) if ref_inpt is not None else None
@@ -597,8 +598,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         last_partner_ref_out = None
 
-        dots_mentioned = make_dots_mentioned_multi(ref_tgts, self.args, bsz, num_dots)
-        dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(ref_tgts, self.args, bsz, num_dots)
+        if self.args.dots_mentioned_no_pronouns:
+            dots_mentioned = make_dots_mentioned_multi(non_pronoun_ref_tgts, self.args, bsz, num_dots)
+            dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(non_pronoun_ref_tgts, self.args, bsz, num_dots)
+            dots_mentioned_num_markables = non_pronoun_num_markables
+        else:
+            dots_mentioned = make_dots_mentioned_multi(ref_tgts, self.args, bsz, num_dots)
+            dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(ref_tgts, self.args, bsz, num_dots)
+            dots_mentioned_num_markables = num_markables
 
         partner_dots_mentioned_our_view = make_dots_mentioned_multi(
             partner_ref_tgts_our_view, self.args, bsz, num_dots
@@ -626,7 +633,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
             lens,
-            dots_mentioned, dots_mentioned_per_ref,
+            dots_mentioned, dots_mentioned_per_ref, dots_mentioned_num_markables,
             belief_constructor=belief_constructor,
             partner_ref_inpts=partner_ref_inpts,
             compute_l1_probs=compute_l1_loss,

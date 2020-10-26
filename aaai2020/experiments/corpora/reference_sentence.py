@@ -16,7 +16,8 @@ ReferenceSentenceInstance = namedtuple(
     "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids \
     agents chat_ids sel_idxs lens rev_idxs hid_idxs num_markables is_self \
     partner_ref_inpt partner_ref_tgt_our_view partner_num_markables \
-    referent_disagreements partner_referent_disagreements partner_ref_tgt is_selection".split()
+    referent_disagreements partner_referent_disagreements partner_ref_tgt is_selection \
+    non_pronoun_ref_inpt non_pronoun_ref_tgt non_pronoun_num_markables".split()
 )
 
 class ReferenceSentenceCorpus(ReferenceCorpus):
@@ -69,11 +70,15 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             sents_, all_partner_refs_our_view = self._split_referents(words, reference_raw.partner_referent_our_view_idxs)
             assert sents == sents_
 
+            sents_, all_non_pronoun_refs = self._split_referents(words, reference_raw.non_pronoun_referent_idxs)
+            assert sents == sents_
+
             new_ref_raw = reference_raw._replace(
                 word_idxs=sents,
                 referent_idxs=all_refs,
                 partner_referent_idxs=all_partner_refs,
                 partner_referent_our_view_idxs=all_partner_refs_our_view,
+                non_pronoun_referent_idxs=all_non_pronoun_refs,
             )
             sent_dataset.append(new_ref_raw)
         # Sort by number of sentences, and then markable length
@@ -130,6 +135,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             ctxs, dials, refs, sels, scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs = [], [], [], [], [], [], [], [], [], []
 
             partner_refs, partner_refs_our_view = [], []
+            non_pronoun_refs = []
 
             ref_disagreements, partner_ref_disagreements = [], []
 
@@ -152,6 +158,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 sel_idxs.append(len(dataset[i][1][-1]) - 1)
                 partner_refs.append(dataset[i].partner_referent_idxs)
                 partner_refs_our_view.append(dataset[i].partner_referent_our_view_idxs)
+                non_pronoun_refs.append(dataset[i].non_pronoun_referent_idxs)
                 ref_disagreements.append(dataset[i].referent_disagreements)
                 partner_ref_disagreements.append(dataset[i].partner_referent_disagreements)
                 i += 1
@@ -161,6 +168,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             ref_inpts, ref_tgts, all_num_markables = [], [], []
             partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables = [], [], []
             partner_ref_tgts = []
+            non_pronoun_ref_inpts, non_pronoun_ref_tgts, all_non_pronoun_num_markables = [], [], []
             is_self = []
             for s in range(dial_len):
                 batch = []
@@ -234,6 +242,14 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 partner_ref_tgts.append(partner_ref_tgt)
                 all_partner_num_markables.append(partner_num_markables)
 
+                assert self.max_mentions_per_utterance is None
+                non_pronoun_ref_inpt, non_pronoun_ref_tgt, non_pronoun_num_markables = process_referents(
+                    [this_refs[s] for this_refs in non_pronoun_refs]
+                )
+                non_pronoun_ref_inpts.append(non_pronoun_ref_inpt)
+                non_pronoun_ref_tgts.append(non_pronoun_ref_tgt)
+                all_non_pronoun_num_markables.append(non_pronoun_num_markables)
+
             # # pad all the dialogues to match the longest dialogue
             # for j in range(len(dials)):
             #     stats['n'] += max_len
@@ -280,6 +296,7 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables,
                 ref_disagreements, partner_ref_disagreements,
                 partner_ref_tgts, is_selection,
+                non_pronoun_ref_inpts, non_pronoun_ref_tgts, all_non_pronoun_num_markables,
             ))
 
         pbar.close()
