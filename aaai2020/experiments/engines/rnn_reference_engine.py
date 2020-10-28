@@ -658,13 +658,13 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 # loss = loss * (this_is_self.unsqueeze(0).expand_as(loss))
                 mask = is_self[i]
                 if self.args.max_mentions_in_generation_training is not None:
-                    mask = mask & (num_markables[i] <= self.args.max_mentions_in_generation_training)
+                    mask = mask & (dots_mentioned_num_markables[i] <= self.args.max_mentions_in_generation_training)
                 loss = loss * (mask.unsqueeze(0).expand_as(loss))
 
-                l1_mask = mask & (num_markables[i] > 0)
+                l1_mask = mask & (dots_mentioned_num_markables[i] > 0)
                 if compute_l1_loss and l1_log_probs[i] is not None and l1_mask.any():
                     # l1_scores[i]: max_num_mentions x bsz
-                    normalizer = (num_markables[i] * l1_mask).sum()
+                    normalizer = (dots_mentioned_num_markables[i] * l1_mask).sum()
                     assert normalizer.item() != 0
                     l1_losses.append(-(l1_log_probs[i] * l1_mask).sum() / normalizer)
                 else:
@@ -875,7 +875,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
                 pred_dots_mentioned, next_mention_stop_loss, next_mention_num_markables = next_mention_outs[i]
                 if self.args.next_mention_prediction_type == 'multi_reference':
-                    gold_num_mentions = num_markables[i].long()
+                    gold_num_mentions = dots_mentioned_num_markables[i].long()
                     gold_dots_mentioned = dots_mentioned_per_ref[i].long()
                     if (~is_augmented).any():
                         next_mention_stop_losses.append(next_mention_stop_loss[~is_augmented].sum())
