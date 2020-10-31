@@ -145,6 +145,7 @@ class RnnReferenceModel(nn.Module):
 
         parser.add_argument('--hidden_context', action='store_true')
         parser.add_argument('--hidden_context_is_selection', action='store_true')
+        parser.add_argument('--hidden_context_confirmations', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder_bidirectional', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder_type', choices=[
@@ -347,6 +348,11 @@ class RnnReferenceModel(nn.Module):
             if self.args.hidden_context_is_selection:
                 self.hidden_ctx_is_selection_embeddings = nn.Embedding(2, args.nhid_lang)
                 self.hidden_ctx_is_selection_weight = nn.Parameter(torch.zeros((1,)))
+
+            if self.args.hidden_context_confirmations:
+                # have / don't have / other person's turn
+                self.hidden_ctx_confirmations_embeddings = nn.Embedding(3, args.nhid_lang, padding_idx=2)
+                self.hidden_ctx_confirmations_weight = nn.Parameter(torch.zeros((1,)))
 
         self.reader = nn.GRU(
             input_size=gru_input_size,
@@ -1478,7 +1484,9 @@ class RnnReferenceModel(nn.Module):
                  # needed for dot_recurrence_oracle
                  ref_tgt=None, partner_ref_tgt=None,
                  force_next_mention_num_markables=False,
-                 next_dots_mentioned_num_markables=None, is_selection=None,
+                 next_dots_mentioned_num_markables=None,
+                 is_selection=None,
+                 can_confirm=None,
                  ):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
@@ -1503,6 +1511,7 @@ class RnnReferenceModel(nn.Module):
             dots_mentioned_num_markables=dots_mentioned_num_markables,
             generation_beliefs=generation_beliefs,
             is_selection=is_selection,
+            can_confirm=can_confirm,
         )
 
         outs, ctx_attn_prob = self.language_output(
@@ -1771,6 +1780,7 @@ class RnnReferenceModel(nn.Module):
     def _add_hidden_context(
         self, state: State, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
         dots_mentioned_num_markables, generation_beliefs, structured_generation_beliefs, is_selection,
+        can_confirm,
     ):
         if vars(self.args).get('hidden_context', False):
             ctx_emb_for_hidden, _, ctx_seq_encoded, ctx_seq_mask = self._context_for_hidden(
@@ -1796,6 +1806,11 @@ class RnnReferenceModel(nn.Module):
                 # 1 x bsz x nhid_lang
                 is_sel_embs = self.hidden_ctx_is_selection_embeddings(is_selection.long()).unsqueeze(0)
                 writer_lang_h = (1-sig_weight) * writer_lang_h + sig_weight * is_sel_embs
+            if vars(self.args).get('hidden_context_confirmations', False):
+                assert can_confirm is not None
+                sig_weight = self.hidden_ctx_confirmations_weight.sigmoid()
+                conf_embs = self.hidden_ctx_confirmations_embeddings(can_confirm.long()).unsqueeze(0)
+                writer_lang_h = (1-sig_weight) * writer_lang_h + sig_weight * conf_embs
             # if not self.args.untie_grus:
             #     reader_lang_h = writer_lang_h
         else:
@@ -1808,7 +1823,7 @@ class RnnReferenceModel(nn.Module):
 
     # -> (reader_lang_hs, writer_lang_hs), state, feed_ctx_attn_prob
     def _read(self, state: _State, inpt, lens=None, pack=False, dots_mentioned=None, dots_mentioned_per_ref=None,
-              dots_mentioned_num_markables=None, generation_beliefs=None, is_selection=None):
+              dots_mentioned_num_markables=None, generation_beliefs=None, is_selection=None, can_confirm=None):
         # lang_h: num_layers * num_directions x batch x nhid_lang
         ctx = state.ctx
         ctx_h = state.ctx_h
@@ -1824,7 +1839,7 @@ class RnnReferenceModel(nn.Module):
         writer_lang_h, ctx_seq_encoded_and_mask = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
             dots_mentioned_num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
-            is_selection,
+            is_selection, can_confirm,
         )
 
         # seq_len x batch_size x nembed_word
@@ -1862,7 +1877,7 @@ class RnnReferenceModel(nn.Module):
     def read(self, state: State, inpt, prefix_token='THEM:',
              dots_mentioned=None, dots_mentioned_per_ref=None,
              dots_mentioned_num_markables=None,
-             generation_beliefs=None, is_selection=None):
+             generation_beliefs=None, is_selection=None, can_confirm=None):
         # Add a 'THEM:' token to the start of the message
         prefix = self.word2var(prefix_token).unsqueeze(0)
         inpt = torch.cat([prefix, inpt])
@@ -1873,6 +1888,7 @@ class RnnReferenceModel(nn.Module):
             dots_mentioned_num_markables=dots_mentioned_num_markables,
             generation_beliefs=generation_beliefs,
             is_selection=is_selection,
+            can_confirm=can_confirm,
         )
         return reader_and_writer_lang_hs, state
 
@@ -1886,7 +1902,7 @@ class RnnReferenceModel(nn.Module):
     def write(self, state: State, max_words, temperature,
               start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None,
               dots_mentioned=None, dots_mentioned_per_ref=None, dots_mentioned_num_markables=None,
-              generation_beliefs=None, is_selection=None):
+              generation_beliefs=None, is_selection=None, can_confirm=None):
         # ctx_h: batch x num_dots x nembed_ctx
         # lang_h: batch x hidden
         ctx = state.ctx
@@ -1915,7 +1931,7 @@ class RnnReferenceModel(nn.Module):
         writer_lang_h, ctx_seq_encoded_and_mask = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
             dots_mentioned_num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
-            is_selection,
+            is_selection, can_confirm,
         )
 
         if self.args.feed_context:
@@ -2000,6 +2016,7 @@ class RnnReferenceModel(nn.Module):
             dots_mentioned_num_markables=dots_mentioned_num_markables,
             prefix_token=start_token,
             is_selection=is_selection,
+            can_confirm=can_confirm,
         )
 
         assert torch.allclose(writer_lang_hs, torch.cat(lang_hs, 0), atol=1e-4)
@@ -2020,7 +2037,9 @@ class RnnReferenceModel(nn.Module):
                    start_token='YOU:', stop_tokens=data.STOP_TOKENS,
                    dots_mentioned=None, dots_mentioned_per_ref=None, dots_mentioned_num_markables=None,
                    generation_beliefs=None, gumbel_noise=False, temperature=1.0,
-                   is_selection=None, read_one_best=True, gumbel_noise_forgetful=False, keep_all_finished=False):
+                   is_selection=None, read_one_best=True, gumbel_noise_forgetful=False, keep_all_finished=False,
+                   can_confirm=None,
+                   ):
         # NOTE: gumbel_noise=True *does not* sample without replacement at the sequence level, for the reasons
         # outlined in https://arxiv.org/pdf/1903.06059.pdf, and so should just be viewed as a randomized beam search
 
@@ -2041,7 +2060,7 @@ class RnnReferenceModel(nn.Module):
         writer_lang_h, (ctx_seq_encoded, ctx_seq_mask) = self._add_hidden_context(
             state, reader_lang_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
             dots_mentioned_num_markables, generation_beliefs, state.dot_h_maybe_multi_structured,
-            is_selection,
+            is_selection, can_confirm,
         )
 
         if self.args.feed_context:
@@ -2206,6 +2225,7 @@ class RnnReferenceModel(nn.Module):
                 dots_mentioned_num_markables=dots_mentioned_num_markables,
                 prefix_token=start_token,
                 is_selection=is_selection,
+                can_confirm=can_confirm,
             )
         else:
             reader_lang_hs = writer_lang_hs = state_new = None
@@ -2316,9 +2336,9 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             multi_mention = False
         else:
             raise NotImplementedError(f"next_mention_candidates_generation=={generation_method}")
-        if (next_mention_latents.next_mention_num_markables == 0).all():
+        if (next_mention_latents.dots_mentioned_num_markables == 0).all():
             return NextMentionRollouts(
-                current_sel_probs, next_mention_latents.next_mention_num_markables, None, None, None, None
+                current_sel_probs, next_mention_latents.dots_mentioned_num_markables, None, None, None, None
             )
 
         def filter_latents(next_mention_latents, max_mentions):
@@ -2353,7 +2373,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             # bsz x candidates x num_dots
             rollout_sel_probs = torch.stack(rollout_sel_probs, 1)
 
-            num_markables_per_candidate = next_mention_latents.num_markables.unsqueeze(1).expand(-1, num_candidates)
+            num_markables_per_candidate = next_mention_latents.dots_mentioned_num_markables.unsqueeze(1).expand(-1, num_candidates)
             return num_markables_per_candidate, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs
 
         if not multi_mention:
@@ -2388,6 +2408,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 compute_l1_probs=False, tgts=None, ref_tgts=None, partner_ref_tgts=None,
                 force_next_mention_num_markables=False,
                 is_selection=None,
+                can_confirm=None,
                 num_next_mention_candidates_to_score=None,
                 next_mention_candidates_generation='topk',
                 return_all_selection_outs=False,
@@ -2468,6 +2489,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 force_next_mention_num_markables=force_next_mention_num_markables,
                 next_dots_mentioned_num_markables=dots_mentioned_num_markables[i + 1] if i < len(dots_mentioned_num_markables) - 1 else None,
                 is_selection=is_selection[i],
+                can_confirm=can_confirm[i],
             )
             sel_outs.append(sel_out)
 

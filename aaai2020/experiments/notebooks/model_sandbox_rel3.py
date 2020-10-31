@@ -308,7 +308,7 @@ from argparse import ArgumentParser
 
 
 def find_same_scenario(index, datasplit=validset):
-    ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt,     [scenario_id], real_ids, partner_real_ids, agents, chat_ids, sel_idxs,     lens, rev_idxs, hid_idxs, num_markables,     is_self, partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables,    ref_disagreements, partner_ref_disagreements, partner_ref_tgts, is_selections = datasplit[index]
+    ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, [scenario_id], *_ = datasplit[index]
     
     for ix, instance in enumerate(datasplit):
         if instance.scenario_ids[0] == scenario_id and ix != index:

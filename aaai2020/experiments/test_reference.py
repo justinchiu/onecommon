@@ -352,6 +352,8 @@ def main():
                     partner_dots_mentioned_our_view = partner_dots_mentioned_our_view_gold
                     partner_dots_mentioned_our_view_per_ref = partner_dots_mentioned_our_view_per_ref_gold
 
+                    raise NotImplementedError("is_confirmation")
+
                     belief_constructor = BeliefConstructor(
                         model.args, None,
                         bsz, num_dots, inpts, ref_tgts, partner_ref_tgts_our_view,
@@ -371,6 +373,7 @@ def main():
                     ]
                     dots_mentioned = [torch.zeros((bsz, 7)).bool().to(device) for _ in num_markables]
                     belief_constructor = BlankBeliefConstructor()
+                    is_confirmation = None
 
                 state, outs, ref_outs, sel_outs, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, is_selection_outs, \
                 (reader_lang_hs, writer_lang_hs), l1_scores, next_mention_rollouts = model.forward(
@@ -380,6 +383,7 @@ def main():
                     partner_ref_inpts=partner_ref_inpts,
                     ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
                     is_selection=is_selection,
+                    can_confirm=is_confirmation,
                     num_next_mention_candidates_to_score=args.next_mention_reranking_k if args.next_mention_reranking else None,
                     force_next_mention_num_markables=args.force_next_mention_num_markables,
                     return_all_selection_outs=True
@@ -398,6 +402,7 @@ def main():
                     partner_ref_inpt=partner_ref_inpts[0],
                     ref_tgts=ref_tgts[0], partner_ref_tgts=partner_ref_tgts_our_view[0],
                     is_selection=is_selection,
+                    can_confirm=is_confirmation,
                 )
                 outs, ref_outs = [out], [ref_out]
             else:

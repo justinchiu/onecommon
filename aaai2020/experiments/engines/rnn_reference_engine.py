@@ -16,6 +16,12 @@ from engines import EngineBase
 from models.reference_predictor import ReferencePredictor
 from models.utils import bit_to_int_array
 
+CAN_CONFIRM_VALUES = {
+    False: 0,
+    True: 1,
+    None: 2,
+}
+
 ForwardRet = namedtuple(
     "ForwardRet",
     ['lang_loss', 'unnormalized_lang_loss',
@@ -34,6 +40,28 @@ ForwardRet = namedtuple(
      'l1_loss',
      ],
 )
+
+def make_can_confirm_single(sentence_ix, is_self, previous_partner_num_markables, previous_partner_ref_tgts_our_view):
+    if sentence_ix == 0:
+        has_previous_mention = torch.zeros_like(is_self)
+        previous_resolves = torch.zeros_like(is_self)
+    else:
+        has_previous_mention = is_self & (previous_partner_num_markables > 0)
+        if previous_partner_ref_tgts_our_view is None:
+            previous_resolves = torch.zeros_like(has_previous_mention)
+        else:
+            previous_resolves = previous_partner_ref_tgts_our_view.bool().any(-1).any(-1)
+    # values match boolean semantics
+    assert (CAN_CONFIRM_VALUES[False] == 0) and (CAN_CONFIRM_VALUES[True] == 1)
+    this_can_confirm = torch.where(has_previous_mention, previous_resolves.long(), torch.tensor(CAN_CONFIRM_VALUES[None]).long())
+    return this_can_confirm
+
+def make_can_confirm(is_self, partner_num_markables, partner_ref_tgts_our_view):
+    can_confirm = []
+    for i, this_is_self in enumerate(is_self):
+        this_can_confirm = make_can_confirm_single(i, this_is_self, partner_num_markables[i-1], partner_ref_tgts_our_view[i-1])
+        can_confirm.append(this_can_confirm)
+    return can_confirm
 
 def add_loss_args(parser):
     group = parser.add_argument_group('loss')
@@ -238,6 +266,7 @@ class RnnReferenceEngine(EngineBase):
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
                 belief_constructor=None, partner_ref_inpt=partner_ref_inpt,
                 is_selection=is_selection,
+                can_confirm=None
             )
 
         tgt = Variable(tgt)
@@ -628,6 +657,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         compute_l1_loss = self.args.l1_loss_weight > 0
 
+        can_confirm = make_can_confirm(is_self, partner_num_markables, partner_ref_tgts_our_view)
+
         state, outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs,\
         is_selection_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs, next_mention_candidates = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
@@ -641,6 +672,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
             force_next_mention_num_markables=True,
             is_selection=is_selection,
+            can_confirm=can_confirm,
         )
 
         sel_tgt = Variable(sel_tgt)
