@@ -9,6 +9,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 import torch.nn.functional as F
 import utils
+from corpora.reference import PRONOUNS
 from dialog import DialogLogger
 import domain
 from engines import Criterion
@@ -17,12 +18,12 @@ from collections import Counter
 
 from nltk.parse import CoreNLPParser, CoreNLPDependencyParser
 
-from engines.rnn_reference_engine import make_can_confirm_single
 from models import RnnReferenceModel, HierarchicalRnnReferenceModel
 from models.markable_detector import BiLSTM_CRF
 import models.reference_predictor
 from models.reference_predictor import RerankingMentionPredictor, ReferencePredictor
 from models.rnn_reference_model import State, NextMentionLatents
+from engines.rnn_reference_engine import make_can_confirm_single
 from models.ctx_encoder import pairwise_differences
 
 
@@ -78,8 +79,6 @@ class RnnAgent(Agent):
         super(RnnAgent, self).__init__()
         self.model: HierarchicalRnnReferenceModel = model
         self.reference_predictor = ReferencePredictor(model.args)
-        if model.args.dots_mentioned_no_pronouns:
-            raise NotImplementedError()
         self.markable_detector: BiLSTM_CRF = markable_detector
         self.args = args
         self.name = name
@@ -244,7 +243,7 @@ class RnnAgent(Agent):
             ref_tgt, partner_ref_tgt,
         )
 
-    def detect_markables(self, utterance_words):
+    def detect_markables(self, utterance_words, remove_pronouns=False):
         """-> markables: List, ref_boundaries: List"""
         if utterance_words[0] == THEM_TOKEN:
             utterance_words = [YOU_TOKEN] + utterance_words[1:]
@@ -255,6 +254,9 @@ class RnnAgent(Agent):
         markables = []
         ref_boundaries = []
         for markable, ref_boundary in self.markable_detector.detect_markables(utterance_words):
+            if remove_pronouns:
+                if PRONOUNS & set(markable['text'].split()):
+                    continue
             markables.append(markable)
             ref_boundaries.append(ref_boundary)
         return markables, ref_boundaries
@@ -306,7 +308,9 @@ class RnnAgent(Agent):
         if detect_markables:
             assert not self.model.args.dot_recurrence_oracle
             assert self.markable_detector is not None
-            partner_markables, ref_boundaries = self.detect_markables(self._decode(inpt, self.model.word_dict))
+            partner_markables, ref_boundaries = self.detect_markables(
+                self._decode(inpt, self.model.word_dict), remove_pronouns=False
+            )
             partner_ref_inpt, partner_num_markables = self.markables_to_tensor(ref_boundaries)
             partner_ref_tgt = torch.zeros((1, partner_num_markables.item(), 7)).long()
 
@@ -353,7 +357,9 @@ class RnnAgent(Agent):
         indices_kept = []
         for ix, utterance in enumerate(extra['words']):
             # TODO: batch this
-            markables, ref_boundaries = self.detect_markables(utterance)
+            markables, ref_boundaries = self.detect_markables(
+                utterance, remove_pronouns=vars(self.model.args).get('dots_mentioned_no_pronouns', False)
+            )
             ref_inpt, num_markables = self.markables_to_tensor(ref_boundaries)
             if num_markables.item() != target_num_markables:
                 continue
@@ -439,7 +445,7 @@ class RnnAgent(Agent):
             can_confirm = make_can_confirm_single(
                 len(self.sents),
                 is_self,
-                torch.LongTensor([len(self.partner_markables[-1])]),
+                torch.LongTensor([len(self.partner_markables[-1])]).to(is_self.device),
                 partner_ref_tgts
             )
         return can_confirm
@@ -524,7 +530,7 @@ class RnnAgent(Agent):
         if detect_markables:
             assert not self.model.args.dot_recurrence_oracle
             assert self.markable_detector is not None
-            markables, ref_boundaries = self.detect_markables(self._decode(outs, self.model.word_dict))
+            markables, ref_boundaries = self.detect_markables(self._decode(outs, self.model.word_dict), remove_pronouns=False)
             ref_inpt, num_markables = self.markables_to_tensor(ref_boundaries)
             ref_tgt = torch.zeros((1, num_markables.item(), 7)).long().to(self.device)
 

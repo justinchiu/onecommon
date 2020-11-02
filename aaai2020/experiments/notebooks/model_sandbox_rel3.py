@@ -182,23 +182,24 @@ SVG_SCALE=0.4
 # In[26]:
 
 
-def display_attn(scenario, attn, agent_id, name=None):
+def display_attn(scenario, attn, agent_id, name=None, boolean=False):
     attn = attn.flatten().detach().numpy()
     if name is not None:
         print("{}: {}".format(name, attn))
-    display_svgs([DialogLogger._scenario_to_svg(scenario, scale=SVG_SCALE)[agent_id], DialogLogger._attention_to_svg(scenario, agent_id, attn, scale=SVG_SCALE)])
+    display_svgs([DialogLogger._scenario_to_svg(scenario, scale=SVG_SCALE)[agent_id],
+                  DialogLogger._attention_to_svg(scenario, agent_id, attn, scale=SVG_SCALE, boolean=boolean)])
 
 
 # In[27]:
 
 
-def display_attns(scenario, attns, agent_id, name=None):
+def display_attns(scenario, attns, agent_id, name=None, boolean=False):
     svgs = [DialogLogger._scenario_to_svg(scenario, scale=SVG_SCALE)[agent_id]]
 #     if name is not None:
 #         print("{}: {}".format(name, attn))
     for attn in attns:
         attn = attn.flatten().detach().numpy()
-        svgs.append(DialogLogger._attention_to_svg(scenario, agent_id, attn, scale=SVG_SCALE))
+        svgs.append(DialogLogger._attention_to_svg(scenario, agent_id, attn, scale=SVG_SCALE, boolean=boolean))
     if name is not None:
         print(name)
     display_svgs(svgs)

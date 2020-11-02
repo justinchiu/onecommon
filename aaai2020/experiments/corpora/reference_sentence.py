@@ -9,8 +9,6 @@ import tqdm
 
 from corpora.reference import ReferenceCorpus, ReferenceRaw, process_referents
 
-PRONOUNS = {'it', 'this', 'that', 'those', 'them', 'they'}
-
 ReferenceSentenceInstance = namedtuple(
     "ReferenceSentenceInstance",
     "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids \

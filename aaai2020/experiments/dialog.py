@@ -52,14 +52,19 @@ class DialogLogger(object):
         return svg_list
 
     @staticmethod
-    def _attention_to_svg(scenario, agent, attention=None, scale=1.0):
+    def _attention_to_svg(scenario, agent, attention=None, scale=1.0, boolean=False):
         svg = '''<svg viewBox='0 0 {0} {0}' id="svg" width="{1}" height="{1}"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/> '''.format(
             430, int(430*scale)
         )
         for obj, attention_weight in zip(scenario['kbs'][agent], attention):
-            svg += "<circle cx=\"{0}\" cy=\"{1}\" r=\"{2}\" fill=\"rgb(255,{3},{3})\" class=\"agent_{4}_{5}\"/>".format(
-                obj['x'], obj['y'], obj['size'], int((1 - attention_weight) * 255),
-                agent, obj['id'],
+            if boolean:
+                # red if non-zero attention
+                color = "rgb(255,0,0)" if attention_weight != 0 else obj['color']
+            else:
+                intensity = int((1 - attention_weight) * 255)
+                color = "rgb(255,{},{})".format(intensity, intensity)
+            svg += "<circle cx=\"{0}\" cy=\"{1}\" r=\"{2}\" fill=\"{3}\" class=\"agent_{4}_{5}\"/>".format(
+                obj['x'], obj['y'], obj['size'], color, agent, obj['id'],
             )
         svg += '''</svg>'''
         return svg
@@ -433,7 +438,7 @@ class HierarchicalDialog(Dialog):
                 start_token='YOU:',
                 dots_mentioned=dots_mentioned,
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
-                num_markables=this_num_markables,
+                dots_mentioned_num_markables=this_num_markables,
                 is_selection=this_is_selection,
                 inference=self.args.language_inference,
                 beam_size=self.args.language_beam_size,
@@ -444,7 +449,7 @@ class HierarchicalDialog(Dialog):
             reader.read(out_words,
                         dots_mentioned=None,
                         dots_mentioned_per_ref=None,
-                        num_markables=this_partner_num_markables,
+                        dots_mentioned_num_markables=this_partner_num_markables,
                         next_num_markables_to_force=None,
                         detect_markables=True,
                         min_num_mentions=min_num_mentions,
