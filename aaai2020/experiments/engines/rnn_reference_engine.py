@@ -25,6 +25,7 @@ CAN_CONFIRM_VALUES = {
 ForwardRet = namedtuple(
     "ForwardRet",
     ['lang_loss', 'unnormalized_lang_loss',
+     'spatial_lang_loss', 'unnormalized_spatial_lang_loss', 'num_spatial_words',
      'word_attn_loss', 'feed_attn_loss',
      'num_words',
      'ref_loss', 'ref_stats',
@@ -67,6 +68,8 @@ def add_loss_args(parser):
     group = parser.add_argument_group('loss')
     group.add_argument('--lang_weight', type=float, default=1.0,
                        help='language loss weight')
+    group.add_argument('--spatial_lang_weight', type=float, default=0.0,
+                       help='spatial language loss weight')
     group.add_argument('--ref_weight', type=float, default=1.0,
                        help='reference loss weight')
     group.add_argument('--partner_ref_weight', type=float, default=1.0,
@@ -106,6 +109,8 @@ def add_loss_args(parser):
     group.add_argument('--anneal_dot_recurrence_min_temperature', type=float, default=1e-2)
 
     group.add_argument('--dots_mentioned_no_pronouns', action='store_true')
+
+    group.add_argument('--augmented_lang_only', action='store_true')
 
 def unwrap(loss):
     if loss is not None:
@@ -236,7 +241,7 @@ class RnnReferenceEngine(EngineBase):
         }
         return ref_loss, ref_pred, stats
 
-    def _forward(self, batch, epoch):
+    def _forward(self, batch, epoch, corpus):
         assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.feed_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.mark_dots_mentioned, 'this only makes sense for a hierarchical model, and --lang_only_self'
@@ -314,8 +319,8 @@ class RnnReferenceEngine(EngineBase):
             next_mention_stats={},
         )
 
-    def train_batch(self, batch, epoch):
-        forward_ret = self._forward(batch, epoch)
+    def train_batch(self, batch, epoch, corpus):
+        forward_ret = self._forward(batch, epoch, corpus)
 
         # default
         # TODO: sel_loss scaling varies based on whether lang_weight is positive
@@ -336,6 +341,8 @@ class RnnReferenceEngine(EngineBase):
         loss = 0.0
         if self.args.lang_weight > 0:
             loss += self.args.lang_weight * forward_ret.lang_loss
+        if self.args.spatial_lang_weight > 0:
+            loss += self.args.spatial_lang_weight * forward_ret.spatial_lang_loss
         if self.args.sel_weight > 0:
             if not self.args.selection_start_epoch or (epoch >= self.args.selection_start_epoch):
                 loss += self.args.sel_weight * forward_ret.sel_loss
@@ -370,15 +377,15 @@ class RnnReferenceEngine(EngineBase):
 
         return forward_ret
 
-    def valid_batch(self, batch, epoch):
+    def valid_batch(self, batch, epoch, corpus):
         with torch.no_grad():
-            return self._forward(batch, epoch)
+            return self._forward(batch, epoch, corpus)
 
-    def test_batch(self, batch, epoch):
+    def test_batch(self, batch, epoch, corpus):
         with torch.no_grad():
-            return self._forward(batch, epoch)
+            return self._forward(batch, epoch, corpus)
 
-    def _pass(self, dataset, batch_fn, split_name, use_tqdm, epoch):
+    def _pass(self, dataset, batch_fn, split_name, use_tqdm, epoch, corpus):
         start_time = time.time()
 
         metrics = {}
@@ -386,7 +393,7 @@ class RnnReferenceEngine(EngineBase):
         for batch in tqdm.tqdm(dataset, ncols=80) if use_tqdm else dataset:
             # for batch in trainset:
             # lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
-            forward_ret = batch_fn(batch, epoch)
+            forward_ret = batch_fn(batch, epoch, corpus)
             batch_metrics = flatten_metrics(forward_ret._asdict())
             metrics = utils.sum_dicts(metrics, batch_metrics)
 
@@ -399,6 +406,7 @@ class RnnReferenceEngine(EngineBase):
 
         aggregate_metrics = {
             'lang_loss': metrics['lang_loss'] / len(dataset),
+            'spatial_lang_loss': metrics['spatial_lang_loss'] / len(dataset),
             'ref_loss': metrics['ref_loss'] / len(dataset),
             'partner_ref_loss': metrics['partner_ref_loss'] / len(dataset),
             'next_mention_loss': metrics['next_mention_loss'] / len(dataset),
@@ -409,6 +417,7 @@ class RnnReferenceEngine(EngineBase):
             'select_accuracy': metrics['sel_correct'] / metrics['sel_num_dots'],
             'time': time_elapsed,
             'correct_ppl': np.exp(metrics['unnormalized_lang_loss'] / metrics['num_words']),
+            'spatial_lang_ppl': np.exp(metrics['unnormalized_spatial_lang_loss'] / metrics['num_spatial_words']),
             'l1_loss': metrics['l1_loss'] / len(dataset),
         }
         add_metrics(metrics, aggregate_metrics, "ref")
@@ -420,21 +429,21 @@ class RnnReferenceEngine(EngineBase):
         # pprint.pprint(metrics)
         return aggregate_metrics
 
-    def train_pass(self, trainset, trainset_stats, epoch):
+    def train_pass(self, trainset, trainset_stats, epoch, corpus):
         '''
         basic implementation of one training pass
         '''
         self.model.train()
-        return self._pass(trainset, self.train_batch, "train", use_tqdm=True, epoch=epoch)
+        return self._pass(trainset, self.train_batch, "train", use_tqdm=True, epoch=epoch, corpus=corpus)
 
-    def valid_pass(self, validset, validset_stats, epoch):
+    def valid_pass(self, validset, validset_stats, epoch, corpus):
         '''
         basic implementation of one validation pass
         '''
         self.model.eval()
-        return self._pass(validset, self.valid_batch, "val", use_tqdm=False, epoch=epoch)
+        return self._pass(validset, self.valid_batch, "val", use_tqdm=False, epoch=epoch, corpus=corpus)
 
-    def iter(self, epoch, lr, traindata, validdata):
+    def iter(self, epoch, lr, traindata, validdata, corpus):
         trainset, trainset_stats = traindata
         validset, validset_stats = validdata
 
@@ -443,8 +452,8 @@ class RnnReferenceEngine(EngineBase):
             temperatures = torch.linspace(1.0, self.args.anneal_dot_recurrence_min_temperature, self.args.max_epoch)
             self.model.dot_recurrence_weight_temperature = temperatures[epoch-1]
 
-        train_metrics = self.train_pass(trainset, trainset_stats, epoch)
-        valid_metrics = self.valid_pass(validset, validset_stats, epoch)
+        train_metrics = self.train_pass(trainset, trainset_stats, epoch, corpus)
+        valid_metrics = self.valid_pass(validset, validset_stats, epoch, corpus)
 
         if self.verbose:
             print('epoch %03d \t s/epoch %.2f \t lr %.2E' % (epoch, train_metrics['time'], lr))
@@ -454,6 +463,7 @@ class RnnReferenceEngine(EngineBase):
                 metrics['ppl(avg exp lang_loss)'] = np.exp(metrics['lang_loss'])
                 metrics['lang_loss_unweighted'] = metrics['lang_loss']
                 metrics['lang_loss'] *= self.args.lang_weight
+                metrics['spatial_lang_loss'] *= self.args.spatial_lang_weight
                 metrics['select_loss'] *= self.args.sel_weight
                 metrics['ref_loss'] *= self.args.ref_weight
                 metrics['partner_ref_loss'] *= self.args.partner_ref_weight
@@ -464,6 +474,7 @@ class RnnReferenceEngine(EngineBase):
 
                 quantities = [
                     ['lang_loss', 'ppl(avg exp lang_loss)', 'correct_ppl'],
+                    ['spatial_lang_ppl'],
                     ['select_loss', 'select_accuracy'],
                     ['ref_loss', 'ref_accuracy', 'ref_precision', 'ref_recall', 'ref_f1', 'ref_exact_match'],
                     ['partner_ref_loss', 'partner_ref_accuracy', 'partner_ref_precision', 'partner_ref_recall',
@@ -517,6 +528,7 @@ class RnnReferenceEngine(EngineBase):
         #        + metrics['partner_ref_loss'] * int(self.args.partner_ref_weight > 0)
 
         return metrics['lang_loss'] * self.args.lang_weight \
+               + metrics['spatial_lang_loss'] * self.args.spatial_lang_weight \
                + metrics['select_loss'] * self.args.sel_weight \
                + metrics['ref_loss'] * self.args.ref_weight \
                + metrics['partner_ref_loss'] * self.args.partner_ref_weight \
@@ -534,7 +546,7 @@ class RnnReferenceEngine(EngineBase):
             print("train set stats:")
             pprint.pprint(traindata[1])
 
-            metrics = self.iter(epoch, self.opt.param_groups[0]["lr"], traindata, validdata)
+            metrics = self.iter(epoch, self.opt.param_groups[0]["lr"], traindata, validdata, corpus)
 
             # valid_lang_loss, valid_select_loss, valid_reference_loss, valid_select_acc = self.iter(
             # )
@@ -596,7 +608,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _ref_loss(self, *args, **kwargs):
         return self.ref_loss.forward(*args, **kwargs)
 
-    def _forward(self, batch, epoch):
+    def _forward(self, batch, epoch, corpus):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
         ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _,\
@@ -610,6 +622,11 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         assert num_dots == 7
 
         assert is_selection[0].size(0) == bsz
+
+        if self.args.augmented_lang_only:
+            non_lang_instance_mask = is_augmented
+        else:
+            non_lang_instance_mask = torch.ones_like(is_augmented)
 
         inpts = [Variable(inpt) for inpt in inpts]
         ref_inpts = [Variable(ref_inpt) if ref_inpt is not None else None
@@ -677,6 +694,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         sel_tgt = Variable(sel_tgt)
         lang_losses = []
+        spatial_lang_losses = []
+        spatial_lang_num_words = []
         l1_losses = []
         assert len(inpts) == len(tgts) == len(outs) == len(lens)
         for i, (out, tgt) in enumerate(zip(outs, tgts)):
@@ -686,6 +705,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 assert self.args.lang_only_self
             if compute_l1_loss:
                 assert self.args.lang_only_self
+
+            spatial_mask = torch.BoolTensor([[ix.item() in corpus.spatial_replacements.keys() for ix in row]
+                            for row in tgt.view(-1, bsz)]).to(loss.device)
+            spatial_lang_loss = (loss * spatial_mask).sum()
+            spatial_lang_losses.append(spatial_lang_loss)
+            spatial_lang_num_words.append(spatial_mask.sum())
             if self.args.lang_only_self:
                 # loss = loss * (this_is_self.unsqueeze(0).expand_as(loss))
                 mask = is_self[i]
@@ -712,6 +737,10 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         unnormed_lang_loss = sum(lang_losses)
         lang_loss = unnormed_lang_loss / total_lens
+
+        unnormed_spatial_lang_loss = sum(spatial_lang_losses)
+        num_spatial_words = sum(spatial_lang_num_words)
+        spatial_lang_loss = unnormed_spatial_lang_loss / num_spatial_words if num_spatial_words > 0 else torch.tensor(0.0)
 
         if l1_losses:
             l1_loss = torch.mean(torch.stack(l1_losses, -1), -1)
@@ -752,17 +781,17 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 continue
             assert max(this_num_markables) == ref_tgt.size(1)
 
-            if (~is_augmented).any():
+            if (~non_lang_instance_mask).any():
                 _ref_loss, _ref_pred, _ref_stats = self._ref_loss(
                     ref_inpt, ref_tgt, ref_out, this_num_markables,
-                    mask=~is_augmented
+                    mask=~non_lang_instance_mask
                 )
                 ref_losses.append(_ref_loss)
                 ref_stats = utils.sum_dicts(ref_stats, _ref_stats)
 
                 _partner_ref_loss, _partner_ref_pred, _partner_ref_stats = self._ref_loss(
                     partner_ref_inpt, partner_ref_tgt, partner_ref_out, this_partner_num_markables,
-                    mask=~is_augmented
+                    mask=~non_lang_instance_mask
                 )
                 partner_ref_stats = utils.sum_dicts(partner_ref_stats, _partner_ref_stats)
                 if _partner_ref_loss is not None:
@@ -875,8 +904,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         # sel_out[1] should be None because we're not using a structured attention layer
         sel_logits, _, _ = sel_out
 
-        if (~is_augmented).any():
-            sel_loss = self.sel_crit(sel_logits[~is_augmented], sel_tgt[~is_augmented])
+        if (~non_lang_instance_mask).any():
+            sel_loss = self.sel_crit(sel_logits[~non_lang_instance_mask], sel_tgt[~non_lang_instance_mask])
             sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()
             sel_total = sel_logits.size(0)
         else:
@@ -909,8 +938,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 if self.args.next_mention_prediction_type == 'multi_reference':
                     gold_num_mentions = dots_mentioned_num_markables[i].long()
                     gold_dots_mentioned = dots_mentioned_per_ref[i].long()
-                    if (~is_augmented).any():
-                        next_mention_stop_losses.append(next_mention_stop_loss[~is_augmented].sum())
+                    if (~non_lang_instance_mask).any():
+                        next_mention_stop_losses.append(next_mention_stop_loss[~non_lang_instance_mask].sum())
                 elif self.args.next_mention_prediction_type == 'collapsed':
                     # supervise only for self, so pseudo_num_mentions = 1 iff is_self; 0 otherwise
                     gold_num_mentions = is_self[i].long()
@@ -921,12 +950,12 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 if pred_dots_mentioned is not None:
                     # TODO: fix this, it should check if gold dots is not empty
                     # hack; pass True for inpt because this method only uses it to ensure it's not null
-                    if (~is_augmented).any():
+                    if (~non_lang_instance_mask).any():
                         _loss, _pred, _stats = self._ref_loss(
                             True, gold_dots_mentioned, pred_dots_mentioned, gold_num_mentions,
                             # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
                             collapse=expanded_next_mention_loss,
-                            mask=~is_augmented
+                            mask=~non_lang_instance_mask
                         )
                         next_mention_stats = utils.sum_dicts(next_mention_stats, _stats)
                         # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
@@ -936,9 +965,9 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         is_selection_losses = []
         is_selection_stats = defaultdict(lambda: 0.0)
 
-        if self.args.is_selection_prediction and (~is_augmented).any():
+        if self.args.is_selection_prediction and (~non_lang_instance_mask).any():
             for is_sel, is_sel_out in utils.safe_zip(is_selection,is_selection_outs):
-                is_sel_loss = self.is_sel_crit(is_sel_out[~is_augmented], is_sel[~is_augmented].float())
+                is_sel_loss = self.is_sel_crit(is_sel_out[~non_lang_instance_mask], is_sel[~non_lang_instance_mask].float())
                 is_selection_losses.append(is_sel_loss)
 
                 add_selection_stats(is_sel, is_sel_out, is_selection_stats)
@@ -966,8 +995,11 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         return ForwardRet(
             lang_loss=lang_loss,
+            spatial_lang_loss=spatial_lang_loss,
             unnormalized_lang_loss=unnormed_lang_loss.item(),
             num_words=total_lens_no_eos,
+            unnormalized_spatial_lang_loss=unnormed_spatial_lang_loss.item(),
+            num_spatial_words=num_spatial_words,
             ref_loss=ref_loss,
             sel_loss=sel_loss,
             word_attn_loss=word_attn_loss,

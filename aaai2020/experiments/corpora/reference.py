@@ -159,7 +159,7 @@ class ReferenceCorpus(object):
                 non_pronoun_referent_idxs, False
             )]
             if spatial_data_augmentation:
-                aug_input_vals = torch.tensor(input_vals).clone().view(4,7)
+                aug_input_vals = torch.tensor(input_vals).clone().view(7,4)
                 aug_input_vals[:,:2] *= -1
                 aug_input_vals = aug_input_vals.flatten().tolist()
                 aug_word_idxs = [self.spatial_replacements.get(ix, ix) for ix in word_idxs]
