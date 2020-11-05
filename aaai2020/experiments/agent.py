@@ -306,7 +306,7 @@ class RnnAgent(Agent):
         self.writer_lang_hs.append(writer_lang_hs)
 
         if detect_markables:
-            assert not self.model.args.dot_recurrence_oracle
+            assert (not self.model.args.dot_recurrence_oracle) or ('partner' not in self.model.args.dot_recurrence_oracle_for)
             assert self.markable_detector is not None
             partner_markables, ref_boundaries = self.detect_markables(
                 self._decode(inpt, self.model.word_dict), remove_pronouns=False
@@ -528,11 +528,14 @@ class RnnAgent(Agent):
         self.writer_lang_hs.append(writer_lang_hs)
 
         if detect_markables:
-            assert not self.model.args.dot_recurrence_oracle
             assert self.markable_detector is not None
             markables, ref_boundaries = self.detect_markables(self._decode(outs, self.model.word_dict), remove_pronouns=False)
             ref_inpt, num_markables = self.markables_to_tensor(ref_boundaries)
-            ref_tgt = torch.zeros((1, num_markables.item(), 7)).long().to(self.device)
+            if self.model.args.dot_recurrence_oracle and dots_mentioned_per_ref.size(1) == num_markables.item():
+                assert self.model.args.dot_recurrence_oracle_for == ['self']
+                ref_tgt = dots_mentioned_per_ref
+            else:
+                ref_tgt = torch.zeros((1, num_markables.item(), 7)).long().to(self.device)
 
             self.ref_inpts.append(ref_inpt)
             self.markables.append(markables)
