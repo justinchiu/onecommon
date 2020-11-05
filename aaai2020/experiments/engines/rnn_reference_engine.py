@@ -626,7 +626,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         if self.args.augmented_lang_only:
             non_lang_instance_mask = is_augmented
         else:
-            non_lang_instance_mask = torch.ones_like(is_augmented)
+            non_lang_instance_mask = torch.zeros_like(is_augmented)
 
         inpts = [Variable(inpt) for inpt in inpts]
         ref_inpts = [Variable(ref_inpt) if ref_inpt is not None else None
@@ -990,8 +990,11 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             next_mention_stop_loss = None
         else:
             loss_normalizer_name = 'expanded_exact_match_denom' if expanded_next_mention_loss else 'exact_match_denom'
-            assert next_mention_stats[loss_normalizer_name] != 0
-            next_mention_stop_loss = sum(next_mention_stop_losses) / next_mention_stats[loss_normalizer_name]
+            loss_normalizer = next_mention_stats[loss_normalizer_name]
+            if loss_normalizer == 0:
+                next_mention_stop_loss = None
+            else:
+                next_mention_stop_loss = sum(next_mention_stop_losses) / next_mention_stats[loss_normalizer_name]
 
         return ForwardRet(
             lang_loss=lang_loss,

@@ -125,19 +125,6 @@ class RnnReferenceModel(nn.Module):
                             choices=['activation-final', '1-hidden-layer', '2-hidden-layer'],
                             default='activation-final')
 
-        parser.add_argument('--structured_attention', action='store_true')
-        parser.add_argument('--structured_temporal_attention', action='store_true')
-        parser.add_argument('--structured_temporal_attention_transitions',
-                            choices=['none', 'dot_id', 'relational', 'relational_asymm'],
-                            default='dot_id')
-        parser.add_argument('--structured_temporal_attention_transitions_language',
-                            choices=['subtract_mentions', 'between_mentions'],
-                            default='subtract_mentions')
-        parser.add_argument('--structured_temporal_attention_training',
-                            choices=['likelihood', 'max_margin'],
-                            default='likelihood')
-        parser.add_argument('--structured_attention_asymmetric_pairs', action='store_true')
-
         parser.add_argument('--selection_attention', action='store_true')
         parser.add_argument('--feed_context', action='store_true')
         parser.add_argument('--feed_context_attend', action='store_true')
@@ -249,6 +236,7 @@ class RnnReferenceModel(nn.Module):
 
         AttentionLayer.add_args(parser)
         StructuredAttentionLayer.add_args(parser)
+        StructuredTemporalAttentionLayer.add_args(parser)
 
         BeliefConstructor.add_belief_args(parser)
 
@@ -707,15 +695,15 @@ class RnnReferenceModel(nn.Module):
     def _attention_name(self, name):
         return '{}_attn'.format(name)
 
-    def _apply_attention(self, name, lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input=None):
+    def _apply_attention(self, name, lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input=None, ctx=None):
         if self.args.share_attn:
-            return self.attn(lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input)
+            return self.attn(lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input, ctx)
         elif self.args.separate_attn:
             attn_module = getattr(self, self._attention_name(name))
-            return attn_module(lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input)
+            return attn_module(lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input, ctx)
         else:
             attn_module = getattr(self, self._attention_name(name))
-            return attn_module(lang_input, self.attn_prefix(input), ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input)
+            return attn_module(lang_input, self.attn_prefix(input), ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input, ctx)
 
     def _zero(self, *sizes):
         h = torch.Tensor(*sizes).fill_(0)
@@ -824,7 +812,8 @@ class RnnReferenceModel(nn.Module):
             attention_params_name = 'ref'
         outs = self._apply_attention(
             attention_params_name, emb_gathered, torch.cat([emb_gathered_expand, ctx_h], -1), ctx_differences, num_markables,
-            joint_factor_input=state.dot_h_maybe_multi_structured, lang_between_mentions_input=emb_between
+            joint_factor_input=state.dot_h_maybe_multi_structured, lang_between_mentions_input=emb_between,
+            ctx=state.ctx,
         )
         return outs
 
@@ -944,6 +933,7 @@ class RnnReferenceModel(nn.Module):
                 latents.latent_states,
                 torch.cat([states_expand, latents.ctx_h_with_beliefs], -1), ctx_differences, latents.dots_mentioned_num_markables,
                 joint_factor_input=state.dot_h_maybe_multi_structured,
+                ctx=state.ctx,
             )
         else:
             scores = None
@@ -996,11 +986,12 @@ class RnnReferenceModel(nn.Module):
         return self._apply_attention(
             'sel', sel_inpt, torch.cat(to_cat, 2), ctx_differences, num_markables=None,
             joint_factor_input=state.dot_h_maybe_multi_structured,
+            ctx=state.ctx,
         )
 
     def _language_conditioned_dot_attention(self, ctx_differences, ctx_h, lang_hs, attention_type,
                                             dots_mentioned, dots_mentioned_per_ref, generation_beliefs,
-                                            structured_generation_beliefs=None):
+                                            structured_generation_beliefs=None, ctx=None):
         # lang_hs: seq_len x batch_size x hidden
         # ctx_h: batch_size x num_dots x nembed_ctx
         # dots_mentioned: batch_size x num_dots, binary tensor of which dots to allow attention on. if all zero, output zeros
@@ -1060,6 +1051,7 @@ class RnnReferenceModel(nn.Module):
             ctx_differences,
             num_markables=None,
             joint_factor_input=structured_generation_beliefs,
+            ctx=ctx,
         )
 
         if constrain_attention:
@@ -1402,6 +1394,7 @@ class RnnReferenceModel(nn.Module):
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
                 generation_beliefs=generation_beliefs,
                 structured_generation_beliefs=state.dot_h_maybe_multi_structured,
+                ctx=state.ctx,
             )
             ctx_h_to_expand = state.ctx_h
             if vars(self.args).get('marks_in_word_prediction', False):
@@ -1618,7 +1611,7 @@ class RnnReferenceModel(nn.Module):
         return outs, (ref_out, partner_ref_out), sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_out, is_selection_out, reader_and_writer_lang_h, ctx_h, ctx_differences
 
     def _context_for_feeding(self, ctx_differences, ctx_h, lang_hs, dots_mentioned, dots_mentioned_per_ref,
-                             generation_beliefs, structured_generation_beliefs):
+                             generation_beliefs, structured_generation_beliefs, ctx):
         if self.args.feed_context_attend:
             # bsz x num_dots
             feed_ctx_attn_prob = self._language_conditioned_dot_attention(
@@ -1628,6 +1621,7 @@ class RnnReferenceModel(nn.Module):
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
                 generation_beliefs=generation_beliefs,
                 structured_generation_beliefs=structured_generation_beliefs,
+                ctx=ctx,
             ).squeeze(0).squeeze(-1)
             # bsz x num_dots x nembed_ctx
             ctx_emb = self.feed_ctx_layer(ctx_h)
@@ -1757,6 +1751,7 @@ class RnnReferenceModel(nn.Module):
                 dots_mentioned_per_ref=dots_mentioned_per_ref,
                 generation_beliefs=generation_beliefs,
                 structured_generation_beliefs=structured_generation_beliefs,
+                ctx=state.ctx,
             ).squeeze(0).squeeze(-1)
             # bsz x num_dots x nembed_ctx
             ctx_emb = self.hidden_ctx_layer(ctx_h)
@@ -1850,6 +1845,7 @@ class RnnReferenceModel(nn.Module):
                 ctx_differences, ctx_h, writer_lang_h,
                 dots_mentioned=dots_mentioned, dots_mentioned_per_ref=dots_mentioned_per_ref,
                 generation_beliefs=generation_beliefs, structured_generation_beliefs=state.dot_h_maybe_multi_structured,
+                ctx=state.ctx,
             )
             dialog_emb = torch.cat((dialog_emb, ctx_emb.expand(seq_len, -1, -1)), dim=-1)
         else:
@@ -1937,7 +1933,7 @@ class RnnReferenceModel(nn.Module):
         if self.args.feed_context:
             ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(
                 ctx_differences, ctx_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-                generation_beliefs, state.dot_h_maybe_multi_structured,
+                generation_beliefs, state.dot_h_maybe_multi_structured, ctx=state.ctx,
             )
         else:
             ctx_emb, feed_ctx_attn_prob = None, None
@@ -2066,7 +2062,7 @@ class RnnReferenceModel(nn.Module):
         if self.args.feed_context:
             ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(
                 ctx_differences, ctx_h, writer_lang_h, dots_mentioned, dots_mentioned_per_ref,
-                generation_beliefs, state.dot_h_maybe_multi_structured,
+                generation_beliefs, state.dot_h_maybe_multi_structured, ctx=state.ctx
             )
         else:
             ctx_emb, feed_ctx_attn_prob = None, None
