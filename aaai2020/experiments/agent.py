@@ -187,7 +187,7 @@ class RnnAgent(Agent):
                 state, next_mention_latents
             )
             if next_mention_scores is None:
-                return None, None
+                return None, None, None
             # hack; pass True for inpt because this method only uses it to ensure it's not null
             _loss, predictions, _stats = self.next_mention_predictor.forward(
                 True, dummy_gold_mentions, next_mention_scores, nm_num_markables,

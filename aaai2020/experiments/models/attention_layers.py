@@ -11,6 +11,8 @@ from models.utils import int_to_bit_array
 
 BIG_NEG = -1e9
 
+# this fits on a 48 GB GPU (RTX 8000); will likely need to lower or optimize in other ways for a smaller gpu
+CONFIGURATION_SUBBATCH_SIZE = 6
 
 class FeedForward(nn.Module):
     def __init__(self, n_hidden_layers, input_dim, hidden_dim, output_dim, dropout_p=None):
@@ -456,11 +458,13 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
     def make_transitions(self, lang_input, batch_size, num_dots, ctx_differences, lang_between_mentions_input, ctx):
         N = lang_input.size(0)
         assert batch_size == lang_input.size(1)
-        def get_input_diffs():
+        def get_input_diffs(subbatch_mask=None):
             if vars(self.args).get('structured_temporal_attention_transitions_language', 'subtract_mentions') == 'between_mentions' and lang_between_mentions_input is not None:
                 input_diffs = torch.stack(lang_between_mentions_input, 0)
             else:
                 input_diffs = lang_input[1:] - lang_input[:-1]
+            if subbatch_mask is not None:
+                return input_diffs[:,subbatch_mask]
             return input_diffs
         if self.args.structured_temporal_attention_transitions == 'none':
             transition_params = self.transition_params.unsqueeze(0).unsqueeze(1).unsqueeze(2)
@@ -534,29 +538,34 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
 
         config_transition_feat_names = vars(self.args).get('structured_attention_configuration_transition_features', [])
         if config_transition_feat_names:
-            config_features = []
-            for feat_name in config_transition_feat_names:
-                if feat_name == 'centroid_diffs':
-                    # 1 x bsz x 2**num_ents x 4
-                    centroids = self.configuration_features(['centroids'], 1, batch_size, self.num_ent, ctx)[0]
-                    # 1 x bsz x 2**num_ents x 2**num_ents 4
-                    centroid_diffs = pyro.ops.contract.einsum(
-                        "nbxd,nbyd->nbxyd", centroids, -1 * centroids,
-                        modulo_total=True,
-                        backend='pyro.ops.einsum.torch_log'
-                    )[0]
-                    centroid_diffs = centroid_diffs.expand(N-1, batch_size, num_configs, num_configs, 4)
-                    config_features.append(centroid_diffs)
+            for subbatch_start in range(0, batch_size, CONFIGURATION_SUBBATCH_SIZE):
+                subbatch_end = min(batch_size, subbatch_start+CONFIGURATION_SUBBATCH_SIZE)
+                this_subbatch_size = subbatch_end - subbatch_start
+                subbatch_mask = torch.zeros(batch_size).bool().to(ctx.device)
+                subbatch_mask[subbatch_start:subbatch_end] = True
+                config_features = []
+                for feat_name in config_transition_feat_names:
+                    if feat_name == 'centroid_diffs':
+                        # 1 x bsz x 2**num_ents x 4
+                        centroids = self.configuration_features(['centroids'], 1, this_subbatch_size, self.num_ent, ctx[subbatch_mask])[0]
+                        # 1 x bsz x 2**num_ents x 2**num_ents 4
+                        centroid_diffs = pyro.ops.contract.einsum(
+                            "nbxd,nbyd->nbxyd", centroids, -1 * centroids,
+                            modulo_total=True,
+                            backend='pyro.ops.einsum.torch_log'
+                        )[0]
+                        centroid_diffs = centroid_diffs.expand(N-1, this_subbatch_size, num_configs, num_configs, 4)
+                        config_features.append(centroid_diffs)
+                    else:
+                        raise ValueError(f"invalid feat_name {feat_name}")
+                if vars(self.args).get('structured_attention_language_conditioned', False):
+                    input_diffs_expand = get_input_diffs(subbatch_mask).unsqueeze(2).unsqueeze(3).expand(-1, -1, num_configs, num_configs, -1)
+                    config_features.append(input_diffs_expand)
+                if len(config_features) == 1:
+                    config_features = config_features[0]
                 else:
-                    raise ValueError(f"invalid feat_name {feat_name}")
-            if vars(self.args).get('structured_attention_language_conditioned', False):
-                input_diffs_expand = get_input_diffs().unsqueeze(2).unsqueeze(3).expand(-1, -1, num_configs, num_configs, -1)
-                config_features.append(input_diffs_expand)
-            if len(config_features) == 1:
-                config_features = config_features[0]
-            else:
-                config_features = torch.cat(config_features, -1)
-            transition_potentials += self.config_transition_encoder(config_features).squeeze(-1)
+                    config_features = torch.cat(config_features, -1)
+                transition_potentials[:,subbatch_mask] += self.config_transition_encoder(config_features).squeeze(-1)
         return transition_potentials
 
     @staticmethod
