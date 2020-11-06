@@ -514,7 +514,7 @@ class RerankingMentionPredictor(ReferencePredictor):
 
         max_num_mentions = num_markables_per_candidate.max()
         if max_num_mentions == 0:
-            return 0.0, None, num_markables_per_candidate, {}
+            return 0.0, None, num_markables_per_candidate, {}, None, None
 
         bsz, num_candidates = num_markables_per_candidate.size()
 
@@ -561,6 +561,9 @@ class RerankingMentionPredictor(ReferencePredictor):
         pred = None
         num_markables = None
 
+        pred_multi_sorted = None
+        num_markables_multi_sorted = None
+
         for weight in self.weights:
             joint_scores = (1 - weight) * next_mention_rollouts.candidate_nm_scores + weight * rerank_scores
             chosen = joint_scores.argmax(-1)
@@ -570,6 +573,14 @@ class RerankingMentionPredictor(ReferencePredictor):
                 pred = this_pred
                 num_markables = this_num_markables
 
+                indices_sorted = joint_scores.argsort(-1, descending=True)
+                indices_sorted_expanded = indices_sorted.unsqueeze(0).expand(next_mention_rollouts.candidate_indices.size(0), -1, -1)
+                pred_multi_sorted = int_to_bit_array(next_mention_rollouts.candidate_indices.gather(-1, indices_sorted_expanded), num_bits=7)
+                num_markables_multi_sorted = num_markables_per_candidate.gather(-1, indices_sorted)
+
+                pred_multi_sorted = [pred_multi_sorted[:,:,ix] for ix in range(pred_multi_sorted.size(2))]
+                num_markables_multi_sorted = [num_markables_multi_sorted[:,ix] for ix in range(num_markables_multi_sorted.size(1))]
+
         stats = deepcopy(stats_by_weight[self.default_weight])
 
         for weight, stats_weight in stats_by_weight.items():
@@ -578,4 +589,4 @@ class RerankingMentionPredictor(ReferencePredictor):
 
         loss = 0.0
 
-        return loss, pred, num_markables, stats
+        return loss, pred, num_markables, stats, pred_multi_sorted, num_markables_multi_sorted

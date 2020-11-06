@@ -74,6 +74,9 @@ class RnnAgent(Agent):
                             choices=['topk', 'topk_multi_mention', 'sample'], default='topk')
         parser.add_argument('--next_mention_reranking_use_stop_scores', action='store_true')
 
+        parser.add_argument('--reranking_l0_confidence', action='store_true')
+        parser.add_argument('--reranking_l0_confidence_prob', type=float, default=0.9)
+
     def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
                  ):
         super(RnnAgent, self).__init__()
@@ -146,19 +149,10 @@ class RnnAgent(Agent):
         self.ref_preds = []
         self.partner_ref_outs = []
         self.partner_ref_preds = []
-        self.next_mention_latents = [
-            self.model.first_mention_latents(
-                self.state,
-                dots_mentioned_num_markables=num_markables_to_force,
-                force_next_mention_num_markables=num_markables_to_force is not None,
-                min_num_mentions=min_num_mentions,
-                max_num_mentions=max_num_mentions,
-            )
-        ]
-        # self.next_mention_outs = [self.model.next_mention_prediction_from_latents(self.state, self.next_mention_latents[-1])]
-        nm_preds, nm_cands = self.next_mention_prediction_and_candidates_from_latents(self.state, self.next_mention_latents[-1])
-        self.next_mention_candidates = [nm_cands]
-        self.next_mention_predictions = [nm_preds]
+        self.next_mention_latents = []
+        self.next_mention_candidates = []
+        self.next_mention_predictions = []
+        self.next_mention_predictions_multi = []
 
         self.is_selection_outs = [self.model.is_selection_prediction(self.state)]
         self.sel_outs = []
@@ -182,7 +176,7 @@ class RnnAgent(Agent):
                 use_stop_losses=self.args.next_mention_reranking_use_stop_scores,
             )
             # num_markables_per_candidate = nm_num_markables.unsqueeze(1).expand(-1, self.args.next_mention_reranking_k)
-            _loss, predictions, nm_num_markables, _stats = self.next_mention_predictor.forward(
+            _loss, predictions, nm_num_markables, _stats, predictions_multi_sorted, nm_num_markables_multi_sorted = self.next_mention_predictor.forward(
                 True, dummy_gold_mentions, None, candidates.num_markables_per_candidate,
                 candidates,
                 # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
@@ -199,9 +193,14 @@ class RnnAgent(Agent):
                 True, dummy_gold_mentions, next_mention_scores, nm_num_markables,
                 collapse=self.model.args.next_mention_prediction_type=='multi_reference',
             )
+            predictions_multi_sorted = None
+            nm_num_markables_multi_sorted = None
             candidates = None
         predictions_truncated = predictions[:nm_num_markables.item()] if predictions is not None else predictions
-        return predictions_truncated, candidates
+        predictions_multi_sorted_truncated = [
+            pred[:nm.item()] for pred, nm in zip(predictions_multi_sorted, nm_num_markables_multi_sorted)
+        ] if predictions_multi_sorted is not None else None
+        return predictions_truncated, candidates, predictions_multi_sorted_truncated
 
     def predict_referents(self, ref_inpt, num_markables):
         ref_beliefs = self.state.make_beliefs('ref', self.timesteps, self.partner_ref_outs, self.ref_outs)
@@ -273,11 +272,8 @@ class RnnAgent(Agent):
              dots_mentioned_num_markables=None,
              start_token=THEM_TOKEN,
              partner_ref_inpt=None, partner_num_markables=None,
-             next_num_markables_to_force=None,
              ref_tgt=None, partner_ref_tgt=None,
              detect_markables=False,
-             min_num_mentions=0,
-             max_num_mentions=12,
              is_selection=None,
              can_confirm=None,
              ):
@@ -331,10 +327,6 @@ class RnnAgent(Agent):
         self.update_dot_h(ref_inpt=None, partner_ref_inpt=partner_ref_inpt,
                           num_markables=None, partner_num_markables=partner_num_markables,
                           ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
-        self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]).to(self.device),
-                          dots_mentioned_num_markables_to_force=next_num_markables_to_force,
-                          min_num_mentions=min_num_mentions,
-                          max_num_mentions=max_num_mentions,)
         if (self.selection_word_index == inpt).any():
             sel_idx = (self.selection_word_index == inpt.flatten()).nonzero()
             assert len(sel_idx) == 1
@@ -431,6 +423,7 @@ class RnnAgent(Agent):
             ref_resolution_scores=dots_mentioned_scores_full,
             language_model_scores=extra['output_scores'],
             joint_scores=candidate_scores,
+            chosen_index=candidate_index,
         )
 
         return candidate_chosen[:candidate_len].unsqueeze(1), this_extra
@@ -451,8 +444,9 @@ class RnnAgent(Agent):
         return can_confirm
 
     def write(self, max_words=100, force_words=None, detect_markables=True, start_token=YOU_TOKEN,
-              dots_mentioned=None, dots_mentioned_per_ref=None,
-              dots_mentioned_num_markables=None, ref_inpt=None,
+              dots_mentioned_per_ref_to_force=None,
+              dots_mentioned_num_markables_to_force=None,
+              ref_inpt=None,
               # used for oracle beliefs
               ref_tgt=None, partner_ref_tgt=None,
               is_selection=None,
@@ -460,66 +454,132 @@ class RnnAgent(Agent):
               beam_size=1,
               sample_temperature_override=None,
               can_confirm=None,
+              min_num_mentions=0,
+              max_num_mentions=12,
+              force_dots_mentioned=False,
               ):
 
         if can_confirm is None:
             is_self = torch.ones(1).bool()
             can_confirm = self.make_can_confirm(is_self)
 
-        generation_beliefs = self.state.make_beliefs('generation', self.timesteps, self.partner_ref_outs, self.ref_outs)
-        if inference == 'sample':
-            sample_temperature = sample_temperature_override if sample_temperature_override is not None else self.args.temperature
-            outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
-                self.state, max_words, sample_temperature,
-                start_token=start_token,
-                force_words=force_words,
-                dots_mentioned=dots_mentioned,
-                dots_mentioned_per_ref=dots_mentioned_per_ref,
-                dots_mentioned_num_markables=dots_mentioned_num_markables,
-                generation_beliefs=generation_beliefs,
-                is_selection=is_selection,
-                can_confirm=can_confirm,
-            )
-        elif inference in ['beam', 'noised_beam', 'forgetful_noised_beam']:
-            assert not force_words
-            outs, logprobs, state_new, (reader_lang_hs, writer_lang_hs), extra = self.model.write_beam(
-                self.state, max_words, beam_size,
-                start_token=start_token,
-                dots_mentioned=dots_mentioned,
-                dots_mentioned_per_ref=dots_mentioned_per_ref,
-                dots_mentioned_num_markables=dots_mentioned_num_markables,
-                generation_beliefs=generation_beliefs,
-                is_selection=is_selection,
-                gumbel_noise=inference == 'noised_beam',
-                gumbel_noise_forgetful=inference == 'forgetful_noised_beam',
-                read_one_best=not self.args.language_rerank,
-                temperature=self.args.language_sample_temperature if inference in ['noised_beam', 'forgetful_noised_beam'] else 1.0,
-                keep_all_finished=self.args.language_beam_keep_all_finished,
-                can_confirm=can_confirm,
-            )
-            if self.args.language_rerank:
-                outs_beam_best = outs
-                if dots_mentioned_per_ref is None or dots_mentioned_per_ref.size(1) == 0:
-                    # outs = outs
-                    pass
-                else:
-                    outs, extra = self.rerank_language(
-                        outs, extra, dots_mentioned, dots_mentioned_per_ref, is_selection, can_confirm, generation_beliefs
-                    )
-                # self.words_beam_best.append(outs_beam_best)
-                # self.sents_beam_best.append(torch.cat([self.model.word2var(start_token).unsqueeze(1), outs_beam_best], 0))
-                self.decoded_beam_best.append(self._decode(outs_beam_best, self.model.word_dict))
+        device = self.state.ctx.device
 
-                (reader_lang_hs, writer_lang_hs), state_new = self.model.read(
-                    self.state, outs,
-                    dots_mentioned=dots_mentioned,
-                    dots_mentioned_per_ref=dots_mentioned_per_ref,
-                    dots_mentioned_num_markables=dots_mentioned_num_markables,
-                    prefix_token=start_token,
-                    is_selection=is_selection,
-                    can_confirm=can_confirm,
-                )
-            self.state = state_new
+        if force_dots_mentioned:
+            dots_mentioned_per_ref = dots_mentioned_per_ref_to_force
+            this_num_markables = torch.LongTensor([dots_mentioned_per_ref.size(1)]).to(device)
+            dots_mentioned_per_ref_candidates = [dots_mentioned_per_ref]
+        else:
+
+            if self.reader_lang_hs:
+                self.next_mention(lens=torch.LongTensor([self.reader_lang_hs[-1].size(0)]).to(self.device),
+                                  dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
+                                  min_num_mentions=min_num_mentions,
+                                  max_num_mentions=max_num_mentions)
+            else:
+                self.first_mention(dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
+                                   min_num_mentions=min_num_mentions,
+                                   max_num_mentions=max_num_mentions)
+
+            if self.args.reranking_l0_confidence:
+                assert self.args.language_rerank
+                assert self.args.next_mention_reranking
+                dots_mentioned_per_ref_candidates = self.next_mention_predictions_multi[-1]
+            else:
+                dots_mentioned_per_ref_candidates = [self.next_mention_predictions[-1]]
+            if dots_mentioned_per_ref_candidates is not None:
+                dots_mentioned_per_ref_candidates = [
+                    t.transpose(0, 1) if t is not None else torch.zeros((1, 0, 7)).long().to(device)
+                    for t in dots_mentioned_per_ref_candidates
+                ]
+            else:
+                dots_mentioned_per_ref_candidates = [torch.zeros((1, 0, 7)).long().to(device)]
+
+        has_terminated = False
+
+        while not has_terminated:
+            for dots_mentioned_per_ref in dots_mentioned_per_ref_candidates:
+                if dots_mentioned_per_ref is not None:
+                    this_num_markables = torch.LongTensor([dots_mentioned_per_ref.size(1)]).to(device)
+                    dots_mentioned_per_ref = dots_mentioned_per_ref.bool()
+                    if this_num_markables.item() > 0:
+                        dots_mentioned = dots_mentioned_per_ref.any(1)
+                    else:
+                        dots_mentioned = torch.zeros((1, 7)).bool().to(device)
+                else:
+                    dots_mentioned = None
+                    this_num_markables = torch.LongTensor([0]).to(device)
+
+                generation_beliefs = self.state.make_beliefs('generation', self.timesteps, self.partner_ref_outs, self.ref_outs)
+                if inference == 'sample':
+                    sample_temperature = sample_temperature_override if sample_temperature_override is not None else self.args.temperature
+                    outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
+                        self.state, max_words, sample_temperature,
+                        start_token=start_token,
+                        force_words=force_words,
+                        dots_mentioned=dots_mentioned,
+                        dots_mentioned_per_ref=dots_mentioned_per_ref,
+                        dots_mentioned_num_markables=this_num_markables,
+                        generation_beliefs=generation_beliefs,
+                        is_selection=is_selection,
+                        can_confirm=can_confirm,
+                    )
+                    assert len(dots_mentioned_per_ref_candidates) == 1
+                    has_terminated = True
+                    break
+                elif inference in ['beam', 'noised_beam', 'forgetful_noised_beam']:
+                    assert not force_words
+                    outs, logprobs, state_new, (reader_lang_hs, writer_lang_hs), extra = self.model.write_beam(
+                        self.state, max_words, beam_size,
+                        start_token=start_token,
+                        dots_mentioned=dots_mentioned,
+                        dots_mentioned_per_ref=dots_mentioned_per_ref,
+                        dots_mentioned_num_markables=this_num_markables,
+                        generation_beliefs=generation_beliefs,
+                        is_selection=is_selection,
+                        gumbel_noise=inference == 'noised_beam',
+                        gumbel_noise_forgetful=inference == 'forgetful_noised_beam',
+                        read_one_best=not self.args.language_rerank,
+                        temperature=self.args.language_sample_temperature if inference in ['noised_beam', 'forgetful_noised_beam'] else 1.0,
+                        keep_all_finished=self.args.language_beam_keep_all_finished,
+                        can_confirm=can_confirm,
+                    )
+                    if self.args.language_rerank:
+                        self.decoded_beam_best.append(self._decode(outs, self.model.word_dict))
+                        if dots_mentioned_per_ref is None or dots_mentioned_per_ref.size(1) == 0:
+                            # outs = outs
+                            pass
+                        else:
+                            outs, extra = self.rerank_language(
+                                outs, extra, dots_mentioned, dots_mentioned_per_ref, is_selection, can_confirm, generation_beliefs
+                            )
+                            if self.args.reranking_l0_confidence and len(dots_mentioned_per_ref_candidates) > 1:
+                                if 'ref_resolution_scores' not in extra:
+                                    # no utterances with the target number of mentions found in the beam!
+                                    continue
+                                ref_resolution_score = extra['ref_resolution_scores'][extra['chosen_index']]
+                                if ref_resolution_score.exp().item() < self.args.reranking_l0_confidence_prob:
+                                    continue
+
+                        (reader_lang_hs, writer_lang_hs), state_new = self.model.read(
+                            self.state, outs,
+                            dots_mentioned=dots_mentioned,
+                            dots_mentioned_per_ref=dots_mentioned_per_ref,
+                            dots_mentioned_num_markables=this_num_markables,
+                            prefix_token=start_token,
+                            is_selection=is_selection,
+                            can_confirm=can_confirm,
+                        )
+                    has_terminated = True
+                    self.state = state_new
+                    break
+
+            if not has_terminated:
+                dots_mentioned_per_ref_candidates = [self.next_mention_predictions[-1]]
+                dots_mentioned_per_ref_candidates = [
+                    t.transpose(0, 1) if t is not None else torch.zeros((1, 0, 7)).long().to(device)
+                    for t in dots_mentioned_per_ref_candidates
+                ]
 
         if logprobs is not None:
             self.logprobs.extend(logprobs)
@@ -588,10 +648,10 @@ class RnnAgent(Agent):
 
     def next_mention(self, lens, dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
         mention_beliefs = self.state.make_beliefs(
-            'mention', self.timesteps, self.partner_ref_outs, self.ref_outs,
+            'mention', self.timesteps-1, self.partner_ref_outs, self.ref_outs,
         )
         mention_latent_beliefs = self.state.make_beliefs(
-            'next_mention_latents', self.timesteps, self.partner_ref_outs, self.ref_outs,
+            'next_mention_latents', self.timesteps-1, self.partner_ref_outs, self.ref_outs,
         )
         if self.args.next_mention_reranking and self.args.next_mention_candidate_generation == 'topk_multi_mention':
             assert dots_mentioned_num_markables_to_force is None
@@ -604,9 +664,28 @@ class RnnAgent(Agent):
             max_num_mentions=max_num_mentions,
         )
         self.next_mention_latents.append(next_mention_latents)
-        nm_preds, nm_cands = self.next_mention_prediction_and_candidates_from_latents(self.state, next_mention_latents)
+        nm_preds, nm_cands, nm_preds_multi = self.next_mention_prediction_and_candidates_from_latents(self.state, next_mention_latents)
         self.next_mention_candidates.append(nm_cands)
         self.next_mention_predictions.append(nm_preds)
+        self.next_mention_predictions_multi.append(nm_preds_multi)
+        return nm_preds
+
+    def first_mention(self, dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
+        if self.args.next_mention_reranking and self.args.next_mention_candidate_generation == 'topk_multi_mention':
+            assert dots_mentioned_num_markables_to_force is None
+            dots_mentioned_num_markables_to_force = torch.Tensor([self.args.next_mention_reranking_max_mentions]).to(self.device)
+        next_mention_latents = self.model.first_mention_latents(
+            self.state,
+            dots_mentioned_num_markables=dots_mentioned_num_markables_to_force,
+            force_next_mention_num_markables=dots_mentioned_num_markables_to_force is not None,
+            min_num_mentions=min_num_mentions,
+            max_num_mentions=max_num_mentions,
+        )
+        self.next_mention_latents.append(next_mention_latents)
+        nm_preds, nm_cands, nm_preds_multi = self.next_mention_prediction_and_candidates_from_latents(self.state, next_mention_latents)
+        self.next_mention_candidates.append(nm_cands)
+        self.next_mention_predictions.append(nm_preds)
+        self.next_mention_predictions_multi.append(nm_preds_multi)
         return nm_preds
 
     def is_selection(self):

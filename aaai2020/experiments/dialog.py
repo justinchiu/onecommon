@@ -403,24 +403,6 @@ class HierarchicalDialog(Dialog):
             assert writer.state.turn == sentence_ix
             assert reader.state.turn == sentence_ix
 
-            nm_preds = writer.next_mention_predictions[-1]
-            if nm_preds is not None:
-                dots_mentioned_per_ref = nm_preds.transpose(0,1)
-                this_num_markables = torch.LongTensor([nm_preds.size(0)]).to(device)
-            else:
-                dots_mentioned_per_ref = torch.zeros((1, 0, 7)).to(device)
-                this_num_markables = torch.LongTensor([0]).to(device)
-
-            dots_mentioned_per_ref = dots_mentioned_per_ref.bool()
-
-            if dots_mentioned_per_ref is not None:
-                if this_num_markables.item() > 0:
-                    dots_mentioned = dots_mentioned_per_ref.any(1)
-                else:
-                    dots_mentioned = torch.zeros((1, 7)).bool().to(device)
-            else:
-                dots_mentioned = None
-
             if is_selection_prediction:
                 is_selection_prob = writer.is_selection_outs[-1].sigmoid()
                 this_is_selection = torch.distributions.Bernoulli(is_selection_prob).sample().bool().view((1,))
@@ -436,13 +418,12 @@ class HierarchicalDialog(Dialog):
                 max_words=words_left,
                 detect_markables=True,
                 start_token='YOU:',
-                dots_mentioned=dots_mentioned,
-                dots_mentioned_per_ref=dots_mentioned_per_ref,
-                dots_mentioned_num_markables=this_num_markables,
                 is_selection=this_is_selection,
                 inference=self.args.language_inference,
                 beam_size=self.args.language_beam_size,
                 sample_temperature_override=self.args.language_sample_temperature,
+                min_num_mentions=min_num_mentions,
+                max_num_mentions=max_num_mentions,
             )
 
             # READER
@@ -450,10 +431,7 @@ class HierarchicalDialog(Dialog):
                         dots_mentioned=None,
                         dots_mentioned_per_ref=None,
                         dots_mentioned_num_markables=this_partner_num_markables,
-                        next_num_markables_to_force=None,
                         detect_markables=True,
-                        min_num_mentions=min_num_mentions,
-                        max_num_mentions=max_num_mentions,
                         is_selection=this_is_selection,
                         )
 
