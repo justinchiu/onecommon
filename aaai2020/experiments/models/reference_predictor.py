@@ -303,11 +303,16 @@ def make_candidates(ref_out, num_markables, k, sample, exhaustive_single=False, 
             ref_out_full, num_markables, transition_potentials=None
         )
 
-    assert not sample
+    # assert not sample
 
     if N > 1:
-        # k x bsz x N-1 x C x C
-        candidate_edges = ref_dist.topk(k)
+        # TODO: sample without replacement
+        if sample:
+            # k x bsz x N-1 x C x C
+            candidate_edges = ref_dist.sample((k,))
+        else:
+            # k x bsz x N-1 x C x C
+            candidate_edges = ref_dist.topk(k)
         # (k*bsz) x N
         candidates, C = ref_dist.struct.from_parts(candidate_edges.view((-1,) + candidate_edges.size()[2:]))
         assert C == 2**num_dots
