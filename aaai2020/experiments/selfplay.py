@@ -43,7 +43,8 @@ class SelfPlay(object):
                 break
             self.logger.dump('=' * 80)
             self.logger.dump(f'dialog {n}')
-            _, agree, _ = self.dialog.run(ctxs, self.logger)
+            with torch.no_grad():
+                _, agree, _ = self.dialog.run(ctxs, self.logger)
             if agree:
                 success += 1
             self.logger.dump('=' * 80)
