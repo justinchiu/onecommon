@@ -252,6 +252,11 @@ class RnnReferenceModel(nn.Module):
         # define modules:
         self.word_embed = nn.Embedding(len(self.word_dict), args.nembed_word)
 
+        self.spatial_replacements = {
+            self.word_dict.word2idx[k]: self.word_dict.word2idx[v]
+            for k, v in corpora.reference.ReferenceCorpus.SPATIAL_REPLACEMENTS.items()
+        }
+
         ctx_encoder_ty = models.get_ctx_encoder_type(args.ctx_encoder_type)
         self.ctx_encoder = ctx_encoder_ty(domain, args)
 
@@ -1840,6 +1845,7 @@ class RnnReferenceModel(nn.Module):
         # seq_len x batch_size x nembed_word
         dialog_emb = self.embed_dialogue(inpt)
         if self.args.feed_context:
+            raise NotImplementedError()
             # seq_len x bsz x (nembed_word+nembed_ctx)
             ctx_emb, feed_ctx_attn_prob = self._context_for_feeding(
                 ctx_differences, ctx_h, writer_lang_h,
@@ -2408,6 +2414,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 num_next_mention_candidates_to_score=None,
                 next_mention_candidates_generation='topk',
                 return_all_selection_outs=False,
+                relation_swap=False,
                 ):
         # inpts is a list, one item per sentence
         # ref_inpts also a list, one per sentence
@@ -2440,6 +2447,10 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         partner_ref_outs = []
         ref_outs = []
 
+        relation_swapped_ref_outs = []
+        relation_swapped_partner_ref_outs = []
+        has_relation_swaps = []
+
         if vars(self.args).get('next_mention_prediction', False):
             # next_mention_outs = self.first_mention(state, num_markables[0], force_next_mention_num_markables)
             next_mention_latents = self.first_mention_latents(state, dots_mentioned_num_markables[0], force_next_mention_num_markables)
@@ -2469,8 +2480,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             partner_ref_tgt = partner_ref_tgts[i] if partner_ref_tgts is not None else None
             is_selection_out = self.is_selection_prediction(state)
             all_is_selection_outs.append(is_selection_out)
-            new_state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_latents = self._forward(
-                state, inpt, this_lens,
+            kwargs = dict(
                 ref_inpt=ref_inpt,
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
                 num_markables=num_markables[i],
@@ -2487,6 +2497,21 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 is_selection=is_selection[i],
                 can_confirm=can_confirm[i],
             )
+            new_state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_latents = self._forward(
+                state, inpt, this_lens, **kwargs,
+            )
+
+            if relation_swap:
+                assert inpt.dim() == 2
+                inpt_replaced = torch.tensor(
+                    [[self.spatial_replacements.get(ix.item(), ix.item()) for ix in row] for row in inpt]
+                ).long().to(inpt.device)
+                has_relation_swap = (inpt != inpt_replaced).any(0)
+                rs_ref_out, rs_partner_ref_out = self._forward(state, inpt_replaced, this_lens, **kwargs)[2]
+                relation_swapped_ref_outs.append(rs_ref_out)
+                relation_swapped_partner_ref_outs.append(rs_partner_ref_out)
+                has_relation_swaps.append(has_relation_swap)
+
             sel_outs.append(sel_out)
 
             next_mention_outs = self.next_mention_prediction_from_latents(state, next_mention_latents)
@@ -2612,4 +2637,6 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             sel_to_return = sel_outs[-1]
 
         return state, all_outs, all_ref_outs, sel_to_return, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs,\
-               all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs, all_next_mention_candidates
+               all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs, all_next_mention_candidates, \
+            relation_swapped_ref_outs, relation_swapped_partner_ref_outs, has_relation_swaps
+

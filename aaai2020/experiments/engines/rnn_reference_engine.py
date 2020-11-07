@@ -39,6 +39,7 @@ ForwardRet = namedtuple(
      # 'next_mention_true_positive', 'next_mention_num_dots', 'next_mention_em_num', 'next_mention_em_denom',
      'is_selection_loss', 'is_selection_stats',
      'l1_loss',
+     'relation_swapped_ref_loss', 'relation_swapped_partner_ref_loss'
      ],
 )
 
@@ -74,6 +75,8 @@ def add_loss_args(parser):
                        help='reference loss weight')
     group.add_argument('--partner_ref_weight', type=float, default=1.0,
                        help='partner reference loss weight')
+    group.add_argument('--relation_swapped_ref_and_partner_ref_weight', type=float, default=1.0,
+                       help='relation swapped ref + partner ref loss weight')
     group.add_argument('--sel_weight', type=float, default=1.0,
                        help='selection loss weight')
     group.add_argument('--next_mention_weight', type=float, default=1.0,
@@ -111,6 +114,7 @@ def add_loss_args(parser):
     group.add_argument('--dots_mentioned_no_pronouns', action='store_true')
 
     group.add_argument('--augmented_lang_only', action='store_true')
+    group.add_argument('--relation_swap_augmentation', action='store_true')
 
 def unwrap(loss):
     if loss is not None:
@@ -317,6 +321,8 @@ class RnnReferenceEngine(EngineBase):
             next_mention_loss=None,
             next_mention_stop_loss=None,
             next_mention_stats={},
+            relation_swapped_ref_loss=None,
+            relation_swapped_partner_ref_loss=None,
         )
 
     def train_batch(self, batch, epoch, corpus):
@@ -356,6 +362,12 @@ class RnnReferenceEngine(EngineBase):
         if self.args.next_mention_stop_weight > 0 and forward_ret.next_mention_stop_loss is not None:
             if not self.args.next_mention_start_epoch or (epoch >= self.args.next_mention_start_epoch):
                 loss += self.args.next_mention_stop_weight * forward_ret.next_mention_stop_loss
+
+        if self.args.relation_swap_augmentation and self.args.relation_swapped_ref_and_partner_ref_weight > 0 and forward_ret.relation_swapped_ref_loss is not None:
+            loss += self.args.relation_swapped_ref_and_partner_ref_weight * forward_ret.relation_swapped_ref_loss
+
+        if self.args.relation_swap_augmentation and self.args.relation_swapped_ref_and_partner_ref_weight > 0 and forward_ret.relation_swapped_partner_ref_loss is not None:
+            loss += self.args.relation_swapped_ref_and_partner_ref_weight * forward_ret.relation_swapped_partner_ref_loss
 
         if self.args.l1_loss_weight > 0 and forward_ret.l1_loss is not None:
             loss += self.args.l1_loss_weight * forward_ret.l1_loss
@@ -419,6 +431,8 @@ class RnnReferenceEngine(EngineBase):
             'correct_ppl': np.exp(metrics['unnormalized_lang_loss'] / metrics['num_words']),
             'spatial_lang_ppl': np.exp(metrics['unnormalized_spatial_lang_loss'] / metrics['num_spatial_words']),
             'l1_loss': metrics['l1_loss'] / len(dataset),
+            'relation_swapped_ref_loss': metrics['relation_swapped_ref_loss'] / len(dataset),
+            'relation_swapped_partner_ref_loss': metrics['relation_swapped_partner_ref_loss'] / len(dataset),
         }
         add_metrics(metrics, aggregate_metrics, "ref")
         add_metrics(metrics, aggregate_metrics, "partner_ref")
@@ -472,6 +486,9 @@ class RnnReferenceEngine(EngineBase):
                 metrics['is_selection_loss'] *= self.args.is_selection_weight
                 metrics['l1_loss'] *= self.args.l1_loss_weight
 
+                metrics['relation_swapped_ref_loss'] *= self.args.relation_swapped_ref_and_partner_ref_weight
+                metrics['relation_swapped_partner_ref_loss'] *= self.args.relation_swapped_ref_and_partner_ref_weight
+
                 quantities = [
                     ['lang_loss', 'ppl(avg exp lang_loss)', 'correct_ppl'],
                     ['spatial_lang_ppl'],
@@ -479,6 +496,7 @@ class RnnReferenceEngine(EngineBase):
                     ['ref_loss', 'ref_accuracy', 'ref_precision', 'ref_recall', 'ref_f1', 'ref_exact_match'],
                     ['partner_ref_loss', 'partner_ref_accuracy', 'partner_ref_precision', 'partner_ref_recall',
                      'partner_ref_f1', 'partner_ref_exact_match'],
+                    ['relation_swapped_ref_loss', 'relation_swapped_partner_ref_loss'],
                     ['next_mention_loss', 'next_mention_stop_loss',
                      'next_mention_accuracy', 'next_mention_precision', 'next_mention_recall',
                      'next_mention_f1', 'next_mention_exact_match'],
@@ -527,6 +545,8 @@ class RnnReferenceEngine(EngineBase):
         #        + metrics['ref_loss'] * int(self.args.ref_weight > 0) \
         #        + metrics['partner_ref_loss'] * int(self.args.partner_ref_weight > 0)
 
+        rs_weights = self.args.relation_swapped_ref_and_partner_ref_weight if self.args.relation_swap_augmentation else 0.0
+
         return metrics['lang_loss'] * self.args.lang_weight \
                + metrics['spatial_lang_loss'] * self.args.spatial_lang_weight \
                + metrics['select_loss'] * self.args.sel_weight \
@@ -535,7 +555,9 @@ class RnnReferenceEngine(EngineBase):
                + metrics['next_mention_loss'] * self.args.next_mention_weight \
                + metrics['next_mention_stop_loss'] * self.args.next_mention_stop_weight \
                + metrics['is_selection_loss'] * self.args.is_selection_weight \
-               + metrics['l1_loss'] * self.args.l1_loss_weight
+               + metrics['l1_loss'] * self.args.l1_loss_weight \
+               + metrics['relation_swapped_ref_loss'] * rs_weights \
+               + metrics['relation_swapped_partner_ref_loss'] * rs_weights
 
     def train(self, corpus, model_filename_fn):
         best_model, best_combined_valid_loss = copy.deepcopy(self.model), 1e100
@@ -566,7 +588,9 @@ class RnnReferenceEngine(EngineBase):
                                      'ref_loss', 'partner_ref_loss',
                                      'next_mention_loss', 'next_mention_stop_loss',
                                      'is_selection_loss',
-                                     'l1_loss']
+                                     'l1_loss',
+                                     'relation_swapped_ref_loss', 'relation_swapped_partner_ref_loss',
+                                     ]
                     )
                 )
                 best_combined_valid_loss = combined_valid_loss
@@ -677,7 +701,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         can_confirm = make_can_confirm(is_self, partner_num_markables, partner_ref_tgts_our_view)
 
         state, outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs,\
-        is_selection_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs, next_mention_candidates = self.model.forward(
+        is_selection_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs, next_mention_candidates,\
+        relation_swapped_ref_outs, relation_swapped_partner_ref_outs, has_relation_swap = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
             lens,
@@ -690,6 +715,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             force_next_mention_num_markables=True,
             is_selection=is_selection,
             can_confirm=can_confirm,
+            relation_swap=self.args.relation_swap_augmentation,
         )
 
         sel_tgt = Variable(sel_tgt)
@@ -765,17 +791,20 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         word_attn_losses = []
         feed_attn_losses = []
 
+        relation_swapped_ref_losses = []
+        relation_swapped_partner_ref_losses = []
+
         assert len(ref_inpts) == len(ref_tgts) == len(num_markables)
 
         assert len(partner_ref_inpts) == len(partner_ref_tgts_our_view) == len(partner_num_markables)
 
         # TODO: just index into the lists; the safety check isn't worth it
-        for ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt,\
+        for sentence_ix, (ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt,\
             this_num_markables,this_partner_num_markables, this_ctx_attn_prob, this_feed_ctx_attn_prob, \
-            this_dots_mentioned, this_dots_mentioned_per_ref, inpt, tgt in utils.safe_zip(
+            this_dots_mentioned, this_dots_mentioned_per_ref, inpt, tgt) in enumerate(utils.safe_zip(
             ref_inpts, partner_ref_inpts, ref_outs_and_partner_ref_outs, ref_tgts, partner_ref_tgts_our_view,
             num_markables, partner_num_markables, ctx_attn_prob, feed_ctx_attn_prob,
-            dots_mentioned, dots_mentioned_per_ref, inpts, tgts
+            dots_mentioned, dots_mentioned_per_ref, inpts, tgts)
         ):
             if (this_num_markables == 0).all() or ref_tgt is None:
                 continue
@@ -796,6 +825,22 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 partner_ref_stats = utils.sum_dicts(partner_ref_stats, _partner_ref_stats)
                 if _partner_ref_loss is not None:
                     partner_ref_losses.append(_partner_ref_loss)
+
+                if self.args.relation_swap_augmentation:
+                    rs_ref_tgt = (0 * ref_tgt) if ref_tgt is not None else None
+                    _rs_ref_loss, _, _ = self._ref_loss(
+                        ref_inpt, rs_ref_tgt, relation_swapped_ref_outs[sentence_ix], this_num_markables,
+                        mask=(~non_lang_instance_mask) & has_relation_swap[sentence_ix]
+                    )
+                    relation_swapped_ref_losses.append(_rs_ref_loss)
+
+                    rs_partner_ref_tgt = (0 * partner_ref_tgt) if partner_ref_tgt is not None else None
+                    _rs_partner_ref_loss, _, _ = self._ref_loss(
+                        partner_ref_inpt, rs_partner_ref_tgt, relation_swapped_partner_ref_outs[sentence_ix],
+                        this_partner_num_markables,
+                        mask=(~non_lang_instance_mask) & has_relation_swap[sentence_ix]
+                    )
+                    relation_swapped_partner_ref_losses.append(_rs_partner_ref_loss)
 
             if this_ctx_attn_prob is not None:
                 # this_ctx_attn_prob: N x batch x num_dots
@@ -896,6 +941,20 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             partner_ref_loss = None
         else:
             partner_ref_loss = sum(partner_ref_losses) / partner_ref_stats['num_dots']
+
+        if (not self.args.relation_swap_augmentation) or ref_stats['num_dots'] == 0 or (not relation_swapped_ref_losses):
+            # not sure why I had this assert, it seems it can be tripped if you have a batch with no self mentions
+            # assert ref_stats['num_dots'] == 0 and (not ref_losses)
+            relation_swapped_ref_loss = 0
+        else:
+            relation_swapped_ref_loss = sum(relation_swapped_ref_losses) / ref_stats['num_dots']
+
+        if (not self.args.relation_swap_augmentation) or partner_ref_stats['num_dots'] == 0 or (not relation_swapped_partner_ref_losses):
+            # not sure why I had this assert, it seems it can be tripped if you have a batch with no self mentions
+            # assert ref_stats['num_dots'] == 0 and (not ref_losses)
+            relation_swapped_partner_ref_loss = 0
+        else:
+            relation_swapped_partner_ref_loss = sum(relation_swapped_partner_ref_losses) / partner_ref_stats['num_dots']
 
         # print('sel_out.size(): {}'.format(sel_out.size()))
         # print('sel_tgt.size(): {}'.format(sel_tgt.size()))
@@ -1018,4 +1077,6 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             is_selection_loss=is_selection_loss,
             is_selection_stats=is_selection_stats,
             l1_loss=l1_loss,
+            relation_swapped_ref_loss=relation_swapped_ref_loss,
+            relation_swapped_partner_ref_loss=relation_swapped_partner_ref_loss,
         )

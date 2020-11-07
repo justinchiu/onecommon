@@ -514,7 +514,7 @@ class RerankingMentionPredictor(ReferencePredictor):
 
         max_num_mentions = num_markables_per_candidate.max()
         if max_num_mentions == 0:
-            return 0.0, None, num_markables_per_candidate, {}, None, None
+            return 0.0, None, num_markables_per_candidate, {}, None, None, None
 
         bsz, num_candidates = num_markables_per_candidate.size()
 
@@ -563,6 +563,7 @@ class RerankingMentionPredictor(ReferencePredictor):
 
         pred_multi_sorted = None
         num_markables_multi_sorted = None
+        indices_sorted = None
 
         for weight in self.weights:
             joint_scores = (1 - weight) * next_mention_rollouts.candidate_nm_scores + weight * rerank_scores
@@ -589,4 +590,4 @@ class RerankingMentionPredictor(ReferencePredictor):
 
         loss = 0.0
 
-        return loss, pred, num_markables, stats, pred_multi_sorted, num_markables_multi_sorted
+        return loss, pred, num_markables, stats, pred_multi_sorted, num_markables_multi_sorted, indices_sorted

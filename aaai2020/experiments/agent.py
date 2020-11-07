@@ -119,8 +119,7 @@ class RnnAgent(Agent):
     def _decode(self, out, dictionary):
         return dictionary.i2w(out.data.squeeze(1).cpu())
 
-    def feed_context(self, context, belief_constructor=None, num_markables_to_force=None,
-                     min_num_mentions=0, max_num_mentions=12):
+    def feed_context(self, context, belief_constructor=None):
         self.reader_lang_hs = []
         self.writer_lang_hs = []
         self.logprobs = []
@@ -140,10 +139,6 @@ class RnnAgent(Agent):
         self.partner_ref_inpts = []
         self.partner_markables = []
 
-        if self.args.next_mention_reranking and self.args.next_mention_candidate_generation == 'topk_multi_mention':
-            assert num_markables_to_force is None
-            num_markables_to_force = torch.Tensor([self.args.next_mention_reranking_max_mentions]).to(self.device)
-
         # for use with the belief constructor
         self.ref_outs = []
         self.ref_preds = []
@@ -153,6 +148,7 @@ class RnnAgent(Agent):
         self.next_mention_candidates = []
         self.next_mention_predictions = []
         self.next_mention_predictions_multi = []
+        self.next_mention_indices_sorted = []
 
         self.is_selection_outs = [self.model.is_selection_prediction(self.state)]
         self.sel_outs = []
@@ -176,7 +172,7 @@ class RnnAgent(Agent):
                 use_stop_losses=self.args.next_mention_reranking_use_stop_scores,
             )
             # num_markables_per_candidate = nm_num_markables.unsqueeze(1).expand(-1, self.args.next_mention_reranking_k)
-            _loss, predictions, nm_num_markables, _stats, predictions_multi_sorted, nm_num_markables_multi_sorted = self.next_mention_predictor.forward(
+            _loss, predictions, nm_num_markables, _stats, predictions_multi_sorted, nm_num_markables_multi_sorted, indices_sorted = self.next_mention_predictor.forward(
                 True, dummy_gold_mentions, None, candidates.num_markables_per_candidate,
                 candidates,
                 # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
@@ -187,7 +183,7 @@ class RnnAgent(Agent):
                 state, next_mention_latents
             )
             if next_mention_scores is None:
-                return None, None, None
+                return None, None, None, None
             # hack; pass True for inpt because this method only uses it to ensure it's not null
             _loss, predictions, _stats = self.next_mention_predictor.forward(
                 True, dummy_gold_mentions, next_mention_scores, nm_num_markables,
@@ -195,12 +191,13 @@ class RnnAgent(Agent):
             )
             predictions_multi_sorted = None
             nm_num_markables_multi_sorted = None
+            indices_sorted = None
             candidates = None
         predictions_truncated = predictions[:nm_num_markables.item()] if predictions is not None else predictions
         predictions_multi_sorted_truncated = [
             pred[:nm.item()] for pred, nm in zip(predictions_multi_sorted, nm_num_markables_multi_sorted)
         ] if predictions_multi_sorted is not None else None
-        return predictions_truncated, candidates, predictions_multi_sorted_truncated
+        return predictions_truncated, candidates, predictions_multi_sorted_truncated, indices_sorted
 
     def predict_referents(self, ref_inpt, num_markables):
         ref_beliefs = self.state.make_beliefs('ref', self.timesteps, self.partner_ref_outs, self.ref_outs)
@@ -664,10 +661,11 @@ class RnnAgent(Agent):
             max_num_mentions=max_num_mentions,
         )
         self.next_mention_latents.append(next_mention_latents)
-        nm_preds, nm_cands, nm_preds_multi = self.next_mention_prediction_and_candidates_from_latents(self.state, next_mention_latents)
+        nm_preds, nm_cands, nm_preds_multi, nm_indices_sorted = self.next_mention_prediction_and_candidates_from_latents(self.state, next_mention_latents)
         self.next_mention_candidates.append(nm_cands)
         self.next_mention_predictions.append(nm_preds)
         self.next_mention_predictions_multi.append(nm_preds_multi)
+        self.next_mention_indices_sorted.append(nm_indices_sorted)
         return nm_preds
 
     def first_mention(self, dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
@@ -682,10 +680,11 @@ class RnnAgent(Agent):
             max_num_mentions=max_num_mentions,
         )
         self.next_mention_latents.append(next_mention_latents)
-        nm_preds, nm_cands, nm_preds_multi = self.next_mention_prediction_and_candidates_from_latents(self.state, next_mention_latents)
+        nm_preds, nm_cands, nm_preds_multi, nm_indices_sorted = self.next_mention_prediction_and_candidates_from_latents(self.state, next_mention_latents)
         self.next_mention_candidates.append(nm_cands)
         self.next_mention_predictions.append(nm_preds)
         self.next_mention_predictions_multi.append(nm_preds_multi)
+        self.next_mention_indices_sorted.append(nm_indices_sorted)
         return nm_preds
 
     def is_selection(self):
