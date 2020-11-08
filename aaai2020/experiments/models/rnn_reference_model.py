@@ -2532,27 +2532,41 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 has_relation_swaps.append(has_relation_swap)
 
                 if has_relation_swap.any():
-                    # masked_kwargs = {}
-                    # def mask(val):
-                    #     if isinstance(val, torch.Tensor):
-                    #         # this only works because all of these inputs have the batch dimension first
-                    #         assert val.size(0) == has_relation_swap.size(0)
-                    #         val = val[has_relation_swap]
-                    #     if isinstance(val, list):
-                    #         return [mask(v) for v in val]
-                    #     return val
-                    #
-                    # for key, val in kwargs.items():
-                    #     masked_kwargs[key] = mask(val)
-                    #
-                    # rs_ref_out, rs_partner_ref_out = self._forward(
-                    #     # inputs has the batch dimension second
-                    #     state.mask(has_relation_swap), inpt_replaced[:,has_relation_swap], **masked_kwargs
-                    # )[2]
+                    masked_kwargs = {}
+                    max_num_markables = kwargs['num_markables'][has_relation_swap].max()
+                    max_partner_num_markables = kwargs['partner_num_markables'][has_relation_swap].max()
+                    def mask(key, val):
+                        if isinstance(val, torch.Tensor):
+                            # this only works because all of these inputs have the batch dimension first
+                            assert val.size(0) == has_relation_swap.size(0)
+                            val = val[has_relation_swap]
+                            if key in {'ref_inpt', 'ref_tgt'}:
+                                if max_num_markables.item() == 0:
+                                    val = None
+                                else:
+                                    val = val[:,:max_num_markables]
+                            elif key in {'partner_ref_inpt', 'partner_ref_tgt'}:
+                                if max_partner_num_markables.item() == 0:
+                                    val = None
+                                else:
+                                    val = val[:,:max_partner_num_markables]
+                            elif key in {'dots_mentioned_per_ref'}:
+                                val = val[:,:max_num_markables]
+                        if isinstance(val, list):
+                            return [mask(key, v) for v in val]
+                        return val
+
+                    for key, val in kwargs.items():
+                        masked_kwargs[key] = mask(key, val)
 
                     rs_ref_out, rs_partner_ref_out = self._forward(
-                        state, inpt_replaced, **kwargs
+                        # inputs has the batch dimension second
+                        state.mask(has_relation_swap), inpt_replaced[:,has_relation_swap], **masked_kwargs
                     )[2]
+
+                    # rs_ref_out, rs_partner_ref_out = self._forward(
+                    #     state, inpt_replaced, **kwargs
+                    # )[2]
                     relation_swapped_ref_outs.append(rs_ref_out)
                     relation_swapped_partner_ref_outs.append(rs_partner_ref_out)
                 else:
