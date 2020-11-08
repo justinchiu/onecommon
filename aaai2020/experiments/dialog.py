@@ -372,7 +372,7 @@ class HierarchicalDialog(Dialog):
         belief_constructor = BlankBeliefConstructor()
 
         for agent, agent_id, ctx, real_ids in zip(self.agents, [0, 1], ctxs[1], ctxs[2]):
-            agent.feed_context(ctx, belief_constructor, min_num_mentions=min_num_mentions, max_num_mentions=max_num_mentions)
+            agent.feed_context(ctx, belief_constructor)
             agent.real_ids = real_ids
             agent.agent_id = agent_id
 
