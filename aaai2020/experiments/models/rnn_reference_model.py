@@ -92,6 +92,26 @@ class State(_State):
             dot_h_maybe_multi_structured=dot_h_maybe_multi_structured,
         )
 
+    def mask(self, mask_to_keep):
+        sub_bsz = mask_to_keep.size()
+        mask_to_keep = mask_to_keep.bool()
+        ctx = self.ctx[mask_to_keep]
+        ctx_h = self.ctx_h[mask_to_keep]
+        ctx_differences = self.ctx_differences[mask_to_keep]
+        _reader_lang_h, _writer_lang_h = self.reader_and_writer_lang_h
+        reader_lang_h = _reader_lang_h[:,mask_to_keep]
+        writer_lang_h = _writer_lang_h[:,mask_to_keep]
+        dot_h_maybe_multi = self.dot_h_maybe_multi[mask_to_keep] if self.dot_h_maybe_multi is not None else None
+        if self.dot_h_maybe_multi_structured is not None:
+            raise NotImplementedError()
+        dot_h_maybe_multi_structured = None
+        return self._replace(
+            bsz=sub_bsz, ctx=ctx, ctx_h=ctx_h, ctx_differences=ctx_differences,
+            reader_and_writer_lang_h=(reader_lang_h, writer_lang_h), dot_h_maybe_multi=dot_h_maybe_multi,
+            dot_h_maybe_multi_structured=dot_h_maybe_multi_structured,
+        )
+
+
 class RnnReferenceModel(nn.Module):
     corpus_ty = corpora.reference.ReferenceCorpus
     engine_ty = RnnReferenceEngine
@@ -2481,6 +2501,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             is_selection_out = self.is_selection_prediction(state)
             all_is_selection_outs.append(is_selection_out)
             kwargs = dict(
+                lens=this_lens,
                 ref_inpt=ref_inpt,
                 partner_ref_inpt=partner_ref_inpts[i] if partner_ref_inpts is not None else None,
                 num_markables=num_markables[i],
@@ -2498,7 +2519,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 can_confirm=can_confirm[i],
             )
             new_state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_latents = self._forward(
-                state, inpt, this_lens, **kwargs,
+                state, inpt, **kwargs,
             )
 
             if relation_swap:
@@ -2506,11 +2527,37 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 inpt_replaced = torch.tensor(
                     [[self.spatial_replacements.get(ix.item(), ix.item()) for ix in row] for row in inpt]
                 ).long().to(inpt.device)
+                # only run the forward pass on those inputs that have had some word replaced
                 has_relation_swap = (inpt != inpt_replaced).any(0)
-                rs_ref_out, rs_partner_ref_out = self._forward(state, inpt_replaced, this_lens, **kwargs)[2]
-                relation_swapped_ref_outs.append(rs_ref_out)
-                relation_swapped_partner_ref_outs.append(rs_partner_ref_out)
                 has_relation_swaps.append(has_relation_swap)
+
+                if has_relation_swap.any():
+                    # masked_kwargs = {}
+                    # def mask(val):
+                    #     if isinstance(val, torch.Tensor):
+                    #         # this only works because all of these inputs have the batch dimension first
+                    #         assert val.size(0) == has_relation_swap.size(0)
+                    #         val = val[has_relation_swap]
+                    #     if isinstance(val, list):
+                    #         return [mask(v) for v in val]
+                    #     return val
+                    #
+                    # for key, val in kwargs.items():
+                    #     masked_kwargs[key] = mask(val)
+                    #
+                    # rs_ref_out, rs_partner_ref_out = self._forward(
+                    #     # inputs has the batch dimension second
+                    #     state.mask(has_relation_swap), inpt_replaced[:,has_relation_swap], **masked_kwargs
+                    # )[2]
+
+                    rs_ref_out, rs_partner_ref_out = self._forward(
+                        state, inpt_replaced, **kwargs
+                    )[2]
+                    relation_swapped_ref_outs.append(rs_ref_out)
+                    relation_swapped_partner_ref_outs.append(rs_partner_ref_out)
+                else:
+                    relation_swapped_ref_outs.append(None)
+                    relation_swapped_partner_ref_outs.append(None)
 
             sel_outs.append(sel_out)
 

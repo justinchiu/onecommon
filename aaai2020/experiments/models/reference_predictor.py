@@ -216,7 +216,7 @@ class ReferencePredictor(object):
 
     def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, by_num_markables=False, collapse=False, mask=None):
         if ref_inpt is None or ref_out is None:
-            return None, None, self.empty_stats()
+            return 0.0, None, self.empty_stats()
 
         ref_tgt, ref_mask = self.preprocess(ref_tgt, num_markables)
 

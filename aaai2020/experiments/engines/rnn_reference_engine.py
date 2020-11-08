@@ -783,6 +783,9 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         # partner_ref_stats = {'num_dots': 0}
         partner_ref_stats = defaultdict(lambda: 0.0)
 
+        rs_ref_stats = defaultdict(lambda: 0.0)
+        rs_partner_ref_stats = defaultdict(lambda: 0.0)
+
         attn_ref_true_positive = 0
         attn_ref_total = 0
         attn_ref_gold_positive = 0
@@ -827,20 +830,41 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                     partner_ref_losses.append(_partner_ref_loss)
 
                 if self.args.relation_swap_augmentation:
-                    rs_ref_tgt = (0 * ref_tgt) if ref_tgt is not None else None
-                    _rs_ref_loss, _, _ = self._ref_loss(
-                        ref_inpt, rs_ref_tgt, relation_swapped_ref_outs[sentence_ix], this_num_markables,
-                        mask=(~non_lang_instance_mask) & has_relation_swap[sentence_ix]
-                    )
-                    relation_swapped_ref_losses.append(_rs_ref_loss)
+                    this_has_relation_swap = has_relation_swap[sentence_ix]
+                    if this_has_relation_swap.any():
+                        # _rs_ref_loss, _, _rs_ref_stats = self._ref_loss(
+                        #     ref_inpt[this_has_relation_swap],
+                        #     (0 * ref_tgt[this_has_relation_swap]) if ref_tgt is not None else None,
+                        #     relation_swapped_ref_outs[sentence_ix],
+                        #     this_num_markables,
+                        #     mask=(~non_lang_instance_mask)[this_has_relation_swap]
+                        # )
+                        _rs_ref_loss, _, _rs_ref_stats = self._ref_loss(
+                            ref_inpt,
+                            (0 * ref_tgt) if ref_tgt is not None else None,
+                            relation_swapped_ref_outs[sentence_ix],
+                            this_num_markables,
+                            mask=(~non_lang_instance_mask) & this_has_relation_swap
+                        )
+                        relation_swapped_ref_losses.append(_rs_ref_loss)
+                        rs_ref_stats = utils.sum_dicts(ref_stats, _rs_ref_stats)
 
-                    rs_partner_ref_tgt = (0 * partner_ref_tgt) if partner_ref_tgt is not None else None
-                    _rs_partner_ref_loss, _, _ = self._ref_loss(
-                        partner_ref_inpt, rs_partner_ref_tgt, relation_swapped_partner_ref_outs[sentence_ix],
-                        this_partner_num_markables,
-                        mask=(~non_lang_instance_mask) & has_relation_swap[sentence_ix]
-                    )
-                    relation_swapped_partner_ref_losses.append(_rs_partner_ref_loss)
+                        # _rs_partner_ref_loss, _, _rs_partner_ref_stats = self._ref_loss(
+                        #     partner_ref_inpt[this_has_relation_swap],
+                        #     (0 * partner_ref_tgt[this_has_relation_swap]) if partner_ref_tgt is not None else None,
+                        #     relation_swapped_partner_ref_outs[sentence_ix],
+                        #     this_partner_num_markables[this_has_relation_swap],
+                        #     mask=(~non_lang_instance_mask)[this_has_relation_swap]
+                        # )
+                        _rs_partner_ref_loss, _, _rs_partner_ref_stats = self._ref_loss(
+                            partner_ref_inpt,
+                            (0 * partner_ref_tgt) if partner_ref_tgt is not None else None,
+                            relation_swapped_partner_ref_outs[sentence_ix],
+                            this_partner_num_markables,
+                            mask=(~non_lang_instance_mask) & this_has_relation_swap
+                        )
+                        relation_swapped_partner_ref_losses.append(_rs_partner_ref_loss)
+                        rs_partner_ref_stats = utils.sum_dicts(ref_stats, _rs_partner_ref_stats)
 
             if this_ctx_attn_prob is not None:
                 # this_ctx_attn_prob: N x batch x num_dots
@@ -942,19 +966,19 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         else:
             partner_ref_loss = sum(partner_ref_losses) / partner_ref_stats['num_dots']
 
-        if (not self.args.relation_swap_augmentation) or ref_stats['num_dots'] == 0 or (not relation_swapped_ref_losses):
+        if (not self.args.relation_swap_augmentation) or rs_ref_stats['num_dots'] == 0 or (not relation_swapped_ref_losses):
             # not sure why I had this assert, it seems it can be tripped if you have a batch with no self mentions
             # assert ref_stats['num_dots'] == 0 and (not ref_losses)
             relation_swapped_ref_loss = 0
         else:
-            relation_swapped_ref_loss = sum(relation_swapped_ref_losses) / ref_stats['num_dots']
+            relation_swapped_ref_loss = sum(relation_swapped_ref_losses) / rs_ref_stats['num_dots']
 
-        if (not self.args.relation_swap_augmentation) or partner_ref_stats['num_dots'] == 0 or (not relation_swapped_partner_ref_losses):
+        if (not self.args.relation_swap_augmentation) or rs_partner_ref_stats['num_dots'] == 0 or (not relation_swapped_partner_ref_losses):
             # not sure why I had this assert, it seems it can be tripped if you have a batch with no self mentions
             # assert ref_stats['num_dots'] == 0 and (not ref_losses)
             relation_swapped_partner_ref_loss = 0
         else:
-            relation_swapped_partner_ref_loss = sum(relation_swapped_partner_ref_losses) / partner_ref_stats['num_dots']
+            relation_swapped_partner_ref_loss = sum(relation_swapped_partner_ref_losses) / rs_partner_ref_stats['num_dots']
 
         # print('sel_out.size(): {}'.format(sel_out.size()))
         # print('sel_tgt.size(): {}'.format(sel_tgt.size()))
