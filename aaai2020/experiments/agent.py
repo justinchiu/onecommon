@@ -148,6 +148,7 @@ class RnnAgent(Agent):
         self.next_mention_candidates = []
         self.next_mention_predictions = []
         self.next_mention_predictions_multi = []
+        self.dots_mentioned_per_ref_chosen = []
         self.next_mention_indices_sorted = []
 
         self.is_selection_outs = [self.model.is_selection_prediction(self.state)]
@@ -277,7 +278,7 @@ class RnnAgent(Agent):
 
         if can_confirm is None:
             is_self = torch.zeros(1).bool()
-            can_confirm = self.make_can_confirm(is_self)
+            can_confirm = self.make_can_confirm(is_self, vars(self.model.args).get("confirmations_resolution_strategy", "any"))
 
         self.sents.append(Variable(self._encode([start_token] + inpt_words, self.model.word_dict)))
         inpt = self._encode(inpt_words, self.model.word_dict)
@@ -339,6 +340,8 @@ class RnnAgent(Agent):
         #best_output = outputs[0][:lens[0]].unsqueeze(1)
         # return best_output
 
+        num_candidates_before_filtering = len(extra['words'])
+
         all_markables, all_ref_boundaries = [], []
         all_ref_inpt, all_num_markables = [], []
         # all_ref_tgt = []
@@ -361,7 +364,15 @@ class RnnAgent(Agent):
             indices_kept.append(ix)
         if not all_markables:
             # no utterances with the target number of referents found, revert to the 1-best candidate
-            return outs, extra
+            this_extra = dict(
+                **extra,
+                was_rerankable=torch.zeros(num_candidates_before_filtering).bool(),
+                ref_resolution_scores=torch.full((num_candidates_before_filtering,), -1e9),
+                joint_scores=extra['output_scores'],
+                language_model_scores=extra['output_scores'],
+                chosen_index=torch.tensor(0).long(),
+            )
+            return outs, this_extra
         num_candidates = len(all_markables)
         ref_inpt = torch.cat(all_ref_inpt, dim=0)
         num_markables = torch.cat(all_num_markables, dim=0)
@@ -400,8 +411,6 @@ class RnnAgent(Agent):
         weight = self.args.language_rerank_weight
         assert 0 <= weight <= 1.0
 
-        num_candidates_before_filtering = len(extra['words'])
-
         dots_mentioned_scores_full = torch.full((num_candidates_before_filtering,), -1e9)
         dots_mentioned_scores_full[indices_kept] = dots_mentioned_scores
 
@@ -425,9 +434,9 @@ class RnnAgent(Agent):
 
         return candidate_chosen[:candidate_len].unsqueeze(1), this_extra
 
-    def make_can_confirm(self, is_self):
+    def make_can_confirm(self, is_self, resolution_strategy='any'):
         if len(self.sents) == 0:
-            can_confirm = make_can_confirm_single(len(self.sents), is_self, None, None)
+            can_confirm = make_can_confirm_single(len(self.sents), is_self, None, None, resolution_strategy=resolution_strategy)
         else:
             partner_ref_tgts = self.partner_ref_preds[-1]
             if partner_ref_tgts is not None:
@@ -436,7 +445,8 @@ class RnnAgent(Agent):
                 len(self.sents),
                 is_self,
                 torch.LongTensor([len(self.partner_markables[-1])]).to(is_self.device),
-                partner_ref_tgts
+                partner_ref_tgts,
+                resolution_strategy=resolution_strategy,
             )
         return can_confirm
 
@@ -458,16 +468,13 @@ class RnnAgent(Agent):
 
         if can_confirm is None:
             is_self = torch.ones(1).bool()
-            can_confirm = self.make_can_confirm(is_self)
+            can_confirm = self.make_can_confirm(is_self, vars(self.model.args).get("confirmations_resolution_strategy", "any"))
 
         device = self.state.ctx.device
 
         if force_dots_mentioned:
-            dots_mentioned_per_ref = dots_mentioned_per_ref_to_force
-            this_num_markables = torch.LongTensor([dots_mentioned_per_ref.size(1)]).to(device)
-            dots_mentioned_per_ref_candidates = [dots_mentioned_per_ref]
+            dots_mentioned_per_ref_candidates = [dots_mentioned_per_ref_to_force]
         else:
-
             if self.reader_lang_hs:
                 self.next_mention(lens=torch.LongTensor([self.reader_lang_hs[-1].size(0)]).to(self.device),
                                   dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
@@ -481,31 +488,25 @@ class RnnAgent(Agent):
             if self.args.reranking_l0_confidence:
                 assert self.args.language_rerank
                 assert self.args.next_mention_reranking
-                dots_mentioned_per_ref_candidates = self.next_mention_predictions_multi[-1]
+                nm_candidates = self.next_mention_predictions_multi[-1]
             else:
-                dots_mentioned_per_ref_candidates = [self.next_mention_predictions[-1]]
-            if dots_mentioned_per_ref_candidates is not None:
-                dots_mentioned_per_ref_candidates = [
-                    t.transpose(0, 1) if t is not None else torch.zeros((1, 0, 7)).long().to(device)
-                    for t in dots_mentioned_per_ref_candidates
-                ]
-            else:
-                dots_mentioned_per_ref_candidates = [torch.zeros((1, 0, 7)).long().to(device)]
+                nm_candidates = [self.next_mention_predictions[-1]]
 
+            dots_mentioned_per_ref_candidates = [
+                t.transpose(0, 1) if t is not None else None
+                for t in nm_candidates
+            ] if nm_candidates is not None else [None]
         has_terminated = False
 
         while not has_terminated:
             for dots_mentioned_per_ref in dots_mentioned_per_ref_candidates:
-                if dots_mentioned_per_ref is not None:
-                    this_num_markables = torch.LongTensor([dots_mentioned_per_ref.size(1)]).to(device)
-                    dots_mentioned_per_ref = dots_mentioned_per_ref.bool()
-                    if this_num_markables.item() > 0:
-                        dots_mentioned = dots_mentioned_per_ref.any(1)
-                    else:
-                        dots_mentioned = torch.zeros((1, 7)).bool().to(device)
+                if dots_mentioned_per_ref is None:
+                    dots_mentioned_per_ref = torch.zeros((1, 0, 7)).bool().to(device)
                 else:
-                    dots_mentioned = None
-                    this_num_markables = torch.LongTensor([0]).to(device)
+                    dots_mentioned_per_ref = dots_mentioned_per_ref.bool()
+
+                this_num_markables = torch.LongTensor([dots_mentioned_per_ref.size(1)]).to(device)
+                dots_mentioned = dots_mentioned_per_ref.any(1)
 
                 generation_beliefs = self.state.make_beliefs('generation', self.timesteps, self.partner_ref_outs, self.ref_outs)
                 if inference == 'sample':
@@ -570,13 +571,17 @@ class RnnAgent(Agent):
                     has_terminated = True
                     self.state = state_new
                     break
+                else:
+                    raise NotImplementedError(f"inference = {inference}")
 
             if not has_terminated:
                 dots_mentioned_per_ref_candidates = [self.next_mention_predictions[-1]]
                 dots_mentioned_per_ref_candidates = [
-                    t.transpose(0, 1) if t is not None else torch.zeros((1, 0, 7)).long().to(device)
+                    t.transpose(0, 1) if t is not None else None
                     for t in dots_mentioned_per_ref_candidates
                 ]
+
+        self.dots_mentioned_per_ref_chosen.append(dots_mentioned_per_ref)
 
         if logprobs is not None:
             self.logprobs.extend(logprobs)

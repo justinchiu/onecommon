@@ -31,7 +31,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 
 from models.reference_predictor import ReferencePredictor, PragmaticReferencePredictor, RerankingMentionPredictor
-from engines.rnn_reference_engine import make_dots_mentioned_multi, make_dots_mentioned_per_ref_multi
+from engines.rnn_reference_engine import make_dots_mentioned_multi, make_dots_mentioned_per_ref_multi, \
+    CAN_CONFIRM_VALUES
 from engines.rnn_reference_engine import add_metrics, flatten_metrics
 from engines.rnn_reference_engine import add_selection_stats
 from engines.beliefs import BeliefConstructor, BlankBeliefConstructor
@@ -305,7 +306,7 @@ def main():
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, \
                 lens, _, _, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view, \
                 partner_num_markables, ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view, \
-                is_selection = batch
+                is_selection, non_pronoun_ref_inpts, non_pronoun_ref_tgts, non_pronoun_num_markables, is_augmented = batch
                 bsz = ctx.size(0)
                 multi_sentence = True
             elif isinstance(corpus, ReferenceCorpus):
@@ -313,7 +314,6 @@ def main():
                 raise NotImplementedError("add extra instance properties")
                 ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, \
                 scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idx, lens, partner_ref_inpt, partner_ref_tgt_our_view, this_partner_num_markables = batch
-                bsz = ctx.size(0)
                 inpts, tgts, ref_inpts, ref_tgts, lens = [inpt], [tgt], [ref_inpt], [ref_tgt], [lens]
                 partner_ref_inpts = [partner_ref_inpt]
                 partner_ref_tgts_our_view = [partner_ref_tgt_our_view]
@@ -330,6 +330,9 @@ def main():
                 raise ValueError("invalid corpus type {}".format(type(corpus)))
 
             ctx = Variable(ctx)
+            bsz = ctx.size(0)
+            num_dots == int(ctx.size(1) / 4)
+            assert num_dots == 7
             inpts = [Variable(inpt) for inpt in inpts]
             ref_inpts = [Variable(ref_inpt) if ref_inpt is not None else None
                          for ref_inpt in ref_inpts]
@@ -347,12 +350,16 @@ def main():
 
             if isinstance(corpus, ReferenceSentenceCorpus):
                 if args.allow_belief_cheating:
-                    dots_mentioned = dots_mentioned_gold
-                    dots_mentioned_per_ref = dots_mentioned_per_ref_gold
+                    if model.args.dots_mentioned_no_pronouns:
+                        dots_mentioned = make_dots_mentioned_multi(non_pronoun_ref_tgts, model.args, bsz, num_dots)
+                        dots_mentioned_per_ref = make_dots_mentioned_per_ref_multi(non_pronoun_ref_tgts, model.args, bsz, num_dots)
+                        dots_mentioned_num_markables = non_pronoun_num_markables
+                    else:
+                        dots_mentioned = dots_mentioned_gold
+                        dots_mentioned_per_ref = dots_mentioned_per_ref_gold
+                        dots_mentioned_num_markables = num_markables
                     partner_dots_mentioned_our_view = partner_dots_mentioned_our_view_gold
                     partner_dots_mentioned_our_view_per_ref = partner_dots_mentioned_our_view_per_ref_gold
-
-                    raise NotImplementedError("is_confirmation")
 
                     belief_constructor = BeliefConstructor(
                         model.args, None,
@@ -364,29 +371,38 @@ def main():
                         num_markables,
                         partner_num_markables,
                     )
+                    can_confirm = make_can_confirm(
+                        is_self, partner_num_markables, partner_ref_tgts_our_view,
+                        resolution_strategy=vars(model.args).get('confirmations_resolution_strategy', 'any')
+                    )
                 else:
                     # don't cheat!
-                    # TODO: feed next mention predictions
+                    # TODO: feed next mention predictions and previous predictions (for can_confirm); affects ppl
                     dots_mentioned_per_ref = [
                         torch.zeros((bsz, nm.max().item(), 7)).bool().to(device)
                         for nm in num_markables
                     ]
                     dots_mentioned = [torch.zeros((bsz, 7)).bool().to(device) for _ in num_markables]
+                    dots_mentioned_num_markables = num_markables
                     belief_constructor = BlankBeliefConstructor()
-                    is_confirmation = None
+                    can_confirm = [torch.full((bsz,), CAN_CONFIRM_VALUES[None]).to(device) for _ in num_markables]
 
                 state, outs, ref_outs, sel_outs, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs, is_selection_outs, \
-                (reader_lang_hs, writer_lang_hs), l1_scores, next_mention_rollouts = model.forward(
+                (reader_lang_hs, writer_lang_hs), l1_scores, next_mention_rollouts, \
+                relation_swapped_ref_outs, relation_swapped_partner_ref_outs, has_relation_swaps = model.forward(
                     ctx, inpts, ref_inpts, sel_idx,
                     num_markables, partner_num_markables,
-                    lens, dots_mentioned, dots_mentioned_per_ref, belief_constructor,
+                    lens,
+                    dots_mentioned, dots_mentioned_per_ref, dots_mentioned_num_markables,
+                    belief_constructor=belief_constructor,
                     partner_ref_inpts=partner_ref_inpts,
                     ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
-                    is_selection=is_selection,
-                    can_confirm=is_confirmation,
-                    num_next_mention_candidates_to_score=args.next_mention_reranking_k if args.next_mention_reranking else None,
                     force_next_mention_num_markables=args.force_next_mention_num_markables,
-                    return_all_selection_outs=True
+                    is_selection=is_selection,
+                    can_confirm=can_confirm,
+                    num_next_mention_candidates_to_score=args.next_mention_reranking_k if args.next_mention_reranking else None,
+                    return_all_selection_outs=True,
+                    relation_swap=False,
                 )
             elif isinstance(corpus, ReferenceCorpus):
                 # don't cheat!
@@ -402,7 +418,7 @@ def main():
                     partner_ref_inpt=partner_ref_inpts[0],
                     ref_tgts=ref_tgts[0], partner_ref_tgts=partner_ref_tgts_our_view[0],
                     is_selection=is_selection,
-                    can_confirm=is_confirmation,
+                    can_confirm=can_confirm,
                 )
                 outs, ref_outs = [out], [ref_out]
             else:

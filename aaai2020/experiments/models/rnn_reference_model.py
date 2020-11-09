@@ -153,6 +153,7 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--hidden_context', action='store_true')
         parser.add_argument('--hidden_context_is_selection', action='store_true')
         parser.add_argument('--hidden_context_confirmations', action='store_true')
+        parser.add_argument('--confirmations_resolution_strategy', choices=['any', 'all', 'half'], default='any')
         parser.add_argument('--hidden_context_mention_encoder', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder_bidirectional', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder_type', choices=[

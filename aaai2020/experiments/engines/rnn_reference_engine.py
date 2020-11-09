@@ -43,7 +43,7 @@ ForwardRet = namedtuple(
      ],
 )
 
-def make_can_confirm_single(sentence_ix, is_self, previous_partner_num_markables, previous_partner_ref_tgts_our_view):
+def make_can_confirm_single(sentence_ix, is_self, previous_partner_num_markables, previous_partner_ref_tgts_our_view, resolution_strategy='any'):
     if sentence_ix == 0:
         has_previous_mention = torch.zeros_like(is_self)
         previous_resolves = torch.zeros_like(is_self)
@@ -52,16 +52,27 @@ def make_can_confirm_single(sentence_ix, is_self, previous_partner_num_markables
         if previous_partner_ref_tgts_our_view is None:
             previous_resolves = torch.zeros_like(has_previous_mention)
         else:
-            previous_resolves = previous_partner_ref_tgts_our_view.bool().any(-1).any(-1)
+            mentions_resolve = previous_partner_ref_tgts_our_view.bool().any(-1)
+            if resolution_strategy == 'any':
+                previous_resolves = mentions_resolve.any(-1)
+            elif resolution_strategy == 'all':
+                previous_resolves = mentions_resolve.long().sum(-1) == previous_partner_num_markables
+            elif resolution_strategy == 'half':
+                previous_resolves = mentions_resolve.long().sum(-1) >= (previous_partner_num_markables.float() / 2)
+            else:
+                raise NotImplementedError(f"bad resolution strategy {resolution_strategy}")
+
     # values match boolean semantics
     assert (CAN_CONFIRM_VALUES[False] == 0) and (CAN_CONFIRM_VALUES[True] == 1)
     this_can_confirm = torch.where(has_previous_mention, previous_resolves.long(), torch.tensor(CAN_CONFIRM_VALUES[None]).long())
     return this_can_confirm
 
-def make_can_confirm(is_self, partner_num_markables, partner_ref_tgts_our_view):
+def make_can_confirm(is_self, partner_num_markables, partner_ref_tgts_our_view, resolution_strategy='any'):
     can_confirm = []
     for i, this_is_self in enumerate(is_self):
-        this_can_confirm = make_can_confirm_single(i, this_is_self, partner_num_markables[i-1], partner_ref_tgts_our_view[i-1])
+        this_can_confirm = make_can_confirm_single(i, this_is_self, partner_num_markables[i-1],
+                                                   partner_ref_tgts_our_view[i-1],
+                                                   resolution_strategy=resolution_strategy)
         can_confirm.append(this_can_confirm)
     return can_confirm
 
@@ -245,11 +256,14 @@ class RnnReferenceEngine(EngineBase):
         }
         return ref_loss, ref_pred, stats
 
-    def _forward(self, batch, epoch, corpus):
+    def _forward(self, batch, epoch, corpus, allow_relation_swap):
         assert not self.args.word_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.feed_attention_supervised, 'this only makes sense for a hierarchical model, and --lang_only_self'
         assert not self.args.mark_dots_mentioned, 'this only makes sense for a hierarchical model, and --lang_only_self'
         ctx, inpt, tgt, ref_inpt, ref_tgt, sel_tgt, scenario_ids, _, _, _, _, sel_idx, lens, partner_ref_inpt, partner_ref_tgt_our_view, partner_num_markables = batch
+
+        if allow_relation_swap and self.args.relation_swap_augmentation:
+            raise NotImplementedError()
 
         ctx = Variable(ctx)
         inpt = Variable(inpt)
@@ -326,7 +340,7 @@ class RnnReferenceEngine(EngineBase):
         )
 
     def train_batch(self, batch, epoch, corpus):
-        forward_ret = self._forward(batch, epoch, corpus)
+        forward_ret = self._forward(batch, epoch, corpus, allow_relation_swap=True)
 
         # default
         # TODO: sel_loss scaling varies based on whether lang_weight is positive
@@ -391,11 +405,11 @@ class RnnReferenceEngine(EngineBase):
 
     def valid_batch(self, batch, epoch, corpus):
         with torch.no_grad():
-            return self._forward(batch, epoch, corpus)
+            return self._forward(batch, epoch, corpus, allow_relation_swap=False)
 
     def test_batch(self, batch, epoch, corpus):
         with torch.no_grad():
-            return self._forward(batch, epoch, corpus)
+            return self._forward(batch, epoch, corpus, allow_relation_swap=False)
 
     def _pass(self, dataset, batch_fn, split_name, use_tqdm, epoch, corpus):
         start_time = time.time()
@@ -632,7 +646,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _ref_loss(self, *args, **kwargs):
         return self.ref_loss.forward(*args, **kwargs)
 
-    def _forward(self, batch, epoch, corpus):
+    def _forward(self, batch, epoch, corpus, allow_relation_swap):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
         ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _,\
@@ -698,7 +712,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         compute_l1_loss = self.args.l1_loss_weight > 0
 
-        can_confirm = make_can_confirm(is_self, partner_num_markables, partner_ref_tgts_our_view)
+        can_confirm = make_can_confirm(is_self, partner_num_markables, partner_ref_tgts_our_view, resolution_strategy=self.args.confirmations_resolution_strategy)
 
         state, outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs,\
         is_selection_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs, next_mention_candidates,\
