@@ -862,7 +862,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                         #     mask=(~non_lang_instance_mask) & this_has_relation_swap
                         # )
                         relation_swapped_ref_losses.append(_rs_ref_loss)
-                        rs_ref_stats = utils.sum_dicts(ref_stats, _rs_ref_stats)
+                        rs_ref_stats = utils.sum_dicts(rs_ref_stats, _rs_ref_stats)
 
                         rs_max_partner_num_markables = this_partner_num_markables[this_has_relation_swap].max()
                         _rs_partner_ref_loss, _, _rs_partner_ref_stats = self._ref_loss(
@@ -880,7 +880,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                         #     mask=(~non_lang_instance_mask) & this_has_relation_swap
                         # )
                         relation_swapped_partner_ref_losses.append(_rs_partner_ref_loss)
-                        rs_partner_ref_stats = utils.sum_dicts(ref_stats, _rs_partner_ref_stats)
+                        rs_partner_ref_stats = utils.sum_dicts(rs_partner_ref_stats, _rs_partner_ref_stats)
 
             if this_ctx_attn_prob is not None:
                 # this_ctx_attn_prob: N x batch x num_dots
