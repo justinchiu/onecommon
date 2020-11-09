@@ -32,7 +32,7 @@ import seaborn as sns
 
 from models.reference_predictor import ReferencePredictor, PragmaticReferencePredictor, RerankingMentionPredictor
 from engines.rnn_reference_engine import make_dots_mentioned_multi, make_dots_mentioned_per_ref_multi, \
-    CAN_CONFIRM_VALUES
+    CAN_CONFIRM_VALUES, make_can_confirm
 from engines.rnn_reference_engine import add_metrics, flatten_metrics
 from engines.rnn_reference_engine import add_selection_stats
 from engines.beliefs import BeliefConstructor, BlankBeliefConstructor
