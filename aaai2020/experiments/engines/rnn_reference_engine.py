@@ -846,39 +846,39 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 if self.args.relation_swap_augmentation:
                     this_has_relation_swap = has_relation_swap[sentence_ix]
                     if this_has_relation_swap.any():
-                        rs_max_num_markables = this_num_markables[this_has_relation_swap].max()
-                        _rs_ref_loss, _, _rs_ref_stats = self._ref_loss(
-                            ref_inpt[this_has_relation_swap][:,:rs_max_num_markables] if ref_inpt is not None else None,
-                            (0 * ref_tgt[this_has_relation_swap][:,:rs_max_num_markables]) if ref_tgt is not None else None,
-                            relation_swapped_ref_outs[sentence_ix],
-                            this_num_markables[this_has_relation_swap],
-                            mask=(~non_lang_instance_mask)[this_has_relation_swap]
-                        )
+                        # rs_max_num_markables = this_num_markables[this_has_relation_swap].max()
                         # _rs_ref_loss, _, _rs_ref_stats = self._ref_loss(
-                        #     ref_inpt,
-                        #     (0 * ref_tgt) if ref_tgt is not None else None,
+                        #     ref_inpt[this_has_relation_swap][:,:rs_max_num_markables] if ref_inpt is not None else None,
+                        #     (0 * ref_tgt[this_has_relation_swap][:,:rs_max_num_markables]) if ref_tgt is not None else None,
                         #     relation_swapped_ref_outs[sentence_ix],
-                        #     this_num_markables,
-                        #     mask=(~non_lang_instance_mask) & this_has_relation_swap
+                        #     this_num_markables[this_has_relation_swap],
+                        #     mask=(~non_lang_instance_mask)[this_has_relation_swap]
                         # )
+                        _rs_ref_loss, _, _rs_ref_stats = self._ref_loss(
+                            ref_inpt,
+                            (0 * ref_tgt) if ref_tgt is not None else None,
+                            relation_swapped_ref_outs[sentence_ix],
+                            this_num_markables,
+                            mask=(~non_lang_instance_mask) & this_has_relation_swap
+                        )
                         relation_swapped_ref_losses.append(_rs_ref_loss)
                         rs_ref_stats = utils.sum_dicts(rs_ref_stats, _rs_ref_stats)
 
-                        rs_max_partner_num_markables = this_partner_num_markables[this_has_relation_swap].max()
-                        _rs_partner_ref_loss, _, _rs_partner_ref_stats = self._ref_loss(
-                            partner_ref_inpt[this_has_relation_swap][:,:rs_max_partner_num_markables] if partner_ref_inpt is not None else None,
-                            (0 * partner_ref_tgt[this_has_relation_swap][:,:rs_max_partner_num_markables]) if partner_ref_tgt is not None else None,
-                            relation_swapped_partner_ref_outs[sentence_ix],
-                            this_partner_num_markables[this_has_relation_swap],
-                            mask=(~non_lang_instance_mask)[this_has_relation_swap]
-                        )
+                        # rs_max_partner_num_markables = this_partner_num_markables[this_has_relation_swap].max()
                         # _rs_partner_ref_loss, _, _rs_partner_ref_stats = self._ref_loss(
-                        #     partner_ref_inpt,
-                        #     (0 * partner_ref_tgt) if partner_ref_tgt is not None else None,
+                        #     partner_ref_inpt[this_has_relation_swap][:,:rs_max_partner_num_markables] if partner_ref_inpt is not None else None,
+                        #     (0 * partner_ref_tgt[this_has_relation_swap][:,:rs_max_partner_num_markables]) if partner_ref_tgt is not None else None,
                         #     relation_swapped_partner_ref_outs[sentence_ix],
-                        #     this_partner_num_markables,
-                        #     mask=(~non_lang_instance_mask) & this_has_relation_swap
+                        #     this_partner_num_markables[this_has_relation_swap],
+                        #     mask=(~non_lang_instance_mask)[this_has_relation_swap]
                         # )
+                        _rs_partner_ref_loss, _, _rs_partner_ref_stats = self._ref_loss(
+                            partner_ref_inpt,
+                            (0 * partner_ref_tgt) if partner_ref_tgt is not None else None,
+                            relation_swapped_partner_ref_outs[sentence_ix],
+                            this_partner_num_markables,
+                            mask=(~non_lang_instance_mask) & this_has_relation_swap
+                        )
                         relation_swapped_partner_ref_losses.append(_rs_partner_ref_loss)
                         rs_partner_ref_stats = utils.sum_dicts(rs_partner_ref_stats, _rs_partner_ref_stats)
 

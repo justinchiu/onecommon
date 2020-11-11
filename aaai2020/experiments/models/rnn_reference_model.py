@@ -2557,17 +2557,17 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                             return [mask(key, v) for v in val]
                         return val
 
-                    for key, val in kwargs.items():
-                        masked_kwargs[key] = mask(key, val)
+                    # for key, val in kwargs.items():
+                    #     masked_kwargs[key] = mask(key, val)
+                    #
+                    # rs_ref_out, rs_partner_ref_out = self._forward(
+                    #     # inputs has the batch dimension second
+                    #     state.mask(has_relation_swap), inpt_replaced[:,has_relation_swap], **masked_kwargs
+                    # )[2]
 
                     rs_ref_out, rs_partner_ref_out = self._forward(
-                        # inputs has the batch dimension second
-                        state.mask(has_relation_swap), inpt_replaced[:,has_relation_swap], **masked_kwargs
+                        state, inpt_replaced, **kwargs
                     )[2]
-
-                    # rs_ref_out, rs_partner_ref_out = self._forward(
-                    #     state, inpt_replaced, **kwargs
-                    # )[2]
                     relation_swapped_ref_outs.append(rs_ref_out)
                     relation_swapped_partner_ref_outs.append(rs_partner_ref_out)
                 else:
