@@ -75,6 +75,7 @@ class StructuredAttentionLayer(nn.Module):
         parser.add_argument('--structured_attention_no_marginalize', dest='structured_attention_marginalize', action='store_false')
         parser.add_argument('--structured_attention_language_conditioned', action='store_true')
         parser.add_argument('--structured_attention_configuration_features', nargs='*', choices=['count', 'centroids'])
+        parser.add_argument('--structured_attention_configuration_transition_max_size', type=int, default=7)
         parser.set_defaults(structured_attention_marginalize=True)
         parser.add_argument('--structured_attention_asymmetric_pairs', action='store_true')
 
@@ -181,12 +182,10 @@ class StructuredAttentionLayer(nn.Module):
 
         return '{}->{}'.format(','.join(input_factors), output_factor_names)
 
-    def configuration_features(self, feature_names, num_mentions, bsz, num_ents, ctx):
+    def configuration_features(self, bits, feature_names, num_mentions, bsz, num_ents, ctx):
+        # bits: configurations x num_ents
         # should return tensor of num_mentions x bsz x 2**num_ents x d
         feats = []
-        ix = torch.arange(2**num_ents)
-        # 2**num_ents x num_ents
-        bits = int_to_bit_array(ix, num_bits=num_ents)
         for feat_name in feature_names:
             if feat_name == 'count':
                 # 2**num_ents vector, counting the number of active dots in the configuration
@@ -287,8 +286,11 @@ class StructuredAttentionLayer(nn.Module):
             joint_factors.append(joint_factor)
 
         if vars(self.args).get('structured_attention_configuration_features', []):
+            ix = torch.arange(2**self.num_ent)
+            # 2**num_ents x num_ents
+            bits = int_to_bit_array(ix, num_bits=self.num_ent)
             config_feats = self.configuration_features(
-                self.args.structured_attention_configuration_features, N, bsz, self.num_ent, ctx
+                bits, self.args.structured_attention_configuration_features, N, bsz, self.num_ent, ctx
             )
             # each config_feat: num_mentions x bsz x 2**num_ent x dim
             lang_input_expand = lang_input.unsqueeze(2).repeat_interleave(2**self.num_ent, dim=2)
@@ -544,28 +546,44 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
                 subbatch_mask = torch.zeros(batch_size).bool().to(ctx.device)
                 subbatch_mask[subbatch_start:subbatch_end] = True
                 config_features = []
+                ix = torch.arange(2**self.num_ent)
+                # 2**num_ents x num_ents
+                bits = int_to_bit_array(ix, num_bits=self.num_ent)
+                config_mask = bits.sum(-1) <= vars(self.args).get('structured_attention_configuration_transition_max_size', self.num_ent)
+                num_transition_configs = config_mask.sum().item()
                 for feat_name in config_transition_feat_names:
                     if feat_name == 'centroid_diffs':
-                        # 1 x bsz x 2**num_ents x 4
-                        centroids = self.configuration_features(['centroids'], 1, this_subbatch_size, self.num_ent, ctx[subbatch_mask])[0]
-                        # 1 x bsz x 2**num_ents x 2**num_ents 4
+                        # 1 x bsz x num_configs x 4
+                        centroids = self.configuration_features(
+                            bits[config_mask], ['centroids'], 1, this_subbatch_size, self.num_ent, ctx[subbatch_mask]
+                        )[0]
+                        # 1 x bsz x num_configs x num_configs x 4
                         centroid_diffs = pyro.ops.contract.einsum(
                             "nbxd,nbyd->nbxyd", centroids, -1 * centroids,
                             modulo_total=True,
                             backend='pyro.ops.einsum.torch_log'
                         )[0]
-                        centroid_diffs = centroid_diffs.expand(N-1, this_subbatch_size, num_configs, num_configs, 4)
+                        centroid_diffs = centroid_diffs.expand(N-1, this_subbatch_size, num_transition_configs, num_transition_configs, 4)
                         config_features.append(centroid_diffs)
                     else:
                         raise ValueError(f"invalid feat_name {feat_name}")
                 if vars(self.args).get('structured_attention_language_conditioned', False):
-                    input_diffs_expand = get_input_diffs(subbatch_mask).unsqueeze(2).unsqueeze(3).expand(-1, -1, num_configs, num_configs, -1)
+                    input_diffs_expand = get_input_diffs(subbatch_mask).unsqueeze(2).unsqueeze(3).expand(-1, -1, num_transition_configs, num_transition_configs, -1)
                     config_features.append(input_diffs_expand)
                 if len(config_features) == 1:
                     config_features = config_features[0]
                 else:
                     config_features = torch.cat(config_features, -1)
-                transition_potentials[:,subbatch_mask] += self.config_transition_encoder(config_features).squeeze(-1)
+                transition_mask = torch.einsum(
+                    "x,y,z,w->xyzw",
+                    torch.ones(transition_potentials.size(0)).to(transition_potentials.device).bool(),
+                    subbatch_mask.bool(),
+                    config_mask.bool(),
+                    config_mask.bool()
+                )
+                structured_transition_potentials = torch.zeros_like(transition_potentials)
+                structured_transition_potentials.masked_scatter_(transition_mask, self.config_transition_encoder(config_features).squeeze(-1))
+                transition_potentials += structured_transition_potentials
         return transition_potentials
 
     @staticmethod
