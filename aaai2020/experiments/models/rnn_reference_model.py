@@ -13,7 +13,7 @@ from corpora import data
 from domain import get_domain
 from engines import Criterion
 from engines.beliefs import BeliefConstructor
-from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
+from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine, CAN_CONFIRM_VALUES
 from models import reference_predictor
 from models.attention_layers import FeedForward, AttentionLayer, StructuredAttentionLayer, \
     StructuredTemporalAttentionLayer
@@ -153,6 +153,8 @@ class RnnReferenceModel(nn.Module):
         parser.add_argument('--hidden_context', action='store_true')
         parser.add_argument('--hidden_context_is_selection', action='store_true')
         parser.add_argument('--hidden_context_confirmations', action='store_true')
+        parser.add_argument('--hidden_context_confirmations_in',
+                            choices=['generation', 'next_mention'], nargs='*', default=['generation'])
         parser.add_argument('--confirmations_resolution_strategy', choices=['any', 'all', 'half'], default='any')
         parser.add_argument('--hidden_context_mention_encoder', action='store_true')
         parser.add_argument('--hidden_context_mention_encoder_bidirectional', action='store_true')
@@ -365,8 +367,12 @@ class RnnReferenceModel(nn.Module):
 
             if self.args.hidden_context_confirmations:
                 # have / don't have / other person's turn
-                self.hidden_ctx_confirmations_embeddings = nn.Embedding(3, args.nhid_lang, padding_idx=2)
-                self.hidden_ctx_confirmations_weight = nn.Parameter(torch.zeros((1,)))
+                if 'generation' in self.args.hidden_context_confirmations_in:
+                    self.hidden_ctx_confirmations_embeddings = nn.Embedding(3, args.nhid_lang, padding_idx=2)
+                    self.hidden_ctx_confirmations_weight = nn.Parameter(torch.zeros((1,)))
+                if 'next_mention' in self.args.hidden_context_confirmations_in:
+                    self.hidden_ctx_confirmations_nm_embeddings = nn.Embedding(3, args.nhid_lang, padding_idx=2)
+                    self.hidden_ctx_confirmations_nm_weight = nn.Parameter(torch.zeros((1,)))
 
         self.reader = nn.GRU(
             input_size=gru_input_size,
@@ -844,7 +850,7 @@ class RnnReferenceModel(nn.Module):
         return outs
 
     def next_mention_latents(self, state: _State, outs_emb, lens, mention_beliefs, mention_latent_beliefs,
-                             dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
+                             dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12, can_confirm=None):
         ctx_h = state.ctx_h
         ctx_differences = state.ctx_differences
         bsz = ctx_h.size(0)
@@ -871,6 +877,11 @@ class RnnReferenceModel(nn.Module):
                 mention_latent_beliefs_pooled = mention_latent_beliefs.mean(1)
                 input_context = torch.cat((input_context, mention_latent_beliefs_pooled), -1)
             h = self.next_mention_transform(input_context)
+            if vars(self.args).get('hidden_context_confirmations') and 'next_mention' in vars(self.args).get('hidden_context_confirmations_in', ['generation']) and can_confirm is not None:
+                # assert can_confirm is not None
+                sig_weight = self.hidden_ctx_confirmations_nm_weight.sigmoid()
+                conf_embs = self.hidden_ctx_confirmations_nm_embeddings(can_confirm.long())
+                h = (1-sig_weight) * h + sig_weight * conf_embs
             hs = []
             # stop_losses = torch.zeros_like(lens).float()
             stop_losses = []
@@ -966,9 +977,11 @@ class RnnReferenceModel(nn.Module):
         return scores, stop_loss, latents.dots_mentioned_num_markables
 
     def next_mention_prediction(self, state: State, outs_emb, lens, mention_beliefs, mention_latent_beliefs,
-                                dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
+                                dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12,
+                                can_confirm=None):
         latents = self.next_mention_latents(
-            state, outs_emb, lens, mention_beliefs, mention_latent_beliefs, dots_mentioned_num_markables_to_force, min_num_mentions, max_num_mentions
+            state, outs_emb, lens, mention_beliefs, mention_latent_beliefs, dots_mentioned_num_markables_to_force,
+            min_num_mentions, max_num_mentions, can_confirm=can_confirm
         )
         return self.next_mention_prediction_from_latents(state, latents)
 
@@ -1184,7 +1197,7 @@ class RnnReferenceModel(nn.Module):
                 this_mentions_t = comb(this_mentions, batch_dim=0)
                 this_mentions_per_ref_t = comb(this_mentions_per_ref, batch_dim=0)
 
-                raise NotImplementedError("dot h")
+                raise NotImplementedError("dot h, can_confirm, can_confirm_next")
 
                 state, outs, *_ = self._forward(
                     state_t, inpt_t, lens_t,
@@ -1506,6 +1519,7 @@ class RnnReferenceModel(nn.Module):
                  next_dots_mentioned_num_markables=None,
                  is_selection=None,
                  can_confirm=None,
+                 can_confirm_next=None,
                  ):
         # ctx_h: bsz x num_dots x nembed_ctx
         # lang_h: num_layers*num_directions x bsz x nhid_lang
@@ -1574,6 +1588,7 @@ class RnnReferenceModel(nn.Module):
                 state, writer_lang_hs, lens, mention_beliefs,
                 mention_latent_beliefs,
                 dots_mentioned_num_markables_to_force=next_dots_mentioned_num_markables if force_next_mention_num_markables else None,
+                can_confirm=can_confirm_next,
             )
             # next_mention_out = self.next_mention_prediction(
             #     state, writer_lang_hs, lens, mention_beliefs,
@@ -1601,7 +1616,7 @@ class RnnReferenceModel(nn.Module):
                 dots_mentioned, dots_mentioned_per_ref, dots_mentioned_num_markables,
                 belief_constructor: Union[BeliefConstructor, None], partner_ref_inpt, compute_l1_scores=False,
                 ref_tgt=None, partner_ref_tgt=None, return_all_selection_outs=False):
-        raise NotImplementedError("make this use _State")
+        raise NotImplementedError("make this use _State, confirm, can_confirm")
         # belief_function:
         # timestep 0
         if belief_constructor is not None:
@@ -2276,6 +2291,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                               min_num_mentions=0, max_num_mentions=12):
         mention_beliefs = state.make_beliefs('mention', -1, [], [])
         mention_latent_beliefs = state.make_beliefs('next_mention_latents', -1, [], [])
+        can_confirm = torch.full((state.bsz,), CAN_CONFIRM_VALUES[None], device=state.ctx_h.device).long()
         return self.next_mention_latents(
             state,
             outs_emb=state.reader_and_writer_lang_h[0], # TODO: fix this to use the writer instead
@@ -2285,6 +2301,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             dots_mentioned_num_markables_to_force=dots_mentioned_num_markables if force_next_mention_num_markables else None,
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
+            can_confirm=can_confirm,
         )
 
     def first_mention(self, state: State, dots_mentioned_num_markables=None, force_next_mention_num_markables=False,
@@ -2518,6 +2535,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 next_dots_mentioned_num_markables=dots_mentioned_num_markables[i + 1] if i < len(dots_mentioned_num_markables) - 1 else None,
                 is_selection=is_selection[i],
                 can_confirm=can_confirm[i],
+                can_confirm_next=can_confirm[i+1] if i < len(can_confirm) - 1 else None,
             )
             new_state, outs, ref_out_and_partner_ref_out, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_latents = self._forward(
                 state, inpt, **kwargs,

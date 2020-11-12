@@ -479,7 +479,8 @@ class RnnAgent(Agent):
                 self.next_mention(lens=torch.LongTensor([self.reader_lang_hs[-1].size(0)]).to(self.device),
                                   dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
                                   min_num_mentions=min_num_mentions,
-                                  max_num_mentions=max_num_mentions)
+                                  max_num_mentions=max_num_mentions,
+                                  can_confirm=can_confirm)
             else:
                 self.first_mention(dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
                                    min_num_mentions=min_num_mentions,
@@ -648,7 +649,7 @@ class RnnAgent(Agent):
         # outs = outs.narrow(0, 1, outs.size(0) - 1)
         return self._decode(outs, self.model.word_dict)
 
-    def next_mention(self, lens, dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12):
+    def next_mention(self, lens, dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12, can_confirm=None):
         mention_beliefs = self.state.make_beliefs(
             'mention', self.timesteps-1, self.partner_ref_outs, self.ref_outs,
         )
@@ -664,6 +665,7 @@ class RnnAgent(Agent):
             dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
+            can_confirm=can_confirm,
         )
         self.next_mention_latents.append(next_mention_latents)
         nm_preds, nm_cands, nm_preds_multi, nm_indices_sorted = self.next_mention_prediction_and_candidates_from_latents(self.state, next_mention_latents)
