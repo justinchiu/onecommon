@@ -12,7 +12,7 @@ from models.utils import int_to_bit_array
 BIG_NEG = -1e9
 
 # this fits on a 48 GB GPU (RTX 8000); will likely need to lower or optimize in other ways for a smaller gpu
-CONFIGURATION_SUBBATCH_SIZE = 6
+CONFIGURATION_SUBBATCH_SIZE = 8
 
 class FeedForward(nn.Module):
     def __init__(self, n_hidden_layers, input_dim, hidden_dim, output_dim, dropout_p=None):

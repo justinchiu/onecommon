@@ -368,8 +368,8 @@ class RnnAgent(Agent):
                 **extra,
                 was_rerankable=torch.zeros(num_candidates_before_filtering).bool(),
                 ref_resolution_scores=torch.full((num_candidates_before_filtering,), -1e9),
-                joint_scores=extra['output_scores'],
-                language_model_scores=extra['output_scores'],
+                joint_scores=extra['output_logprobs'],
+                language_model_scores=extra['output_logprobs'],
                 chosen_index=torch.tensor(0).long(),
             )
             return outs, this_extra
@@ -414,7 +414,7 @@ class RnnAgent(Agent):
         dots_mentioned_scores_full = torch.full((num_candidates_before_filtering,), -1e9)
         dots_mentioned_scores_full[indices_kept] = dots_mentioned_scores
 
-        candidate_scores = extra['output_scores'] * (1.0 - weight) + dots_mentioned_scores_full * weight
+        candidate_scores = extra['output_logprobs'] * (1.0 - weight) + dots_mentioned_scores_full * weight
         candidate_index = candidate_scores.argmax()
 
         candidate_chosen = extra['outputs'][candidate_index]
@@ -427,7 +427,7 @@ class RnnAgent(Agent):
             **extra,
             was_rerankable=candidate_kept,
             ref_resolution_scores=dots_mentioned_scores_full,
-            language_model_scores=extra['output_scores'],
+            language_model_scores=extra['output_logprobs'],
             joint_scores=candidate_scores,
             chosen_index=candidate_index,
         )

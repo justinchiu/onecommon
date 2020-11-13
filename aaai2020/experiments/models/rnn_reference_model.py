@@ -511,24 +511,24 @@ class RnnReferenceModel(nn.Module):
             self.next_mention_cell = nn.GRUCell(
                 args.nhid_lang, args.nhid_lang, bias=True
             )
-            transform_and_stop_input_dim = args.nhid_lang
+            transform_input_dim = args.nhid_lang
             if 'next_mention_latents' in args.dot_recurrence_in:
-                transform_and_stop_input_dim += args.dot_recurrence_dim * (2 if self.args.dot_recurrence_split else 1)
+                transform_input_dim += args.dot_recurrence_dim * (2 if self.args.dot_recurrence_split else 1)
 
-            def _make_layer(output_dim):
+            def _make_layer(input_dim, output_dim):
                 if args.next_mention_prediction_latent_layers == 0:
-                    return nn.Linear(transform_and_stop_input_dim, output_dim)
+                    return nn.Linear(input_dim, output_dim)
                 else:
                     return FeedForward(
-                        args.next_mention_prediction_latent_layers, transform_and_stop_input_dim, 128, output_dim,
+                        args.next_mention_prediction_latent_layers, input_dim, 128, output_dim,
                         dropout_p=args.dropout
                     )
 
-            self.next_mention_transform = _make_layer(args.nhid_lang)
+            self.next_mention_transform = _make_layer(transform_input_dim, args.nhid_lang)
             if self.args.next_mention_length_prediction_type == 'bernoulli':
-                self.next_mention_stop = _make_layer(1)
+                self.next_mention_stop = _make_layer(args.nhid_lang, 1)
             else:
-                self.next_mention_length = _make_layer(MAX_NUM_MENTIONS+1)
+                self.next_mention_length = _make_layer(transform_input_dim, MAX_NUM_MENTIONS+1)
                 self.next_mention_length_crit = nn.CrossEntropyLoss(reduction='none')
 
         if args.structured_attention or args.structured_temporal_attention:
@@ -2141,6 +2141,8 @@ class RnnReferenceModel(nn.Module):
         # prevent the beam from filling with identical copies of the same hypothesis, by breaking ties
         total_scores = torch.full((beam_size,), BIG_NEG).float().to(device)
         total_scores[0] = 0
+
+        total_log_probs = torch.zeros((beam_size,)).float().to(device)
         lens = torch.zeros(beam_size).long().to(device)
 
         pad_ix = self.word_dict.get_idx('<pad>')
@@ -2178,16 +2180,18 @@ class RnnReferenceModel(nn.Module):
             # this_beam_size x vocab
             word_logprobs = word_scores.log_softmax(dim=-1)
             if temperature != 1.0:
-                word_logprobs = (word_logprobs / temperature).log_softmax(-1)
+                word_logprobs_to_sample = (word_logprobs / temperature).log_softmax(-1)
+            else:
+                word_logprobs_to_sample = word_logprobs
 
             # (this_beam_size * vocab)
             if gumbel_noise_forgetful:
                 assert not gumbel_noise
-                candidate_scores = Gumbel(word_logprobs, scale=1.0).sample()
+                candidate_scores = Gumbel(word_logprobs_to_sample, scale=1.0).sample()
             elif gumbel_noise:
-                candidate_scores = total_scores.unsqueeze(1) + Gumbel(word_logprobs, scale=1.0).sample()
+                candidate_scores = total_scores.unsqueeze(1) + Gumbel(word_logprobs_to_sample, scale=1.0).sample()
             else:
-                candidate_scores = total_scores.unsqueeze(1) + word_logprobs
+                candidate_scores = total_scores.unsqueeze(1) + word_logprobs_to_sample
 
             vocab_size = word_logprobs.size(-1)
 
@@ -2202,9 +2206,13 @@ class RnnReferenceModel(nn.Module):
                 finished_beam_indices_set = set(finished_beam_indices.tolist())
                 finished_scores = total_scores[is_finished]
 
+                finished_total_log_probs = total_log_probs[is_finished]
+
                 top_beam_indices_to_keep = []
                 top_vocab_indices_to_keep = []
                 top_scores_to_keep = []
+
+                top_total_log_probs_to_keep = []
 
                 for beam_ix, vocab_ix, score in zip(top_beam_indices, top_vocab_indices, top_scores):
                     if len(top_beam_indices_to_keep) >= num_top_to_keep:
@@ -2213,17 +2221,21 @@ class RnnReferenceModel(nn.Module):
                         top_beam_indices_to_keep.append(beam_ix)
                         top_vocab_indices_to_keep.append(vocab_ix)
                         top_scores_to_keep.append(score)
+                        top_total_log_probs_to_keep.append(total_log_probs[beam_ix] + word_logprobs[beam_ix,vocab_ix])
 
                 top_beam_indices_to_keep = torch.stack(top_beam_indices_to_keep, -1)
                 top_vocab_indices_to_keep = torch.stack(top_vocab_indices_to_keep, -1)
                 top_scores_to_keep = torch.stack(top_scores_to_keep, -1)
+                top_total_log_probs_to_keep = torch.stack(top_total_log_probs_to_keep, -1)
 
                 top_beam_indices = torch.cat((finished_beam_indices, top_beam_indices_to_keep), -1)
                 top_vocab_indices = torch.cat((finished_vocab_indices, top_vocab_indices_to_keep), -1)
                 total_scores = torch.cat((finished_scores, top_scores_to_keep), -1)
+                total_log_probs = torch.cat((finished_total_log_probs, top_total_log_probs_to_keep), -1)
 
             else:
                 total_scores = top_scores
+                total_log_probs = (total_log_probs.unsqueeze(1) + word_logprobs).view(-1).gather(-1, top_indices)
 
             outputs = outputs[top_beam_indices]
             lens = lens[top_beam_indices]
@@ -2240,6 +2252,7 @@ class RnnReferenceModel(nn.Module):
         outputs = outputs[sort_indices]
         lens = lens[sort_indices]
         total_scores = total_scores[sort_indices]
+        total_log_probs = total_log_probs[sort_indices]
 
         # remove start token for consistency with write()
         outputs = outputs[:,1:]
@@ -2268,11 +2281,15 @@ class RnnReferenceModel(nn.Module):
         else:
             reader_lang_hs = writer_lang_hs = state_new = None
 
+        # if not (gumbel_noise or gumbel_noise_forgetful):
+        #     assert torch.allclose(total_scores, total_log_probs)
+
         extra = {
             'outputs': outputs,
             'lens': lens,
             'words': decoded,
             'output_scores': total_scores,
+            'output_logprobs': total_log_probs,
         }
 
         # None: for where write() returns logprobs
