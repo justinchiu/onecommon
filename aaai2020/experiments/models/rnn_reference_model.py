@@ -2363,9 +2363,9 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         partner_num_markables = torch.zeros(state.bsz).long().to(device)
 
         if self.args.dot_recurrence_oracle:
-            ref_tgt = torch.zeros((bsz, num_mentions, num_dots)).long().to(device)
+            ref_tgt = dots_mentioned_per_ref.transpose(0,1)
         else:
-            ref_tgt = dots_mentioned_per_ref
+            ref_tgt = torch.zeros((bsz, num_mentions, num_dots)).long().to(device)
         dummy_partner_ref_tgt = torch.zeros((bsz, 0, num_dots)).long().to(device)
         dummy_reader_h = torch.zeros((1, bsz, reader_h_dim)).to(device)
 
