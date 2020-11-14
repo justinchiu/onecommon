@@ -2362,20 +2362,19 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         partner_ref_inpt = None
         partner_num_markables = torch.zeros(state.bsz).long().to(device)
 
-        dummy_ref_tgt = torch.zeros((bsz, num_mentions, num_dots)).long().to(device)
+        if self.args.dot_recurrence_oracle:
+            ref_tgt = torch.zeros((bsz, num_mentions, num_dots)).long().to(device)
+        else:
+            ref_tgt = dots_mentioned_per_ref
         dummy_partner_ref_tgt = torch.zeros((bsz, 0, num_dots)).long().to(device)
         dummy_reader_h = torch.zeros((1, bsz, reader_h_dim)).to(device)
-
-        # if this is True, should pass dots_mentioned_per_ref for ref_tgt (the second-to-last argument)
-        if self.args.dot_recurrence_oracle:
-            raise NotImplementedError()
 
         new_state = self._update_dot_h_maybe_multi(
             state, dummy_reader_h,
             dummy_ref_inpt, partner_ref_inpt,
             num_markables, partner_num_markables,
             ref_out, None,
-            dummy_ref_tgt, dummy_partner_ref_tgt,
+            ref_tgt, dummy_partner_ref_tgt,
         )
 
         return self.current_selection_probabilities(new_state)
