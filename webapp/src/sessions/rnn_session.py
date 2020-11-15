@@ -82,4 +82,6 @@ class RnnSession(Session):
 
     def select(self):
         choice = self.model.choose()
+        # convert choice to id string
+        choice = self.kb.items[choice]["id"]
         return super(RnnSession, self).select(choice)

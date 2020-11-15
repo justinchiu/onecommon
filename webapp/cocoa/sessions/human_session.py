@@ -15,6 +15,10 @@ class HumanSession(Session):
         # todo implement caching to store message history
 
     def send(self):
+        # todo: remove this, just for debugging
+        if self.outbox:
+            print(self.outbox[0].action)
+            print(self.outbox[0].data)
         if len(self.outbox) > 0:
             return self.outbox.pop(0)
         return None
