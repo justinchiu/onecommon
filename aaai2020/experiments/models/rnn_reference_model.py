@@ -278,6 +278,7 @@ class RnnReferenceModel(nn.Module):
         self.spatial_replacements = {
             self.word_dict.word2idx[k]: self.word_dict.word2idx[v]
             for k, v in corpora.reference.ReferenceCorpus.SPATIAL_REPLACEMENTS.items()
+            if k in self.word_dict.word2idx and v in self.word_dict.word2idx
         }
 
         ctx_encoder_ty = models.get_ctx_encoder_type(args.ctx_encoder_type)
