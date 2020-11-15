@@ -749,7 +749,7 @@ class RnnAgent(Agent):
             self.logprobs.append(logprob)
 
         choice, _, _ = self._choose()
-        if self.real_ids:
+        if hasattr(self, "real_ids") and self.real_ids:
             choice = self.real_ids[choice]
         return choice
 

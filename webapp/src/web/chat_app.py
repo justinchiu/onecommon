@@ -29,6 +29,10 @@ socketio = SocketIO()
 
 import pdb
 
+# TODO: verify
+from utils import use_cuda
+use_cuda(True)
+
 DB_FILE_NAME = 'chat_state.db'
 LOG_FILE_NAME = 'log.out'
 ERROR_LOG_FILE_NAME = 'error_log.out'
@@ -106,7 +110,12 @@ def add_systems(args, config_dict, schema):
         if info["active"]:
             name = info["type"]
             try:
-                model = get_system(name, args, schema=schema, timed=timed)
+                model_path = info["model_path"]
+                markable_detector_path = info["markable_detector_path"]
+                model = get_system(
+                    name, args, schema=schema, timed=timed,
+                    model_path=model_path, markable_detector_path=markable_detector_path,
+                )
             except ValueError:
                 warnings.warn(
                     'Unrecognized model type in {} for configuration '

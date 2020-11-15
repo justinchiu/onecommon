@@ -1,5 +1,5 @@
 __author__ = 'anushabala'
-from session import Session
+from cocoa.sessions.session import Session
 import time
 import random
 from collections import deque

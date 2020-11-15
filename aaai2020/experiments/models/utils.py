@@ -86,7 +86,8 @@ def int_to_bit_array(int_array, num_bits=None, base=2):
     remainder = int_array_flat
     for i in range(num_bits):
         bits[ix, num_bits - i - 1] = remainder % base
-        remainder = remainder / base
+        #remainder = remainder / base
+        remainder = remainder // base
     assert (remainder == 0).all()
     bits = bits.view((int_array.size()) + (num_bits,))
     return bits

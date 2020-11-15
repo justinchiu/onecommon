@@ -3,7 +3,8 @@ import pdb
 
 class Controller(BaseController):
     def __init__(self, scenario, sessions, chat_id=None):
-        super(Controller, self).__init__(scenario, sessions, chat_id, allow_cross_talk=True)
+        #super(Controller, self).__init__(scenario, sessions, chat_id, allow_cross_talk=True)
+        super(Controller, self).__init__(scenario, sessions, chat_id, allow_cross_talk=False)
         self.selections = [None, None]
 
     def event_callback(self, event):

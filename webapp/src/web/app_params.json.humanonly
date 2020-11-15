@@ -33,25 +33,8 @@
     "coreference_instructions": "web/templates/coreference_instructions.html",
     "task_title": "Find One In Common!",
     "icon": "handshake.jpg",
-    "num_chats_per_scenario": {
-        "human": 1,
-        "full": 1,
-        "uabaseline": 1
-    },
-    "models": {
-        "full": {
-            "active": true,
-            "type": "full",
-            "model_path": "full.th",
-            "markable_detector_path": "markable_detector.th"
-        },
-        "uabaseline": {
-            "active": true,
-            "type": "uabaseline",
-            "model_path": "full.th",
-            "markable_detector_path": "markable_detector.th"
-        }
-    },
+    "num_chats_per_scenario": {"human": 1},
+    "models": {},
     "debug": false,
     "quit_after": 1200
 }

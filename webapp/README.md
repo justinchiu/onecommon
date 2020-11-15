@@ -10,8 +10,11 @@ This repository includes basic functions for dataset collection, dataset visuali
 To run the web server, move to `src` directory and simply run `run_sample.sh`. Make sure to append `onecommon/webapp` and `onecommon/webapp/src` directories to the PYTHONPATH, e.g.
 
 ```
-export PYTHONPATH=$PYTHONPATH:~/onecommon/webapp/src:~/onecommon/webapp
+export PYTHONPATH=$PYTHONPATH:~/onecommon/webapp/src:~/onecommon/webapp:~/onecommon/aaai2020/experiments:~/onecommon/aaai2020
 ```
+
+`full.th` and `markable_detector.th` are assumed to be checkpoints saved in `webapp/src`.
+Change the paths in `webapp/src/web/app_params.json`.
 
 Unless you use the `--reuse` option, this script will create new data directory every time and overwrite the existing one if already exists.
 
