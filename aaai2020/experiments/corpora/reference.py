@@ -99,6 +99,7 @@ class ReferenceCorpus(object):
         self.spatial_replacements = {
             self.word_dict.word2idx[k]: self.word_dict.word2idx[v]
             for k, v in self.SPATIAL_REPLACEMENTS.items()
+            if k in self.word_dict.word2idx
         }
 
         print("freq cutoff: {}".format(freq_cutoff))
