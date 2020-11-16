@@ -7,6 +7,7 @@ STATS = [
     for split in ['train', 'valid']
     for stat in ['correct_ppl', 
                  'spatial_lang_ppl',
+                 'lang_loss',
                  'select_acc',
                  'is_selection_acc', 'is_selection_precision', 'is_selection_recall', 'is_selection_f1', 'is_selection_loss',
                  'ref_acc', 'ref_f1', 'ref_exact_match', 
@@ -24,7 +25,7 @@ DEFAULT_STATS = [
     'valid_select_acc',
     'valid_ref_acc', 'valid_ref_f1', 'valid_ref_exact_match',
     'valid_partner_ref_acc', 'valid_partner_ref_f1', 'valid_partner_ref_exact_match',
-    'valid_next_mention_f1', 'valid_next_mention_exact_match'
+    'valid_next_mention_acc', 'valid_next_mention_f1', 'valid_next_mention_exact_match'
 ]
 
 def make_parser():
@@ -80,7 +81,15 @@ if __name__ == "__main__":
         stats_by_epoch = parse(log_file)
         if stats_by_epoch is None:
             print("error parsing {}".format(log_file))
-        dfs_by_name[log_file] = pandas.DataFrame(stats_by_epoch).transpose()
+        df = pandas.DataFrame(stats_by_epoch).transpose()
+        dfs_by_name[log_file] = df
+        last_stats = df[DEFAULT_STATS].iloc[-1]
+        print(last_stats)
+        print("{}\t{}\t{}".format(
+            log_file,
+            last_stats.name,
+            ','.join('{:.4f}'.format(x) for x in last_stats)
+        ))
     for stat in args.stats:
         data = {}
         for name, df in dfs_by_name.items():

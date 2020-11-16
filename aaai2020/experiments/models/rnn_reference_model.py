@@ -2117,10 +2117,13 @@ class RnnReferenceModel(nn.Module):
         dots_mentioned_expanded = dots_mentioned.expand(beam_size, -1)
         dots_mentioned_per_ref_expanded = dots_mentioned_per_ref.expand(beam_size, -1, -1)
 
-        ctx_seq_encoded_and_mask_expanded = (
-            ctx_seq_encoded.expand(beam_size, -1, -1),
-            ctx_seq_mask.expand(beam_size, -1)
-        )
+        if ctx_seq_encoded is not None and ctx_seq_mask is not None:
+            ctx_seq_encoded_and_mask_expanded = (
+                ctx_seq_encoded.expand(beam_size, -1, -1),
+                ctx_seq_mask.expand(beam_size, -1)
+            )
+        else:
+            ctx_seq_encoded_and_mask_expanded = None
 
         # pass None for vars that really should be expanded, but not implemented for now
         state_expanded = state._replace(

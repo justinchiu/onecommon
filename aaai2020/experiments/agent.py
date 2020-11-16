@@ -313,7 +313,7 @@ class RnnAgent(Agent):
             self.partner_ref_inpts.append(partner_ref_inpt)
             self.partner_markables.append(partner_markables)
 
-        if partner_ref_inpt is not None and partner_num_markables is not None:
+        if self.model.args.partner_reference_prediction and partner_ref_inpt is not None and partner_num_markables is not None:
             self.predict_partner_referents(partner_ref_inpt, partner_num_markables)
         else:
             self.partner_ref_outs.append(None)
@@ -475,28 +475,31 @@ class RnnAgent(Agent):
         if force_dots_mentioned:
             dots_mentioned_per_ref_candidates = [dots_mentioned_per_ref_to_force]
         else:
-            if self.reader_lang_hs:
-                self.next_mention(lens=torch.LongTensor([self.reader_lang_hs[-1].size(0)]).to(self.device),
-                                  dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
-                                  min_num_mentions=min_num_mentions,
-                                  max_num_mentions=max_num_mentions,
-                                  can_confirm=can_confirm)
+            if not self.model.args.next_mention_prediction:
+                dots_mentioned_per_ref_candidates = [None]
             else:
-                self.first_mention(dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
-                                   min_num_mentions=min_num_mentions,
-                                   max_num_mentions=max_num_mentions)
+                if self.reader_lang_hs:
+                    self.next_mention(lens=torch.LongTensor([self.reader_lang_hs[-1].size(0)]).to(self.device),
+                                      dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
+                                      min_num_mentions=min_num_mentions,
+                                      max_num_mentions=max_num_mentions,
+                                      can_confirm=can_confirm)
+                else:
+                    self.first_mention(dots_mentioned_num_markables_to_force=dots_mentioned_num_markables_to_force,
+                                       min_num_mentions=min_num_mentions,
+                                       max_num_mentions=max_num_mentions)
 
-            if self.args.reranking_l0_confidence:
-                assert self.args.language_rerank
-                assert self.args.next_mention_reranking
-                nm_candidates = self.next_mention_predictions_multi[-1]
-            else:
-                nm_candidates = [self.next_mention_predictions[-1]]
+                if self.args.reranking_l0_confidence:
+                    assert self.args.language_rerank
+                    assert self.args.next_mention_reranking
+                    nm_candidates = self.next_mention_predictions_multi[-1]
+                else:
+                    nm_candidates = [self.next_mention_predictions[-1]]
 
-            dots_mentioned_per_ref_candidates = [
-                t.transpose(0, 1) if t is not None else None
-                for t in nm_candidates
-            ] if nm_candidates is not None else [None]
+                dots_mentioned_per_ref_candidates = [
+                    t.transpose(0, 1) if t is not None else None
+                    for t in nm_candidates
+                ] if nm_candidates is not None else [None]
         has_terminated = False
 
         while not has_terminated:

@@ -35,6 +35,6 @@ python -u train_reference.py \
   --separate_attn \
   --cuda \
   $@ \
-  | tee ${output_dir}/train_fold-1.out
+  | tee ${output_dir}/train.out
 
 #	--repeat_train \
