@@ -124,7 +124,7 @@ class ReferencePredictor(object):
             # print('ref_tgt size: {}'.format(ref_tgt.size()))
             ref_losses = (self.crit(ref_out_logits, ref_tgt) * ref_mask.float())
             if instance_mask is not None:
-                ref_loss = ref_losses[instance_mask].sum()
+                ref_loss = ref_losses[:, instance_mask].sum()
             else:
                 ref_loss = ref_losses.sum()
             ref_pred = (ref_out_logits > 0).long()

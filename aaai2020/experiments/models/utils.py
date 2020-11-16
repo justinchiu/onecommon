@@ -14,7 +14,6 @@ import math
 
 def init_rnn(rnn, init_range, weights=None, biases=None):
     """ Orthogonal initialization of RNN. """
-    return
     weights = weights or ['weight_ih_l0', 'weight_hh_l0']
     biases = biases or ['bias_ih_l0', 'bias_hh_l0']
     bound = 1 / math.sqrt(rnn.hidden_size)
@@ -36,20 +35,17 @@ def init_rnn(rnn, init_range, weights=None, biases=None):
 
 def init_rnn_cell(rnn, init_range):
     """ Orthogonal initialization of RNNCell. """
-    return
     init_rnn(rnn, init_range, ['weight_ih', 'weight_hh'], ['bias_ih', 'bias_hh'])
 
 
 def init_linear(linear, init_range):
     """ Uniform initialization of Linear. """
-    return
     linear.weight.data.uniform_(-init_range, init_range)
     linear.bias.data.fill_(0)
 
 
 def init_cont(cont, init_range):
     """ Uniform initialization of a container. """
-    return
     for m in cont:
         if hasattr(m, 'weight'):
             m.weight.data.uniform_(-init_range, init_range)

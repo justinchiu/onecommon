@@ -2611,7 +2611,10 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
             sel_outs.append(sel_out)
 
-            next_mention_outs = self.next_mention_prediction_from_latents(state, next_mention_latents)
+            if self.args.next_mention_prediction:
+                next_mention_outs = self.next_mention_prediction_from_latents(state, next_mention_latents)
+            else:
+                next_mention_outs = None
 
             state = new_state
             if compute_l1_probs and ref_inpt is not None:

@@ -114,8 +114,6 @@ class AttentionContextEncoder(nn.Module):
 
         self.dropout = nn.Dropout(args.dropout)
 
-        init_cont([self.property_encoder, self.relation_encoder], args.init_range)
-
     def forward(self, ctx):
         ents = ctx.view(ctx.size(0), self.num_ent, self.dim_ent)
         prop_emb = self.property_encoder(ents)
@@ -158,8 +156,6 @@ class RelationalAttentionContextEncoder(nn.Module):
         )
 
         self.dropout = nn.Dropout(args.dropout)
-
-        init_cont([self.property_encoder, self.relation_encoder], args.init_range)
 
     def forward(self, ctx):
         ents = ctx.view(ctx.size(0), self.num_ent, self.dim_ent)
@@ -238,8 +234,6 @@ class RelationalAttentionContextEncoder2(nn.Module):
                 nn.Dropout(args.dropout),
             )
 
-        init_cont([self.property_encoder, self.relation_encoder], args.init_range)
-
     def forward(self, ctx):
         ents = ctx.view(ctx.size(0), self.num_ent, self.dim_ent)
         ent_rel_pairs = []
@@ -300,8 +294,6 @@ class RelationContextEncoder(nn.Module):
         self.tanh = nn.ReLU()
         self.dropout = nn.Dropout(args.dropout)
 
-        init_cont([self.relation_encoder, self.fc1], args.init_range)
-
     def forward(self, ctx):
         ents = ctx.view(ctx.size(0), self.num_ent, self.dim_ent)
 
@@ -332,8 +324,6 @@ class MlpContextEncoder(nn.Module):
         self.fc2 = nn.Linear(args.nembed_ctx, args.nembed_ctx)
         self.tanh = nn.ReLU()
         self.dropout = nn.Dropout(args.dropout)
-
-        init_cont([self.fc1, self.fc2], args.init_range)
 
     def forward(self, ctx):
         out = self.fc1(ctx)
@@ -421,8 +411,6 @@ class RelationalAttentionContextEncoder3(nn.Module):
                 nn.ReLU(),
                 nn.Dropout(args.dropout),
             )
-
-        init_cont([self.property_encoder, self.relation_encoder, self.extremes_encoder], args.init_range)
 
     def forward(self, ctx, relational_dot_mask=None):
         relation_include_angle = hasattr(self, 'args') and self.args.relation_include_angle
