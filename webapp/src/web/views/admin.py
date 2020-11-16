@@ -1,6 +1,8 @@
 from flask import Blueprint, jsonify, render_template, request, redirect, url_for, Markup, Response
 from flask import current_app as app
 
+from collections import defaultdict
+
 from functools import wraps
 import json
 import sqlite3
@@ -151,16 +153,31 @@ def visualize():
             ids = [chat_id for chat_id in ids if chat_id not in reviewed_ids and DatabaseReader.check_completed_info(cursor, chat_id)]
         outcomes = []
         dialogues = []
+        opponent_agents = []
         num_success = 0
         num_fail = 0
         num_incomplete = 0
+
+        success_by_opponent = defaultdict(int)
+        fail_by_opponent = defaultdict(int)
+        incomplete_by_opponent = defaultdict(int)
+
         for chat_id in ids:
             outcome = DatabaseReader.get_chat_outcome(cursor, chat_id)
+            this_opponent_agents = set(DatabaseReader.get_chat_agent_types(cursor, chat_id).values()) - {'human'}
+            if not this_opponent_agents:
+                opponent_agent = 'human'
+            else:
+                opponent_agent = next(iter(this_opponent_agents))
+            opponent_agents.append(opponent_agent)
+
             outcomes.append(outcome)
             if outcome['reward'] == 1:
                 num_success += 1
+                success_by_opponent[opponent_agent] += 1
             else:
                 num_fail += 1
+                fail_by_opponent[opponent_agent] += 1
             chat_info = DatabaseReader.get_chat_example(cursor, chat_id, app.config['scenario_db'], include_meta=True).to_dict()
             chat_text = ""
             select_id = {}
@@ -170,19 +187,24 @@ def visualize():
             dialogues.append(chat_text)
 
         num_ids = len(ids)
+        opponent_types = list(sorted(set(opponent_agents)))
 
         return render_template('chat_list.html',
-                                num_chats = num_ids,
-                                chat_ids = ids,
-                                chat_outcomes = outcomes,
-                                reviewed = ["" for i in range(num_ids)],
-                                base_url = request.url + '?chat_id=',
-                                num_success=num_success,
-                                num_fail=num_fail,
-                                num_incomplete=num_incomplete,
-                                num_accept=0,
-                                num_reject=0,
-                                dialogues=dialogues)
+                               num_chats = num_ids,
+                               chat_ids = ids,
+                               chat_outcomes = outcomes,
+                               reviewed = ["" for i in range(num_ids)],
+                               base_url = request.url + '?chat_id=',
+                               num_success=num_success,
+                               num_fail=num_fail,
+                               num_incomplete=num_incomplete,
+                               num_accept=0,
+                               num_reject=0,
+                               dialogues=dialogues,
+                               opponent_agents=opponent_agents,
+                               success_by_opponent=success_by_opponent,
+                               fail_by_opponent=fail_by_opponent,
+                              opponent_types=opponent_types)
     else:
         chat_id = request.args.get('chat_id')
         chat_info = DatabaseReader.get_chat_example(cursor, chat_id, app.config['scenario_db'], include_meta=True).to_dict()

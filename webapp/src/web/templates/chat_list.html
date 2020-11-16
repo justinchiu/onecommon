@@ -60,10 +60,18 @@
   <button type="button" id="zero_active" onclick="zero_active()">Zero Active Scenarios</button><p id='zero_active_result'></p> <br>
   <table class="stat">
     <tr>
+      <th>overall</th>
       <th>success: {{num_success}}</th>
       <th>fail: {{num_fail}}</th>
       <th>incomplete: {{num_incomplete}}</th>
     </tr>
+    {% for agent_type in opponent_types %}
+    <tr>
+      <th>{{ agent_type }}</th>
+      <th>success: {{success_by_opponent[agent_type]}}</th>
+      <th>fail: {{fail_by_opponent[agent_type]}}</th>
+    </tr>
+    {% endfor %}
   </table><br>
   <table class="stat">
     <tr>
@@ -77,6 +85,7 @@
       <th>accept</th>
       <th>reject</th>
       <th>Chat_id</th>
+      <th>Opponent</th>
       <th>Outcome</th>
       <th>Review Status</th>
       <th>Dialogue</th>
@@ -87,6 +96,7 @@
         <td><button type="button" id="accept" onclick="accept_chat('{{chat_ids[i]}}')">Accept</button> <br></td>
         <td><button type="button" id="reject" onclick="reject_chat('{{chat_ids[i]}}')">Reject</button> <br></td>
         <td><a href="{{base_url}}{{ chat_ids[i] }}" > {{ chat_ids[i] }} </a></td>
+        <td>{{ opponent_agents[i] }}</td>
         <td>{{ chat_outcomes[i] }}</td>
         <td>{{ reviewed[i] }}</td>
         <td>{{ dialogues[i] }}</td>

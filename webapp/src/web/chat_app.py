@@ -215,6 +215,8 @@ if __name__ == "__main__":
     db, log_file, error_log_file, transcripts_dir = init(args.output, args.reuse)
     error_log_file = open(error_log_file, 'w')
 
+    print(params)
+
     WebLogger.initialize(log_file)
     params['db'] = {}
     params['db']['location'] = db.db_file
@@ -251,7 +253,7 @@ if __name__ == "__main__":
     if not os.path.exists(templates_dir):
             raise ValueError("Specified HTML template location doesn't exist: %s" % templates_dir)
 
-    app = create_app(debug=False, templates_dir=templates_dir)
+    app = create_app(debug=params['debug'], templates_dir=templates_dir)
 
     schema_path = args.schema_path
 

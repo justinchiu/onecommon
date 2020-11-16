@@ -10,6 +10,8 @@ from sessions.session import Session
 
 import torch
 
+from nltk import word_tokenize
+
 class RnnSession(Session):
     def __init__(self, agent, kb, model):
         super(RnnSession, self).__init__(agent)
@@ -45,7 +47,7 @@ class RnnSession(Session):
             is_selection=this_is_selection,
             inference="sample", # todo
             beam_size=1, # todo
-            sample_temperature_override=1, # todo
+            sample_temperature_override=0.25, # todo
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
         )
@@ -65,8 +67,8 @@ class RnnSession(Session):
         elif event.action == 'quit':
             self.state['quit'] = True
         elif event.action == 'message':
-            # TODO: nltk tok
-            tokens = event.data.lower().strip().split() + ['<eos>']
+            #tokens = event.data.lower().strip().split() + ['<eos>']
+            tokens = word_tokenize(event.data.lower().strip()) + ['<eos>']
 
             this_partner_num_markables = torch.LongTensor([0])
             # TODO: verify
