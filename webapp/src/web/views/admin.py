@@ -95,7 +95,7 @@ def check_auth(username, password):
     """This function is called to check if a username /
     password combination is valid.
     """
-    return username == 'sample' and password == 'sample'
+    return username == 'admin' and password == 'pragmatix'
 
 def authenticate():
     """Sends a 401 response that enables basic auth"""
@@ -242,11 +242,13 @@ def visualize():
             cooperative = res[3]
             humanlike = res[4]
             comments = res[5]
+            confidence = res[6]
         else:
             survey = False
             cooperative = None
             humanlike = None
             comments = None
+            confidence = None
 
         return render_template('visualize.html',
                                 chat_id=chat_id,
@@ -262,6 +264,7 @@ def visualize():
                                 survey=survey,
                                 cooperative=cooperative,
                                 humanlike=humanlike,
-                                comments=comments
+                                confidence=confidence,
+                                comments=comments,
                                 )
 
