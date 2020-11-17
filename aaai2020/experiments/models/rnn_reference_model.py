@@ -621,11 +621,11 @@ class RnnReferenceModel(nn.Module):
                 setattr(
                     self,
                     self._attention_name(attn_name),
-                    attention_constructors[attn_name](args, 1, args.nhid_sel, args.nhid_sel, dropout_p=args.dropout)
+                    attention_constructors[attn_name](args, 1, args.nhid_sel, args.nhid_sel, dropout_p=args.dropout, language_dim=lang_input_dim)
                 )
             if self.args.feed_context_attend_separate:
                 # TODO: why separate hidden dim for this?
-                self.feed_attn = attention_constructors['feed'](args, 1, args.nhid_sel, args.nhid_attn, dropout_p=args.dropout)
+                self.feed_attn = attention_constructors['feed'](args, 1, args.nhid_sel, args.nhid_attn, dropout_p=args.dropout, language_dim=lang_input_dim)
             else:
                 self.feed_attn = None
 

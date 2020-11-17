@@ -10,6 +10,7 @@ shift
 shift
 
 log_file=${model_dir_a}/${name}_ctx-${shared_ctx_count}.selfplay.log
+out_file=${model_dir_a}/${name}_ctx-${shared_ctx_count}.selfplay.out
 
 python -u selfplay.py \
   --alice_model_file=${model_dir_a}/1_ep-20.th \
@@ -19,4 +20,5 @@ python -u selfplay.py \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
   --log_file=${log_file} \
-  $@
+  $@ \
+  | tee ${out_file}
