@@ -46,7 +46,7 @@ def close_connection(exception):
 def create_app(debug=False, templates_dir='templates'):
     """Create an application."""
 
-    app = Flask(__name__, template_folder=os.path.abspath(templates_dir), static_url_path='/sample/static')
+    app = Flask(__name__, template_folder=os.path.abspath(templates_dir), static_url_path='/dialogue/static')
     app.debug = debug
     app.config['SECRET_KEY'] = 'gjr39dkjn344_!67#'
     app.config['PROPAGATE_EXCEPTIONS'] = True
@@ -57,12 +57,12 @@ def create_app(debug=False, templates_dir='templates'):
     from web.views.coreference import coreference
     from web.views.selfplay import selfplay
     from cocoa.web.views.chat import chat
-    app.register_blueprint(chat, url_prefix='/sample')
-    app.register_blueprint(action, url_prefix='/sample')
-    app.register_blueprint(admin, url_prefix='/sample')
-    app.register_blueprint(annotation, url_prefix='/sample')
-    app.register_blueprint(coreference, url_prefix='/sample')
-    app.register_blueprint(selfplay, url_prefix='/sample')
+    app.register_blueprint(chat, url_prefix='/dialogue')
+    app.register_blueprint(action, url_prefix='/dialogue')
+    app.register_blueprint(admin, url_prefix='/dialogue')
+    app.register_blueprint(annotation, url_prefix='/dialogue')
+    app.register_blueprint(coreference, url_prefix='/dialogue')
+    app.register_blueprint(selfplay, url_prefix='/dialogue')
 
     app.teardown_appcontext_funcs = [close_connection]
 
@@ -386,6 +386,10 @@ if __name__ == "__main__":
 
     print("App setup complete")
 
-    server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file)
     atexit.register(cleanup, flask_app=app)
+    #app.run('0.0.0.0', debug=True, port=args.port, ssl_context=('/home/ubuntu/server.crt', '/home/ubuntu/server.key'))
+    #server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file)
+    server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file,
+                        keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
+                        certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem')
     server.serve_forever()

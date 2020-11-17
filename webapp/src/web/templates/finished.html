@@ -24,6 +24,7 @@
 	</div>
 	<div id="mturk">
 
+<!--
     <form name='mturk_form' method='post' id='mturk_form' action="{{turk_submit_to}}/mturk/externalSubmit"><input type='hidden' value='' name='assignmentId' id='assignmentId'/>
     <div>
     <input type='hidden' name='chat_id' value='{{chat_id}}' />
@@ -32,18 +33,18 @@
     <p><input type='submit' id='submitButton' value='Submit HIT!' /></p></form>
     <script language='Javascript'>turkSetAssignmentID();</script>
     {% endif %}
+-->
 
-<!--
 		{% if mturk_code is not none %}
 		<hr>
 
-		<h3>Thanks for completing this HIT! Please copy and paste this code into the HIT on Mechanical Turk: {{ mturk_code }}</h3>
+		<h3>Thanks for completing this HIT! Please copy and paste this code into the HIT on Mechanical Turk:</h3>
+    {{ mturk_code }}
 		{% endif %}
 		<hr>
 		{% if visualize %}
 		<h4><a href="javascript:visualize();">Click here</a> to visualize the dialogue you just completed</h4>
 		{% endif %}
 	</div>
--->
     </body>
 </html>

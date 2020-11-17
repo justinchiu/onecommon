@@ -158,7 +158,10 @@ def index():
             # link for NLP group
             prefix = "NLP_"
 
-        url = request.url + '?{}={}'.format('uid', generate_userid(prefix))
+        if '?' in request.url:
+            url = request.url + '&{}={}'.format('uid', generate_userid(prefix))
+        else:
+            url = request.url + '?{}={}'.format('uid', generate_userid(prefix))
         for _key in dict(request.args).keys():
             _value = request.args.get(_key,default=None, type=None)
             if _value:
@@ -177,7 +180,9 @@ def index():
     turkSubmitTo = request.args.get('turkSubmitTo', default=None, type=None)
     workerId = request.args.get('workerId', default=None, type=None)
 
-    mturk = True if hitId else None
+    mturk = True if request.args.get('mturk', default=None, type=None) == '1' else None
+
+    #mturk = True if hitId else None
 
     if status == Status.Waiting:
         waiting_info = backend.get_waiting_info(userid())
@@ -189,6 +194,7 @@ def index():
                                icon=app.config['task_icon'])
     elif status == Status.Finished:
         finished_info, chat_id, completed = backend.get_finished_info(userid(), from_mturk=mturk, hit_id=hitId, assignment_id=assignmentId)
+        mturk_code = finished_info.mturk_code if mturk else None
         if completed:
           backend.add_completed_scenarios(chat_id, userid())
         visualize_link = False
@@ -196,6 +202,7 @@ def index():
             visualize_link = True
         return render_template('finished.html',
                                finished_message=finished_info.message,
+                               mturk_code=mturk_code,
                                chat_id=chat_id,
                                turk_submit_to=request.args.get('turkSubmitTo', default=None, type=None),
                                title=app.config['task_title'],
@@ -205,11 +212,13 @@ def index():
                                completed=completed)
     elif status == Status.Incomplete:
         finished_info, chat_id, completed = backend.get_finished_info(userid(), from_mturk=False, current_status=Status.Incomplete)
+        mturk_code = finished_info.mturk_code if mturk else None
         visualize_link = False
         if request.args.get('debug') is not None and request.args.get('debug') == '1':
             visualize_link = True
         return render_template('finished.html',
                                finished_message=finished_info.message,
+                               mturk_code=mturk_code,
                                chat_id=chat_id,
                                turk_submit_to=request.args.get('turkSubmitTo', default=None, type=None),
                                title=app.config['task_title'],
