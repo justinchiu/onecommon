@@ -18,6 +18,7 @@ from cocoa.web.main.logger import WebLogger
 
 from core.scenario import Scenario
 from systems import get_system
+from systems.rnn_system import CUDA
 from main.db_reader import DatabaseReader
 from main.backend import DatabaseManager
 
@@ -31,7 +32,8 @@ import pdb
 
 # TODO: verify
 from utils import use_cuda
-use_cuda(True)
+if CUDA:
+    use_cuda(True)
 
 DB_FILE_NAME = 'chat_state.db'
 LOG_FILE_NAME = 'log.out'
@@ -146,7 +148,6 @@ def add_systems(args, config_dict, schema):
         systems.pop(sys_name, None)
 
     return systems, pairing_probabilities
-
 
 def cleanup(flask_app):
     db_path = flask_app.config['user_params']['db']['location']

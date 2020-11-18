@@ -15,6 +15,8 @@ from engines.beliefs import BlankBeliefConstructor
 
 import pprint
 
+CUDA = False
+
 class Dummy:
     def __init__(self):
         self.normalize = True
@@ -38,11 +40,13 @@ class RnnSystem(System):
         assert inference_args is not None
         self.inference_args = inference_args
 
-        self.model = utils.load_model(model_path, prefix_dir=None)
-        self.markable_detector = utils.load_model(markable_detector_path, prefix_dir=None)
+        self.model = utils.load_model(model_path, prefix_dir=None, map_location='cpu')
+        self.model.eval()
+        self.markable_detector = utils.load_model(markable_detector_path, prefix_dir=None, map_location='cpu')
+        self.markable_detector.eval()
 
         # todo: help, should probably pass in a use_cuda arg?
-        if True:
+        if CUDA:
             self.model.cuda()
             self.markable_detector.cuda()
 
@@ -58,6 +62,7 @@ class RnnSystem(System):
         d = self.inference_args
         d = utils.merge_dicts(d, vars(agent_args))
         d = utils.merge_dicts(d, vars(self.model.args))
+        d['cuda'] = CUDA
         merged_args = argparse.Namespace(**d)
         # todo: verify
         merged_args.eps = 0

@@ -193,6 +193,7 @@ class Backend(object):
         if timeout_limit < 0:
             return False
         num_seconds_remaining = (timeout_limit + timestamp) - current_timestamp_in_seconds()
+        #print("{} / {}".format(num_seconds_remaining, timeout_limit))
         return num_seconds_remaining <= 0
 
     def _assert_no_connection_timeout(self, connection_status, connection_timestamp):
@@ -397,6 +398,7 @@ class Backend(object):
 
                 scenario, partner_type = _choose_scenario_and_partner_type(cursor)
                 scenario_id = scenario.uuid
+                print("scenario_id: {}; partner_type: {}".format(scenario_id, partner_type))
                 #my_index = np.random.choice([0, 1])
                 # TODO: hack for buyer/seller
                 my_index = 0 if self.scenario_int_id[scenario_id] % 2 == 0 else 1
@@ -671,6 +673,7 @@ class Backend(object):
                 u = self._get_user_info(cursor, userid, assumed_status=Status.Waiting)
                 num_seconds = (self.config["status_params"]["waiting"]["num_seconds"] +
                                u.status_timestamp) - current_timestamp_in_seconds()
+                print("waiting {}".format(num_seconds))
                 return WaitingState(u.message, num_seconds)
 
         except sqlite3.IntegrityError:
@@ -833,6 +836,7 @@ class Backend(object):
                     u = self._get_user_info(cursor, userid, assumed_status=assumed_status)
                     self._update_user(cursor, userid, connected_status=1)
                     if u.status == Status.Waiting:
+                        print("attempting to join")
                         self.attempt_join_chat(userid)
                     return True
                 except (UnexpectedStatusException, ConnectionTimeoutException, StatusTimeoutException) as e:

@@ -85,6 +85,7 @@
       <th>accept</th>
       <th>reject</th>
       <th>Chat_id</th>
+      <th>Scenario</th>
       <th>Opponent</th>
       <th>Outcome</th>
       <th>Review Status</th>
@@ -96,6 +97,7 @@
         <td><button type="button" id="accept" onclick="accept_chat('{{chat_ids[i]}}')">Accept</button> <br></td>
         <td><button type="button" id="reject" onclick="reject_chat('{{chat_ids[i]}}')">Reject</button> <br></td>
         <td><a href="{{base_url}}{{ chat_ids[i] }}" > {{ chat_ids[i] }} </a></td>
+        <td>{{ scenario_ids[i] }}</td>
         <td>{{ opponent_agents[i] }}</td>
         <td>{{ chat_outcomes[i] }}</td>
         <td>{{ reviewed[i] }}</td>

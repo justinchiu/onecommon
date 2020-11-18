@@ -153,6 +153,7 @@ def visualize():
             ids = [chat_id for chat_id in ids if chat_id not in reviewed_ids and DatabaseReader.check_completed_info(cursor, chat_id)]
         outcomes = []
         dialogues = []
+        scenario_ids = []
         opponent_agents = []
         num_success = 0
         num_fail = 0
@@ -185,6 +186,7 @@ def visualize():
                 if chat_event['action'] == 'message':
                     chat_text += "{}: {}\n".format(chat_event['agent'], chat_event['data'].encode('ascii', 'ignore'))
             dialogues.append(chat_text)
+            scenario_ids.append(chat_info['scenario_uuid'])
 
         num_ids = len(ids)
         opponent_types = list(sorted(set(opponent_agents)))
@@ -204,7 +206,9 @@ def visualize():
                                opponent_agents=opponent_agents,
                                success_by_opponent=success_by_opponent,
                                fail_by_opponent=fail_by_opponent,
-                              opponent_types=opponent_types)
+                               opponent_types=opponent_types,
+                               scenario_ids=scenario_ids,
+                              )
     else:
         chat_id = request.args.get('chat_id')
         chat_info = DatabaseReader.get_chat_example(cursor, chat_id, app.config['scenario_db'], include_meta=True).to_dict()

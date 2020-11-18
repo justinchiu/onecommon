@@ -35,7 +35,7 @@ class RnnSession(Session):
 
         this_partner_num_markables = torch.LongTensor([0])
 
-        words_left = 100
+        words_left = 1000
         this_is_selection = None
 
         min_num_mentions = self.inference_args.get('min_num_mentions', 0)
