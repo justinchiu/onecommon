@@ -96,6 +96,8 @@ class Controller(object):
                 if event is None:
                     continue
 
+                # print(f"action: {event.action}, agent: {event.agent}, disable_chat: {event.disable_chat}")
+
                 if not event.action in Event.decorative_events:
                     self.session_status[agent] = 'sent'
                 self.event_callback(event)

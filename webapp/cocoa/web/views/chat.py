@@ -109,6 +109,7 @@ def join_chat():
     backend = get_backend()
     uid = userid()
     chat_info = backend.get_chat_info(uid)
+    # print("join_chat: {}".format(uid))
     backend.send(uid, Event.JoinEvent(chat_info.agent_index,
                                       uid,
                                       str(time.time())))

@@ -89,8 +89,6 @@
             var select_time = 0;
          {% endif %}
          $(document).ready(function(){
-           $("#text").attr("disabled", "disabled")
-           $("#text").attr("placeholder", "Waiting on your partner to take a turn...")
          	$('#description').modal({backdrop: 'static', keyboard: true});
            /*
          	$('#description').dialog({
@@ -147,8 +145,7 @@
          				   var currentTime = Date.now() / 1000.0;
          				   messageTime = currentTime - messageStartTime;
          				   sendMessage(text);
-                   $("#text").attr("disabled", "disabled");
-                   $("#text").attr("placeholder", "Waiting on your partner to take a turn...");
+                           disableChat();
          				   messageStartTime = null;
          				   messageTime = 0.0;
          			   }
@@ -156,8 +153,14 @@
          	}, read_time); 
 
          });
-         
+
+    	  var canSelectDot = true;
+
          function makeSelection(selected) {
+           if (!canSelectDot) {
+             window.alert("It's your partner's turn; you can select a dot after they write a message or select a dot.")
+             return;
+           }
          	if(selectTime == null) {
          		// if no selection has been made before, log selection and save selection time
          		now = new Date();
@@ -166,8 +169,9 @@
                   selectTime = now;
                   select(selected);
                }
-         	}
-         	else {
+         	} else {
+         	  window.alert("You've already selected a dot in this game.");
+         	  /*
          		var currentTime = new Date();
          		// check if last selection was more than 10 seconds ago; selections can only be made > 10 seconds apart.
          		// If the last selection was made < 10 seconds ago, do nothing (no selection event is logged).
@@ -175,6 +179,7 @@
          			select(selected);
          			selectTime = currentTime;
          		} // otherwise do nothing
+         		*/
          	}
          }
          /*
@@ -247,16 +252,17 @@
          		data: { "uid": "{{ uid }}" },
          		dataType: "json",
          		success: function(response) {
+         		  console.log(response);
          			if(response['received']	) {
                 if(response['status']) {
                   displayStatus(response['message']);
                 } else if ('message' in response) {
                   displayText(response['message']);
                   console.debug(response['message']);
-                  if (!response['message'].includes("Your partner has joined the room.")) {
-                    $("#text").removeAttr('disabled');
-                    $("#text").attr("placeholder", "Enter your message here")
-                  }
+                  enableChat();
+                }
+                if (('disable_chat' in response) && (response['disable_chat'])) {
+                  disableChat();
                 }
               }
          		}
@@ -327,7 +333,7 @@
          		var t = getTimeRemaining(endtime);
          		minutesSpan.innerHTML = t.minutes+':';
          		secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
-         		console.log(t.total/1000);
+         		//console.log(t.total/1000);
          		if (t.total/1000 <= {{ quit_after|int }} && {{ quit_enabled }}) {
          			$("#leave").css("display", "inline-block");
          		}
@@ -347,13 +353,25 @@
          	initializeClock('clockdiv', deadline);
          }
 
-        function hideModal() {
-          $('#description').modal('hide')
-        }
-
-        function showModal() {
-          $('#description').modal('show')
-        }
+         function disableChat() {
+            $("#text").attr("disabled", "disabled")
+            $("#text").attr("placeholder", "Waiting on your partner to take a turn...")
+           canSelectDot = false;
+         }
+ 
+         function enableChat() {
+            $("#text").removeAttr('disabled');
+            $("#text").attr("placeholder", "Enter your message here")
+           canSelectDot = true;
+         }
+ 
+         function hideModal() {
+           $('#description').modal('hide')
+         }
+ 
+         function showModal() {
+           $('#description').modal('show')
+         }
       </script>
    </head>
    <body onload='init()' oncopy="return false" oncut="return false" onpaste="return false">
@@ -413,8 +431,8 @@
             <textarea readonly id="chat"></textarea>
             <br><br>
             <!-- <input readonly id="status" style="width:100%;"><br><br> -->
-            <!-- <input id="text" placeholder="Enter your text here"><br><br> -->
-            <input id="text" placeholder="Waiting on your partner to take a turn..."><br><br>
+            <input id="text" placeholder="Enter your text here"><br><br> 
+            <!-- <input id="text" placeholder="Waiting on your partner to take a turn..."><br><br> -->
          </div>
          <div id="info_container">
             <div id="topright">

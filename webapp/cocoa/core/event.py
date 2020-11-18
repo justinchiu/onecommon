@@ -13,13 +13,14 @@ class Event(object):
 
     decorative_events = ('join', 'leave', 'typing', 'eval')
 
-    def __init__(self, agent, time, action, data, start_time=None, metadata=None):
+    def __init__(self, agent, time, action, data, start_time=None, metadata=None, disable_chat=False):
         self.agent = agent
         self.time = time
         self.action = action
         self.data = data
         self.start_time = start_time
         self.metadata = metadata
+        self.disable_chat = disable_chat
 
     @staticmethod
     def from_dict(raw):
@@ -34,8 +35,9 @@ class Event(object):
         return cls(agent, time, 'message', data, start_time=start_time, metadata=metadata)
 
     @classmethod
-    def JoinEvent(cls, agent, userid=None, time=None):
-        return cls(agent, time, 'join', userid)
+    def JoinEvent(cls, agent, userid=None, time=None, disable_chat=False):
+        # print("construct {} disable_chat: {}".format(agent, disable_chat))
+        return cls(agent, time, 'join', userid, disable_chat=disable_chat)
 
     @classmethod
     def LeaveEvent(cls, agent, userid=None, time=None):

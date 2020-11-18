@@ -132,6 +132,8 @@ class Backend(object):
         if event.action == 'message':
             message = format_message(u"Partner: {}".format(event.data), False)
         elif event.action == 'join':
+            # print("action: {}".format(event.action))
+            # print("disable_chat: {}".format(event.disable_chat))
             message = format_message("Your partner has joined the room.", True)
         elif event.action == 'leave':
             message = format_message("Your partner has left the room.", True)
@@ -146,6 +148,8 @@ class Backend(object):
         data = {'status': status}
         if message is not None:
             data['message'] = message
+        if hasattr(event, 'disable_chat'):
+            data['disable_chat'] = event.disable_chat
         return data
 
     def _update_user(self, cursor, userid, **kwargs):

@@ -25,7 +25,8 @@ class TimedSessionWrapper(Session):
         self.last_message_timestamp = time.time()
         self.queued_event = deque()
         # JoinEvent
-        init_event = Event.JoinEvent(self.agent)
+        # print('sending init_event')
+        init_event = Event.JoinEvent(self.agent, disable_chat=True)
         self.queued_event.append(init_event)
         self.prev_action = None
         self.received = False
@@ -63,6 +64,7 @@ class TimedSessionWrapper(Session):
             self.queued_event.append(self.session.send())
 
         event = self.queued_event[0]
+        #print(f"send | action: {event.action}, agent: {event.agent}, disable_chat: {event.disable_chat}")
         if event is None:
             return self.queued_event.popleft()
         if event.action == 'message':
@@ -95,8 +97,13 @@ class TimedSessionWrapper(Session):
                 self.start_typing = False
                 return Event.TypingEvent(self.agent, 'stopped')
             elif event.action == 'join':
-                event = self.queued_event.popleft()
-                return event
+                new_event = self.queued_event.popleft()
+                # print('delayed join action: {}'.format(new_event.action))
+                # print('delayed join disable_chat: {}'.format(new_event.disable_chat))
+                # print('this join disable_chat: {}'.format(event.disable_chat))
+                # if new_event.action == 'join':
+                #     new_event.disable_chat = event.disable_chat
+                return new_event
             else:
                 event = self.queued_event.popleft()
                 self.prev_action = event.action
