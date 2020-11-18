@@ -166,10 +166,15 @@ class Dialog(object):
             self.metrics.register_uniqueness('%s_unique' % agent.name)
             if "plot_metrics" in self.args and self.args.plot_metrics:
                 self.metrics.register_select_frequency('%s_sel_bias' % agent.name)
+
+            self.metrics.register_average('%s_ref_resolution_score' % agent.name)
+            self.metrics.register_average('%s_language_model_score' % agent.name)
+            self.metrics.register_average('%s_joint_score' % agent.name)
         # text metrics
         if self.args.ref_text:
             ref_text = ' '.join(data.read_lines(self.args.ref_text))
             self.metrics.register_ngram('full_match', text=ref_text)
+
 
     def _is_selection(self, out):
         return '<selection>' in out
@@ -270,6 +275,14 @@ class Dialog(object):
         for agent, reward in zip(self.agents, rewards):
             self.metrics.record('%s_rew' % agent.name, reward if agree else 0)
             self.metrics.record('%s_moving_rew' % agent.name, reward if agree else 0)
+
+        for agent in self.agents:
+            if agent.ref_resolution_scores:
+                self.metrics.record('%s_ref_resolution_score' % agent.name, np.mean(agent.ref_resolution_scores))
+            if agent.language_model_scores:
+                self.metrics.record('%s_language_model_score' % agent.name, np.mean(agent.language_model_scores))
+            if agent.joint_scores:
+                self.metrics.record('%s_joint_score' % agent.name, np.mean(agent.joint_scores))
 
         if self.markable_detector is not None and self.markable_detector_corpus is not None:
             markable_list = []
@@ -505,6 +518,14 @@ class HierarchicalDialog(Dialog):
         for agent, reward in zip(self.agents, rewards):
             self.metrics.record('%s_rew' % agent.name, reward if agree else 0)
             self.metrics.record('%s_moving_rew' % agent.name, reward if agree else 0)
+
+        for agent in self.agents:
+            if agent.ref_resolution_scores:
+                self.metrics.record('%s_ref_resolution_score' % agent.name, np.mean(agent.ref_resolution_scores))
+            if agent.language_model_scores:
+                self.metrics.record('%s_language_model_score' % agent.name, np.mean(agent.language_model_scores))
+            if agent.joint_scores:
+                self.metrics.record('%s_joint_score' % agent.name, np.mean(agent.joint_scores))
 
         if self.markable_detector is not None and self.markable_detector_corpus is not None:
             markable_list = []
