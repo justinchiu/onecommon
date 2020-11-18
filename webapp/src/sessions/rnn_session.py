@@ -13,7 +13,7 @@ import torch
 from nltk import word_tokenize
 
 class RnnSession(Session):
-    def __init__(self, agent, kb, model):
+    def __init__(self, agent, kb, model, inference_args):
         super(RnnSession, self).__init__(agent)
         self.kb = kb
         self.model = model
@@ -21,6 +21,7 @@ class RnnSession(Session):
             'selected': False,
             'quit': False,
         }
+        self.inference_args = inference_args
 
     def _is_selection(self, out):
         return len(out) == 1 and out[0] == '<selection>'
@@ -35,19 +36,25 @@ class RnnSession(Session):
         this_partner_num_markables = torch.LongTensor([0])
 
         words_left = 100
-        this_is_selection = False
+        this_is_selection = None
 
-        min_num_mentions = 1
-        max_num_mentions = 3
+        min_num_mentions = self.inference_args.get('min_num_mentions', 0)
+        max_num_mentions = self.inference_args.get('max_num_mentions', 10)
+        inference = self.inference_args.get('language_inference', 'beam')
+        beam_size = self.inference_args.get('language_beam_size', 1)
+        sample_temperature_override = self.inference_args.get('language_sample_temperature', 0.25)
+
+        # print("inference: {}".format(inference))
+        # print("beam_size: {}".format(beam_size))
 
         tokens = self.model.write(
             max_words=words_left,
             detect_markables=True,
             start_token='YOU:',
             is_selection=this_is_selection,
-            inference="sample", # todo
-            beam_size=1, # todo
-            sample_temperature_override=0.25, # todo
+            inference=inference, 
+            beam_size=beam_size, 
+            sample_temperature_override=sample_temperature_override,
             min_num_mentions=min_num_mentions,
             max_num_mentions=max_num_mentions,
         )

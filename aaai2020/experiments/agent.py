@@ -124,6 +124,7 @@ class RnnAgent(Agent):
             self.t = 0
         else:
             self.model.eval()
+        # print("language_rerank: {}".format(self.args.language_rerank))
 
     def _encode(self, inpt, dictionary):
         encoded = torch.Tensor(dictionary.w2i(inpt)).long().unsqueeze(1)

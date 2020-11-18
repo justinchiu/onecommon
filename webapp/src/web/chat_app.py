@@ -115,6 +115,7 @@ def add_systems(args, config_dict, schema):
                 model = get_system(
                     name, args, schema=schema, timed=timed,
                     model_path=model_path, markable_detector_path=markable_detector_path,
+                    inference_args=info["inference_args"],
                 )
             except ValueError:
                 warnings.warn(

@@ -598,8 +598,8 @@ class Backend(object):
     def get_finished_info(self, userid, from_mturk=False, current_status=Status.Finished, hit_id=None, assignment_id=None):
         def _generate_mturk_code(completed=True):
             if completed:
-                return "MTURK_TASK_C{}".format(str(uuid4().hex))
-            return "MTURK_TASK_I{}".format(str(uuid4().hex))
+                return "TASK_DONE_b{}".format(str(uuid4().hex))
+            return "TASK_DONE_d{}".format(str(uuid4().hex))
 
         def _add_finished_task_row(cursor, userid, mturk_code, chat_id, hit_id, assignment_id):
             cursor.execute('INSERT INTO mturk_task VALUES (?,?,?,?,?)',
