@@ -13,7 +13,7 @@ class TimedSessionWrapper(Session):
     This class can be used to wrap around a session that produces event responses generated using rules (or a model) -
     the wrapper will add a delay to the responses sent by the session in order to simulate human typing/action rates.
     """
-    CHAR_RATE = 7
+    CHAR_RATE = 10
     MIN_EPSILON = 1
     EPSILON = 3
     SELECTION_DELAY = 1
@@ -31,6 +31,7 @@ class TimedSessionWrapper(Session):
         self.received = False
         self.num_utterances = 0
         self.start_typing = False
+        self.message_count = 0
 
     @property
     def config(self):
@@ -66,6 +67,8 @@ class TimedSessionWrapper(Session):
             return self.queued_event.popleft()
         if event.action == 'message':
             delay = float(len(event.data)) / self.CHAR_RATE + random.uniform(self.MIN_EPSILON, self.EPSILON)
+            if not self.received:
+                delay += 15
         elif event.action == 'select':
             delay = self.SELECTION_DELAY + random.uniform(self.MIN_EPSILON, self.EPSILON)
             if self.prev_action == 'select':
@@ -74,7 +77,7 @@ class TimedSessionWrapper(Session):
         elif event.action in ('offer', 'accept', 'reject', 'done'):
             delay = self.SELECTION_DELAY + random.uniform(self.MIN_EPSILON, self.EPSILON)
         elif event.action == 'join':
-            delay = 5
+            delay = 2
         else:
             raise ValueError('Unknown event type: %s' % event.action)            
 

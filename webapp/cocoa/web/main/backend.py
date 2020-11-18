@@ -673,7 +673,6 @@ class Backend(object):
                 u = self._get_user_info(cursor, userid, assumed_status=Status.Waiting)
                 num_seconds = (self.config["status_params"]["waiting"]["num_seconds"] +
                                u.status_timestamp) - current_timestamp_in_seconds()
-                print("waiting {}".format(num_seconds))
                 return WaitingState(u.message, num_seconds)
 
         except sqlite3.IntegrityError:

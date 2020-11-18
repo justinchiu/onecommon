@@ -82,13 +82,15 @@
          var messageTime = 0.0;
          var initTime = new Date()
          {% if not debug %}
-            var read_time = 30000; // milliseconds
+            var read_time = 1000; // milliseconds
             var select_time = read_time; // milliseconds
          {% else %}
             var read_time = 1000;  // In peek/debug mode, skip it
             var select_time = 0;
          {% endif %}
          $(document).ready(function(){
+           $("#text").attr("disabled", "disabled")
+           $("#text").attr("placeholder", "Waiting on your partner to take a turn...")
          	$('#description').modal({backdrop: 'static', keyboard: true});
            /*
          	$('#description').dialog({
@@ -145,7 +147,8 @@
          				   var currentTime = Date.now() / 1000.0;
          				   messageTime = currentTime - messageStartTime;
          				   sendMessage(text);
-                        $("#text").attr("disabled", "disabled")
+                   $("#text").attr("disabled", "disabled");
+                   $("#text").attr("placeholder", "Waiting on your partner to take a turn...");
          				   messageStartTime = null;
          				   messageTime = 0.0;
          			   }
@@ -245,13 +248,17 @@
          		dataType: "json",
          		success: function(response) {
          			if(response['received']	) {
-                                  if(response['status']) {
-                                      displayStatus(response['message'])
-                                  } else if ('message' in response) {
-                                      $("#text").removeAttr('disabled');
-                                      displayText(response['message']);
-                                  }
-         			}
+                if(response['status']) {
+                  displayStatus(response['message']);
+                } else if ('message' in response) {
+                  displayText(response['message']);
+                  console.debug(response['message']);
+                  if (!response['message'].includes("Your partner has joined the room.")) {
+                    $("#text").removeAttr('disabled');
+                    $("#text").attr("placeholder", "Enter your message here")
+                  }
+                }
+              }
          		}
          	});
          }
@@ -381,9 +388,9 @@
                      </ul>
                         </td>
                     </table>
-                    You'll see more detailed instructions after clicking Start below!
+                    You'll see more detailed instructions after clicking Close below!
                   </div>
-                 <div align="center"> <button onclick="hideModal()" >Start</button> </div>
+                 <div align="center"> <button onclick="hideModal()" >Close</button> </div>
                </div>
             </div>
          </div>
@@ -406,7 +413,8 @@
             <textarea readonly id="chat"></textarea>
             <br><br>
             <!-- <input readonly id="status" style="width:100%;"><br><br> -->
-            <input id="text" placeholder="Enter your message here"><br><br>
+            <!-- <input id="text" placeholder="Enter your text here"><br><br> -->
+            <input id="text" placeholder="Waiting on your partner to take a turn..."><br><br>
          </div>
          <div id="info_container">
             <div id="topright">
