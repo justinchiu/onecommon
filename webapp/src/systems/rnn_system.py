@@ -13,6 +13,8 @@ import models
 from agent import RnnAgent
 from engines.beliefs import BlankBeliefConstructor
 
+import pprint
+
 class Dummy:
     def __init__(self):
         self.normalize = True
@@ -30,9 +32,11 @@ class Dummy:
         #https://github.com/dpfried/onecommon/blob/580620b9bc309625e949bb9c1dcd65063c1ba8b3/aaai2019/generate_scenarios.py
 
 class RnnSystem(System):
-    def __init__(self, name, args, model_path, markable_detector_path, timed=False):
+    def __init__(self, name, args, model_path, markable_detector_path, timed=False, inference_args=None):
         super(RnnSystem, self).__init__()
         self.name_ = name
+        assert inference_args is not None
+        self.inference_args = inference_args
 
         self.model = utils.load_model(model_path, prefix_dir=None)
         self.markable_detector = utils.load_model(markable_detector_path, prefix_dir=None)
@@ -51,9 +55,14 @@ class RnnSystem(System):
         parser = argparse.ArgumentParser()
         RnnAgent.add_args(parser)
         agent_args = parser.parse_args([])
-        merged_args = argparse.Namespace(**utils.merge_dicts(vars(agent_args), vars(self.model.args)))
+        d = self.inference_args
+        d = utils.merge_dicts(d, vars(agent_args))
+        d = utils.merge_dicts(d, vars(self.model.args))
+        merged_args = argparse.Namespace(**d)
         # todo: verify
         merged_args.eps = 0
+
+        #pprint.pprint(vars(merged_args))
 
         model = RnnAgent(self.model, merged_args, markable_detector=self.markable_detector)
 
@@ -61,4 +70,4 @@ class RnnSystem(System):
         ctxt = create_input(kb.items, Dummy())
         model.feed_context(ctxt, belief_constructor = BlankBeliefConstructor())
 
-        return RnnSession(agent, kb, model)
+        return RnnSession(agent, kb, model, self.inference_args)
