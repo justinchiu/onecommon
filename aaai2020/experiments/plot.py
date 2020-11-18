@@ -84,7 +84,7 @@ if __name__ == "__main__":
         df = pandas.DataFrame(stats_by_epoch).transpose()
         dfs_by_name[log_file] = df
         last_stats = df[DEFAULT_STATS].iloc[-1]
-        print(last_stats)
+        # print(last_stats)
         print("{}\t{}\t{}".format(
             log_file,
             last_stats.name,

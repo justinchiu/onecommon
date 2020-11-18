@@ -14,7 +14,7 @@ from dialog import DialogLogger
 import domain
 from engines import Criterion
 import math
-from collections import Counter
+from collections import Counter, namedtuple
 
 from nltk.parse import CoreNLPParser, CoreNLPDependencyParser
 
@@ -26,6 +26,15 @@ from models.rnn_reference_model import State, NextMentionLatents
 from engines.rnn_reference_engine import make_can_confirm_single
 from models.ctx_encoder import pairwise_differences
 
+GenerationOutput = namedtuple("GenerationOutput", [
+    "dots_mentioned_per_ref",
+    "num_markables",
+    "outs",
+    "logprobs",
+    "state",
+    "reader_and_writer_lang_hs",
+    "extra",
+])
 
 class Agent(object):
     """ Agent's interface. """
@@ -74,8 +83,12 @@ class RnnAgent(Agent):
                             choices=['topk', 'topk_multi_mention', 'sample'], default='topk')
         parser.add_argument('--next_mention_reranking_use_stop_scores', action='store_true')
 
-        parser.add_argument('--reranking_l0_confidence', action='store_true')
-        parser.add_argument('--reranking_l0_confidence_prob', type=float, default=0.9)
+        parser.add_argument('--reranking_confidence', action='store_true')
+        parser.add_argument('--reranking_confidence_exp_score_threshold', type=float, default=0.9)
+        parser.add_argument('--reranking_confidence_score', choices=['l0', 'joint'], default='l0')
+        parser.add_argument('--reranking_confidence_type',
+                            choices=['first_above_threshold', 'keep_best'],
+                            default='first_above_threshold')
 
     def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
                  ):
@@ -151,6 +164,10 @@ class RnnAgent(Agent):
         self.next_mention_predictions_multi = []
         self.dots_mentioned_per_ref_chosen = []
         self.next_mention_indices_sorted = []
+
+        self.joint_scores = []
+        self.language_model_scores = []
+        self.ref_resolution_scores = []
 
         self.is_selection_outs = [self.model.is_selection_prediction(self.state)]
         self.sel_outs = []
@@ -490,7 +507,7 @@ class RnnAgent(Agent):
                                        min_num_mentions=min_num_mentions,
                                        max_num_mentions=max_num_mentions)
 
-                if self.args.reranking_l0_confidence:
+                if self.args.reranking_confidence:
                     assert self.args.language_rerank
                     assert self.args.next_mention_reranking
                     nm_candidates = self.next_mention_predictions_multi[-1]
@@ -501,9 +518,14 @@ class RnnAgent(Agent):
                     t.transpose(0, 1) if t is not None else None
                     for t in nm_candidates
                 ] if nm_candidates is not None else [None]
-        has_terminated = False
 
-        while not has_terminated:
+        best_generation_output = None
+        best_generation_score = None
+
+        if self.args.reranking_confidence:
+            assert inference in ['beam', 'noised_beam', 'forgetful_noised_beam'] and self.args.language_rerank
+
+        while best_generation_output is None:
             for dots_mentioned_per_ref in dots_mentioned_per_ref_candidates:
                 if dots_mentioned_per_ref is None:
                     dots_mentioned_per_ref = torch.zeros((1, 0, 7)).bool().to(device)
@@ -513,10 +535,12 @@ class RnnAgent(Agent):
                 this_num_markables = torch.LongTensor([dots_mentioned_per_ref.size(1)]).to(device)
                 dots_mentioned = dots_mentioned_per_ref.any(1)
 
+                this_generation_score = None
+
                 generation_beliefs = self.state.make_beliefs('generation', self.timesteps, self.partner_ref_outs, self.ref_outs)
                 if inference == 'sample':
                     sample_temperature = sample_temperature_override if sample_temperature_override is not None else self.args.temperature
-                    outs, logprobs, self.state, (reader_lang_hs, writer_lang_hs), extra = self.model.write(
+                    write_output_tpl = self.model.write(
                         self.state, max_words, sample_temperature,
                         start_token=start_token,
                         force_words=force_words,
@@ -528,11 +552,14 @@ class RnnAgent(Agent):
                         can_confirm=can_confirm,
                     )
                     assert len(dots_mentioned_per_ref_candidates) == 1
-                    has_terminated = True
+                    this_generation_output = GenerationOutput(
+                        *((dots_mentioned_per_ref, this_num_markables) + write_output_tpl)
+                    )
+                    best_generation_output = this_generation_output
                     break
                 elif inference in ['beam', 'noised_beam', 'forgetful_noised_beam']:
                     assert not force_words
-                    outs, logprobs, state_new, (reader_lang_hs, writer_lang_hs), extra = self.model.write_beam(
+                    write_output_tpl = self.model.write_beam(
                         self.state, max_words, beam_size,
                         start_token=start_token,
                         dots_mentioned=dots_mentioned,
@@ -547,25 +574,33 @@ class RnnAgent(Agent):
                         keep_all_finished=self.args.language_beam_keep_all_finished,
                         can_confirm=can_confirm,
                     )
+                    this_generation_output = GenerationOutput(
+                        *((dots_mentioned_per_ref, this_num_markables) + write_output_tpl)
+                    )
                     if self.args.language_rerank:
-                        self.decoded_beam_best.append(self._decode(outs, self.model.word_dict))
+                        self.decoded_beam_best.append(self._decode(this_generation_output.outs, self.model.word_dict))
                         if dots_mentioned_per_ref is None or dots_mentioned_per_ref.size(1) == 0:
                             # outs = outs
-                            pass
+                            this_generation_score = None
                         else:
                             outs, extra = self.rerank_language(
-                                outs, extra, dots_mentioned, dots_mentioned_per_ref, is_selection, can_confirm, generation_beliefs
+                                this_generation_output.outs, this_generation_output.extra, dots_mentioned, dots_mentioned_per_ref, is_selection, can_confirm, generation_beliefs
                             )
-                            if self.args.reranking_l0_confidence and len(dots_mentioned_per_ref_candidates) > 1:
+                            this_generation_output = this_generation_output._replace(outs=outs, extra=extra)
+                            if self.args.reranking_confidence and len(dots_mentioned_per_ref_candidates) > 1:
                                 if 'ref_resolution_scores' not in extra:
                                     # no utterances with the target number of mentions found in the beam!
-                                    continue
-                                ref_resolution_score = extra['ref_resolution_scores'][extra['chosen_index']]
-                                if ref_resolution_score.exp().item() < self.args.reranking_l0_confidence_prob:
-                                    continue
+                                    this_generation_score = None
+                                else:
+                                    joint_score = extra['joint_scores'][extra['chosen_index']]
+                                    ref_resolution_score = extra['ref_resolution_scores'][extra['chosen_index']]
 
-                        (reader_lang_hs, writer_lang_hs), state_new = self.model.read(
-                            self.state, outs,
+                                    this_generation_score = {
+                                        'l0': ref_resolution_score,
+                                        'joint': joint_score,
+                                    }[self.args.reranking_confidence_score]
+                        reader_and_writer_lang_hs, state = self.model.read(
+                            self.state, this_generation_output.outs,
                             dots_mentioned=dots_mentioned,
                             dots_mentioned_per_ref=dots_mentioned_per_ref,
                             dots_mentioned_num_markables=this_num_markables,
@@ -573,34 +608,49 @@ class RnnAgent(Agent):
                             is_selection=is_selection,
                             can_confirm=can_confirm,
                         )
-                    has_terminated = True
-                    self.state = state_new
-                    break
+                        this_generation_output = this_generation_output._replace(
+                            reader_and_writer_lang_hs=reader_and_writer_lang_hs,
+                            state=state
+                        )
                 else:
                     raise NotImplementedError(f"inference = {inference}")
+                if self.args.reranking_confidence and len(dots_mentioned_per_ref_candidates) > 1:
+                    if this_generation_score is not None:
+                        if best_generation_score is None or this_generation_score > best_generation_score:
+                            best_generation_output = this_generation_output
+                            best_generation_score = this_generation_score
+                        if self.args.reranking_confidence_type == 'first_above_threshold' and this_generation_score.exp().item() >= self.args.reranking_confidence_exp_score_threshold:
+                            assert best_generation_output is not None
+                            break
+                else:
+                    best_generation_output = this_generation_output
+                    break
 
-            if not has_terminated:
+            if best_generation_output is None:
                 dots_mentioned_per_ref_candidates = [self.next_mention_predictions[-1]]
                 dots_mentioned_per_ref_candidates = [
                     t.transpose(0, 1) if t is not None else None
                     for t in dots_mentioned_per_ref_candidates
                 ]
 
-        self.dots_mentioned_per_ref_chosen.append(dots_mentioned_per_ref)
+        assert best_generation_output is not None
+        self.dots_mentioned_per_ref_chosen.append(best_generation_output.dots_mentioned_per_ref)
 
-        if logprobs is not None:
-            self.logprobs.extend(logprobs)
+        if best_generation_output.logprobs is not None:
+            self.logprobs.extend(best_generation_output.logprobs)
 
-        self.reader_lang_hs.append(reader_lang_hs)
-        self.writer_lang_hs.append(writer_lang_hs)
+        self.reader_lang_hs.append(best_generation_output.reader_and_writer_lang_hs[0])
+        self.writer_lang_hs.append(best_generation_output.reader_and_writer_lang_hs[1])
+
+        self.state = best_generation_output.state
 
         if detect_markables:
             assert self.markable_detector is not None
-            markables, ref_boundaries = self.detect_markables(self._decode(outs, self.model.word_dict), remove_pronouns=False)
+            markables, ref_boundaries = self.detect_markables(self._decode(best_generation_output.outs, self.model.word_dict), remove_pronouns=False)
             ref_inpt, num_markables = self.markables_to_tensor(ref_boundaries)
-            if self.model.args.dot_recurrence_oracle and dots_mentioned_per_ref.size(1) == num_markables.item():
+            if self.model.args.dot_recurrence_oracle and best_generation_output.dots_mentioned_per_ref.size(1) == num_markables.item():
                 assert self.model.args.dot_recurrence_oracle_for == ['self']
-                ref_tgt = dots_mentioned_per_ref
+                ref_tgt = best_generation_output.dots_mentioned_per_ref
             else:
                 ref_tgt = torch.zeros((1, num_markables.item(), 7)).long().to(self.device)
 
@@ -617,9 +667,14 @@ class RnnAgent(Agent):
         self.partner_ref_outs.append(None)
         self.partner_ref_preds.append(None)
         #self.words.append(self.model.word2var('YOU:').unsqueeze(0))
-        self.words.append(outs)
-        self.sents.append(torch.cat([self.model.word2var(start_token).unsqueeze(1), outs], 0))
-        self.extras.append(extra)
+        self.words.append(best_generation_output.outs)
+        self.sents.append(torch.cat([self.model.word2var(start_token).unsqueeze(1), best_generation_output.outs], 0))
+        self.extras.append(best_generation_output.extra)
+        extra = best_generation_output.extra
+        if 'joint_scores' in extra:
+            self.joint_scores.append(extra['joint_scores'][extra['chosen_index']].item())
+            self.ref_resolution_scores.append(extra['ref_resolution_scores'][extra['chosen_index']].item())
+            self.language_model_scores.append(extra['output_logprobs'][extra['chosen_index']].item())
         self.update_dot_h(ref_inpt=ref_inpt, partner_ref_inpt=None,
                           num_markables=num_markables, partner_num_markables=None,
                           ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
@@ -628,8 +683,8 @@ class RnnAgent(Agent):
         # self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]).to(self.device),
         #                   num_markables_to_force=None,
         #                   )
-        if (self.selection_word_index == outs).any():
-            sel_idx = (self.selection_word_index == outs.flatten()).nonzero()
+        if (self.selection_word_index == best_generation_output.outs).any():
+            sel_idx = (self.selection_word_index == best_generation_output.outs.flatten()).nonzero()
             assert len(sel_idx) == 1
             # add one to offset from the start_token
             self.selection(sel_idx[0] + 1)
@@ -651,7 +706,7 @@ class RnnAgent(Agent):
         #assert (torch.cat(self.words).size(0) + 1 == torch.cat(self.lang_hs).size(0))
         # remove 'YOU:'
         # outs = outs.narrow(0, 1, outs.size(0) - 1)
-        return self._decode(outs, self.model.word_dict)
+        return self._decode(best_generation_output.outs, self.model.word_dict)
 
     def next_mention(self, lens, dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12, can_confirm=None):
         mention_beliefs = self.state.make_beliefs(
