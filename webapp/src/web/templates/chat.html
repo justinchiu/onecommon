@@ -82,19 +82,31 @@
          var messageTime = 0.0;
          var initTime = new Date()
          {% if not debug %}
-            var read_time = 20000; // milliseconds
+            var read_time = 30000; // milliseconds
             var select_time = read_time; // milliseconds
          {% else %}
             var read_time = 1000;  // In peek/debug mode, skip it
             var select_time = 0;
          {% endif %}
          $(document).ready(function(){
-         	$('#description').modal({backdrop: 'static', keyboard: false});
+         	$('#description').modal({backdrop: 'static', keyboard: true});
+           /*
+         	$('#description').dialog({
+          modal: true,
+          autoOpen: false,
+            buttons: {
+              Ok: function() {
+                $(this).dialog("close");
+              }
+            }
+          });
+          */
             $('#description').modal('show');
+            //$('#description').dialog('show');
             //$("#instructionCollapse").click();
             window.onbeforeunload = disconnect;
 
-            document.getElementById('modal_instruction').innerHTML = "(This window will automatically collapse and the chat will start after " + read_time/1000 +" seconds).";
+            //document.getElementById('modal_instruction').innerHTML = "(This window will automatically collapse and the chat will start after " + read_time/1000 +" seconds).";
 
             var deadline = new Date(Date.parse(new Date()) + ({{ num_seconds }}) * 1000);
 
@@ -119,7 +131,6 @@
 
          	setTimeout(function(){
 
-                  $('#description').modal('hide')
 
                   inboxCheckInterval = setInterval(checkInbox, 1000);
 
@@ -328,22 +339,37 @@
          	var deadline = new Date(Date.parse(new Date()) + {{ num_seconds }} * 1000);
          	initializeClock('clockdiv', deadline);
          }
+
+        function hideModal() {
+          $('#description').modal('hide')
+        }
+
+        function showModal() {
+          $('#description').modal('show')
+        }
       </script>
    </head>
    <body onload='init()' oncopy="return false" oncut="return false" onpaste="return false">
       <div class="clearfix">
          <!-- Modal -->
          <div class="modal fade" id="description" role="dialog">
-            <div class="modal-dialog">
+            <div class="modal-dialog modal-lg">
                <!-- Modal content-->
                <div class="modal-content">
+                 <div align="right"> <button onclick="hideModal()" >X</button> </div>
                   <div class="modal-header">
+                     <h3>Task Overview:</h3>
                         <p id="modal_instruction"></p>
                         <p>You'll be paired with a partner. You and your partner can both see 7 objects in your view. However, your view is centered slightly differently from your partner's, and only some objects are in common. Your goal is <span style="color:#009933"> to chat with your partner and find one object you have in common!</span></p>
                   </div>
                   <div class="modal-body">
+                    <table>
+                      <tr>
+                        <td>
                      <h4>Example Scenario:</h4>
                      <img height="400" width="400" src="{{ url_for('static', filename='img/')}}sample_colored.png"/>
+                        </td>
+                        <td>
                      <h4>Example Conversation:</h4>
                      <ul style="list-style-type:none">
                         <li> <span style="color:#0000FF">Player1:</span> I see a lonely light gray dot. </li>
@@ -353,7 +379,11 @@
                         <li> <span style="color:#0000FF">Player1:</span> Yes, they are almost vertical. </li>
                         <li> <span style="color:#FF0000">Player2:</span> Let's choose the lower one! </li>
                      </ul>
+                        </td>
+                    </table>
+                    You'll see more detailed instructions after clicking Start below!
                   </div>
+                 <div align="center"> <button onclick="hideModal()" >Start</button> </div>
                </div>
             </div>
          </div>
