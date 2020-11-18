@@ -4,6 +4,7 @@ import torch
 
 from cocoa.systems.system import System
 from sessions.rnn_session import RnnSession
+from cocoa.sessions.timed_session import TimedSessionWrapper
 
 from annotation.transform_scenarios_to_txt import create_input
 
@@ -45,6 +46,8 @@ class RnnSystem(System):
         self.markable_detector = utils.load_model(markable_detector_path, prefix_dir=None, map_location='cpu')
         self.markable_detector.eval()
 
+        self.timed = timed
+
         # todo: help, should probably pass in a use_cuda arg?
         if CUDA:
             self.model.cuda()
@@ -75,4 +78,8 @@ class RnnSystem(System):
         ctxt = create_input(kb.items, Dummy())
         model.feed_context(ctxt, belief_constructor = BlankBeliefConstructor())
 
-        return RnnSession(agent, kb, model, self.inference_args)
+        session = RnnSession(agent, kb, model, self.inference_args)
+        if self.timed:
+            session = TimedSessionWrapper(session)
+
+        return session
