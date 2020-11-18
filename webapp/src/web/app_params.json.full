@@ -92,6 +92,6 @@
             "inference_args": {}
         }
     },
-    "debug": true,
+    "debug": false,
     "quit_after": 1200
 }
