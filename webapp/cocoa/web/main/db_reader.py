@@ -55,6 +55,19 @@ class DatabaseReader(object):
         return outcome
 
     @classmethod
+    def get_chat_mturk(cls, cursor, chat_id):
+        fields = ['mturk_code', 'chat_id', 'hit_id', 'assignment_id', 'worker_id']
+        cursor.execute('SELECT {} from mturk_task where chat_id=?'.format(', '.join(fields)),
+                       (chat_id,))
+        row = cursor.fetchone()
+        if not row:
+            return {}
+        parsed = {}
+        for k, o in zip(row.keys(), row):
+            parsed[k] = o
+        return parsed
+
+    @classmethod
     def get_chat_agent_types(cls, cursor, chat_id):
         """Get types of the two agents in the chat specified by chat_id.
 
@@ -150,7 +163,7 @@ class DatabaseReader(object):
         return Example(scenario, scenario_uuid, events, outcome, chat_id, agent_types)
 
     @classmethod
-    def dump_chats(cls, cursor, scenario_db, json_path, uids=None, accepted_only=False):
+    def dump_chats(cls, cursor, scenario_db, json_path, uids=None, accepted_only=False, include_turk=False):
         """Dump chat transcripts to a JSON file.
 
         Args:
@@ -185,9 +198,12 @@ class DatabaseReader(object):
             ex = cls.get_chat_example(cursor, chat_id[0], scenario_db)
             if ex is None or is_single_agent(ex):
                 continue
-            examples.append(ex)
+            ex_dict = ex.to_dict()
+            if include_turk:
+                ex_dict.update(**cls.get_chat_mturk(cursor, chat_id[0]))
+            examples.append(ex_dict)
 
-        write_json([ex.to_dict() for ex in examples], json_path)
+        write_json(examples, json_path)
         print(len(examples))
 
     @classmethod

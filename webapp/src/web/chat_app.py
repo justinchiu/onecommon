@@ -157,7 +157,8 @@ def cleanup(flask_app):
     conn = sqlite3.connect(db_path)
     conn.row_factory = sqlite3.Row
     cursor = conn.cursor()
-    DatabaseReader.dump_chats(cursor, flask_app.config['scenario_db'], accepted_transcripts, accepted_only=True)
+    DatabaseReader.dump_chats(cursor, flask_app.config['scenario_db'], transcript_path, accepted_only=False, include_turk=True)
+    DatabaseReader.dump_chats(cursor, flask_app.config['scenario_db'], accepted_transcripts, accepted_only=True, include_turk=True)
     if flask_app.config['user_params']['end_survey'] == 1:
         surveys_path = os.path.join(flask_app.config['user_params']['logging']['chat_dir'], 'surveys.json')
         DatabaseReader.dump_surveys(cursor, surveys_path)
@@ -171,6 +172,8 @@ def init(output_dir, reuse=False):
     transcripts_dir = os.path.join(output_dir, TRANSCRIPTS_DIR)
     # TODO: don't remove everything
     if not reuse:
+        # print("removing everything not implemented!")
+        # sys.exit(1)
         if os.path.exists(output_dir):
             shutil.rmtree(output_dir)
         os.makedirs(output_dir)
@@ -199,8 +202,10 @@ if __name__ == "__main__":
     parser.add_argument('--selfplay_scenarios', type=str, default='data/shared_5.json')
     parser.add_argument('--selfplay_markables', type=str, default='data/selfplay_markables.json')
     parser.add_argument('--selfplay_referents', type=str, default='data/selfplay_referents.json')
+    parser.add_argument('--dump-only', action='store_true')
     add_website_arguments(parser)
     add_scenario_arguments(parser)
+    print(' '.join(sys.argv))
     args = parser.parse_args()
 
     if not args.reuse and os.path.exists(args.output):
@@ -388,10 +393,13 @@ if __name__ == "__main__":
 
     print("App setup complete")
 
-    atexit.register(cleanup, flask_app=app)
-    #app.run('0.0.0.0', debug=True, port=args.port, ssl_context=('/home/ubuntu/server.crt', '/home/ubuntu/server.key'))
-    server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file)
-    #server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file,
-                        #keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
-                        #certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem')
-    server.serve_forever()
+    if args.dump_only:
+        cleanup(app)
+    else:
+        atexit.register(cleanup, flask_app=app)
+        #app.run('0.0.0.0', debug=True, port=args.port, ssl_context=('/home/ubuntu/server.crt', '/home/ubuntu/server.key'))
+        server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file)
+        # server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file,
+        #                     keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
+        #                     certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem')
+        server.serve_forever()
