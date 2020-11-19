@@ -18,6 +18,8 @@ from cocoa.web.main.logger import WebLogger
 
 import pdb
 
+MAX_ACTIVE=20
+
 class DatabaseManager(object):
     """Update database with user/chat information.
     """
@@ -347,6 +349,14 @@ class Backend(object):
             userids = [r[0] for r in cursor.fetchall()]
             return userids
 
+        def _get_num_active_users(cursor):
+            cursor.execute(
+                "SELECT name FROM active_user WHERE status=? AND connected_status=1",
+                (Status.Chat,),
+            )
+            userids = [r[0] for r in cursor.fetchall()]
+            return len(userids)
+
         def _choose_scenario_and_partner_type(cursor):
             # for each scenario, get number of complete dialogues per agent type
             all_partners = self.systems.keys() if not self.active_system else [self.active_system]
@@ -378,7 +388,7 @@ class Backend(object):
             # just select a random scenario and agent type
             if len(active_scenarios.keys()) == 0:
                 sid = np.random.choice(list(scenario_dialogues.keys()))
-                p = np.random.choice(all_partners)
+                p = np.random.choice(list(all_partners))
                 return self.scenario_db.get(sid), p
 
             # otherwise, select a random active scenario and an agent type that it's missing
@@ -398,6 +408,11 @@ class Backend(object):
         try:
             with self.conn:
                 cursor = self.conn.cursor()
+
+                num_active = _get_num_active_users(cursor)
+                if num_active >= MAX_ACTIVE:
+                    return None
+
                 others = _get_other_waiting_users(cursor, userid)
 
                 scenario, partner_type = _choose_scenario_and_partner_type(cursor)
