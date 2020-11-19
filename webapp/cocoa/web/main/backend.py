@@ -35,7 +35,7 @@ class DatabaseManager(object):
             connected_status integer, connected_timestamp integer, message text, partner_type text,
             partner_id text, scenario_id text, agent_index integer, selected_index integer, chat_id text)'''
         )
-        c.execute('''CREATE TABLE mturk_task (name text, mturk_code text, chat_id text, hit_id text, assignment_id text)''')
+        c.execute('''CREATE TABLE mturk_task (name text, mturk_code text, chat_id text, hit_id text, assignment_id text, worker_id text)''')
 
         c.execute(
             '''CREATE TABLE event (chat_id text, action text, agent integer, time text, data text, start_time text, metadata text)'''
@@ -601,15 +601,15 @@ class Backend(object):
             print("WARNING: Rolled back transaction")
 
 
-    def get_finished_info(self, userid, from_mturk=False, current_status=Status.Finished, hit_id=None, assignment_id=None):
+    def get_finished_info(self, userid, from_mturk=False, current_status=Status.Finished, hit_id=None, assignment_id=None, worker_id=None):
         def _generate_mturk_code(completed=True):
             if completed:
                 return "TASK_DONE_b{}".format(str(uuid4().hex))
             return "TASK_DONE_d{}".format(str(uuid4().hex))
 
-        def _add_finished_task_row(cursor, userid, mturk_code, chat_id, hit_id, assignment_id):
-            cursor.execute('INSERT INTO mturk_task VALUES (?,?,?,?,?)',
-                           (userid, mturk_code, chat_id, hit_id, assignment_id))
+        def _add_finished_task_row(cursor, userid, mturk_code, chat_id, hit_id, assignment_id, worker_id):
+            cursor.execute('INSERT INTO mturk_task VALUES (?,?,?,?,?,?)',
+                           (userid, mturk_code, chat_id, hit_id, assignment_id, worker_id))
 
         def _is_chat_complete(cursor, chat_id):
             cursor.execute('''SELECT outcome FROM chat WHERE chat_id=?''', (chat_id,))
@@ -650,7 +650,7 @@ class Backend(object):
                     self.logger.debug("User {:s} got completion code {:s}".format(userid, mturk_code))
                 else:
                     mturk_code = None
-                _add_finished_task_row(cursor, userid, mturk_code, u.chat_id, hit_id, assignment_id)
+                _add_finished_task_row(cursor, userid, mturk_code, u.chat_id, hit_id, assignment_id, worker_id)
                 return FinishedState(Markup(u.message), num_seconds, mturk_code), u.chat_id, completed
 
         except sqlite3.IntegrityError:

@@ -194,7 +194,7 @@ def index():
                                title=app.config['task_title'],
                                icon=app.config['task_icon'])
     elif status == Status.Finished:
-        finished_info, chat_id, completed = backend.get_finished_info(userid(), from_mturk=mturk, hit_id=hitId, assignment_id=assignmentId)
+        finished_info, chat_id, completed = backend.get_finished_info(userid(), from_mturk=mturk, hit_id=hitId, assignment_id=assignmentId, worker_id=workerId)
         mturk_code = finished_info.mturk_code if mturk else None
         if completed:
           backend.add_completed_scenarios(chat_id, userid())
@@ -212,7 +212,7 @@ def index():
                                uid=userid(),
                                completed=completed)
     elif status == Status.Incomplete:
-        finished_info, chat_id, completed = backend.get_finished_info(userid(), from_mturk=False, current_status=Status.Incomplete)
+        finished_info, chat_id, completed = backend.get_finished_info(userid(), from_mturk=False, current_status=Status.Incomplete, worker_id=workerId)
         mturk_code = finished_info.mturk_code if mturk else None
         visualize_link = False
         if request.args.get('debug') is not None and request.args.get('debug') == '1':
