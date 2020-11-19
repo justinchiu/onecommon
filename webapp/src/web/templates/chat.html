@@ -83,10 +83,11 @@
          var initTime = new Date()
          {% if not debug %}
             var read_time = 1000; // milliseconds
-            var select_time = read_time; // milliseconds
+            //var select_time = read_time; // milliseconds
+            var select_time = 30000; // milliseconds
          {% else %}
             var read_time = 1000;  // In peek/debug mode, skip it
-            var select_time = 0;
+            var select_time = 30000;
          {% endif %}
          $(document).ready(function(){
          	$('#description').modal({backdrop: 'static', keyboard: true});
@@ -154,7 +155,7 @@
 
          });
 
-    	  var canSelectDot = true;
+    	 var canSelectDot = true;
 
          function makeSelection(selected) {
            if (!canSelectDot) {
@@ -162,12 +163,14 @@
              return;
            }
          	if(selectTime == null) {
-         		// if no selection has been made before, log selection and save selection time
-         		now = new Date();
+               // if no selection has been made before, log selection and save selection time
+               now = new Date();
                console.log(now - initTime)
                if(now - initTime > read_time + select_time) {
                   selectTime = now;
                   select(selected);
+               } else {
+                  window.alert("Please play 30s before selecting a dot.")
                }
          	} else {
          	  window.alert("You've already selected a dot in this game.");
