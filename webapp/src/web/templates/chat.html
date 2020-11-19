@@ -84,10 +84,10 @@
          {% if not debug %}
             var read_time = 1000; // milliseconds
             //var select_time = read_time; // milliseconds
-            var select_time = 30000; // milliseconds
+            var select_time = 60000; // milliseconds, 1 min
          {% else %}
             var read_time = 1000;  // In peek/debug mode, skip it
-            var select_time = 30000;
+            var select_time = 60000; // 1 min
          {% endif %}
          $(document).ready(function(){
          	$('#description').modal({backdrop: 'static', keyboard: true});
@@ -170,7 +170,7 @@
                   selectTime = now;
                   select(selected);
                } else {
-                  window.alert("Please play 30s before selecting a dot.")
+                  window.alert("Please play 1m before selecting a dot.")
                }
          	} else {
          	  window.alert("You've already selected a dot in this game.");
@@ -273,6 +273,7 @@
          }
          
          function pollServer() {
+            // delete this later
          	$.ajax({
          		url: '{{ url_for('chat.check_chat_valid')}}',
          		type: "get",
@@ -337,7 +338,7 @@
          		minutesSpan.innerHTML = t.minutes+':';
          		secondsSpan.innerHTML = ('0' + t.seconds).slice(-2);
          		//console.log(t.total/1000);
-         		if (t.total/1000 <= {{ quit_after|int }} && {{ quit_enabled }}) {
+         		if (t.total / 1000 <= {{ quit_after|int }} && {{ quit_enabled }}) {
          			$("#leave").css("display", "inline-block");
          		}
          		if (t.total <= 0) {
