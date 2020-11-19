@@ -349,13 +349,13 @@ class Backend(object):
             userids = [r[0] for r in cursor.fetchall()]
             return userids
 
-        def _get_num_active_users(cursor):
+        def _get_active_users(cursor):
             cursor.execute(
                 "SELECT name FROM active_user WHERE status=? AND connected_status=1",
                 (Status.Chat,),
             )
             userids = [r[0] for r in cursor.fetchall()]
-            return len(userids)
+            return userids
 
         def _choose_scenario_and_partner_type(cursor):
             # for each scenario, get number of complete dialogues per agent type
@@ -409,9 +409,17 @@ class Backend(object):
             with self.conn:
                 cursor = self.conn.cursor()
 
-                num_active = _get_num_active_users(cursor)
+                active_users = _get_active_users(cursor)
+
+                # limit number of dialogs
+                num_active = len(active_users)
+                print("num_active: {}".format(num_active))
                 if num_active >= MAX_ACTIVE:
                     return None
+
+                # cleanup zombie users
+                for active_user in active_users:
+                    self.get_updated_status(active_user)
 
                 others = _get_other_waiting_users(cursor, userid)
 
