@@ -602,9 +602,13 @@ class Backend(object):
 
 
     def get_finished_info(self, userid, from_mturk=False, current_status=Status.Finished, hit_id=None, assignment_id=None, worker_id=None):
-        def _generate_mturk_code(completed=True):
-            if completed:
+        def _generate_mturk_code(completed=True, reward=None):
+            if completed and reward:
+                return "TASK_DONE_a{}".format(str(uuid4().hex))
+            if reward:
                 return "TASK_DONE_b{}".format(str(uuid4().hex))
+            if completed:
+                return "TASK_DONE_c{}".format(str(uuid4().hex))
             return "TASK_DONE_d{}".format(str(uuid4().hex))
 
         def _add_finished_task_row(cursor, userid, mturk_code, chat_id, hit_id, assignment_id, worker_id):
@@ -638,6 +642,22 @@ class Backend(object):
             except ValueError:
                 return False
 
+        def _chat_reward(cursor, chat_id):
+            cursor.execute('''SELECT outcome FROM chat WHERE chat_id=?''', (chat_id,))
+            try:
+                result = cursor.fetchone()
+                if result is None or len(result) == 0:
+                    return None
+
+                try:
+                    outcome = json.loads(result[0])
+                except ValueError:
+                    return None
+
+                return outcome['reward']
+            except:
+                return None
+
         try:
             with self.conn:
                 cursor = self.conn.cursor()
@@ -645,8 +665,9 @@ class Backend(object):
                 num_seconds = (self.config["status_params"]["finished"]["num_seconds"] +
                                u.status_timestamp) - current_timestamp_in_seconds()
                 completed = _is_chat_complete(cursor, u.chat_id)
+                reward = _chat_reward(cursor, u.chat_id)
                 if from_mturk:
-                    mturk_code = _generate_mturk_code(completed)
+                    mturk_code = _generate_mturk_code(completed, reward)
                     self.logger.debug("User {:s} got completion code {:s}".format(userid, mturk_code))
                 else:
                     mturk_code = None
