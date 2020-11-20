@@ -24,7 +24,7 @@
     },
 
     "scenarios_json_file": "data/scenarios.json",
-    "idle_timeout_num_seconds": 200,
+    "idle_timeout_num_seconds": 90,
     "connection_timeout_num_seconds": 3,
     "templates_dir": "web/templates",
     "images_base": "web/static/images",
