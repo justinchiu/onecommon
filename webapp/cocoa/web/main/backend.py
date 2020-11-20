@@ -278,7 +278,7 @@ class Backend(object):
         except sqlite3.IntegrityError:
             print("WARNING: Rolled back transaction")
 
-    def attempt_join_chat(self, userid):
+    def attempt_join_chat(self, userid, try_human=None):
         def _init_controller(my_index, partner_type, scenario, chat_id):
             my_session = self.systems[HumanSystem.name()].new_session(my_index, scenario.get_kb(my_index))
             partner_session = self.systems[partner_type].new_session(1 - my_index, scenario.get_kb(1 - my_index))
@@ -357,7 +357,7 @@ class Backend(object):
             userids = [r[0] for r in cursor.fetchall()]
             return userids
 
-        def _choose_scenario_and_partner_type(cursor):
+        def _choose_scenario_and_partner_type(cursor, try_human=None):
             # for each scenario, get number of complete dialogues per agent type
             all_partners = self.systems.keys() if not self.active_system else [self.active_system]
 
@@ -392,9 +392,36 @@ class Backend(object):
                 return self.scenario_db.get(sid), p
 
             # otherwise, select a random active scenario and an agent type that it's missing
-            sid = np.random.choice(list(active_scenarios.keys()))
-            p = np.random.choice(active_scenarios[sid])
+            #sid = np.random.choice(list(active_scenarios.keys()))
+            #p = np.random.choice(active_scenarios[sid])
+            #return self.scenario_db.get(sid), p
+
+            # we want to choose a type first to allow users to wait longer for humans.
+            # transpose scenario -> type map to type -> scenario
+            active_types = defaultdict(list)
+            for sid, partner_types in active_scenarios.items():
+                for partner_type in partner_types:
+                    active_types[partner_type].append(sid)
+
+            if try_human is None:
+                # no preference, any active
+                p = np.random.choice(list(active_types.keys()))
+            elif try_human and active_types[HumanSystem.name()]:
+                # human only
+                p = HumanSystem.name()
+            else:
+                # bot only
+                bots = list(set(active_types.keys()) - {HumanSystem.name()})
+                if not bots:
+                    # sample random dialogue scenario with bot
+                    sid = np.random.choice(list(scenario_dialogues.keys()))
+                    bots = list(set(all_partners) - {HumanSystem.name()})
+                    p = np.random.choice(bots)
+                    return self.scenario_db.get(sid), p
+                p = np.random.choice(bots)
+            sid = np.random.choice(active_types[p])
             return self.scenario_db.get(sid), p
+
 
         def _update_used_scenarios(scenario_id, partner_type, chat_id):
             cursor.execute(
@@ -423,9 +450,12 @@ class Backend(object):
 
                 others = _get_other_waiting_users(cursor, userid)
 
-                scenario, partner_type = _choose_scenario_and_partner_type(cursor)
+                scenario, partner_type = _choose_scenario_and_partner_type(cursor, try_human)
                 scenario_id = scenario.uuid
                 print("scenario_id: {}; partner_type: {}".format(scenario_id, partner_type))
+
+                # update partner_type in db for future polling
+                self._update_user(cursor, userid, partner_type=partner_type)
                 #my_index = np.random.choice([0, 1])
                 # TODO: hack for buyer/seller
                 my_index = 0 if self.scenario_int_id[scenario_id] % 2 == 0 else 1
@@ -884,7 +914,18 @@ class Backend(object):
                     self._update_user(cursor, userid, connected_status=1)
                     if u.status == Status.Waiting:
                         print("attempting to join")
-                        self.attempt_join_chat(userid)
+                        # check partner type
+                        partner_type = u.partner_type
+                        if partner_type == HumanSystem.name():
+                            timeout = self._is_timeout(
+                                self.config["status_params"][u.status]["num_seconds"]-10,
+                                u.status_timestamp,
+                            )
+                            # if waiting has timed out sample randomly
+                            # todo: sample bots only to decrease waiting time
+                            self.attempt_join_chat(userid, try_human=not timeout)
+                        else:
+                            self.attempt_join_chat(userid)
                     return True
                 except (UnexpectedStatusException, ConnectionTimeoutException, StatusTimeoutException) as e:
                     return False
