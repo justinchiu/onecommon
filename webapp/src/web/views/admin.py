@@ -145,6 +145,8 @@ def visualize():
         reviewed_ids = [x[0] for x in cursor.fetchall()]
         print(request.args)
         print("num ids: {}".format(len(set(ids))))
+        num_active_users = len(backend._get_active_users(cursor))
+        print("num active users: {}".format(num_active_users))
         if 'incomplete' in request.args:
             # list only chat_ids which are incomplete and not reviewed yet
             ids = [chat_id for chat_id in ids if (chat_id not in reviewed_ids) and (not DatabaseReader.check_completed_info(cursor, chat_id))]
@@ -211,6 +213,7 @@ def visualize():
                                fail_by_opponent=fail_by_opponent,
                                opponent_types=opponent_types,
                                scenario_ids=scenario_ids,
+                               num_active_users=num_active_users,
                               )
     else:
         chat_id = request.args.get('chat_id')

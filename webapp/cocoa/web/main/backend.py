@@ -194,6 +194,14 @@ class Backend(object):
         else:
             return v
 
+    def _get_active_users(self, cursor):
+        cursor.execute(
+            "SELECT name FROM active_user WHERE status=? AND connected_status=1",
+            (Status.Chat,),
+        )
+        userids = [r[0] for r in cursor.fetchall()]
+        return userids
+
     @staticmethod
     def _is_timeout(timeout_limit, timestamp):
         if timeout_limit < 0:
@@ -357,7 +365,7 @@ class Backend(object):
             userids = [r[0] for r in cursor.fetchall()]
             return userids
 
-        def _choose_scenario_and_partner_type(cursor, try_human=None):
+        def _choose_scenario_and_partner_type(cursor, other_waiting_users, try_human=None):
             # for each scenario, get number of complete dialogues per agent type
             all_partners = self.systems.keys() if not self.active_system else [self.active_system]
 
@@ -403,7 +411,9 @@ class Backend(object):
                 for partner_type in partner_types:
                     active_types[partner_type].append(sid)
 
-            if try_human is None:
+            if other_waiting_users:
+                p = HumanSystem.name()
+            elif try_human is None:
                 # no preference, any active
                 p = np.random.choice(list(active_types.keys()))
             elif try_human and active_types[HumanSystem.name()]:
@@ -449,8 +459,9 @@ class Backend(object):
                     self.get_updated_status(active_user)
 
                 others = _get_other_waiting_users(cursor, userid)
+                print("num other waiting users: {}".format(len(others)))
 
-                scenario, partner_type = _choose_scenario_and_partner_type(cursor, try_human)
+                scenario, partner_type = _choose_scenario_and_partner_type(cursor, others, try_human)
                 scenario_id = scenario.uuid
                 print("scenario_id: {}; partner_type: {}".format(scenario_id, partner_type))
 

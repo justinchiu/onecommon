@@ -77,7 +77,9 @@ class Backend(BaseBackend):
             cursor = self.conn.cursor()
             chat_id = controller.get_chat_id()
             ex = DatabaseReader.get_chat_example(cursor, chat_id, self.scenario_db)
-            if sum([1 if event.action == 'message' else 0 for event in ex.events]) <= 2 and sum([len(event.data) if event.action == 'message' else 0 for event in ex.events]) <= 10:
+            # if sum([1 if event.action == 'message' else 0 for event in ex.events]) <= 1 and sum([len(event.data) if event.action == 'message' else 0 for event in ex.events]) <= 10:
+            #     return True
+            if sum([1 if event.action == 'message' else 0 for event in ex.events]) <= 1:
                 return True
             return False
 
