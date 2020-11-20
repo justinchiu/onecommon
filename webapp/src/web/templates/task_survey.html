@@ -16,18 +16,22 @@
 
     // Ensure all questions have a selected response
     function ensureAllAnswered(){
-        coopVal = $("#cooperative").val();
+        //coopVal = $("#cooperative").val();
         humanVal = $("#humanlike").val();
         confidenceVal = $("#confidence").val();
+        understandYouVal = $("#understandYou").val();
+        understandPartnerVal = $("#understandPartner").val();
         comments = $("#comments").val();
         
-        if (humanVal == null | coopVal == null | confidenceVal == null){
+        if (humanVal == null | confidenceVal == null | understandYouVal == null | understandPartnerVal == null ){
             return false;
         }
         else{
             questionAnswers["humanlike"] = humanVal;
-            questionAnswers["cooperative"] = coopVal;
+            //questionAnswers["cooperative"] = coopVal;
             questionAnswers["confidence"] = confidenceVal;
+            questionAnswers["understand_you"] = understandYouVal;
+            questionAnswers["understand_partner"] = understandPartnerVal;
             if(comments == null) {
             	comments = "";
             }
@@ -104,22 +108,33 @@
         <br> <br>
 
         <div class="q">
-            <p style="text-align:center;">How <strong>cooperative</strong> was your partner?</p> <br>
-            <form id="q_s">
-                <p style="float:left;">Not cooperative at all</p>
-                <input type="range" id="cooperative" min="1" max="5" value="3" style="width:50%; margin-left:6.5%" >
-                <p style="float:right;">Very cooperative</p>
-            </form>
-        </div>
-
-        <br> <br>
-
-        <div class="q">
-            <p style="text-align:center;">How <strong>human-like</strong> was your partner?</p> <br>
+            <p style="text-align:center;">How <strong>human-like</strong> was your partner's language?</p> <br>
             <form id="q_h">
                 <p style="float:left;">Not human-like at all</p>
                 <input type="range" id="humanlike" min="1" max="5" value="3" style="width:50%; margin-left:7%;" >
                 <p style="float:right;">Very human-like</p>
+            </form>
+        </div>
+        
+        <br> <br>
+
+        <div class="q">
+            <p style="text-align:center;">How well did your partner <strong>understand you</strong>?</p> <br>
+            <form id="q_h">
+                <p style="float:left;">Not well at all</p>
+                <input type="range" id="understandYou" min="1" max="5" value="3" style="width:50%; margin-left:13%;" >
+                <p style="float:right;">Very well</p>
+            </form>
+        </div>
+        
+        <br> <br>
+
+        <div class="q">
+          <p style="text-align:center;">How well did <strong>you understand</strong> your partner?</p> <br>
+            <form id="q_h">
+                <p style="float:left;">Not well at all</p>
+                <input type="range" id="understandPartner" min="1" max="5" value="3" style="width:50%; margin-left:13%;" >
+                <p style="float:right;">Very well</p>
             </form>
         </div>
         

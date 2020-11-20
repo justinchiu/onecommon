@@ -12,7 +12,7 @@ class DatabaseReader(BaseDatabaseReader):
     # TODO: move this to cocoa. factor survey questions
     @classmethod
     def dump_surveys(cls, cursor, json_path):
-        questions = ['humanlike', 'cooperative', 'comments', 'confidence']
+        questions = ['humanlike', 'comments', 'confidence', 'understand_you', 'understand_partner']
 
         cursor.execute('''SELECT * FROM survey''')
         logged_surveys = cursor.fetchall()
@@ -21,8 +21,8 @@ class DatabaseReader(BaseDatabaseReader):
 
         for survey in logged_surveys:
             # todo this is pretty lazy - support variable # of questions per task eventually..
-            (userid, cid, _, q1, q2, comments, q3) = survey
-            responses = dict(zip(questions, [q1, q2, comments, q3]))
+            (userid, cid, _, q1, comments, q2, q3, q4) = survey
+            responses = dict(zip(questions, [q1, comments, q2, q3, q4]))
             cursor.execute('''SELECT agent_types, agent_ids FROM chat WHERE chat_id=?''', (cid,))
             chat_result = cursor.fetchone()
             agents = json.loads(chat_result[0])

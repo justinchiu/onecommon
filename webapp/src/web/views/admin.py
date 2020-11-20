@@ -246,16 +246,18 @@ def visualize():
         res = cursor.fetchone()
         if res:
             survey = True
-            cooperative = res[3]
-            humanlike = res[4]
-            comments = res[5]
-            confidence = res[6]
+            humanlike = res[3]
+            comments = res[4]
+            confidence = res[5]
+            understand_you = res[6]
+            understand_them = res[7]
         else:
             survey = False
-            cooperative = None
             humanlike = None
             comments = None
             confidence = None
+            understand_you = None
+            understand_them = None
 
         return render_template('visualize.html',
                                 chat_id=chat_id,
@@ -269,9 +271,10 @@ def visualize():
                                 agent_0=chat_info['agents']['0'],
                                 agent_1=chat_info['agents']['1'],
                                 survey=survey,
-                                cooperative=cooperative,
                                 humanlike=humanlike,
                                 confidence=confidence,
                                 comments=comments,
+                               understand_you=understand_you,
+                               understand_them=understand_them,
                                 )
 
