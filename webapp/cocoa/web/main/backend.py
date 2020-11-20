@@ -18,7 +18,7 @@ from cocoa.web.main.logger import WebLogger
 
 import pdb
 
-MAX_ACTIVE=20
+MAX_ACTIVE=10
 
 class DatabaseManager(object):
     """Update database with user/chat information.

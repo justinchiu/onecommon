@@ -139,9 +139,12 @@ def visualize():
 
     if not request.args.get('chat_id'):
         cursor.execute('SELECT DISTINCT chat_id FROM event')
+        # cursor.execute('SELECT DISTINCT chat_id FROM chat')
         ids = [x[0] for x in cursor.fetchall()]
         cursor.execute('SELECT DISTINCT chat_id FROM review')
         reviewed_ids = [x[0] for x in cursor.fetchall()]
+        print(request.args)
+        print("num ids: {}".format(len(set(ids))))
         if 'incomplete' in request.args:
             # list only chat_ids which are incomplete and not reviewed yet
             ids = [chat_id for chat_id in ids if (chat_id not in reviewed_ids) and (not DatabaseReader.check_completed_info(cursor, chat_id))]
@@ -196,7 +199,7 @@ def visualize():
                                chat_ids = ids,
                                chat_outcomes = outcomes,
                                reviewed = ["" for i in range(num_ids)],
-                               base_url = request.url + '?chat_id=',
+                               base_url = request.base_url + '?chat_id=',
                                num_success=num_success,
                                num_fail=num_fail,
                                num_incomplete=num_incomplete,
