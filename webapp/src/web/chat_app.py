@@ -165,24 +165,26 @@ def cleanup(flask_app):
     DatabaseReader.dump_reviewed_chat(cursor, review_path)
     conn.close()
 
-def init(output_dir, reuse=False):
+def init(output_dir, reuse=False, rewrite=False):
     db_file = os.path.join(output_dir, DB_FILE_NAME)
     log_file = os.path.join(output_dir, LOG_FILE_NAME + datetime.now().strftime("-%Y-%m-%d-%H-%M-%S"))
     error_log_file = os.path.join(output_dir, ERROR_LOG_FILE_NAME + datetime.now().strftime("-%Y-%m-%d-%H-%M-%S"))
     transcripts_dir = os.path.join(output_dir, TRANSCRIPTS_DIR)
     # TODO: don't remove everything
     if not reuse:
-        # print("removing everything not implemented!")
-        # sys.exit(1)
-        if os.path.exists(output_dir):
-            shutil.rmtree(output_dir)
-        os.makedirs(output_dir)
+        if False:
+            print("removing everything not implemented!")
+            sys.exit(1)
+        else:
+            if os.path.exists(output_dir):
+                shutil.rmtree(output_dir)
+            os.makedirs(output_dir)
 
-        db = DatabaseManager.init_database(db_file)
+            db = DatabaseManager.init_database(db_file)
 
-        if os.path.exists(transcripts_dir):
-            shutil.rmtree(transcripts_dir)
-        os.makedirs(transcripts_dir)
+            if os.path.exists(transcripts_dir):
+                shutil.rmtree(transcripts_dir)
+            os.makedirs(transcripts_dir)
     else:
         db = DatabaseManager(db_file)
 
@@ -192,6 +194,7 @@ def init(output_dir, reuse=False):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--num-scenarios', type=int)
+    parser.add_argument('--starting-scenario', type=int)
     parser.add_argument('--visualize-transcripts', type=str, default='data/final_transcripts.json')
     parser.add_argument('--markable_annotation', type=str, default='data/markable_annotation.json')
     parser.add_argument('--batch_info', type=str, default='data/batch_info.json')
@@ -269,8 +272,11 @@ if __name__ == "__main__":
 
     schema = Schema(schema_path)
     scenarios = read_json(args.scenarios_path)
+    if args.starting_scenario is not None:
+        scenarios = scenarios[args.starting_scenario:]
     if args.num_scenarios is not None:
         scenarios = scenarios[:args.num_scenarios]
+    print("num scenarios: {}".format(len(scenarios)))
     scenario_db = ScenarioDB.from_dict(schema, scenarios, Scenario)
     app.config['scenario_db'] = scenario_db
 
@@ -398,8 +404,8 @@ if __name__ == "__main__":
     else:
         atexit.register(cleanup, flask_app=app)
         #app.run('0.0.0.0', debug=True, port=args.port, ssl_context=('/home/ubuntu/server.crt', '/home/ubuntu/server.key'))
-        server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file)
-        # server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file,
-        #                     keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
-        #                     certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem')
+        # server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file)
+        server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file,
+                            keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
+                            certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem')
         server.serve_forever()

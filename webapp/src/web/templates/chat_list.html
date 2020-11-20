@@ -63,6 +63,7 @@
       <th>overall</th>
       <th>success: {{num_success}}</th>
       <th>fail: {{num_fail}}</th>
+      <th>success %: {{(num_success * 100.0 / (num_fail + num_success)) if (num_fail + num_success > 0) else 0}}</th>
       <th>incomplete: {{num_incomplete}}</th>
     </tr>
     {% for agent_type in opponent_types %}
@@ -70,6 +71,7 @@
       <th>{{ agent_type }}</th>
       <th>success: {{success_by_opponent[agent_type]}}</th>
       <th>fail: {{fail_by_opponent[agent_type]}}</th>
+      <th>success %: {{(success_by_opponent[agent_type] * 100.0 / (success_by_opponent[agent_type] + fail_by_opponent[agent_type])) if (success_by_opponent[agent_type] + fail_by_opponent[agent_type] > 0) else 0}}</th>
     </tr>
     {% endfor %}
   </table><br>

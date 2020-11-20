@@ -1,4 +1,5 @@
-{ "status_params": {
+{
+    "status_params": {
 	    "waiting": {
 	        "num_seconds": 120
 	    },
@@ -22,7 +23,7 @@
 	    }
     },
 
-    "idle_timeout_num_seconds": 120,
+    "idle_timeout_num_seconds": 200,
     "connection_timeout_num_seconds": 3,
     "templates_dir": "web/templates",
     "images_base": "web/static/images",
@@ -32,28 +33,43 @@
     "task_title": "Find One In Common!",
     "icon": "handshake.jpg",
     "num_chats_per_scenario": {
-        "human": 4,
-        "full": 4,
-        "pragmatic_confidence": 4,
-        "uabaseline": 4
+        "human": 1,
+        "full": 1,
+        "pragmatic": 0,
+        "pragmatic_confidence": 0,
+        "mastermind":0,
+        "uabaseline": 1
     },
     "models": {
         "full": {
             "active": true,
             "type": "full",
-            "model_path": "models/plain-hierarchical-structured-recurrence/1_ep-12.th",
+            "model_path": "models/full/1_ep-12.th",
+            "markable_detector_path": "models/markable_detector_with_dict_1.th",
+            "inference_args": {
+              "min_num_mentions": 0,
+              "max_num_mentions": 10
+            }
+        },
+        "pragmatic": {
+            "active": true,
+            "type": "full",
+            "model_path": "models/full/1_ep-12.th",
             "markable_detector_path": "models/markable_detector_with_dict_1.th",
             "inference_args": {
               "min_num_mentions": 0,
               "max_num_mentions": 10,
-              "language_inference": "sample",
-              "language_beam_size": 1
+              "language_rerank": true,
+              "language_inference": "forgetful_noised_beam",
+              "language_beam_size": 100,
+              "language_beam_keep_all_finished": true,
+              "language_rerank_weight": 0.999
             }
         },
         "pragmatic_confidence": {
             "active": true,
             "type": "full",
-            "model_path": "models/plain-hierarchical-structured-recurrence/1_ep-12.th",
+            "model_path": "models/full/1_ep-12.th",
             "markable_detector_path": "models/markable_detector_with_dict_1.th",
             "inference_args": {
               "min_num_mentions": 0,
@@ -68,15 +84,34 @@
               "next_mention_reranking_weight": 0.0,
               "next_mention_reranking_score": "log_max_probability",
               "reranking_confidence": true,
-              "reranking_confidence_exp_score_threshold": 0.8,
+              "reranking_confidence_exp_score_threshold": 0.6,
               "reranking_confidence_type": "first_above_threshold",
               "reranking_confidence_score": "joint"
+            }
+        },
+        "mastermind": {
+            "active": true,
+            "type": "full",
+            "model_path": "models/full/1_ep-12.th",
+            "markable_detector_path": "models/markable_detector_with_dict_1.th",
+            "inference_args": {
+              "min_num_mentions": 0,
+              "max_num_mentions": 10,
+              "language_rerank": true,
+              "language_inference": "forgetful_noised_beam",
+              "language_beam_size": 100,
+              "language_beam_keep_all_finished": true,
+              "language_rerank_weight": 0.999,
+              "reranking_confidence": true,
+              "reranking_confidence_type": "keep_best",
+              "next_mention_reranking": true,
+              "next_mention_reranking_k": 20
             }
         },
         "uabaseline": {
             "active": true,
             "type": "uabaseline",
-            "model_path": "models/ua_arch_attn_enc_shared_attn/1_ep-12.th",
+            "model_path": "models/plain/1_ep-12.th",
             "markable_detector_path": "models/markable_detector_with_dict_1.th",
             "inference_args": {}
         }
