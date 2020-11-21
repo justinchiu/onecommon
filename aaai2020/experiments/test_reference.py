@@ -63,6 +63,12 @@ def reference_to_svg(kb, ref_out):
     svg += '''</svg>'''
     return svg
 
+DEFAULT_STATS = [
+    'select_acc',
+    'ref_accuracy', 'ref_f1', 'ref_exact_match',
+    'partner_ref_accuracy', 'partner_ref_f1', 'partner_ref_exact_match',
+    'next_mention_accuracy', 'next_mention_f1', 'next_mention_exact_match'
+]
 
 def main():
     parser = argparse.ArgumentParser(description='testing script for reference resolution')
@@ -97,6 +103,7 @@ def main():
         help='repeat training n times')
 
     parser.add_argument('--eval_split', choices=['dev', 'test'], default='dev')
+    parser.add_argument('--eval_split_num', type=int, default=1)
 
     # for error analysis
     parser.add_argument('--transcript_file', type=str, default='final_transcripts.json',
@@ -161,8 +168,9 @@ def main():
         assert args.model_file
         # assert args.model_file.endswith(f"{args.seed}_best.th") or args.model_file.endswith(f"{args.seed}_latest.th")
         # check that this model has a split number that matches the dataset
-        split = 1
-        splits = [1]
+        split = args.eval_split_num
+        assert split is not None
+        splits = [split]
         match = re.compile(r".*{}_(best|ep-\d+).th$".format(split)).match(args.model_file)
         assert match is not None, args.model_file
 
@@ -256,7 +264,7 @@ def main():
         location_correct = Counter()
         location_exact_match = Counter()
 
-        # information to compute correlation between selection and reference score 
+        # information to compute correlation between selection and reference score
         select_correct = {}
         reference_correct = {}
         reference_total = {}
@@ -298,6 +306,8 @@ def main():
         partner_ref_stats = defaultdict(lambda: 0.0)
         next_mention_stats = defaultdict(lambda: 0.0)
         is_selection_stats = defaultdict(lambda: 0.0)
+
+        return_all_selection_outs = model.args.is_selection_prediction and args.selection_confidence
 
         for batch in tqdm.tqdm(testset, ncols=80):
             if isinstance(corpus, ReferenceSentenceCorpus):
@@ -401,7 +411,7 @@ def main():
                     is_selection=is_selection,
                     can_confirm=can_confirm,
                     num_next_mention_candidates_to_score=args.next_mention_reranking_k if args.next_mention_reranking else None,
-                    return_all_selection_outs=True,
+                    return_all_selection_outs=return_all_selection_outs,
                     relation_swap=False,
                 )
             elif isinstance(corpus, ReferenceCorpus):
@@ -663,7 +673,10 @@ def main():
 
                 # END loop over sentences
 
-            sel_logits, _, _ = sel_outs[-1]
+            if return_all_selection_outs:
+                sel_logits, _, _ = sel_outs[-1]
+            else:
+                sel_logits, _, _ = sel_outs
 
             sel_loss = sel_crit(sel_logits, sel_tgt)
             sel_correct = (sel_logits.max(dim=1)[1] == sel_tgt).sum().item()
@@ -752,6 +765,7 @@ def main():
             lang_ppl_name = 'langppl'
         test_select_loss /= len(testset)
         test_select_accuracy = test_select_correct / test_select_total
+        metrics['select_acc'] = test_select_accuracy
         test_reference_accuracy = test_reference_correct / test_reference_total
         print('eval_reference_correct {} ; eval_reference_total {}'.format(test_reference_correct, test_reference_total))
         # this is affected by --allow_belief_cheating for models that constrain attention or mark dots mentioned
@@ -762,6 +776,11 @@ def main():
         for k in sorted(num_markables_counter.keys()):
             print('{}: {:.4f} {:.4f} (out of {})'.format(k, num_markables_correct[k] / (num_markables_counter[k] * 7), exact_match_counter[k] / num_markables_counter[k], num_markables_counter[k]))
         print('eval anaphora: {} (out of {})'.format(correct_anaphora / total_anaphora, total_anaphora))
+
+        print("print string:")
+        default_stat_values = [metrics[stat_name] for stat_name in DEFAULT_STATS]
+        print(','.join(DEFAULT_STATS))
+        print(','.join('{:.4f}'.format(x) for x in default_stat_values))
 
         if args.bleu_n > 0:
             print('average bleu score {}'.format(np.mean(bleu_scores)))
