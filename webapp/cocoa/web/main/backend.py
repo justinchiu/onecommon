@@ -932,6 +932,7 @@ class Backend(object):
                                 self.config["status_params"][u.status]["num_seconds"]-10,
                                 u.status_timestamp,
                             )
+                            timeout = False # never sample bot, let the waiting period timeout
                             # if waiting has timed out sample randomly
                             # todo: sample bots only to decrease waiting time
                             self.attempt_join_chat(userid, try_human=not timeout)
