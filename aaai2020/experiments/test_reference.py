@@ -778,7 +778,7 @@ def main():
         print('eval anaphora: {} (out of {})'.format(correct_anaphora / total_anaphora, total_anaphora))
 
         print("print string:")
-        default_stat_values = [metrics[stat_name] for stat_name in DEFAULT_STATS]
+        default_stat_values = [metrics.get(stat_name, 0.0) for stat_name in DEFAULT_STATS]
         print(','.join(DEFAULT_STATS))
         print(','.join('{:.4f}'.format(x) for x in default_stat_values))
 

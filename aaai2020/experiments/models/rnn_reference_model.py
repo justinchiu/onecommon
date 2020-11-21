@@ -2523,7 +2523,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 #     state, next_mention_outs[0], next_mention_outs[2],
                 #     num_next_mention_candidates_to_score, next_mention_candidates_generation,
                 # ))
-
+        else:
+            all_next_mention_outs.append(None)
 
         l1_log_probs = []
         assert len(inpts) == len(ref_inpts)
@@ -2742,4 +2743,3 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         return state, all_outs, all_ref_outs, sel_to_return, all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs,\
                all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h), l1_log_probs, all_next_mention_candidates, \
             relation_swapped_ref_outs, relation_swapped_partner_ref_outs, has_relation_swaps
-
