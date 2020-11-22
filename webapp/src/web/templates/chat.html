@@ -267,6 +267,7 @@
                 if (('disable_chat' in response) && (response['disable_chat'])) {
                   disableChat();
                 }
+            chatBeep();
               }
          		}
          	});
@@ -356,6 +357,11 @@
          	var deadline = new Date(Date.parse(new Date()) + {{ num_seconds }} * 1000);
          	initializeClock('clockdiv', deadline);
          }
+
+        function chatBeep() {
+          const audio = new Audio("{{ url_for('static', filename='')}}chat.wav");
+          audio.play();
+        }
 
          function disableChat() {
             $("#text").attr("disabled", "disabled")
