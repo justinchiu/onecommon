@@ -1,9 +1,10 @@
 import argparse
 import sqlite3
 import json
-from collections import Counter
 
 from cocoa.web.main.db_reader import DatabaseReader
+
+from analyze_chats import analyze
 
 def check_completed_info(cursor, chat_id):
     cursor.execute('SELECT * FROM event WHERE chat_id=? ORDER BY time ASC', (chat_id,))
@@ -16,6 +17,10 @@ def check_completed_info(cursor, chat_id):
         if action == 'select':
             agent_select[agent] = True
     return agent_select
+
+def get_worker_ids(cursor, chat_id):
+    cursor.execute('SELECT worker_id FROM mturk_task WHERE chat_id=?', (chat_id,))
+    return [row[0] for row in cursor.fetchall()]
 
 # def get_chat_outcome(cursor, chat_id):
 #     cursor.execute('SELECT outcome FROM chat WHERE chat_id=?', (chat_id,))
@@ -101,6 +106,7 @@ def get_chats(args, db_name):
                 if chat_event['action'] == 'message':
                     chat.append((chat_event['agent'], chat_event['data']))
             record = {
+                'chat_id': chat_id,
                 'outcome': outcome,
                 'agent_types': agent_types,
                 'opponent_type': opponent_agent,
@@ -109,6 +115,7 @@ def get_chats(args, db_name):
                 'scenario_id': scenario_uuid,
                 'survey_result': survey_result(args, cursor, chat_id),
                 'num_players_selected': num_selections,
+                'workers': list(set(get_worker_ids(cursor, chat_id))),
             }
             records.append(record)
     return records
@@ -121,25 +128,7 @@ if __name__ == "__main__":
     all_chats = []
     for db_name in args.db_names:
         all_chats += get_chats(args, db_name)
-    agent_type_counts = Counter()
-    successful_agent_type_counts = Counter()
-    completed_agent_type_counts = Counter()
-    success = 0
-    completed = 0
-    for chat in all_chats:
-        agent_type_counts[chat['opponent_type']] += 1
-        if chat['outcome'] and chat['outcome'].get('reward', None) == 1:
-            success += 1
-            successful_agent_type_counts[chat['opponent_type']] += 1
-        if chat['num_players_selected'] == 2:
-            completed += 1
-            completed_agent_type_counts[chat['opponent_type']] += 1
-    print("{} chats found".format(len(all_chats)))
-    print(agent_type_counts)
-    print("{} completed".format(completed))
-    print(completed_agent_type_counts)
-    print("{} successful".format(success))
-    print(successful_agent_type_counts)
     if args.output_name:
         with open(args.output_name, 'w') as f:
             json.dump(all_chats, f, indent=4, sort_keys=True)
+    analyze(all_chats)

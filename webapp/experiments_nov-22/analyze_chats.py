@@ -40,7 +40,6 @@ def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_ga
         chat = chat.copy()
         opponent_type = chat['opponent_type']
         agent_type_counts[opponent_type] += 1
-        if opponent_type not in 
         if chat['outcome'] and chat['outcome'].get('reward', None) == 1:
             success += 1
             successful_agent_type_counts[chat['opponent_type']] += 1
