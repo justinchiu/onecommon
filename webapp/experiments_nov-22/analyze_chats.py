@@ -2,6 +2,8 @@ import numpy as np
 import pandas
 from collections import Counter, defaultdict
 import matplotlib.pyplot as plt
+import seaborn as sns
+from scipy import stats
 to_print = ['uabaseline_same_opt', 'pragmatic_confidence', 'human']
 
 def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_games=None, print_order=None):
@@ -116,24 +118,61 @@ if __name__ == "__main__":
         'uabaseline_same_opt': 'U&A\'20',
         'pragmatic_confidence': 'Full+Prag',
     }
+    diffs = [('pragmatic_confidence', 'uabaseline_same_opt')]
 
     chat_stats_df = pandas.DataFrame(chat_stats)
     x_vals = []
-    by_key = {k: [] for k in to_print}
-    for min_success_rate in np.linspace(0, 1.0, 21):
+    means_by_key = {k: [] for k in to_print}
+    std_errs_by_key = {k: [] for k in to_print}
+    for min_success_rate in np.linspace(0, 1.0, 41):
         filtered = chat_stats_df[chat_stats_df['min_success_rate'] >= min_success_rate]
+        success_counts = filtered.groupby('opponent_type')['success'].sum()
         success_rates = filtered.groupby('opponent_type')['success'].mean()
         counts = filtered.groupby('opponent_type')['success'].count()
+        # https://stats.stackexchange.com/questions/29641/standard-error-for-the-mean-of-a-sample-of-binomial-random-variables
+        standard_error_mean = np.sqrt(success_rates * (1 - success_rates) / counts)
         total_count = 0
         for k in to_print:
             total_count += counts[k]
-            by_key[k].append(success_rates[k])
-        print("{:.2f}: {}".format(min_success_rate, total_count))
+            means_by_key[k].append(success_rates[k])
+            std_errs_by_key[k].append(standard_error_mean[k])
+        #print("{:.2f}: {}".format(min_success_rate, total_count))
+        for diff in diffs:
+            a, b = diff
+            n = counts[a] + counts[b]
+            p = (success_counts[a] + success_counts[b]) / (n)
+            z = (success_rates[a] - success_rates[b]) / np.sqrt(p * (1 - p) * (1.0 / counts[a] + 1.0 / counts[b]))
+            p_value = stats.t.sf(z, n-1)
+            if p_value < 0.05:
+                sig_str = "**"
+            elif p_value < 0.1:
+                sig_str = "*"
+            else:
+                sig_str = ""
+            if len(diffs) > 1:
+                print("{}{:.2f}\t{}\t{}\t{:.4f}\t{:.4f}".format(sig_str, min_success_rate, total_count, diff, z, p_value))
+            else:
+                print("{}{:.2f}\t{}\t{:.4f}\t{:.4f}".format(sig_str, min_success_rate, total_count, z, p_value))
+        if len(diffs) > 1:
+            print()
         x_vals.append(min_success_rate)
-    for k, y_vals in by_key.items():
-        plt.plot(x_vals, y_vals, label=name_lookups[k])
-    plt.ylabel("Per-Condition Success Rate")
-    plt.xlabel("Minimum Worker Overall Success Rate")
+    fig, ax = plt.subplots()
+    x_vals = np.array(x_vals)
+    for k, y_mean in means_by_key.items():
+        y_mean = np.array(y_mean)
+        #plt.plot(x_vals, y_mean, label=name_lookups[k])
+        #plt.errorbar(x_vals, y_mean, yerr=std_errs_by_key[k], label=name_lookups[k])
+        p = ax.plot(x_vals, y_mean, label=name_lookups[k])
+        sem = np.array(std_errs_by_key[k])
+        lower=y_mean-sem
+        upper=y_mean+sem
+        ax.plot(x_vals, lower, color=p[0].get_color(), alpha=0.1)
+        ax.plot(x_vals, upper, color=p[0].get_color(), alpha=0.1)
+        ax.fill_between(x_vals, lower, upper, alpha=0.2)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    plt.ylabel("Per-Condition Success")
+    plt.xlabel("Minimum Worker Success")
     plt.legend()
     plt.vlines(0.287, ymin=0.2, ymax=1)
     plt.show()
