@@ -4,7 +4,11 @@ from collections import Counter, defaultdict
 import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy import stats
-to_print = ['uabaseline_same_opt', 'pragmatic_confidence', 'human']
+import matplotlib.ticker as mtick
+import nltk
+to_print = list(reversed(['uabaseline_same_opt', 'pragmatic_confidence', 'human']))
+# to_print = list(reversed(['uabaseline_same_opt', 'human']))
+# to_print = list(reversed(['human']))
 
 def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_games=None, print_order=None):
     agent_type_counts = Counter()
@@ -40,6 +44,10 @@ def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_ga
             if all(worker not in worker_filter for worker in chat['workers']):
                 continue
         chat = chat.copy()
+        chat['num_turns'] = len(chat['dialogue'])
+        chat['total_words'] = sum(len(d) for d in human_dialogues(chat))
+        if chat['num_turns'] > 0:
+            chat['words_per_turn'] = float(chat['total_words']) / chat['num_turns']
         opponent_type = chat['opponent_type']
         agent_type_counts[opponent_type] += 1
         if chat['outcome'] and chat['outcome'].get('reward', None) == 1:
@@ -96,6 +104,17 @@ def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_ga
         print()
     return worker_completed_counts, worker_success_counts, chat_stats
 
+def tokenize_and_filter(utterance):
+    punct = set(".,\"'!-")
+    toks = nltk.word_tokenize(utterance)
+    return [tok for tok in toks if tok not in punct]
+
+def human_dialogues(chat):
+    dialogue = chat['dialogue']
+    human_agent_numbers = set([int(k) for k, v in chat['agent_types'].items()
+                           if v == 'human'])
+    return [tokenize_and_filter(d) for ix, d in dialogue if ix in human_agent_numbers]
+
 if __name__ == "__main__":
     import json
     import argparse
@@ -113,10 +132,16 @@ if __name__ == "__main__":
         #print_order=None,
     )
 
+    # name_lookups = {
+    #     'human': 'Human',
+    #     'uabaseline_same_opt': 'U&A\'20',
+    #     'pragmatic_confidence': 'Full+Prag',
+    # }
+
     name_lookups = {
         'human': 'Human',
-        'uabaseline_same_opt': 'U&A\'20',
-        'pragmatic_confidence': 'Full+Prag',
+        'uabaseline_same_opt': 'Udagawa and Aizawa 2020',
+        'pragmatic_confidence': 'Ours',
     }
     diffs = [('pragmatic_confidence', 'uabaseline_same_opt')]
 
@@ -124,11 +149,19 @@ if __name__ == "__main__":
     x_vals = []
     means_by_key = {k: [] for k in to_print}
     std_errs_by_key = {k: [] for k in to_print}
+    num_turns_by_key = {k: [] for k in to_print}
+    num_turns_std_dev_by_key = {k: [] for k in to_print}
+    num_words_per_turn_by_key = {k: [] for k in to_print}
+    num_words_per_turn_std_dev_by_key = {k: [] for k in to_print}
     for min_success_rate in np.linspace(0, 1.0, 41):
         filtered = chat_stats_df[chat_stats_df['min_success_rate'] >= min_success_rate]
         success_counts = filtered.groupby('opponent_type')['success'].sum()
         success_rates = filtered.groupby('opponent_type')['success'].mean()
+        num_turns = filtered.groupby('opponent_type')['num_turns'].mean()
+        num_turns_std_dev = filtered.groupby('opponent_type')['num_turns'].std()
         counts = filtered.groupby('opponent_type')['success'].count()
+        num_words_per_turn = filtered.groupby('opponent_type')['words_per_turn'].mean()
+        num_words_per_turn_std_dev = filtered.groupby('opponent_type')['words_per_turn'].std()
         # https://stats.stackexchange.com/questions/29641/standard-error-for-the-mean-of-a-sample-of-binomial-random-variables
         standard_error_mean = np.sqrt(success_rates * (1 - success_rates) / counts)
         total_count = 0
@@ -136,6 +169,10 @@ if __name__ == "__main__":
             total_count += counts[k]
             means_by_key[k].append(success_rates[k])
             std_errs_by_key[k].append(standard_error_mean[k])
+            num_turns_by_key[k].append(num_turns[k])
+            num_turns_std_dev_by_key[k].append(num_turns_std_dev[k])
+            num_words_per_turn_by_key[k].append(num_words_per_turn[k])
+            num_words_per_turn_std_dev_by_key[k].append(num_words_per_turn_std_dev[k])
         #print("{:.2f}: {}".format(min_success_rate, total_count))
         for diff in diffs:
             a, b = diff
@@ -156,23 +193,51 @@ if __name__ == "__main__":
         if len(diffs) > 1:
             print()
         x_vals.append(min_success_rate)
-    fig, ax = plt.subplots()
     x_vals = np.array(x_vals)
-    for k, y_mean in means_by_key.items():
-        y_mean = np.array(y_mean)
-        #plt.plot(x_vals, y_mean, label=name_lookups[k])
-        #plt.errorbar(x_vals, y_mean, yerr=std_errs_by_key[k], label=name_lookups[k])
-        p = ax.plot(x_vals, y_mean, label=name_lookups[k])
-        sem = np.array(std_errs_by_key[k])
-        lower=y_mean-sem
-        upper=y_mean+sem
-        ax.plot(x_vals, lower, color=p[0].get_color(), alpha=0.1)
-        ax.plot(x_vals, upper, color=p[0].get_color(), alpha=0.1)
-        ax.fill_between(x_vals, lower, upper, alpha=0.2)
-    ax.spines['top'].set_visible(False)
-    ax.spines['right'].set_visible(False)
+    colors = {
+        'human': 'gold',
+        'uabaseline_same_opt': 'grey',
+        'pragmatic_confidence': 'mediumblue',
+    }
+    print(num_turns_by_key)
+    def plot(stats_by_key, std_errs_by_key=None, y_percentage=True):
+        fig, ax = plt.subplots()
+        for k, y_mean in stats_by_key.items():
+            y_mean = np.array(y_mean)
+            #plt.plot(x_vals, y_mean, label=name_lookups[k])
+            #plt.errorbar(x_vals, y_mean, yerr=std_errs_by_key[k], label=name_lookups[k])
+            p = ax.plot(x_vals, y_mean, label=name_lookups[k], color=colors[k])
+            if std_errs_by_key is not None:
+                sem = np.array(std_errs_by_key[k])
+                lower=y_mean-sem
+                upper=y_mean+sem
+                ax.plot(x_vals, lower, color=colors[k], alpha=0.1)
+                ax.plot(x_vals, upper, color=colors[k], alpha=0.1)
+                ax.fill_between(x_vals, lower, upper, alpha=0.1, color=colors[k])
+        ax.xaxis.set_major_formatter(mtick.PercentFormatter(1.0, decimals=0))
+        if y_percentage:
+            ax.yaxis.set_major_formatter(mtick.PercentFormatter(1.0, decimals=0))
+        if std_errs_by_key is not None:
+            ax.spines['top'].set_visible(False)
+            ax.spines['right'].set_visible(False)
+    plot(means_by_key, std_errs_by_key)
     plt.ylabel("Per-Condition Success")
     plt.xlabel("Minimum Worker Success")
-    plt.legend()
-    plt.vlines(0.287, ymin=0.2, ymax=1)
+    plt.legend(loc='lower right')
+    #plt.vlines(0.287, ymin=0.2, ymax=1)
+    plt.show()
+
+    #plot(num_turns_by_key, num_turns_std_dev_by_key, y_percentage=False)
+    plot(num_turns_by_key, y_percentage=False)
+    plt.ylabel("Number of Turns")
+    plt.xlabel("Minimum Worker Success")
+    plt.legend(loc='lower right')
+    #plt.vlines(0.287, ymin=0.2, ymax=1)
+    plt.show()
+
+    plot(num_words_per_turn_by_key, num_words_per_turn_std_dev_by_key, y_percentage=False)
+    plt.ylabel("Number of Words per Turn")
+    plt.xlabel("Minimum Worker Success")
+    plt.legend(loc='lower right')
+    #plt.vlines(0.287, ymin=0.2, ymax=1)
     plt.show()
