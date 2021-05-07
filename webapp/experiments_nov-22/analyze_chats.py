@@ -10,7 +10,7 @@ to_print = list(reversed(['uabaseline_same_opt', 'pragmatic_confidence', 'human'
 # to_print = list(reversed(['uabaseline_same_opt', 'human']))
 # to_print = list(reversed(['human']))
 
-def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_games=None, print_order=None):
+def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_games=None, print_order=None, human_human_only=False):
     agent_type_counts = Counter()
     successful_agent_type_counts = Counter()
     completed_agent_type_counts = Counter()
@@ -22,12 +22,14 @@ def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_ga
         if min_completed_games is None:
             min_completed_games = 0
         _worker_completed_counts, _worker_success_counts, _ = analyze(all_chats, verbose=False)
+        _worker_hh_completed_counts, _worker_hh_success_counts, _ = analyze(all_chats, verbose=False, human_human_only=True)
         worker_filter = set([
             worker for worker in set(_worker_completed_counts.keys()) | set(_worker_success_counts.keys())
             if (_worker_completed_counts[worker] >= min_completed_games) and (_worker_success_counts[worker] >= min_successful_games)
         ])
     else:
         _worker_completed_counts = _worker_success_counts = None
+        _worker_hh_completed_counts = _worker_hh_success_counts = None
         worker_filter = None
 
     worker_completed_counts = Counter()
@@ -43,6 +45,8 @@ def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_ga
                 continue
             if all(worker not in worker_filter for worker in chat['workers']):
                 continue
+        if human_human_only and chat['opponent_type'] != 'human':
+            continue
         chat = chat.copy()
         chat['num_turns'] = len(chat['dialogue'])
         chat['total_words'] = sum(len(d) for d in human_dialogues(chat))
@@ -63,9 +67,18 @@ def analyze(all_chats, verbose=True, min_successful_games=None, min_completed_ga
             wcc = np.array([_worker_completed_counts[worker] for worker in chat['workers']])
             success_rates = wsc / wcc
             min_success_rate = np.min(success_rates)
+
             chat['worker_success_counts'] = wsc
             chat['worker_completed_counts'] = wcc
             chat['min_success_rate'] = min_success_rate
+
+            whhsc = np.array([_worker_hh_success_counts[worker] for worker in chat['workers']])
+            whhcc = np.array([_worker_hh_completed_counts[worker] for worker in chat['workers']])
+            hh_success_rates = whhsc / whhcc
+            min_hh_success_rate = np.min(hh_success_rates)
+            chat['worker_human_human_success_counts'] = whhsc
+            chat['worker_human_human_completed_counts'] = whhcc
+            chat['min_human_human_success_rate'] = min_hh_success_rate
         if chat['num_players_selected'] == 2:
             if verbose:
                 if len(chat['workers']) == 0:
@@ -122,6 +135,7 @@ if __name__ == "__main__":
     parser.add_argument("chat_json_file")
     parser.add_argument("--min_successful_games", type=int)
     parser.add_argument("--min_completed_games", type=int)
+    parser.add_argument("--min_success_type", choices=['all_games', 'human_human_games'])
     args = parser.parse_args()
     with open(args.chat_json_file, 'r') as f:
         chats = json.load(f)
@@ -153,8 +167,12 @@ if __name__ == "__main__":
     num_turns_std_dev_by_key = {k: [] for k in to_print}
     num_words_per_turn_by_key = {k: [] for k in to_print}
     num_words_per_turn_std_dev_by_key = {k: [] for k in to_print}
+    success_key, success_name = {
+        'all_games': ('min_success_rate', 'Overall'),
+        'human_human_games': ('min_human_human_success_rate', 'Human-Human')
+    }[args.min_success_type]
     for min_success_rate in np.linspace(0, 1.0, 41):
-        filtered = chat_stats_df[chat_stats_df['min_success_rate'] >= min_success_rate]
+        filtered = chat_stats_df[chat_stats_df[success_key] >= min_success_rate]
         success_counts = filtered.groupby('opponent_type')['success'].sum()
         success_rates = filtered.groupby('opponent_type')['success'].mean()
         num_turns = filtered.groupby('opponent_type')['num_turns'].mean()
@@ -222,7 +240,7 @@ if __name__ == "__main__":
             ax.spines['right'].set_visible(False)
     plot(means_by_key, std_errs_by_key)
     plt.ylabel("Per-Condition Success")
-    plt.xlabel("Minimum Worker Success")
+    plt.xlabel("Minimum {} Worker Success".format(success_name))
     plt.legend(loc='lower right')
     #plt.vlines(0.287, ymin=0.2, ymax=1)
     plt.show()
