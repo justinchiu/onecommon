@@ -1,25 +1,18 @@
-# Introduction
+# Reference-Centric Models for Grounded Collaborative Dialogue
 
-This is the repository of our OneCommon Corpus, which is introduced in the following research papers:
+Daniel Fried, Justin Chiu, and Dan Klein
 
-* (1) [A Natural Language Corpus of Common Grounding under Continuous and Partially-Observable Context](https://aaai.org/ojs/index.php/AAAI/article/view/4694) (Udagawa and Aizawa, AAAI 2019)
-* (2) [An Annotated Corpus of Reference Resolution for Interpreting Common Grounding](https://aaai.org/ojs/index.php/AAAI/article/view/6442) (Udagawa and Aizawa, AAAI 2020)
-* (3) [A Linguistic Analysis of Visually Grounded Dialogues based on Spatial Expressions](https://arxiv.org/abs/2010.03127) (Udagawa et al., Findings of EMNLP 2020)
+EMNLP 2021
 
-Dataset is also available on Facebook's dialogue platform [ParlAI](https://github.com/facebookresearch/ParlAI/tree/master/parlai/tasks/onecommon).
+[Paper](http://nlp.cs.berkeley.edu/pubs/Fried-Chiu-Klein_2021_GroundedDialogue_paper.pdf)
 
-# AAAI 2019
+Documentation coming (hopefully) soon! If you'd like to run the code or get our models in the meantime, please contact [Daniel Fried](https://dpfried.github.io/).
 
-All related materials are available in the [aaai2019](https://github.com/Alab-NII/onecommon/tree/master/aaai2019) subdirectory.
+Our code draws heavily on the original code from Takuma Udagawa et al., which you can find at https://github.com/Alab-NII/onecommon, and which was used for the following papers:
 
-# AAAI 2020
+(1) A Natural Language Corpus of Common Grounding under Continuous and Partially-Observable Context (Udagawa and Aizawa, AAAI 2019)
 
-All related materials are available in the [aaai2020](https://github.com/Alab-NII/onecommon/tree/master/aaai2020) subdirectory.
+(2) An Annotated Corpus of Reference Resolution for Interpreting Common Grounding (Udagawa and Aizawa, AAAI 2020)
 
-# Findings of EMNLP 2020
+(3) A Linguistic Analysis of Visually Grounded Dialogues based on Spatial Expressions (Udagawa et al., Findings of EMNLP 2020)
 
-All related materials are available in the [emnlp2020](https://github.com/Alab-NII/onecommon/tree/master/emnlp2020) subdirectory.
-
-# Dialogue Interface
-
-The web application is available in the [webapp](https://github.com/Alab-NII/onecommon/tree/master/webapp) subdirectory.
