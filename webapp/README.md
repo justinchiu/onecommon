@@ -9,6 +9,8 @@ This repository includes basic functions for dataset collection, dataset visuali
 
 To run the web server, move to `src` directory and simply run `run_sample.sh`. Make sure to append `onecommon/webapp` and `onecommon/webapp/src` directories to the PYTHONPATH, e.g.
 
+Use `run_pomdp.sh` instead.
+
 ```
 export PYTHONPATH=$PYTHONPATH:~/onecommon/webapp/src:~/onecommon/webapp:~/onecommon/aaai2020/experiments:~/onecommon/aaai2020
 ```
@@ -18,13 +20,13 @@ Change the paths in `webapp/src/web/app_params.json`.
 
 Unless you use the `--reuse` option, this script will create new data directory every time and overwrite the existing one if already exists.
 
-By default, <http://localhost:5000/sample> is used for dataset collection: when more than two people are connected to this URL, we create pairs to start playing the dialogue task.
+By default, <http://localhost:5000/dialogue> is used for dataset collection: when more than two people are connected to this URL, we create pairs to start playing the dialogue task.
 
-After collecting the dialogues, you can use <http://localhost:5000/sample/admin> to view the collected dialogues and decide whether to accept or reject the dialogues. All the dialogues collected in the AAAI-19 paper can be seen from the URL <http://localhost:5000/sample/annotation>. By default, these URLs are password protected (username and password are both *sample*).
+After collecting the dialogues, you can use <http://localhost:5000/dialogue/admin> to view the collected dialogues and decide whether to accept or reject the dialogues. All the dialogues collected in the AAAI-19 paper can be seen from the URL <http://localhost:5000/sample/annotation>. By default, these URLs are password protected (username and password are both *sample*).
 
 # Functionalities for AAAI2020
 
-You can visualize the collected reference resolution data from <http://localhost:5000/sample/coreference>. Loading all data at once will be heavy and slow, so we recommend visualizng the data with batch ID, e.g. <http://localhost:5000/sample/coreference?batch_id=batch_00>. In total, there are 34 batches (batch_00, batch_01, ... batch_33).
+You can visualize the collected reference resolution data from <http://localhost:5000/sample/coreference>. Loading all data at once will be heavy and slow, so we recommend visualizng the data with batch ID, e.g. <http://localhost:5000/dialogue/coreference?batch_id=batch_00>. In total, there are 34 batches (batch_00, batch_01, ... batch_33).
 
 You can click on the links to create, review and update the annotation by each annotator: `New` will create new annotation, `admin` (if available) is annotated by one of the authors, and `annotator_0`, `annotator_1` and `annotator_2` are annotated by the crowdworkers. We manually checked the statistics (e.g. number of no_referent, agreement and exact match) to reject spams during dataset collection.
 

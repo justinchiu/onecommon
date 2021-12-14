@@ -1,0 +1,53 @@
+{ "status_params": {
+	    "waiting": {
+	        "num_seconds": 120
+	    },
+	    "chat": {
+	        "num_seconds": 380
+	    },
+	    "finished": {
+	        "num_seconds": -1
+	    },
+	    "redirected": {
+	        "num_seconds": -1
+	    },
+	    "incomplete": {
+	        "num_seconds": -1
+	    },
+	    "reporting": {
+	        "num_seconds": -1
+	    },
+        "survey": {
+	        "num_seconds": -1
+	    }
+    },
+    "idle_timeout_num_seconds": 120,
+    "connection_timeout_num_seconds": 3,
+    "templates_dir": "web/templates",
+    "images_base": "web/static/images",
+    "end_survey": 1,
+    "instructions": "web/templates/instructions.html",
+    "coreference_instructions": "web/templates/coreference_instructions.html",
+    "task_title": "Find One In Common!",
+    "icon": "handshake.jpg",
+    "num_chats_per_scenario": {
+        "pomdp": 1,
+        "human": 1
+    },
+    "models": {
+        "pomdp": {
+            "active": true,
+            "type": "pomdp",
+            "model_path": "models/plain-hierarchical-structured-recurrence/1_ep-12.th",
+            "markable_detector_path": "models/markable_detector_with_dict_1.th",
+            "inference_args": {
+              "min_num_mentions": 0,
+              "max_num_mentions": 10,
+              "language_inference": "sample",
+              "language_beam_size": 1
+            }
+        }
+    },
+    "debug": true,
+    "quit_after": 1200
+}

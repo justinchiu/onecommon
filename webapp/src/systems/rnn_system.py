@@ -12,6 +12,7 @@ from annotation.transform_scenarios_to_txt import create_input
 import utils as utils
 import models
 from agent import RnnAgent
+from agents.pomdp_agent import PomdpAgent
 from engines.beliefs import BlankBeliefConstructor
 
 import pprint
@@ -33,6 +34,31 @@ class Dummy:
         self.base_color = 128
         #self.svg_grid_size = self.svg_radius * 6
         #https://github.com/dpfried/onecommon/blob/580620b9bc309625e949bb9c1dcd65063c1ba8b3/aaai2019/generate_scenarios.py
+
+class PomdpSystem(System):
+    def __init__(self, name, args, timed, inference_args):
+        super(PomdpSystem, self).__init__()
+        self.name_ = name
+        self.timed = timed
+        self.inference_args = inference_args
+
+    @classmethod
+    def name(cls):
+        return self.name_
+
+    def new_session(self, agent, kb):
+        model = PomdpAgent()
+
+        # feed context, can probably save agent in init.
+        ctxt = create_input(kb.items, Dummy())
+        model.feed_context(ctxt)
+
+        session = RnnSession(agent, kb, model, self.inference_args)
+        if self.timed:
+            session = TimedSessionWrapper(session)
+
+        return session
+
 
 class RnnSystem(System):
     def __init__(self, name, args, model_path, markable_detector_path, timed=False, inference_args=None):

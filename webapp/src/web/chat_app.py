@@ -405,7 +405,11 @@ if __name__ == "__main__":
         atexit.register(cleanup, flask_app=app)
         #app.run('0.0.0.0', debug=True, port=args.port, ssl_context=('/home/ubuntu/server.crt', '/home/ubuntu/server.key'))
         # server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file)
-        server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file,
-                            keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
-                            certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem')
+        server = WSGIServer(
+            ('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file,
+                            #keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
+                            #certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem')
+                            #keyfile='/home/justinchiu/keys/key.pem',
+                            #certfile='/home/justinchiu/keys/cert.pem')
+        )
         server.serve_forever()
