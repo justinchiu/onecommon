@@ -1,10 +1,11 @@
 #!/bin/bash
 script=""
+#script="bash"
 
 overall_name="nov-15"
 
 out_dir="expts/rel3_tsel_ref_dial_model_separate/${overall_name}"
-mkdir $out_dir 2>/dev/null
+mkdir -p $out_dir 2>/dev/null
 
 base_args="--model_type hierarchical_rnn_reference_model \
   --max_epoch 12 \
@@ -178,7 +179,7 @@ structured_attention_args="--structured_attention \
 
 ## **FULL model in Table 1 of paper**
 this_name=plain-hierarchical-structured-recurrence
-mkdir ${out_dir}/${this_name} 2>/dev/null
+mkdir -p ${out_dir}/${this_name} 2>/dev/null
 for fold in $@
 do
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \

@@ -150,10 +150,12 @@ class ReferencePredictor(object):
         return ref_loss, ref_pred, ref_pred_ix
 
     def _forward_temporal(self, ref_out, ref_tgt, ref_tgt_ix, ref_mask, num_markables, instance_mask=None):
-        from torch_struct import LinearChainNoScanCRF
+        #from torch_struct import LinearChainNoScanCRF
+        from torch_struct import LinearChainCRF
 
         marginal_log_probs, joint_log_probs, temporal_dist = ref_out
-        assert isinstance(temporal_dist, LinearChainNoScanCRF)
+        #assert isinstance(temporal_dist, LinearChainNoScanCRF)
+        assert isinstance(temporal_dist, LinearChainCRF)
 
         num_dots = ref_tgt.size(-1)
         # bsz x N x 2**num_dots x 2**num_dots
@@ -178,7 +180,8 @@ class ReferencePredictor(object):
             ref_pred_ix[:,~has_multiple] = ref_pred_ix_single
 
 
-        ref_pred_ix_transpose_multi, exp_num_dots = LinearChainNoScanCRF.struct.from_parts(temporal_dist.argmax)
+        #ref_pred_ix_transpose_multi, exp_num_dots = LinearChainNoScanCRF.struct.from_parts(temporal_dist.argmax)
+        ref_pred_ix_transpose_multi, exp_num_dots = LinearChainCRF.struct.from_parts(temporal_dist.argmax)
         assert exp_num_dots == 2**num_dots
 
         # aggregate with single timestep info
@@ -186,7 +189,8 @@ class ReferencePredictor(object):
         ref_pred_ix[:,has_multiple] = ref_pred_ix_transpose_multi.transpose(0,1).contiguous()[:,has_multiple]
         ref_pred[:,has_multiple] = int_to_bit_array(ref_pred_ix[:, has_multiple], num_bits=num_dots)
 
-        gold_parts = LinearChainNoScanCRF.struct.to_parts(
+        #gold_parts = LinearChainNoScanCRF.struct.to_parts(
+        gold_parts = LinearChainCRF.struct.to_parts(
             ref_tgt_ix_transpose, 2**num_dots, lengths=num_markables
         )
         if self.args.structured_temporal_attention_training == 'likelihood':

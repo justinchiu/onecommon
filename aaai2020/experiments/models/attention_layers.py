@@ -440,7 +440,8 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
 
     @staticmethod
     def make_distribution(joint_logits, num_markables, transition_potentials=None):
-        from torch_struct import LinearChainNoScanCRF
+        from torch_struct import LinearChainCRF
+        #from torch_struct import LinearChainNoScanCRF
         N, bsz, *dot_dims = joint_logits.size()
         num_dots = len(dot_dims)
         exp_num_dots = 2**num_dots
@@ -454,7 +455,8 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
         # bsz x N-1 x exp_num_dots x exp_num_dots
         transition_potentials = transition_potentials.transpose(0,1)
         edge_potentials = StructuredTemporalAttentionLayer.make_potentials(transition_potentials, emission_potentials)
-        dist = LinearChainNoScanCRF(edge_potentials, lengths=num_markables)
+        #dist = LinearChainNoScanCRF(edge_potentials, lengths=num_markables)
+        dist = LinearChainCRF(edge_potentials, lengths=num_markables)
         return dist
 
     def make_transitions(self, lang_input, batch_size, num_dots, ctx_differences, lang_between_mentions_input, ctx):
