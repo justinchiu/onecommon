@@ -50,7 +50,9 @@ class PomdpAgent(Agent):
         max_num_mentions=12,
         force_dots_mentioned=False,
     ):
-        return ["hello", "<eos>"]
+        return "do you have a black dot ?".split() + ["<eos>"]
+        #return ["hello", "<eos>"]
+        #return ["hello", "<eos>"]
 
     def choose(self):
         import pdb; pdb.set_trace()
