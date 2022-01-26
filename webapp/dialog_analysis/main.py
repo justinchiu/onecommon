@@ -1,11 +1,30 @@
+import streamlit as st
+import streamlit.components.v1 as components
+
+from functools import partial
+
 import json
 from functools import partial
 import numpy as np
 
-json_file = "experiments_nov-22/all_dialogues.json"
+# Testing streamlit
+st.title("OneCommon Visualizations")
+
+#json_file = "experiments_nov-22/all_dialogues.json"
+json_file = "../../onecommon_human_experiments/dialogues_with_completion_info.json"
+
+board_json_file = "../../onecommon_human_experiments/shared_4_100.json"
 
 with open(json_file, "r") as f:
     dialogues = json.load(f)
+
+with open(board_json_file, "r") as f:
+    boards = json.load(f)
+    # convert boards to map
+    boards = {
+        board["uuid"]: board
+        for board in boards
+    }
 
 model_types = set([x["agent_types"]["1"] for x in dialogues])
 
@@ -124,6 +143,7 @@ for ty, xs in dialogues_by_ty.items():
         if x["agent_types"][f"{id}"] == ty
     ])
 
+"""
 print("Num turns mean")
 print(num_turns_mean)
 print("Num turns std")
@@ -132,4 +152,58 @@ print("Utt len mean")
 print(utt_len_mean)
 print("Utt len std")
 print(utt_len_std)
+"""
 
+# visualize dots
+def dot_html(item, shift=0):
+    x = item["x"] + shift
+    y = item["y"]
+    r = item["size"]
+    f = item["color"]
+    return f'<circle cx="{x}" cy="{y}" r="{r}" fill="{f}" />'
+
+def visualize_board(board):
+    left_dots = board["kbs"][0]
+    right_dots = board["kbs"][1]
+
+    left_dots_html = map(dot_html, left_dots)
+    right_dots_html = map(partial(dot_html, shift=430), right_dots)
+    nl = "\n"
+    html = f"""
+    <svg width="860" height="430">
+    <circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
+    {nl.join(left_dots_html)}
+    <circle cx="645" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
+    {nl.join(right_dots_html)}
+    </svg>
+    """
+    components.html(html, height=430, width=860)
+
+def visualize_dialogue(dialogue):
+    st.table(dialogue)
+
+subsampled_by_ty = {
+    k: np.random.choice(v, 10, replace=False)
+    for k,v in dialogues_by_ty.items()
+}
+
+# we only care about 'human' and 'pragmatic_confidence'
+human = subsampled_by_ty["human"]
+robot = subsampled_by_ty["pragmatic_confidence"]
+
+def process_dialogue(dialogue_dict):
+    scenario_id = dialogue_dict["scenario_id"]
+    dialogue = dialogue_dict["dialogue"]
+    agent_types = dialogue_dict["agent_types"]
+
+    board = boards[scenario_id]
+    visualize_board(board)
+    st.write(f"Agent 0: {agent_types['0']} || 1: {agent_types['1']}")
+    visualize_dialogue(dialogue)
+
+
+dialogues_type = st.select_slider("Human or robot dialogue", options=["human", "robot"])
+dialogues = human if dialogues_type == "human" else robot
+dialogue_id = st.select_slider("Dialogue number", options=list(range(len(dialogues))))
+
+process_dialogue(dialogues[dialogue_id])
