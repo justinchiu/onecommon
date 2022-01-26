@@ -206,7 +206,7 @@ def visualize_dialogue(dialogue):
     st.table(dialogue)
 
 dialogue_idxs = {
-    k: np.random.choice(len(v), 10, replace=False)
+    k: np.random.choice(len(v), 20, replace=False)
     for k,v in finished_dialogues_by_ty.items()
 }
 
@@ -231,13 +231,13 @@ def process_dialogue(dialogue_dict):
     select1 = int((event0["data"] if event1["agent"] == 0 else event1["data"]).replace("\"", ""))
 
     board = boards[scenario_id]
+    st.write("SUCCESS" if reward else "FAILURE")
     visualize_board(board, select0, select1)
     st.write(f"Agent 0: {agent_types['0']} || 1: {agent_types['1']}")
     visualize_dialogue(dialogue)
-    st.write("success" if reward else "failure")
 
 
-dialogues_type = st.selectbox("Human or robot dialogue", options=["human", "robot"])
+dialogues_type = st.selectbox("Human or robot dialogue", options=["robot", "human"])
 st.write(f"Dialogue idxs: {dialogue_idxs['human' if dialogues_type == 'human' else 'pragmatic_confidence']}")
 dialogues = human if dialogues_type == "human" else robot
 dialogue_id = st.select_slider("Dialogue number", options=list(range(len(dialogues))))
