@@ -3,9 +3,13 @@ import streamlit.components.v1 as components
 
 from functools import partial
 
+import random
 import json
 from functools import partial
 import numpy as np
+
+random.seed(1234)
+np.random.seed(1234)
 
 # Testing streamlit
 st.title("OneCommon Visualizations")
@@ -39,6 +43,12 @@ def chop_up(xs):
 
 def get_complete(xs):
     return list(filter(lambda x: x["num_players_selected"] == 2, xs))
+
+def get_selected(xs):
+    # num_players_selected is inaccurate, final selection may be dropped
+    return list(filter(
+        lambda x: x["events"][-2]["action"] == "select" and x["events"][-1]["action"] == "select",
+        xs))
 
 def get_success(xs):
     return list(filter(lambda x: x["outcome"]["reward"] == 1 and x["num_players_selected"] == 2, xs))
@@ -117,6 +127,7 @@ def apply_mul(dxs, fns):
 
 # get success rates?
 dialogues_by_ty = chop_up(get_complete(dialogues))
+finished_dialogues_by_ty = chop_up(get_selected(dialogues))
 
 
 num_turns_mean = apply(dialogues_by_ty, lambda xs: np.mean([len(x["dialogue"]) for x in xs]))
@@ -162,19 +173,31 @@ def dot_html(item, shift=0):
     f = item["color"]
     return f'<circle cx="{x}" cy="{y}" r="{r}" fill="{f}" />'
 
-def visualize_board(board):
+def select_html(item, shift=0):
+    x = item["x"] + shift
+    y = item["y"]
+    r = item["size"] + 2
+    f = item["color"] # ignored
+    return f'<circle cx="{x}" cy="{y}" r="{r}" fill="none" stroke="red" stroke-width="2" stroke-dasharray="3,3"  />'
+
+def visualize_board(board, select0, select1):
+    shift = 430
     left_dots = board["kbs"][0]
     right_dots = board["kbs"][1]
 
     left_dots_html = map(dot_html, left_dots)
-    right_dots_html = map(partial(dot_html, shift=430), right_dots)
+    right_dots_html = map(partial(dot_html, shift=shift), right_dots)
+    select_left = list(filter(lambda x: int(x["id"]) == select0, left_dots))[0]
+    select_right = list(filter(lambda x: int(x["id"]) == select1, right_dots))[0]
     nl = "\n"
     html = f"""
     <svg width="860" height="430">
     <circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
     {nl.join(left_dots_html)}
+    {select_html(select_left)}
     <circle cx="645" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
     {nl.join(right_dots_html)}
+    {select_html(select_right, shift=shift)}
     </svg>
     """
     components.html(html, height=430, width=860)
@@ -182,9 +205,14 @@ def visualize_board(board):
 def visualize_dialogue(dialogue):
     st.table(dialogue)
 
+dialogue_idxs = {
+    k: np.random.choice(len(v), 10, replace=False)
+    for k,v in finished_dialogues_by_ty.items()
+}
+
 subsampled_by_ty = {
-    k: np.random.choice(v, 10, replace=False)
-    for k,v in dialogues_by_ty.items()
+    k: [v[idx] for idx in dialogue_idxs[k]]
+    for k,v in finished_dialogues_by_ty.items()
 }
 
 # we only care about 'human' and 'pragmatic_confidence'
@@ -196,13 +224,21 @@ def process_dialogue(dialogue_dict):
     dialogue = dialogue_dict["dialogue"]
     agent_types = dialogue_dict["agent_types"]
 
+    reward = dialogue_dict["outcome"]["reward"]
+    event0 = dialogue_dict["events"][-2]
+    event1 = dialogue_dict["events"][-1]
+    select0 = int((event0["data"] if event0["agent"] == 0 else event1["data"]).replace("\"", ""))
+    select1 = int((event0["data"] if event1["agent"] == 0 else event1["data"]).replace("\"", ""))
+
     board = boards[scenario_id]
-    visualize_board(board)
+    visualize_board(board, select0, select1)
     st.write(f"Agent 0: {agent_types['0']} || 1: {agent_types['1']}")
     visualize_dialogue(dialogue)
+    st.write("success" if reward else "failure")
 
 
-dialogues_type = st.select_slider("Human or robot dialogue", options=["human", "robot"])
+dialogues_type = st.selectbox("Human or robot dialogue", options=["human", "robot"])
+st.write(f"Dialogue idxs: {dialogue_idxs['human' if dialogues_type == 'human' else 'pragmatic_confidence']}")
 dialogues = human if dialogues_type == "human" else robot
 dialogue_id = st.select_slider("Dialogue number", options=list(range(len(dialogues))))
 
