@@ -143,8 +143,30 @@ class RnnAgent(Agent):
         #
         # POLICY BLOCK
         self.policy = args.policy
-        if self.name == "Alice":
+        #if self.name == "Alice":
+        if False:
             self.policy = "beta_bernoulli" # JUST FOR DEBUGGING
+
+            # random fake ground truth vector here
+            dots = np.zeros(7, dtype=np.bool)
+            dots[:4] = True
+            # problem is mostly a datastructure for holding the agent
+            self.problem = RankingAndSelectionProblem(
+                dot_vector = dots,
+                max_turns = 50,
+                belief_rep = "particles",
+                num_bins=2,
+                num_particles = 0,
+                enumerate_belief = True,
+            )
+            self.planner = planner = pomdp_py.POMCP(
+                max_depth = 10, # need to change
+                discount_factor = 1,
+                num_sims = 10000,
+                exploration_const = 100,
+                #rollout_policy = problems[0].agent.policy_model, # need to change per agent?
+                num_rollouts=1,
+            )
         # / POLICY BLOCK
 
     def _encode(self, inpt, dictionary):
@@ -197,27 +219,8 @@ class RnnAgent(Agent):
         # POLICY BLOCK
         if self.policy == "beta_bernoulli":
             # reset tree and history
-            # random fake ground truth vector here
-            dots = np.zeros(7, dtype=np.bool)
-            dots[:4] = True
-            # problem is mostly a datastructure for holding the agent
-            self.problem = RankingAndSelectionProblem(
-                dot_vector = dots,
-                max_turns = 10,
-                belief_rep = "particles",
-                num_bins=2,
-                num_particles = 0,
-                enumerate_belief = True,
-            )
-            self.planner = planner = pomdp_py.POMCP(
-                max_depth = 10, # need to change
-                discount_factor = 1,
-                num_sims = 10000,
-                exploration_const = 100,
-                #rollout_policy = problems[0].agent.policy_model, # need to change per agent?
-                num_rollouts=1,
-            )
             self.actions = []
+            self.problem.agent.reset_tree_and_history()
         # / POLICY BLOCK
 
     def feed_partner_context(self, partner_context):
@@ -389,27 +392,41 @@ class RnnAgent(Agent):
             if self.policy == "beta_bernoulli":
                 # JC: are dot mentions found in here?
                 #print(self.partner_ref_preds)
-                last_partner_reference = self.partner_ref_preds[-1]
+                last_partner_reference = self.partner_ref_preds[-1].cpu().numpy().squeeze()
                 agent = self.problem.agent
-                for ref in last_partner_reference:
-                    if ref.any():
-                        # if they mentioned anything you have, do a belief update
-                        # as if you asked about it
-                        array = ref.cpu().numpy().squeeze()
-                        action = Ask(array)
-                        response = ProductObservation({id: array[id] for id in range(7)})
-                        # check if need particle rejuvenation
-                        next_node = agent.tree[action][response]
-                        num_particles = len(next_node.belief.particles)
-                        if num_particles == 0:
-                            for _ in range(100):
-                                self.planner.force_expansion(action, response)
-                        belief_update(
-                            agent, action, response,
-                            self.problem.env.state.object_states[agent.id],
-                            self.problem.env.state.object_states[agent.countdown_id],
-                            self.planner,
-                        )
+                # PARTICULAR TO BETA-BERNOULLI
+                global_ref = last_partner_reference.any()
+                if not last_partner_reference.any() and self.actions and isinstance(self.actions[-1], Ask):
+                    response = ProductObservation({id: 0 for id in range(7)})
+                    belief_update(
+                        agent, self.actions[-1], response,
+                        self.problem.env.state.object_states[agent.id],
+                        self.problem.env.state.object_states[agent.countdown_id],
+                        self.planner,
+                    )
+                else:
+                    for ref in last_partner_reference:
+                        if ref.any() and ref.sum() <= 3:
+                            # specificity requirement
+                            for idx in ref.nonzero()[0]:
+                                # if they mentioned anything you have, do a belief update
+                                # as if you asked about it
+                                array = np.zeros(7, dtype=np.int)
+                                array[idx] = 1
+                                action = Ask(array)
+                                response = ProductObservation({id: array[id] for id in range(7)})
+                                # check if need particle rejuvenation
+                                next_node = agent.tree[action][response]
+                                num_particles = len(next_node.belief.particles)
+                                if num_particles == 0:
+                                    for _ in range(100):
+                                        self.planner.force_expansion(action, response)
+                                belief_update(
+                                    agent, action, response,
+                                    self.problem.env.state.object_states[agent.id],
+                                    self.problem.env.state.object_states[agent.countdown_id],
+                                    self.planner,
+                                )
             # / POLICY BLOCK
         else:
             self.partner_ref_outs.append(None)
