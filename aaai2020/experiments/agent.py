@@ -145,28 +145,6 @@ class RnnAgent(Agent):
         self.policy = args.policy
         if self.name == "Alice":
             self.policy = "beta_bernoulli" # JUST FOR DEBUGGING
-        if self.policy == "beta_bernoulli":
-            # random fake ground truth vector here?
-            dots = np.zeros(7, dtype=np.bool)
-            dots[:4] = True
-            # problem is mostly a datastructure for holding the agent
-            self.problem = RankingAndSelectionProblem(
-                dot_vector = dots,
-                max_turns = 10,
-                belief_rep = "particles",
-                num_bins=2,
-                num_particles = 0,
-                enumerate_belief = True,
-            )
-            self.planner = planner = pomdp_py.POMCP(
-                max_depth = 10, # need to change
-                discount_factor = 1,
-                num_sims = 10000,
-                exploration_const = 100,
-                #rollout_policy = problems[0].agent.policy_model, # need to change per agent?
-                num_rollouts=1,
-            )
-            self.actions = []
         # / POLICY BLOCK
 
     def _encode(self, inpt, dictionary):
@@ -215,6 +193,32 @@ class RnnAgent(Agent):
         self.is_selection_outs = [self.model.is_selection_prediction(self.state)]
         self.sel_outs = []
         self.extras = []
+
+        # POLICY BLOCK
+        if self.policy == "beta_bernoulli":
+            # reset tree and history
+            # random fake ground truth vector here
+            dots = np.zeros(7, dtype=np.bool)
+            dots[:4] = True
+            # problem is mostly a datastructure for holding the agent
+            self.problem = RankingAndSelectionProblem(
+                dot_vector = dots,
+                max_turns = 10,
+                belief_rep = "particles",
+                num_bins=2,
+                num_particles = 0,
+                enumerate_belief = True,
+            )
+            self.planner = planner = pomdp_py.POMCP(
+                max_depth = 10, # need to change
+                discount_factor = 1,
+                num_sims = 10000,
+                exploration_const = 100,
+                #rollout_policy = problems[0].agent.policy_model, # need to change per agent?
+                num_rollouts=1,
+            )
+            self.actions = []
+        # / POLICY BLOCK
 
     def feed_partner_context(self, partner_context):
         pass
@@ -394,6 +398,12 @@ class RnnAgent(Agent):
                         array = ref.cpu().numpy().squeeze()
                         action = Ask(array)
                         response = ProductObservation({id: array[id] for id in range(7)})
+                        # check if need particle rejuvenation
+                        next_node = agent.tree[action][response]
+                        num_particles = len(next_node.belief.particles)
+                        if num_particles == 0:
+                            for _ in range(100):
+                                self.planner.force_expansion(action, response)
                         belief_update(
                             agent, action, response,
                             self.problem.env.state.object_states[agent.id],
@@ -595,12 +605,14 @@ class RnnAgent(Agent):
                     # that way we dont have to run prediction again...
 
                     action = plan(self.planner, self.problem, steps_left = 10)
-                    self.actions.append(action)
                     # TODO: SWITCH ON ACTION = SELECT
                     # OVERWRITE
-                    dots_mentioned_per_ref_candidates = [
-                        torch.tensor(action.val, dtype=torch.int64).reshape((1, 1, 7))
-                    ]
+                    if isinstance(action, Ask):
+                        self.actions.append(action)
+                        dots_mentioned_per_ref_candidates = [
+                            torch.tensor(action.val, dtype=torch.int64).reshape((1, 1, 7))
+                        ]
+                        # TODO: FORCE SELECTION
                     # / POLICY BLOCK
 
         best_generation_output = None
