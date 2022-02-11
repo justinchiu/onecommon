@@ -144,7 +144,8 @@ class RnnAgent(Agent):
         # POLICY BLOCK
         self.policy = args.policy
         #if self.name == "Alice":
-        if False:
+        if True:
+        #if False:
             self.policy = "beta_bernoulli" # JUST FOR DEBUGGING
 
             # random fake ground truth vector here
@@ -153,14 +154,14 @@ class RnnAgent(Agent):
             # problem is mostly a datastructure for holding the agent
             self.problem = RankingAndSelectionProblem(
                 dot_vector = dots,
-                max_turns = 50,
+                max_turns = 20,
                 belief_rep = "particles",
                 num_bins=2,
                 num_particles = 0,
                 enumerate_belief = True,
             )
             self.planner = planner = pomdp_py.POMCP(
-                max_depth = 10, # need to change
+                max_depth = 20, # need to change
                 discount_factor = 1,
                 num_sims = 10000,
                 exploration_const = 100,
@@ -394,39 +395,58 @@ class RnnAgent(Agent):
                 #print(self.partner_ref_preds)
                 last_partner_reference = self.partner_ref_preds[-1].cpu().numpy().squeeze()
                 agent = self.problem.agent
-                # PARTICULAR TO BETA-BERNOULLI
-                global_ref = last_partner_reference.any()
+                #print(f"{self.name} reading")
+                #print(last_partner_reference)
                 if not last_partner_reference.any() and self.actions and isinstance(self.actions[-1], Ask):
                     response = ProductObservation({id: 0 for id in range(7)})
+                    """
+                    from pomdp_py.utils import TreeDebugger
+                    dd = TreeDebugger(agent.tree)
+                    print(dd)
+                    print(self.actions[-1])
+                    print(TreeDebugger(agent.tree[self.actions[-1]]))
+                    """
                     belief_update(
                         agent, self.actions[-1], response,
                         self.problem.env.state.object_states[agent.id],
                         self.problem.env.state.object_states[agent.countdown_id],
                         self.planner,
                     )
+                    #dd = TreeDebugger(agent.tree)
+                    #print(dd)
+                    #import pdb; pdb.set_trace()
                 else:
+                    # PARTICULAR TO BETA-BERNOULLI
+                    merged_ref = []
                     for ref in last_partner_reference:
+                        # specificity requirement
                         if ref.any() and ref.sum() <= 3:
-                            # specificity requirement
-                            for idx in ref.nonzero()[0]:
-                                # if they mentioned anything you have, do a belief update
-                                # as if you asked about it
-                                array = np.zeros(7, dtype=np.int)
-                                array[idx] = 1
-                                action = Ask(array)
-                                response = ProductObservation({id: array[id] for id in range(7)})
-                                # check if need particle rejuvenation
-                                next_node = agent.tree[action][response]
-                                num_particles = len(next_node.belief.particles)
-                                if num_particles == 0:
-                                    for _ in range(100):
-                                        self.planner.force_expansion(action, response)
-                                belief_update(
-                                    agent, action, response,
-                                    self.problem.env.state.object_states[agent.id],
-                                    self.problem.env.state.object_states[agent.countdown_id],
-                                    self.planner,
-                                )
+                            merged_ref.append(ref)
+                    if merged_ref:
+                        merged_ref = np.vstack(merged_ref).any(0)
+                        for idx in merged_ref.nonzero()[0]:
+                            # if they mentioned anything you have, do a belief update
+                            # as if you asked about it
+                            array = np.zeros(7, dtype=np.int)
+                            array[idx] = 1
+                            action = Ask(array)
+                            response = ProductObservation({id: array[id] for id in range(7)})
+                            # check if unexpanded
+                            if agent.tree[action][response] is None:
+                                for _ in range(10):
+                                    self.planner.force_expansion(action, response)
+                            next_node = agent.tree[action][response]
+                            # check if need particle rejuvenation
+                            num_particles = len(next_node.belief.particles)
+                            if num_particles == 0:
+                                for _ in range(10):
+                                    self.planner.force_expansion(action, response)
+                            belief_update(
+                                agent, action, response,
+                                self.problem.env.state.object_states[agent.id],
+                                self.problem.env.state.object_states[agent.countdown_id],
+                                self.planner,
+                            )
             # / POLICY BLOCK
         else:
             self.partner_ref_outs.append(None)
