@@ -9,6 +9,7 @@ then
 fi
 
 model_file=${model_dir}/1_ep-30.th
+model_file=${model_dir}/1_ep-12.th
 #model_file=${model_dir}
 
 split=dev

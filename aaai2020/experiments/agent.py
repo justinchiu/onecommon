@@ -26,6 +26,14 @@ from models.rnn_reference_model import State, NextMentionLatents
 from engines.rnn_reference_engine import make_can_confirm_single
 from models.ctx_encoder import pairwise_differences
 
+# POLICY BLOCK
+import pomdp_py
+from mab.beta_bernoulli.domain.action import Ask, Select
+from mab.beta_bernoulli.domain.observation import ProductObservation
+from mab.beta_bernoulli.dialogue import take_turn, plan
+from mab.beta_bernoulli.problem import RankingAndSelectionProblem, belief_update
+# / POLICY BLOCK
+
 GenerationOutput = namedtuple("GenerationOutput", [
     "dots_mentioned_per_ref",
     "num_markables",
@@ -89,6 +97,12 @@ class RnnAgent(Agent):
         parser.add_argument('--reranking_confidence_type',
                             choices=['first_above_threshold', 'keep_best'],
                             default='first_above_threshold')
+        # POLICY ARGS
+        parser.add_argument(
+            '--policy',
+            choices=['rnn', 'beta_bernoulli'],
+            default='rnn',
+        )
 
     def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
                  ):
@@ -125,6 +139,35 @@ class RnnAgent(Agent):
         else:
             self.model.eval()
         # print("language_rerank: {}".format(self.args.language_rerank))
+        #
+        #
+        # POLICY BLOCK
+        self.policy = args.policy
+        if self.name == "Alice":
+            self.policy = "beta_bernoulli" # JUST FOR DEBUGGING
+        if self.policy == "beta_bernoulli":
+            # random fake ground truth vector here?
+            dots = np.zeros(7, dtype=np.bool)
+            dots[:4] = True
+            # problem is mostly a datastructure for holding the agent
+            self.problem = RankingAndSelectionProblem(
+                dot_vector = dots,
+                max_turns = 10,
+                belief_rep = "particles",
+                num_bins=2,
+                num_particles = 0,
+                enumerate_belief = True,
+            )
+            self.planner = planner = pomdp_py.POMCP(
+                max_depth = 10, # need to change
+                discount_factor = 1,
+                num_sims = 10000,
+                exploration_const = 100,
+                #rollout_policy = problems[0].agent.policy_model, # need to change per agent?
+                num_rollouts=1,
+            )
+            self.actions = []
+        # / POLICY BLOCK
 
     def _encode(self, inpt, dictionary):
         encoded = torch.Tensor(dictionary.w2i(inpt)).long().unsqueeze(1)
@@ -177,6 +220,7 @@ class RnnAgent(Agent):
         pass
 
     def next_mention_prediction_and_candidates_from_latents(self, state: State, next_mention_latents: NextMentionLatents):
+        # JC: RNN NEXT MENTION COMES FROM HERE
         dummy_gold_mentions = torch.zeros(
             (state.bsz, next_mention_latents.dots_mentioned_num_markables.max().item(), self.model.num_ent)
         ).long().to(self.device)
@@ -219,6 +263,7 @@ class RnnAgent(Agent):
         return predictions_truncated, candidates, predictions_multi_sorted_truncated, indices_sorted
 
     def predict_referents(self, ref_inpt, num_markables):
+        # JC: what is this doing? seems like it operates on next mention candidates.
         ref_beliefs = self.state.make_beliefs('ref', self.timesteps, self.partner_ref_outs, self.ref_outs)
         ref_out = self.model.reference_resolution(
             self.state, self.reader_lang_hs[-1], ref_inpt, num_markables,
@@ -246,6 +291,7 @@ class RnnAgent(Agent):
             partner_ref_inpt, dummy_targets, partner_ref_out, partner_num_markables
         )
         self.partner_ref_preds.append(ref_preds)
+        # JC: this is where the reference resolution is when reading!
         return partner_ref_out
 
     def update_dot_h(self, ref_inpt, partner_ref_inpt, num_markables, partner_num_markables,
@@ -330,9 +376,31 @@ class RnnAgent(Agent):
             self.markables.append([])
             self.partner_ref_inpts.append(partner_ref_inpt)
             self.partner_markables.append(partner_markables)
+            # JC: doesnt look like mention input is here?
 
         if self.model.args.partner_reference_prediction and partner_ref_inpt is not None and partner_num_markables is not None:
             self.predict_partner_referents(partner_ref_inpt, partner_num_markables)
+
+            # POLICY BLOCK
+            if self.policy == "beta_bernoulli":
+                # JC: are dot mentions found in here?
+                #print(self.partner_ref_preds)
+                last_partner_reference = self.partner_ref_preds[-1]
+                agent = self.problem.agent
+                for ref in last_partner_reference:
+                    if ref.any():
+                        # if they mentioned anything you have, do a belief update
+                        # as if you asked about it
+                        array = ref.cpu().numpy().squeeze()
+                        action = Ask(array)
+                        response = ProductObservation({id: array[id] for id in range(7)})
+                        belief_update(
+                            agent, action, response,
+                            self.problem.env.state.object_states[agent.id],
+                            self.problem.env.state.object_states[agent.countdown_id],
+                            self.planner,
+                        )
+            # / POLICY BLOCK
         else:
             self.partner_ref_outs.append(None)
             self.partner_ref_preds.append(None)
@@ -491,7 +559,9 @@ class RnnAgent(Agent):
         device = self.state.ctx.device
 
         if force_dots_mentioned:
+            # JC: not used in selfplay, assume this is when testing ground truth?
             dots_mentioned_per_ref_candidates = [dots_mentioned_per_ref_to_force]
+            import pdb; pdb.set_trace()
         else:
             if not self.model.args.next_mention_prediction:
                 dots_mentioned_per_ref_candidates = [None]
@@ -518,6 +588,20 @@ class RnnAgent(Agent):
                     t.transpose(0, 1) if t is not None else None
                     for t in nm_candidates
                 ] if nm_candidates is not None else [None]
+
+                if self.policy == "beta_bernoulli":
+                    # POLICY BLOCK
+                    # JC: INSERT POLICY OUTPUT HERE, add another branch and force mentions
+                    # that way we dont have to run prediction again...
+
+                    action = plan(self.planner, self.problem, steps_left = 10)
+                    self.actions.append(action)
+                    # TODO: SWITCH ON ACTION = SELECT
+                    # OVERWRITE
+                    dots_mentioned_per_ref_candidates = [
+                        torch.tensor(action.val, dtype=torch.int64).reshape((1, 1, 7))
+                    ]
+                    # / POLICY BLOCK
 
         best_generation_output = None
         best_generation_score = None
@@ -675,6 +759,7 @@ class RnnAgent(Agent):
             self.joint_scores.append(extra['joint_scores'][extra['chosen_index']].item())
             self.ref_resolution_scores.append(extra['ref_resolution_scores'][extra['chosen_index']].item())
             self.language_model_scores.append(extra['output_logprobs'][extra['chosen_index']].item())
+        # JC: doesnt look like the next mention candidate is used here
         self.update_dot_h(ref_inpt=ref_inpt, partner_ref_inpt=None,
                           num_markables=num_markables, partner_num_markables=None,
                           ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
