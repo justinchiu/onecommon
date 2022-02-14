@@ -28,18 +28,22 @@ def dump_json(file, path):
         raise Exception('Error writing JSON to %s' % path)
 
 class SelfPlay(object):
-    def __init__(self, dialog, ctx_gen, args, logger=None):
+    def __init__(self, dialog, ctx_gen, args, logger=None, max_n=1000):
         self.dialog = dialog
         self.ctx_gen = ctx_gen
         self.args = args
         self.logger = logger if logger else DialogLogger()
+        self.max_n = max_n
 
     def run(self):
+        max_n = self.max_n
         n = 0
         success = 0
         for ctxs in self.ctx_gen.iter():
             n += 1
-            if self.args.smart_alice and n > 1000:
+            if self.args.smart_alice and n > max_n:
+                break
+            if n > max_n:
                 break
             self.logger.dump('=' * 80)
             self.logger.dump(f'dialog {n}')
@@ -128,6 +132,9 @@ def make_parser():
                         help='record markables and referents')
     parser.add_argument('--repeat_selfplay', action='store_true', default=False,
                         help='repeat selfplay')
+    parser.add_argument('--num_contexts', type=int, default=-1,
+                        help='num_contexts')
+
 
     RnnAgent.add_args(parser)
 
@@ -193,7 +200,7 @@ def main():
         scenarios = {scenario['uuid']: scenario for scenario in scenario_list}
         logger = DialogLogger(verbose=args.verbose, log_file=args.log_file, scenarios=scenarios)
 
-        selfplay = SelfPlay(dialog, ctx_gen, args, logger)
+        selfplay = SelfPlay(dialog, ctx_gen, args, logger, max_n = args.num_contexts)
         result = selfplay.run()
         repeat_results.append(result)
 
