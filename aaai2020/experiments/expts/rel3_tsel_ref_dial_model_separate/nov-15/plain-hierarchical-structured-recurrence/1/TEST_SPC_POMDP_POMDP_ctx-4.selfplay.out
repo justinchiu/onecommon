@@ -1,0 +1,362 @@
+8bca2339d900b1b4c0358c0bc0ea759807fad025
+diff --git a/aaai2020/experiments/selfplay.py b/aaai2020/experiments/selfplay.py
+index 73ab30c..853fe98 100644
+--- a/aaai2020/experiments/selfplay.py
++++ b/aaai2020/experiments/selfplay.py
+@@ -28,18 +28,22 @@ def dump_json(file, path):
+         raise Exception('Error writing JSON to %s' % path)
+ 
+ class SelfPlay(object):
+-    def __init__(self, dialog, ctx_gen, args, logger=None):
++    def __init__(self, dialog, ctx_gen, args, logger=None, max_n=1000):
+         self.dialog = dialog
+         self.ctx_gen = ctx_gen
+         self.args = args
+         self.logger = logger if logger else DialogLogger()
++        self.max_n = max_n
+ 
+     def run(self):
++        max_n = self.max_n
+         n = 0
+         success = 0
+         for ctxs in self.ctx_gen.iter():
+             n += 1
+-            if self.args.smart_alice and n > 1000:
++            if self.args.smart_alice and n > max_n:
++                break
++            if n > max_n:
+                 break
+             self.logger.dump('=' * 80)
+             self.logger.dump(f'dialog {n}')
+@@ -128,6 +132,9 @@ def make_parser():
+                         help='record markables and referents')
+     parser.add_argument('--repeat_selfplay', action='store_true', default=False,
+                         help='repeat selfplay')
++    parser.add_argument('--num_contexts', type=int, default=-1,
++                        help='num_contexts')
++
+ 
+     RnnAgent.add_args(parser)
+ 
+@@ -193,7 +200,7 @@ def main():
+         scenarios = {scenario['uuid']: scenario for scenario in scenario_list}
+         logger = DialogLogger(verbose=args.verbose, log_file=args.log_file, scenarios=scenarios)
+ 
+-        selfplay = SelfPlay(dialog, ctx_gen, args, logger)
++        selfplay = SelfPlay(dialog, ctx_gen, args, logger, max_n = args.num_contexts)
+         result = selfplay.run()
+         repeat_results.append(result)
+ 
+@@ -209,4 +216,4 @@ def main():
+ 
+ 
+ if __name__ == '__main__':
+-    main()
+\ No newline at end of file
++    main()
+selfplay.py --alice_model_file=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/1_ep-12.th --bob_model_file=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/1_ep-12.th --context_file=shared_4 --cuda --markable_detector_file=serialized_models/markable_detector_with_dict_1.th --verbose --num_contexts 100 --log_file=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/TEST_SPC_POMDP_POMDP_ctx-4.selfplay.log
+{'alice_forward_model_file': None,
+ 'alice_model_file': 'expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/1_ep-12.th',
+ 'bob_model_file': 'expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/1_ep-12.th',
+ 'bsz': 16,
+ 'context_file': 'shared_4',
+ 'cuda': True,
+ 'data': 'data/onecommon',
+ 'domain': 'one_common',
+ 'eps': 0.0,
+ 'language_beam_keep_all_finished': False,
+ 'language_beam_size': 1,
+ 'language_inference': 'beam',
+ 'language_rerank': False,
+ 'language_rerank_weight': 1.0,
+ 'language_sample_temperature': 0.25,
+ 'log_attention': False,
+ 'log_file': 'expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/TEST_SPC_POMDP_POMDP_ctx-4.selfplay.log',
+ 'markable_detector_file': 'serialized_models/markable_detector_with_dict_1.th',
+ 'markables_file': 'selfplay_markables.json',
+ 'max_sentences': 20,
+ 'max_turns': 20,
+ 'next_mention_candidate_generation': 'topk',
+ 'next_mention_reranking': False,
+ 'next_mention_reranking_k': 10,
+ 'next_mention_reranking_max_mentions': 2,
+ 'next_mention_reranking_score': 'log_max_probability',
+ 'next_mention_reranking_use_stop_scores': False,
+ 'next_mention_reranking_weight': 1.0,
+ 'num_contexts': 100,
+ 'plot_metrics': False,
+ 'policy': 'rnn',
+ 'record_markables': False,
+ 'ref_text': None,
+ 'referents_file': 'selfplay_referents.json',
+ 'repeat_selfplay': False,
+ 'reranking_confidence': False,
+ 'reranking_confidence_exp_score_threshold': 0.9,
+ 'reranking_confidence_score': 'l0',
+ 'reranking_confidence_type': 'first_above_threshold',
+ 'rollout_bsz': 3,
+ 'rollout_count_threshold': 3,
+ 'rollout_model_file': '',
+ 'seed': 1,
+ 'selection_model_file': '',
+ 'smart_alice': False,
+ 'smart_bob': False,
+ 'unk_threshold': 10,
+ 'verbose': True,
+ 'visual': False}
+overwriting key bsz with value 8 with value 16
+overwriting key bsz with value 8 with value 16
+Particle reinvigoration for 84 particles
+Particle reinvigoration for 80 particles
+Particle reinvigoration for 98 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 72 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 83 particles
+Particle reinvigoration for 71 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 94 particles
+Particle reinvigoration for 27 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 121 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 54 particles
+Particle reinvigoration for 97 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 29 particles
+Particle reinvigoration for 27 particles
+Particle reinvigoration for 98 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 64 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 83 particles
+Particle reinvigoration for 66 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 98 particles
+Particle reinvigoration for 64 particles
+Particle reinvigoration for 93 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 69 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 20 particles
+Particle reinvigoration for 64 particles
+Particle reinvigoration for 91 particles
+Particle reinvigoration for 64 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 92 particles
+Particle reinvigoration for 104 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 39 particles
+Particle reinvigoration for 27 particles
+Particle reinvigoration for 95 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 98 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 69 particles
+Particle reinvigoration for 98 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 19 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 83 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 69 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 94 particles
+Particle reinvigoration for 64 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 54 particles
+Particle reinvigoration for 104 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 87 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 19 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 64 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 64 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 87 particles
+Particle reinvigoration for 91 particles
+Particle reinvigoration for 12 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 64 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 70 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 94 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 99 particles
+Particle reinvigoration for 81 particles
+Particle reinvigoration for 12 particles
+Particle reinvigoration for 101 particles
+Particle reinvigoration for 70 particles
+Particle reinvigoration for 27 particles
+Particle reinvigoration for 95 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 106 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 31 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 92 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 9 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 95 particles
+Particle reinvigoration for 27 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 52 particles
+Particle reinvigoration for 94 particles
+Particle reinvigoration for 40 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 68 particles
+Particle reinvigoration for 12 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 68 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 62 particles
+Particle reinvigoration for 9 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 95 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 27 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 98 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 27 particles
+Particle reinvigoration for 98 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 81 particles
+Particle reinvigoration for 27 particles
+Particle reinvigoration for 73 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 85 particles
+Particle reinvigoration for 123 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 12 particles
+Particle reinvigoration for 62 particles
+Particle reinvigoration for 109 particles
+Particle reinvigoration for 73 particles
+Particle reinvigoration for 74 particles
+Particle reinvigoration for 9 particles
+Particle reinvigoration for 104 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 86 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 81 particles
+Particle reinvigoration for 56 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 61 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 91 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 61 particles
+Particle reinvigoration for 9 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 92 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 74 particles
+Particle reinvigoration for 98 particles
+Particle reinvigoration for 102 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 81 particles
+Particle reinvigoration for 86 particles
+Particle reinvigoration for 56 particles
+Particle reinvigoration for 106 particles
+Particle reinvigoration for 71 particles
+Particle reinvigoration for 37 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 87 particles
+Particle reinvigoration for 72 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 97 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 114 particles
+Particle reinvigoration for 61 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 104 particles
+Particle reinvigoration for 119 particles
+Particle reinvigoration for 42 particles
+Particle reinvigoration for 61 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 81 particles
+Particle reinvigoration for 78 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 25 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 61 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 118 particles
+Particle reinvigoration for 61 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 87 particles
+Particle reinvigoration for 106 particles
+Particle reinvigoration for 39 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 61 particles
+Particle reinvigoration for 12 particles
+Particle reinvigoration for 101 particles
+Particle reinvigoration for 9 particles
+Particle reinvigoration for 121 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 68 particles
+Particle reinvigoration for 86 particles
+Particle reinvigoration for 96 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 92 particles
+Particle reinvigoration for 77 particles
+Particle reinvigoration for 9 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 81 particles
+Particle reinvigoration for 87 particles
+Particle reinvigoration for 12 particles
+Particle reinvigoration for 101 particles
+Particle reinvigoration for 41 particles
+Particle reinvigoration for 68 particles
+Particle reinvigoration for 78 particles
+Particle reinvigoration for 41 particles
+100: dialog_len=4.26 sent_len=10.72 agree=56.00% moving_agree=56.00% advantage=0.00 moving_advantage=0.00 time=39.847s comb_rew=1.12 agree_comb_rew=2.00 alice_rew=0.56 alice_moving_rew=0.56 agree_alice_rew=1.00 alice_make_sel=41.00% alice_unique=104 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.56 bob_moving_rew=0.56 agree_bob_rew=1.00 bob_make_sel=59.00% bob_unique=83 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+dump selfplay_markables.json
+dump selfplay_referents.json
+repeat selfplay results 0.55445545 ( 0.00000000 )
