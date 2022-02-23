@@ -191,8 +191,19 @@ class BiLSTM_CRF(nn.Module):
                     if tag_seq[j].item() != self.tag_to_ix["I"]:
                         end_idx = j - 1
                         break
+                    if word_indices[j].item() in self.word_dict.w2i(["<eos>", "<selection>"]):
+                        # it looks like sometimes EOS gets labelled as I
+                        end_idx = j - 1
+                        break
                 for j in range(i + 1, len(tag_seq)):
-                    if tag_seq[j].item() in self.word_dict.w2i(["<eos>", "<selection>"]):
+                    # JUSTIN: this seems incorrect? im guessing you want end_uttr to be the end of the utterance
+                    # original one first
+                    #if tag_seq[j].item() in self.word_dict.w2i(["<eos>", "<selection>"]):
+                    if word_indices[j].item() in self.word_dict.w2i(["<eos>", "<selection>"]):
+                    #if (
+                        #tag_seq[j].item() in self.word_dict.w2i(["<eos>", "<selection>"])
+                        #or word_indices[j].item() in self.word_dict.w2i(["<eos>", "<selection>"])
+                    #):
                         end_uttr = j
                         break
 

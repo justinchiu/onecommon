@@ -132,7 +132,7 @@ def make_parser():
                         help='record markables and referents')
     parser.add_argument('--repeat_selfplay', action='store_true', default=False,
                         help='repeat selfplay')
-    parser.add_argument('--num_contexts', type=int, default=-1,
+    parser.add_argument('--num_contexts', type=int, default=1000,
                         help='num_contexts')
 
 

@@ -28,6 +28,7 @@ from models.ctx_encoder import pairwise_differences
 
 # POLICY BLOCK
 import pomdp_py
+from pomdp_py.utils import TreeDebugger
 from mab.beta_bernoulli.domain.action import Ask, Select
 from mab.beta_bernoulli.domain.observation import ProductObservation
 from mab.beta_bernoulli.dialogue import take_turn, plan
@@ -48,7 +49,6 @@ class Agent(object):
     """ Agent's interface. """
     def feed_context(self, ctx):
         pass
-
     def read(self, inpt):
         pass
 
@@ -72,28 +72,30 @@ class RnnAgent(Agent):
 
     @staticmethod
     def add_args(parser):
-        parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample', 'forgetful_noised_beam'], default='beam')
-        parser.add_argument('--language_beam_size', type=int, default=1)
+        # default to pragmatic confidence args https://github.com/justinchiu/onecommon/blob/master/webapp/src/web/app_params.json.full#L53
+        parser.add_argument('--language_inference', choices=['beam', 'noised_beam', 'sample', 'forgetful_noised_beam'], default='forgetful_noised_beam')
+        parser.add_argument('--language_beam_size', type=int, default=100)
         parser.add_argument('--language_beam_keep_all_finished', action='store_true')
+        # do the above ^
         parser.add_argument('--language_sample_temperature', type=float, default=0.25)
         parser.add_argument('--language_rerank', action='store_true')
-        parser.add_argument('--language_rerank_weight', type=float, default=1.0)
+        parser.add_argument('--language_rerank_weight', type=float, default=.999)
         parser.add_argument('--max_sentences', type=int, default=20)
 
         parser.add_argument('--next_mention_reranking', action='store_true')
-        parser.add_argument('--next_mention_reranking_max_mentions', type=int, default=2)
-        parser.add_argument('--next_mention_reranking_k', default=10, type=int)
+        parser.add_argument('--next_mention_reranking_max_mentions', type=int, default=10)
+        parser.add_argument('--next_mention_reranking_k', default=20, type=int)
         parser.add_argument('--next_mention_reranking_score',
                             default='log_max_probability',
                             choices=RerankingMentionPredictor.SCORING_FUNCTIONS)
-        parser.add_argument('--next_mention_reranking_weight', default=1.0, type=float)
+        parser.add_argument('--next_mention_reranking_weight', default=0, type=float)
         parser.add_argument('--next_mention_candidate_generation',
                             choices=['topk', 'topk_multi_mention', 'sample'], default='topk')
         parser.add_argument('--next_mention_reranking_use_stop_scores', action='store_true')
 
         parser.add_argument('--reranking_confidence', action='store_true')
-        parser.add_argument('--reranking_confidence_exp_score_threshold', type=float, default=0.9)
-        parser.add_argument('--reranking_confidence_score', choices=['l0', 'joint'], default='l0')
+        parser.add_argument('--reranking_confidence_exp_score_threshold', type=float, default=0.8)
+        parser.add_argument('--reranking_confidence_score', choices=['l0', 'joint'], default='joint')
         parser.add_argument('--reranking_confidence_type',
                             choices=['first_above_threshold', 'keep_best'],
                             default='first_above_threshold')
@@ -144,8 +146,8 @@ class RnnAgent(Agent):
         # POLICY BLOCK
         self.policy = args.policy
         #if self.name == "Alice":
-        if True:
-        #if False:
+        #if True:
+        if False:
             self.policy = "beta_bernoulli" # JUST FOR DEBUGGING
 
             # random fake ground truth vector here
@@ -391,20 +393,19 @@ class RnnAgent(Agent):
 
             # POLICY BLOCK
             if self.policy == "beta_bernoulli":
+                agent = self.problem.agent
                 # JC: are dot mentions found in here?
                 #print(self.partner_ref_preds)
-                last_partner_reference = self.partner_ref_preds[-1].cpu().numpy().squeeze()
-                agent = self.problem.agent
+                last_partner_reference = self.partner_ref_preds[-1].cpu().numpy()[:,0]
+                # is the second dimension batch?
                 #print(f"{self.name} reading")
                 #print(last_partner_reference)
                 if not last_partner_reference.any() and self.actions and isinstance(self.actions[-1], Ask):
                     response = ProductObservation({id: 0 for id in range(7)})
                     """
-                    from pomdp_py.utils import TreeDebugger
-                    dd = TreeDebugger(agent.tree)
-                    print(dd)
+                    d0 = TreeDebugger(agent.tree)
+                    print(d0)
                     print(self.actions[-1])
-                    print(TreeDebugger(agent.tree[self.actions[-1]]))
                     """
                     belief_update(
                         agent, self.actions[-1], response,
@@ -418,16 +419,23 @@ class RnnAgent(Agent):
                 else:
                     # PARTICULAR TO BETA-BERNOULLI
                     merged_ref = []
-                    for ref in last_partner_reference:
+                    for idx in range(last_partner_reference.shape[0]):
+                        ref = last_partner_reference[idx]
                         # specificity requirement
                         if ref.any() and ref.sum() <= 3:
                             merged_ref.append(ref)
                     if merged_ref:
+                        if not hasattr(agent, "tree") or agent.tree is None:
+                            # need to plan to initialize tree
+                            plan(self.planner, self.problem, steps_left = 20 - self.timesteps)
                         merged_ref = np.vstack(merged_ref).any(0)
+                        #d0 = TreeDebugger(agent.tree)
+                        #print(d0)
                         for idx in merged_ref.nonzero()[0]:
                             # if they mentioned anything you have, do a belief update
                             # as if you asked about it
                             array = np.zeros(7, dtype=np.int)
+                            #array[idx.item()] = 1
                             array[idx] = 1
                             action = Ask(array)
                             response = ProductObservation({id: array[id] for id in range(7)})
@@ -447,6 +455,9 @@ class RnnAgent(Agent):
                                 self.problem.env.state.object_states[agent.countdown_id],
                                 self.planner,
                             )
+                            #dd = TreeDebugger(agent.tree)
+                            #print(dd)
+                            #import pdb; pdb.set_trace()
             # / POLICY BLOCK
         else:
             self.partner_ref_outs.append(None)
@@ -608,7 +619,7 @@ class RnnAgent(Agent):
         if force_dots_mentioned:
             # JC: not used in selfplay, assume this is when testing ground truth?
             dots_mentioned_per_ref_candidates = [dots_mentioned_per_ref_to_force]
-            import pdb; pdb.set_trace()
+            #import pdb; pdb.set_trace()
         else:
             if not self.model.args.next_mention_prediction:
                 dots_mentioned_per_ref_candidates = [None]
@@ -641,7 +652,8 @@ class RnnAgent(Agent):
                     # JC: INSERT POLICY OUTPUT HERE, add another branch and force mentions
                     # that way we dont have to run prediction again...
 
-                    action = plan(self.planner, self.problem, steps_left = 10)
+                    action = plan(self.planner, self.problem, steps_left = 20 - self.timesteps)
+                    print(action)
                     # TODO: SWITCH ON ACTION = SELECT
                     # OVERWRITE
                     if isinstance(action, Ask):
@@ -649,7 +661,12 @@ class RnnAgent(Agent):
                         dots_mentioned_per_ref_candidates = [
                             torch.tensor(action.val, dtype=torch.int64).reshape((1, 1, 7))
                         ]
+                    elif isinstance(action, Select):
                         # TODO: FORCE SELECTION
+                        self.actions.append(action)
+                        z = torch.zeros(7, dtype=torch.int64).reshape((1, 1, 7))
+                        z[0,0,action.val] = 1
+                        dots_mentioned_per_ref_candidates = [z]
                     # / POLICY BLOCK
 
         best_generation_output = None
@@ -758,7 +775,6 @@ class RnnAgent(Agent):
                 else:
                     best_generation_output = this_generation_output
                     break
-
             if best_generation_output is None:
                 dots_mentioned_per_ref_candidates = [self.next_mention_predictions[-1]]
                 dots_mentioned_per_ref_candidates = [
