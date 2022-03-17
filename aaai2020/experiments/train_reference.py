@@ -45,6 +45,18 @@ def main():
 
     parser.add_argument('--spatial_data_augmentation', action='store_true')
 
+    parser.add_argument(
+        '--train_response_model',
+        choices=[
+            'none',
+            "words", "first_words",
+            'dots', 'first_dots',
+            "clusters", "specialized_clusters",
+            "binary_dots",
+        ],
+        default='none',
+        help='train a response model for planning')
+
     engines.add_training_args(parser)
     add_loss_args(parser)
     models.add_model_args(parser)
