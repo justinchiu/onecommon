@@ -9,11 +9,28 @@ import tqdm
 
 from corpora.reference import ReferenceCorpus, ReferenceRaw, process_referents
 
+# helper function for collapsing a batch of raw references,
+# any of refs/partner_refs/next_partner_refs,
+# processed from tags in corpora/reference.py:tokenize
+def collapse(references):
+    # dot_mentions: batch x 7
+    rs = []
+    for r in references:
+        rs.append(
+            np.array(r, dtype=bool).reshape((-1, 10))[:,3:].any(0)
+            if r else np.zeros((7,), dtype=bool)
+        )
+    return np.stack(rs)
+
 ReferenceSentenceInstance = namedtuple(
     "ReferenceSentenceInstance",
-    "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids \
+    "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids \
+    real_ids partner_real_ids \
+    id_intersection \
     agents chat_ids sel_idxs lens rev_idxs hid_idxs num_markables is_self \
     partner_ref_inpt partner_ref_tgt_our_view partner_num_markables \
+    next_partner_ref_inpt next_partner_ref_tgt_our_view next_partner_num_markables \
+    next_partner_ref_intersect_ref next_partner_ref_complement_ref \
     referent_disagreements partner_referent_disagreements partner_ref_tgt is_selection \
     non_pronoun_ref_inpt non_pronoun_ref_tgt non_pronoun_num_markables is_augmented".split()
 )
@@ -135,6 +152,13 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             partner_refs, partner_refs_our_view = [], []
             non_pronoun_refs = []
 
+            # MODEL-BASED PLANNING
+            next_partner_refs, next_partner_refs_our_view = [], []
+            next_partner_refs_intersect_ref = []
+            next_partner_refs_complement_ref = []
+            id_intersections = []
+            # / MODEL-BASED PLANNING
+
             ref_disagreements, partner_ref_disagreements = [], []
 
             is_augmented = []
@@ -158,6 +182,22 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 sel_idxs.append(len(dataset[i][1][-1]) - 1)
                 partner_refs.append(dataset[i].partner_referent_idxs)
                 partner_refs_our_view.append(dataset[i].partner_referent_our_view_idxs)
+                # MODEL-BASED PLANNING
+                # shift one over and append empty reference for last next reference
+                next_partner_refs.append(
+                    dataset[i].partner_referent_idxs[:-1] + [[]]
+                )
+                next_partner_refs_our_view.append(
+                    dataset[i].partner_referent_our_view_idxs[:-1] + [[]]
+                )
+                # boolean response to whether they repeat mentions
+                collapsed_ref = collapse(refs[-1])
+                collapsed_resp = collapse(next_partner_refs_our_view[-1])
+                next_partner_refs_intersect_ref.append(collapsed_ref * collapsed_resp)
+                next_partner_refs_complement_ref.append(~collapsed_ref * collapsed_resp)
+                # static dot intersection
+                id_intersections.append([x in dataset[i][6] for x in dataset[i][5]])
+                # / MODEL-BASED PLANNING
                 non_pronoun_refs.append(dataset[i].non_pronoun_referent_idxs)
                 ref_disagreements.append(dataset[i].referent_disagreements)
                 partner_ref_disagreements.append(dataset[i].partner_referent_disagreements)
@@ -169,6 +209,13 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             ref_inpts, ref_tgts, all_num_markables = [], [], []
             partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables = [], [], []
             partner_ref_tgts = []
+            # MODEL-BASED PLANNING
+            # dont forget to use id_intersections
+            next_partner_ref_inpts, next_partner_ref_tgts_our_view, next_all_partner_num_markables = [], [], []
+            next_partner_ref_tgts = []
+            next_partner_ref_intersect_refs = []
+            next_partner_ref_complement_refs = []
+            # / MODEL-BASED PLANNING
             non_pronoun_ref_inpts, non_pronoun_ref_tgts, all_non_pronoun_num_markables = [], [], []
             is_self = []
             for s in range(dial_len):
@@ -243,6 +290,33 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 partner_ref_tgts.append(partner_ref_tgt)
                 all_partner_num_markables.append(partner_num_markables)
 
+                # MODEL-BASED PLANNING
+                # process references into RNN-ingestible format
+                next_partner_ref_inpt, next_partner_ref_tgt_our_view, next_partner_num_markables = process_referents(
+                    [this_refs[s] for this_refs in next_partner_refs_our_view],
+                    max_mentions=self.max_mentions_per_utterance,
+                )
+                next_partner_ref_inpt_, next_partner_ref_tgt, _ = process_referents(
+                    [this_refs[s] for this_refs in next_partner_refs],
+                    max_mentions=self.max_mentions_per_utterance,
+                )
+                assert (
+                    next_partner_ref_inpt is None
+                    and next_partner_ref_inpt_ is None
+                ) or torch.allclose(next_partner_ref_inpt, next_partner_ref_inpt_)
+
+                next_partner_ref_inpts.append(next_partner_ref_inpt)
+                next_partner_ref_tgts_our_view.append(next_partner_ref_tgt_our_view)
+                next_partner_ref_tgts.append(next_partner_ref_tgt)
+                next_all_partner_num_markables.append(next_partner_num_markables)
+
+                # find intersection and complement with partner response and our utt
+                next_partner_ref_intersect_refs.append(
+                    torch.tensor(np.stack(next_partner_refs_intersect_ref)))
+                next_partner_ref_complement_refs.append(
+                    torch.tensor(np.stack(next_partner_refs_complement_ref)))
+                # / MODEL-BASED PLANNING
+
                 assert self.max_mentions_per_utterance is None
                 non_pronoun_ref_inpt, non_pronoun_ref_tgt, non_pronoun_num_markables = process_referents(
                     [this_refs[s] for this_refs in non_pronoun_refs]
@@ -294,9 +368,14 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
 
             batches.append(ReferenceSentenceInstance(
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt,
-                scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs,
+                scenario_ids, real_ids, partner_real_ids,
+                torch.tensor(id_intersections),
+                agents, chat_ids, sel_idxs,
                 lens, rev_idxs, hid_idxs, all_num_markables, is_self,
                 partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables,
+                next_partner_ref_inpts, next_partner_ref_tgts_our_view, next_all_partner_num_markables,
+                next_partner_ref_intersect_refs,
+                next_partner_ref_complement_refs,
                 ref_disagreements, partner_ref_disagreements,
                 partner_ref_tgts, is_selection,
                 non_pronoun_ref_inpts, non_pronoun_ref_tgts, all_non_pronoun_num_markables,

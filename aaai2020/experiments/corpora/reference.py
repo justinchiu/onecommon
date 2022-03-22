@@ -14,7 +14,12 @@ from corpora.data import Dictionary, read_lines, get_tag
 
 ReferenceRaw = namedtuple(
     "ReferenceRaw",
-    "input_vals word_idxs referent_idxs output_idx scenario_id real_ids partner_real_ids agent chat_id partner_referent_idxs partner_referent_our_view_idxs referent_disagreements partner_referent_disagreements non_pronoun_referent_idxs is_augmented".split()
+    "input_vals word_idxs referent_idxs output_idx \
+    scenario_id real_ids partner_real_ids \
+    agent chat_id \
+    partner_referent_idxs partner_referent_our_view_idxs \
+    referent_disagreements partner_referent_disagreements \
+    non_pronoun_referent_idxs is_augmented".split()
 )
 
 
@@ -195,6 +200,7 @@ class ReferenceCorpus(object):
         return self._split_into_batches(copy.copy(self.test), bsz, shuffle=shuffle, name="test")
 
     def _split_into_batches(self, dataset, bsz, shuffle=True, device=None, name="unknown"):
+        # NOT USED. see corpora/reference_sentence.py: ReferenceSentenceCorpus
         """Splits given dataset into batches."""
         if self.max_mentions_per_utterance is not None:
             raise NotImplementedError("--max_mentions_per_utterance for ReferenceCorpus")

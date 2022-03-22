@@ -34,7 +34,7 @@ python -u train_reference.py \
 	--unk_threshold 10 \
   --separate_attn \
   --cuda \
-  $@ \
-  | tee ${output_dir}/train.out
+  $@ #\
+  #| tee ${output_dir}/train.out
 
 #	--repeat_train \

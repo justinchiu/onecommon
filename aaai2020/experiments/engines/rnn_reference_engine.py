@@ -649,10 +649,16 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _forward(self, batch, epoch, corpus, allow_relation_swap):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
-        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _,\
-        sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view,\
-        partner_num_markables, ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view,\
-        is_selection, non_pronoun_ref_inpts, non_pronoun_ref_tgts, non_pronoun_num_markables, is_augmented = batch
+        (
+            ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids,
+            real_ids, partner_real_ids, id_intersection, _, _,
+            sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self,
+            partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables,
+            next_partner_ref_inpt, next_partner_ref_tgt_our_view, next_partner_num_markables, # MBP
+            next_partner_ref_intersect_ref, next_partner_ref_complement_ref, # MBP
+            ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view,
+            is_selection, non_pronoun_ref_inpts, non_pronoun_ref_tgts, non_pronoun_num_markables, is_augmented,
+        ) = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)
