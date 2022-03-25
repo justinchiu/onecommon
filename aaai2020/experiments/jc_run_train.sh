@@ -137,8 +137,12 @@ structured_attention_args="--structured_attention \
   --structured_attention_configuration_transition_max_size 3 \
   "
 
+mbp_args="--next_partner_reference_prediction \
+ --next_partner_reference_condition lang \
+ --next_partner_reference_blind \
+ "
+# 
 
-## **FULL model in Table 1 of paper**
 this_name=plain-hierarchical-structured-recurrence
 mkdir -p ${out_dir}/${this_name} 2>/dev/null
 for fold in $@
@@ -147,8 +151,10 @@ do
     ${overall_name}/${this_name}/$fold \
     $base_args \
     $hierarchical_args \
+    $mbp_args \
     $structured_attention_args \
     $dot_recurrence_args \
+    --wandb \
     --fold_nums $fold \
     --train_response_model binary_dots
 done

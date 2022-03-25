@@ -412,9 +412,12 @@ class RelationalAttentionContextEncoder3(nn.Module):
                 nn.Dropout(args.dropout),
             )
 
-    def forward(self, ctx, relational_dot_mask=None):
-        relation_include_angle = hasattr(self, 'args') and self.args.relation_include_angle
+    def forward(self, ctx, relational_dot_mask=None, mask_ctx=False):
         bsz = ctx.size(0)
+        if relational_dot_mask is not None and mask_ctx:
+            ctx = ctx.view(bsz, self.num_ent, -1) * relational_dot_mask[:,:,None]
+            ctx = ctx.view(bsz, -1)
+        relation_include_angle = hasattr(self, 'args') and self.args.relation_include_angle
         position, appearance, ent_rel_pairs = pairwise_differences(
             ctx, self.num_ent, self.dim_ent, self.args.relation_include, relation_include_angle,
             symmetric=False, include_self=(relational_dot_mask is not None)
@@ -432,6 +435,7 @@ class RelationalAttentionContextEncoder3(nn.Module):
                 # rel_emb_pooled: bsz x num_dots x hidden_dim
                 rel_emb_pooled = (rel_emb * dot_mask_select.unsqueeze(-1).expand_as(rel_emb)).sum(2)
                 rel_emb_pooled = rel_emb_pooled / torch.clamp_min(relational_dot_mask.sum(1) - 1, 1.0).unsqueeze(-1).unsqueeze(-1)
+                # relational_dot_mask + mask_ctx works here!
             else:
                 rel_emb_pooled = rel_emb.mean(2)
         else:
@@ -452,7 +456,11 @@ class RelationalAttentionContextEncoder3(nn.Module):
                 to_embed = torch.cat(prop_to_cat, dim=-1)
             else:
                 to_embed = prop_to_cat[0]
+            if mask_ctx:
+                to_embed = to_embed * relational_dot_mask[:,:,None]
             prop_emb = self.property_encoder(to_embed)
+            if relational_dot_mask is not None and mask_ctx:
+                prop_emb = prop_emb * relational_dot_mask[:,:,None]
             to_cat.append(prop_emb)
 
         to_cat.append(rel_emb_pooled)
@@ -469,7 +477,11 @@ class RelationalAttentionContextEncoder3(nn.Module):
             diffs_max = single_difference(ents, ex_max, self.args.relation_include, relation_include_angle,
                                           include_symmetric_rep=False, include_asymmetric_rep=True)
             diffs = torch.cat((diffs_min, diffs_max), dim=-1)
+            if relational_dot_mask is not None and mask_ctx:
+                diffs = diffs * relational_dot_mask[:,:,None]
             extremes_emb = self.extremes_encoder(diffs)
+            if relational_dot_mask is not None and mask_ctx:
+                extremes_emb = extremes_emb * relational_dot_mask[:,:,None]
             to_cat.append(extremes_emb)
 
         if len(to_cat) > 1:
@@ -477,3 +489,4 @@ class RelationalAttentionContextEncoder3(nn.Module):
         else:
             out = to_cat[0]
         return out
+
