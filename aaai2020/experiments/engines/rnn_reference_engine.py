@@ -444,7 +444,8 @@ class RnnReferenceEngine(EngineBase):
                 / len(dataset),
             "next_partner_ref_intersect_accuracy":
                 metrics["next_partner_ref_intersect_correct"]
-                / metrics["next_partner_ref_intersect_num_dots"],
+                / metrics["next_partner_ref_intersect_num_dots"]
+                if metrics["next_partner_ref_intersect_num_dots"] > 0 else 0,
             "next_partner_ref_intersect_exact_match":
                 metrics["next_partner_ref_intersect_exact_match_num"]
                 / metrics["next_partner_ref_intersect_exact_match_denom"]
@@ -562,13 +563,6 @@ class RnnReferenceEngine(EngineBase):
                      'next_mention_f1', 'next_mention_exact_match'],
                     ['is_selection_baseline_accuracy'],
                     ['is_selection_loss', 'is_selection_accuracy', 'is_selection_precision', 'is_selection_recall', 'is_selection_f1'],
-                    # MBP
-                    [
-                        "next_partner_ref_intersect_loss",
-                        "next_partner_ref_intersect_accuracy",
-                        "next_partner_ref_intersect_em",
-                    ],
-                    # / MBP
                 ]
                 if self.args.next_mention_prediction_type == 'multi_reference':
                     quantities.append(
@@ -577,6 +571,14 @@ class RnnReferenceEngine(EngineBase):
                          'next_mention_expanded_exact_match']
                     )
                 quantities.append(['l1_loss'])
+                if self.args.next_partner_reference_prediction:
+                    # MBP
+                    [
+                        "next_partner_ref_intersect_loss",
+                        "next_partner_ref_intersect_accuracy",
+                        "next_partner_ref_intersect_exact_match",
+                    ],
+                    # / MBP
                 for line_metrics in quantities:
                     print('epoch {:03d} \t '.format(epoch) + ' \t '.join(
                         ('%s_%s {%s:.4f}' % (split_name, metric, metric)).format(**metrics)

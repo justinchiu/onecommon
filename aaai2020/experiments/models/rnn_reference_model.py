@@ -273,9 +273,19 @@ class RnnReferenceModel(nn.Module):
         )
         parser.add_argument(
             '--next_partner_reference_blind',
-            action = "store_false",
+            action = "store_true",
             help= "force next partner reference prediction to be blind to true state",
         )
+        parser.add_argument(
+            '--next_partner_reference_intersect_encoder',
+            choices = ["mask", "indicator", "shared_indicator"],
+            default = "indicator",
+            help= "dot intersection encoder for next partner ref prediction. \
+            mask: mask out complement, \
+            indicator: concat indicator features, \
+            shared_indicator: concat indicator features to ctx_encoder",
+        )
+        parser.add_argument('--intersect_encoding_dim', type=int, default=8)
         # / MBP
 
         AttentionLayer.add_args(parser)
@@ -620,6 +630,11 @@ class RnnReferenceModel(nn.Module):
                         input_dim += len(args.mention_beliefs)
                     if args.dot_recurrence and 'next_mention' in args.dot_recurrence_in:
                         input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
+                # MBP
+                #if attn_name == "next_partner_reference":
+                    #if args.next_partner_reference_intersect_encoder == "indicator":
+                        #input_dim += args.intersect_encoding_dim
+                # / MBP
                 if attn_name == 'ref':
                     if args.ref_beliefs:
                         input_dim += len(args.ref_beliefs)
@@ -631,9 +646,6 @@ class RnnReferenceModel(nn.Module):
                     # TODO: fix ref_partner vs partner_ref naming
                     if args.dot_recurrence and 'partner_ref' in args.dot_recurrence_in:
                         input_dim += args.dot_recurrence_dim * self.dot_recurrence_embeddings
-                # MBP
-                # ADD if attn_name == "next_partner_attn":
-                # / MBP
                 if self.args.tie_reference_attn and attn_name == 'ref_partner':
                     pass
                 else:
@@ -734,7 +746,9 @@ class RnnReferenceModel(nn.Module):
             #ctx_encoder_ty = models.get_ctx_encoder_type(args.ctx_encoder_type)
             #self.intersect_ctx_encoder = IntersectionRelationalAttentionContextEncoder(
             self.intersect_ctx_encoder = RelationalAttentionContextEncoder3(
-                domain, args)
+                domain, args,
+                use_intersect_encoding = args.next_partner_reference_intersect_encoder == "indicator",
+            )
 
     def initialize_state(self, ctx, belief_constructor) -> State:
         # ctx: bsz x 28 (4 features x 7 dots)
@@ -1041,7 +1055,6 @@ class RnnReferenceModel(nn.Module):
         return self.next_mention_prediction_from_latents(state, latents)
 
     # MBP
-    # TODO: CHECK THIS. WHAT ARE THE BELIEFS?
     def next_partner_reference_latents(
         self, state: _State, outs_emb, lens, mention_beliefs, mention_latent_beliefs,
         dots_mentioned_num_markables_to_force=None, min_num_mentions=0,
@@ -1090,6 +1103,8 @@ class RnnReferenceModel(nn.Module):
         latents: NextPartnerReferenceLatents,
         intersection_encodings=None,
     ):
+        # MBP: technically unnecessary, since latents already created using
+        # intersection_encodings in next_partner_reference_latents, if necessary
         ctx_h = (state.ctx_h
             if self.args.next_partner_reference_blind or intersection_encodings is None
             else intersection_encodings
@@ -1103,6 +1118,7 @@ class RnnReferenceModel(nn.Module):
             scores = self._apply_attention(
                 'next_partner_reference',
                 latents.latent_states,
+                # MBP: latents.ctx_h_with_beliefs already used intersection_encodings
                 torch.cat([states_expand, latents.ctx_h_with_beliefs], -1),
                 ctx_differences, latents.dots_mentioned_num_markables,
                 joint_factor_input=state.dot_h_maybe_multi_structured,
@@ -1110,7 +1126,6 @@ class RnnReferenceModel(nn.Module):
             )
         else:
             scores = None
-        #import pdb; pdb.set_trace()
         # TODO: why is the second element of scores so big for collapsed?
 
         return (
@@ -2678,7 +2693,14 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # encode the ORACLE INTERSECTION of view.
         if self.next_partner_reference_prediction:
             intersection_encodings = self.intersect_ctx_encoder(
-                ctx, relational_dot_mask = id_intersection.float(), mask_ctx=True,
+                ctx,
+                relational_dot_mask = id_intersection.float()
+                    if self.args.next_partner_reference_intersect_encoder == "mask"
+                    else None,
+                mask_ctx=self.args.next_partner_reference_intersect_encoder == "mask",
+                id_intersection = id_intersection.float()
+                    if self.intersect_ctx_encoder.intersect_size == 1
+                    else id_intersection.int(),
             )
             # relational dot mask zeros out dots not in the intersection
         else:
@@ -2776,7 +2798,6 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 next_mention_latents,
                 next_partner_ref_latents, # MBP
             ) = self._forward(state, inpt, **kwargs)
-            #import pdb; pdb.set_trace()
 
             if relation_swap:
                 assert inpt.dim() == 2
@@ -2843,7 +2864,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     next_partner_intersect_out, next_partner_complement_out,
                 ) = self.next_partner_reference_prediction_from_latents(
                     #state,
-                    new_state, next_partner_ref_latents, id_intersection,
+                    new_state, next_partner_ref_latents, intersection_encodings,
                 )
             else:
                 next_partner_intersect_out, next_partner_complement_out = None, None

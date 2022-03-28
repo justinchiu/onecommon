@@ -137,24 +137,87 @@ structured_attention_args="--structured_attention \
   --structured_attention_configuration_transition_max_size 3 \
   "
 
-mbp_args="--next_partner_reference_prediction \
+mbp_indicator_args="--next_partner_reference_prediction \
+ --next_partner_reference_condition lang \
+ --next_partner_reference_intersect_encoder indicator \
+ --relation_include_intersect \
+ --relation_include_intersect_both \
+ --intersect_encoding_dim 1 \
+ "
+mbp_blind_args="--next_partner_reference_prediction \
  --next_partner_reference_condition lang \
  --next_partner_reference_blind \
+ --intersect_encoding_dim 1 \
  "
-# 
+mbp_mask_args="--next_partner_reference_prediction \
+ --next_partner_reference_condition lang \
+ --next_partner_reference_intersect_encoder mask \
+ --intersect_encoding_dim 0 \
+ "
 
 this_name=plain-hierarchical-structured-recurrence
 mkdir -p ${out_dir}/${this_name} 2>/dev/null
+
+function baseline () {
 for fold in $@
 do
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
     $base_args \
     $hierarchical_args \
-    $mbp_args \
     $structured_attention_args \
     $dot_recurrence_args \
     --wandb \
     --fold_nums $fold \
     --train_response_model binary_dots
 done
+}
+
+function blind () {
+for fold in $@
+do
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $mbp_blind_args \
+    $dot_recurrence_args \
+    --wandb \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}
+
+function mask () {
+for fold in $@
+do
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $mbp_mask_args \
+    $dot_recurrence_args \
+    --wandb \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}
+
+function indicator () {
+for fold in $@
+do
+  #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $mbp_indicator_args \
+    $dot_recurrence_args \
+    --wandb \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}

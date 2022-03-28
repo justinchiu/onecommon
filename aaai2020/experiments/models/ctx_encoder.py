@@ -14,15 +14,33 @@ import torch.nn.functional as F
 
 from models.utils import *
 
-def single_difference(ent_i, ent_j, relation_include, relation_include_angle, include_symmetric_rep, include_asymmetric_rep):
+def single_difference(
+    ent_i, ent_j,
+    relation_include,
+    relation_include_angle,
+    include_symmetric_rep, include_asymmetric_rep,
+    intersect_size = 0,
+    relation_include_intersect = False,
+    relation_include_intersect_both = False,
+):
     # ent_i: ... x 4
     # ent_j: ... x 4
-    assert ent_i.size(-1) == 4
-    assert ent_j.size(-1) == 4
+    assert ent_i.size(-1) == 4 + intersect_size
+    assert ent_j.size(-1) == 4 + intersect_size
+    # MBP: ent_i: ... x 4 + intersect_size
     dist = torch.sqrt((ent_i[...,0] - ent_j[...,0])**2 + (ent_i[...,1] - ent_j[...,1])**2)
 
-    position_i, appearance_i = torch.split(ent_i, (2,2), dim=-1)
-    position_j, appearance_j = torch.split(ent_j, (2,2), dim=-1)
+    # MBP
+    # take advantage of python variable weirdness to avoid declaration
+    if intersect_size == 0:
+        position_i, appearance_i = torch.split(ent_i, (2,2), dim=-1)
+        position_j, appearance_j = torch.split(ent_j, (2,2), dim=-1)
+    else: 
+        position_i, appearance_i, intersect_i = torch.split(
+            ent_i, (2,2, intersect_size), dim=-1)
+        position_j, appearance_j, intersect_j = torch.split(
+            ent_j, (2,2, intersect_size), dim=-1)
+    # / MBP
 
     to_cat = []
     if 'i_position' in relation_include:
@@ -33,6 +51,13 @@ def single_difference(ent_i, ent_j, relation_include, relation_include_angle, in
         to_cat.append(position_j)
     if 'j_appearance' in relation_include:
         to_cat.append(appearance_j)
+    # MBP
+    if intersect_size > 0 and relation_include_intersect:
+        to_cat.append(intersect_i)
+        to_cat.append(intersect_j)
+    if intersect_size > 0 and relation_include_intersect_both:
+        to_cat.append(intersect_i * intersect_j)
+    # / MBP
     property_diff = ent_i - ent_j
 
     if include_symmetric_rep:
@@ -50,18 +75,29 @@ def single_difference(ent_i, ent_j, relation_include, relation_include_angle, in
         rad_2 = torch.atan2(diff_y, diff_x) / math.pi
         to_cat.append(rad_1)
         to_cat.append(rad_2)
+
     return torch.cat(to_cat, -1)
 
-def pairwise_differences(ctx, num_ent, dim_ent,
-                         relation_include=['i_position', 'i_appearance', 'j_position', 'j_appearance'],
-                         relation_include_angle=False,
-                         symmetric=False,
-                         include_asymmetric_rep_in_symmetric=False,
-                         include_self=False,
-                         ):
+def pairwise_differences(
+    ctx, num_ent, dim_ent,
+    relation_include=['i_position', 'i_appearance', 'j_position', 'j_appearance'],
+    relation_include_angle=False,
+    symmetric=False,
+    include_asymmetric_rep_in_symmetric=False,
+    include_self=False,
+    intersect_size = 0,
+    relation_include_intersect = False,
+    relation_include_intersect_both = False,
+):
     ents = ctx.view(ctx.size(0), num_ent, dim_ent)
 
-    position, appearance = torch.split(ents, (2,2), dim=-1)
+    # MBP
+    if intersect_size == 0:
+        position, appearance = torch.split(ents, (2,2), dim=-1)
+    else: 
+        position, appearance, intersect = torch.split(
+            ents, (2,2, intersect_size), dim=-1)
+    # / MBP
 
     rel_pairs = []
 
@@ -72,18 +108,25 @@ def pairwise_differences(ctx, num_ent, dim_ent,
                 continue
             if symmetric and i > j:
                 continue
-            diff = single_difference(ents[:,i], ents[:,j], relation_include, relation_include_angle,
-                                     symmetric, (not symmetric) or include_asymmetric_rep_in_symmetric)
+            diff = single_difference(
+                ents[:,i], ents[:,j], relation_include, relation_include_angle,
+                symmetric, (not symmetric) or include_asymmetric_rep_in_symmetric,
+                intersect_size = intersect_size,
+                relation_include_intersect = relation_include_intersect,
+                relation_include_intersect_both = relation_include_intersect_both,
+            )
             rel_pairs.append(diff.unsqueeze(1))
         # ent_rel_pairs.append(torch.cat(rel_pairs, 1).unsqueeze(1))
     ent_rel_pairs_t = torch.cat(rel_pairs, 1)
     if not symmetric:
         if include_self:
             assert len(rel_pairs) == num_ent * num_ent
-            ent_rel_pairs_t = ent_rel_pairs_t.view(ent_rel_pairs_t.size(0), num_ent, num_ent, ent_rel_pairs_t.size(-1))
+            ent_rel_pairs_t = ent_rel_pairs_t.view(
+                ent_rel_pairs_t.size(0), num_ent, num_ent, ent_rel_pairs_t.size(-1))
         else:
             assert len(rel_pairs) == num_ent * (num_ent - 1)
-            ent_rel_pairs_t = ent_rel_pairs_t.view(ent_rel_pairs_t.size(0), num_ent, num_ent-1, ent_rel_pairs_t.size(-1))
+            ent_rel_pairs_t = ent_rel_pairs_t.view(
+                ent_rel_pairs_t.size(0), num_ent, num_ent-1, ent_rel_pairs_t.size(-1))
     else:
         assert len(rel_pairs) == num_ent * (num_ent - 1) // 2
     return position, appearance, ent_rel_pairs_t
@@ -343,24 +386,63 @@ class RelationalAttentionContextEncoder3(nn.Module):
                             choices=['position', 'appearance'],
                             default=['appearance'],
                             nargs='*')
-        parser.add_argument('--relation_include',
-                            choices=['i_position', 'i_appearance', 'j_position', 'j_appearance'],
-                            default=['i_appearance', 'j_appearance'],
-                            nargs='*')
+        parser.add_argument(
+            '--relation_include',
+            choices=[
+                'i_position', 'i_appearance',
+                'j_position', 'j_appearance',
+            ],
+            default=['i_appearance', 'j_appearance'],
+            nargs='*',
+        )
+        parser.add_argument(
+            '--relation_include_intersect', action = "store_true",
+            help = "use intersection features for partner modeling",
+        )
+        parser.add_argument(
+            '--relation_include_intersect_both', action = "store_true",
+            help = "use product of intersection features for partner modeling",
+        )
         parser.add_argument('--encode_relative_to_extremes', action='store_true')
 
-    def __init__(self, domain, args):
+    def __init__(self, domain, args, use_intersect_encoding=False):
         super(RelationalAttentionContextEncoder3, self).__init__()
         self.args = args
 
         self.num_ent = domain.num_ent()
         self.dim_ent = domain.dim_ent()
 
+        # MBP
+        self.use_intersect_encoding = use_intersect_encoding
+        if use_intersect_encoding:
+            self.intersect_size = args.intersect_encoding_dim
+            if self.intersect_size > 1:
+                self.intersect_emb = nn.Embedding(2, self.intersect_size)
+                torch.nn.init.xavier_uniform_(self.intersect_emb.weight)
+            self.dim_ent += self.intersect_size
+        else:
+            self.intersect_size = 0
+        # / MBP
+
         self.relation_pooling = args.relation_pooling
 
         property_input_dim = 2 * len(self.args.properties_include)
+        if use_intersect_encoding and self.intersect_size > 0:
+            property_input_dim += self.intersect_size
 
         relation_input_dim = 2 * len(self.args.relation_include) + domain.dim_ent() + 1
+        if use_intersect_encoding and self.args.relation_include_intersect:
+            relation_input_dim += 2 * self.intersect_size
+        if use_intersect_encoding and self.args.relation_include_intersect_both:
+            relation_input_dim += 2 * self.intersect_size
+        # MBP
+        #if use_intersect_encoding and self.intersect_size > 0:
+            # add another dimension for multiplication of intersect features
+            # we added intersect_size do dim_ent
+            # ie ent_emb = [position, appearance, intersection]
+            # but we want ent_pair_emb = [pos, app, inter] * 2 + [inter1 * inter2]
+            #relation_input_dim += self.intersect_size
+        # / MBP
 
         if args.encode_relative_to_extremes:
             assert args.nembed_ctx % 4 == 0
@@ -412,16 +494,45 @@ class RelationalAttentionContextEncoder3(nn.Module):
                 nn.Dropout(args.dropout),
             )
 
-    def forward(self, ctx, relational_dot_mask=None, mask_ctx=False):
+    def forward(
+        self, ctx, relational_dot_mask=None,
+        mask_ctx=False, id_intersection=None, # MBP
+    ):
+        # mask_ctx will annihilate all output for dots != 1
+        # found not to be a good idea in prelim experiments, though
+        # TODO: remove mask_ctx
+         
         bsz = ctx.size(0)
+        # MBP
+        intersect_emb = None
+        if self.use_intersect_encoding:
+            # embed id_intersection and concatenate to ctx
+            intersect_emb = (id_intersection[:,:,None]
+                if self.intersect_size == 1
+                else self.intersect_emb(id_intersection)
+            )
+            #ctx = torch.cat((ctx.view(bsz, self.num_ent, -1), intersect_emb), -1).view(bsz, -1)
+            ctx = torch.cat(
+                (
+                    ctx.view(bsz, self.num_ent, -1),
+                    intersect_emb,
+                ),
+                -1,
+            ).view(bsz, -1)
         if relational_dot_mask is not None and mask_ctx:
             ctx = ctx.view(bsz, self.num_ent, -1) * relational_dot_mask[:,:,None]
             ctx = ctx.view(bsz, -1)
+        # / MBP
         relation_include_angle = hasattr(self, 'args') and self.args.relation_include_angle
         position, appearance, ent_rel_pairs = pairwise_differences(
             ctx, self.num_ent, self.dim_ent, self.args.relation_include, relation_include_angle,
-            symmetric=False, include_self=(relational_dot_mask is not None)
+            symmetric=False, include_self=(relational_dot_mask is not None),
+            intersect_size = self.intersect_size if self.use_intersect_encoding else 0,
+            relation_include_intersect = self.args.relation_include_intersect,
+            relation_include_intersect_both = self.args.relation_include_intersect_both,
         )
+        # ent_rel_pairs: bsz x 7 x 6 x feats=9
+        # add intersection features
         rel_emb = self.relation_encoder(ent_rel_pairs)
 
         if self.relation_pooling == 'mean':
@@ -452,15 +563,23 @@ class RelationalAttentionContextEncoder3(nn.Module):
                 prop_to_cat.append(position)
             if 'appearance' in self.args.properties_include:
                 prop_to_cat.append(appearance)
+            # MBP
+            if self.use_intersect_encoding and intersect_emb is not None:
+               prop_to_cat.append(intersect_emb)
+            # / MBP
             if len(prop_to_cat) > 1:
                 to_embed = torch.cat(prop_to_cat, dim=-1)
             else:
                 to_embed = prop_to_cat[0]
-            if mask_ctx:
+            # MBP
+            if relational_dot_mask is not None and mask_ctx:
                 to_embed = to_embed * relational_dot_mask[:,:,None]
+            # / MBP
             prop_emb = self.property_encoder(to_embed)
+            # MBP
             if relational_dot_mask is not None and mask_ctx:
                 prop_emb = prop_emb * relational_dot_mask[:,:,None]
+            # / MBP
             to_cat.append(prop_emb)
 
         to_cat.append(rel_emb_pooled)
@@ -472,16 +591,30 @@ class RelationalAttentionContextEncoder3(nn.Module):
             # bsz x num_ent x relation_input_dim
             ex_max = ents.max(1).values.unsqueeze(1).expand_as(ents)
             # bsz x num_ent x relation_input_dim
-            diffs_min = single_difference(ents, ex_min, self.args.relation_include, relation_include_angle,
-                                          include_symmetric_rep=False, include_asymmetric_rep=True)
-            diffs_max = single_difference(ents, ex_max, self.args.relation_include, relation_include_angle,
-                                          include_symmetric_rep=False, include_asymmetric_rep=True)
+            diffs_min = single_difference(
+                ents, ex_min, self.args.relation_include, relation_include_angle,
+                include_symmetric_rep=False, include_asymmetric_rep=True,
+                intersect_size = self.intersect_size,
+                relation_include_intersect = self.args.relation_include_intersect,
+                relation_include_intersect_both = self.args.relation_include_intersect_both,
+            )
+            diffs_max = single_difference(
+                ents, ex_max, self.args.relation_include, relation_include_angle,
+                include_symmetric_rep=False, include_asymmetric_rep=True,
+                intersect_size = self.intersect_size if self.use_intersect_encoding else 0,
+                relation_include_intersect = self.args.relation_include_intersect,
+                relation_include_intersect_both = self.args.relation_include_intersect_both,
+            )
             diffs = torch.cat((diffs_min, diffs_max), dim=-1)
+            # MBP
             if relational_dot_mask is not None and mask_ctx:
                 diffs = diffs * relational_dot_mask[:,:,None]
+            # / MBP
             extremes_emb = self.extremes_encoder(diffs)
+            # MBP
             if relational_dot_mask is not None and mask_ctx:
                 extremes_emb = extremes_emb * relational_dot_mask[:,:,None]
+            # / MBP
             to_cat.append(extremes_emb)
 
         if len(to_cat) > 1:
