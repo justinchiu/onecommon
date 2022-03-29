@@ -154,10 +154,16 @@ mbp_mask_args="--next_partner_reference_prediction \
  --next_partner_reference_intersect_encoder mask \
  --intersect_encoding_dim 0 \
  "
+mbp_deterministic_args="--next_partner_reference_prediction \
+ --next_partner_reference_condition lang \
+ --next_partner_reference_intersect_encoder deterministic \
+ --intersect_encoding_dim 0 \
+ "
 
 this_name=plain-hierarchical-structured-recurrence
 mkdir -p ${out_dir}/${this_name} 2>/dev/null
 
+# baseline model from fried without any next partner reference
 function baseline () {
 for fold in $@
 do
@@ -173,6 +179,7 @@ do
 done
 }
 
+# train next partner reference without any true state info
 function blind () {
 for fold in $@
 do
@@ -189,6 +196,7 @@ do
 done
 }
 
+# train next partner reference by masking dot context
 function mask () {
 for fold in $@
 do
@@ -205,6 +213,7 @@ do
 done
 }
 
+# train next partner reference by adding dot indicator features
 function indicator () {
 for fold in $@
 do
@@ -215,6 +224,24 @@ do
     $hierarchical_args \
     $structured_attention_args \
     $mbp_indicator_args \
+    $dot_recurrence_args \
+    --wandb \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}
+
+# use deterministic mention prediction based on true state
+function deterministic () {
+for fold in $@
+do
+  #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $mbp_deterministic_args \
     $dot_recurrence_args \
     --wandb \
     --fold_nums $fold \

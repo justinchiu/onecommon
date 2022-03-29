@@ -43,9 +43,12 @@ NextMentionLatents = namedtuple('NextMentionLatents', [
     'latent_states', 'dots_mentioned_num_markables', 'stop_losses', 'ctx_h_with_beliefs'
 ])
 
+# MBP
 NextPartnerReferenceLatents = namedtuple('NextPartnerReferenceLatents', [
     'latent_states', 'dots_mentioned_num_markables', 'ctx_h_with_beliefs',
+    "dots_mentioned",
 ])
+# / MBP
 
 class State(_State):
 
@@ -278,12 +281,12 @@ class RnnReferenceModel(nn.Module):
         )
         parser.add_argument(
             '--next_partner_reference_intersect_encoder',
-            choices = ["mask", "indicator", "shared_indicator"],
+            choices = ["mask", "indicator", "deterministic"],
             default = "indicator",
             help= "dot intersection encoder for next partner ref prediction. \
             mask: mask out complement, \
             indicator: concat indicator features, \
-            shared_indicator: concat indicator features to ctx_encoder",
+            deterministic: output 1 if in collapsed_dots(utt) intersect state",
         )
         parser.add_argument('--intersect_encoding_dim', type=int, default=8)
         # / MBP
@@ -737,11 +740,11 @@ class RnnReferenceModel(nn.Module):
             self.between_mention_self_attn_layer = nn.Linear(args.nhid_lang * self.num_reader_directions, 1)
 
         # MBP
-        self.next_partner_reference_prediction = vars(self.args).get(
+        self.do_next_partner_reference_prediction = vars(self.args).get(
             'next_partner_reference_prediction', False)
         self.next_partner_reference_condition = vars(self.args).get(
             'next_partner_reference_condition', None)
-        if self.next_partner_reference_prediction:
+        if self.do_next_partner_reference_prediction:
             # already defined above self.ctx_encoder
             #ctx_encoder_ty = models.get_ctx_encoder_type(args.ctx_encoder_type)
             #self.intersect_ctx_encoder = IntersectionRelationalAttentionContextEncoder(
@@ -1060,7 +1063,10 @@ class RnnReferenceModel(nn.Module):
         dots_mentioned_num_markables_to_force=None, min_num_mentions=0,
         max_num_mentions=12, can_confirm=None,
         intersection_encodings = None,
+        id_intersection = None,
+        dots_mentioned = None,
     ):
+        # TODO: incorporate dots_mentioned, see if that improves next part ref
         ctx_h = (state.ctx_h
             if self.args.next_partner_reference_blind or intersection_encodings is None
             else intersection_encodings
@@ -1095,14 +1101,18 @@ class RnnReferenceModel(nn.Module):
             latent_states=latent_states,
             dots_mentioned_num_markables=dots_mentioned_num_markables,
             ctx_h_with_beliefs=ctx_h,
+            dots_mentioned = dots_mentioned,
         )
 
     def next_partner_reference_prediction_from_latents(
         self,
         state: State,
         latents: NextPartnerReferenceLatents,
-        intersection_encodings=None,
+        intersection_encodings = None,
+        id_intersection = None,
+        dots_mentioned = None,
     ):
+
         # MBP: technically unnecessary, since latents already created using
         # intersection_encodings in next_partner_reference_latents, if necessary
         ctx_h = (state.ctx_h
@@ -1128,11 +1138,26 @@ class RnnReferenceModel(nn.Module):
             scores = None
         # TODO: why is the second element of scores so big for collapsed?
 
+        if self.args.next_partner_reference_intersect_encoder == "deterministic":
+            # if we are doing deterministic encoding, then we just deterministically
+            next_partner_ref_intersect = id_intersection & dots_mentioned
+            # FAKE CRF POTENTIALS using the above
+            # TODO: double check this
+            scores0 = scores[0].masked_fill(next_partner_ref_intersect[None], 0)
+            scores0 = scores0.masked_fill(~next_partner_ref_intersect[None], -10000)
+            bsz = scores[1].shape[1]
+            s1shape = scores[1].shape
+            scores1 = torch.full_like(scores[1], -10000).view(1, bsz, -1)
+            mask = bit_to_int_array(next_partner_ref_intersect)
+            scores1[0,torch.arange(bsz),mask] = 0
+            scores1 = scores1.view(s1shape)
+            scores = (scores0, scores1, scores[2])
+
         return (
             # intersection prediction
             (scores, latents.dots_mentioned_num_markables),
             # complement prediction
-            (scores, latents.dots_mentioned_num_markables),
+            (None, latents.dots_mentioned_num_markables),
         )
 
     def next_partner_reference_prediction(
@@ -1140,14 +1165,22 @@ class RnnReferenceModel(nn.Module):
         dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12,
         can_confirm=None,
         intersection_encodings = None,
+        id_intersection = None,
+        dots_mentioned = None,
     ):
         latents = self.next_partner_reference_latents(
             state, outs_emb, lens, mention_beliefs, mention_latent_beliefs, dots_mentioned_num_markables_to_force,
             min_num_mentions, max_num_mentions, can_confirm=can_confirm,
             intersection_encodings = intersection_encodings,
+            id_intersection = id_intersection,
+            dots_mentioned = dots_mentioned,
         )
         return self.next_partner_reference_prediction_from_latents(
-            state, latents, intersection_encodings=intersection_encodings)
+            state, latents,
+            intersection_encodings = intersection_encodings,
+            id_intersection = id_interseciton,
+            dots_mentioned = dots_mentioned,
+        )
     # / MBP
 
     def selection(self, state: _State, outs_emb, sel_idx, beliefs=None):
@@ -1784,7 +1817,7 @@ class RnnReferenceModel(nn.Module):
         state = state._replace(turn=state.turn+1)
 
         if (
-            self.next_partner_reference_prediction
+            self.do_next_partner_reference_prediction
             and self.next_partner_reference_condition == "lang"
         ):
             assert lens is not None
@@ -1798,11 +1831,12 @@ class RnnReferenceModel(nn.Module):
             next_partner_ref_latents = self.next_partner_reference_latents(
                 state, writer_lang_hs, lens,
                 next_partner_ref_beliefs, next_partner_ref_latent_beliefs,
-                #dots_mentioned_num_markables_to_force=None,
-                #can_confirm=can_confirm_next,
                 intersection_encodings = intersection_encodings,
+                id_intersection = id_intersection,
+                dots_mentioned = dots_mentioned,
             )
-        elif (self.next_partner_reference_prediction
+        elif (
+            self.do_next_partner_reference_prediction
             and self.next_partner_reference_condition == "dots"
         ):
             raise NotImplementedError
@@ -2691,7 +2725,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         state = self.initialize_state(ctx, belief_constructor)
         # MBP
         # encode the ORACLE INTERSECTION of view.
-        if self.next_partner_reference_prediction:
+        if self.do_next_partner_reference_prediction:
             intersection_encodings = self.intersect_ctx_encoder(
                 ctx,
                 relational_dot_mask = id_intersection.float()
@@ -2864,7 +2898,10 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     next_partner_intersect_out, next_partner_complement_out,
                 ) = self.next_partner_reference_prediction_from_latents(
                     #state,
-                    new_state, next_partner_ref_latents, intersection_encodings,
+                    new_state, next_partner_ref_latents,
+                    intersection_encodings = intersection_encodings,
+                    id_intersection = id_intersection,
+                    dots_mentioned = dots_mentioned[i] if dots_mentioned is not None else None,
                 )
             else:
                 next_partner_intersect_out, next_partner_complement_out = None, None

@@ -16,7 +16,7 @@ output_dir="expts/${model_dir}"
 #mkdir -p serialized_models/$script_name
 mkdir -p $output_dir
 
-python -u -m pdb train_reference.py \
+python -u train_reference.py \
 	--ctx_encoder_type rel_attn_encoder_3 \
 	--max_epoch 30 \
 	--optimizer adam \

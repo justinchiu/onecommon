@@ -1211,7 +1211,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                         True, gold_intersect, pred_intersect, gold_num_mentions,
                         # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
                         #collapse=expanded_next_mention_loss,
-                        mask=~non_lang_instance_mask
+                        mask=~non_lang_instance_mask,
                     )
                     next_partner_ref_intersect_stats = utils.sum_dicts(
                         next_partner_ref_intersect_stats, _stats)
