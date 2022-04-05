@@ -41,6 +41,8 @@ def add_training_args(parser):
     group.add_argument('--reduce_plateau_patience', type=float, default=2)
     group.add_argument('--reduce_plateau_min_lr', type=float, default=1e-6)
 
+    group.add_argument('--wandb', action='store_true')
+
 def add_engine_args(parser):
     from engines.rnn_reference_engine import RnnReferenceEngine, HierarchicalRnnReferenceEngine
     for eng in [RnnReferenceEngine, HierarchicalRnnReferenceEngine]:
@@ -140,6 +142,9 @@ class EngineBase(object):
             self.logger = TFLogger(log_name)
         else:
             self.logger = Logger()
+        if args.wandb:
+            import wandb
+            wandb.init(project="believe-in-onecommon", config=args)
 
     def make_opt(self):
         if self.args.optimizer == 'adam':

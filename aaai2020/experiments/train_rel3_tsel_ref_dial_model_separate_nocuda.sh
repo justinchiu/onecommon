@@ -32,9 +32,8 @@ python -u train_reference.py \
 	--clip 0.5 \
 	--dropout 0.5 \
 	--unk_threshold 10 \
-  --separate_attn \
-  --cuda \
-  $@ #\
-  #| tee ${output_dir}/train.out
+    --separate_attn \
+    $@ #\
+    #| tee ${output_dir}/train.out
 
 #	--repeat_train \

@@ -393,7 +393,11 @@ class PragmaticReferencePredictor(ReferencePredictor):
             exhaustive_single=self.args.l1_exhaustive_single
         )
 
-    def forward(self, ref_inpt, ref_tgt, ref_out, num_markables, scoring_function, by_num_markables=False, collapse=False):
+    def forward(
+        self, ref_inpt, ref_tgt, ref_out,
+        num_markables, scoring_function,
+        by_num_markables=False, collapse=False,
+    ):
         if ref_inpt is None or ref_out is None:
             return None, None, self.empty_stats()
 

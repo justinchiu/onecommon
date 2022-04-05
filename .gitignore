@@ -130,3 +130,6 @@ webapp/src/web/sample/
 
 # checkpoints
 *.th
+
+expts/
+serialized_models/

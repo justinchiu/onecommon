@@ -19,6 +19,9 @@ def main():
     parser.add_argument('--max_mentions_per_utterance', type=int)
     parser.add_argument('--crosstalk_split', choices=[0, 1], default=None, type=int)
 
+
+    parser.add_argument('--old_model_file', type=str, default=None,
+        help='load model parameters from old file')
     parser.add_argument('--model_type', type=str, default='rnn_reference_model',
         help='type of model to use', choices=models.get_model_names())
     parser.add_argument('--ctx_encoder_type', type=str, default='mlp_encoder',
@@ -44,6 +47,18 @@ def main():
         help='type of training corpus to use')
 
     parser.add_argument('--spatial_data_augmentation', action='store_true')
+
+    parser.add_argument(
+        '--train_response_model',
+        choices=[
+            'none',
+            "words", "first_words",
+            'dots', 'first_dots',
+            "clusters", "specialized_clusters",
+            "binary_dots",
+        ],
+        default='none',
+        help='train a response model for planning')
 
     engines.add_training_args(parser)
     add_loss_args(parser)
@@ -97,6 +112,9 @@ def main():
         )
 
         model = model_ty(corpus.word_dict, args)
+        if args.old_model_file is not None:
+            old_model = utils.load_model(args.old_model_file, prefix_dir=None, map_location='cpu')
+            # SET MODEL PARAMS HERE.
         if args.cuda:
             model.cuda()
 

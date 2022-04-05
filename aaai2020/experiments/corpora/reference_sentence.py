@@ -9,11 +9,49 @@ import tqdm
 
 from corpora.reference import ReferenceCorpus, ReferenceRaw, process_referents
 
+# helper function for collapsing a batch of raw references,
+# any of refs/partner_refs/next_partner_refs,
+# processed from tags in corpora/reference.py:tokenize
+# references should be a list of per-turn references (of which there can be multiple)
+# each set of per-turn references is flattened
+# need to return something of shape ????
+def collapse(references):
+    # dot_mentions: batch x 7
+    rs = []
+    for r in references:
+        rs.append(
+            np.array(r, dtype=bool).reshape((-1, 10))[:,3:].any(0)
+            if r else np.zeros((7,), dtype=bool)
+        )
+    return np.stack(rs)
+
+
+confirm_word_set = set(["yes", "great", "ok", "yep", "yeah"])
+disconfirm_word_set = set(["no", "n't", "nope"])
+
+def has_words(sentence_idxs, word_set, word_dict):
+    word_set = [word_dict.word2idx[w] for w in word_set]
+    return any([x in word_set for x in sentence_idxs])
+
+# Dataset = List[Dialogue]
+# Dialogue = List[Turn]
+# Turn = List[ReferenceSentenceInstance]
+# [ # per dialogue
+    # [ # per turn
+        # multiple mentions
+    # ]
+# ]
+
 ReferenceSentenceInstance = namedtuple(
     "ReferenceSentenceInstance",
-    "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids real_ids partner_real_ids \
+    "ctx inpts tgts ref_inpt ref_tgt sel_tgt scenario_ids \
+    real_ids partner_real_ids \
+    id_intersection \
     agents chat_ids sel_idxs lens rev_idxs hid_idxs num_markables is_self \
     partner_ref_inpt partner_ref_tgt_our_view partner_num_markables \
+    next_partner_ref_inpt next_partner_ref_tgt_our_view next_partner_num_markables \
+    next_partner_ref_intersect_ref next_partner_ref_complement_ref \
+    next_partner_confirm next_partner_disconfirm \
     referent_disagreements partner_referent_disagreements partner_ref_tgt is_selection \
     non_pronoun_ref_inpt non_pronoun_ref_tgt non_pronoun_num_markables is_augmented".split()
 )
@@ -135,6 +173,14 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
             partner_refs, partner_refs_our_view = [], []
             non_pronoun_refs = []
 
+            # MBP
+            next_partner_refs, next_partner_refs_our_view = [], []
+            next_partner_refs_intersect_ref = []
+            next_partner_refs_complement_ref = []
+            id_intersections = []
+            next_partner_confirms, next_partner_disconfirms = [], []
+            # / MBP
+
             ref_disagreements, partner_ref_disagreements = [], []
 
             is_augmented = []
@@ -158,6 +204,39 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 sel_idxs.append(len(dataset[i][1][-1]) - 1)
                 partner_refs.append(dataset[i].partner_referent_idxs)
                 partner_refs_our_view.append(dataset[i].partner_referent_our_view_idxs)
+                # MBP
+                # shift one over and append empty reference for last next reference
+                next_partner_refs.append(
+                    dataset[i].partner_referent_idxs[1:] + [[]]
+                )
+                next_partner_refs_our_view.append(
+                    dataset[i].partner_referent_our_view_idxs[1:] + [[]]
+                )
+                # boolean response to whether they repeat mentions
+                # list of per-turn collapsed references
+                # multiple references possible per turn
+                collapsed_ref = collapse(refs[-1])
+                collapsed_resp = collapse(next_partner_refs_our_view[-1])
+                next_partner_refs_intersect_ref.append(collapsed_ref * collapsed_resp)
+                next_partner_refs_complement_ref.append(~collapsed_ref * collapsed_resp)
+                #if (collapsed_ref * collapsed_resp).any():
+                    #import pdb; pdb.set_trace()
+                # TODO: MAKE LAST NEXT PARTNER MENTIONS = NONE AT LAST TURN IN DIAL
+                # TODO: COUNT NUMBER OF REPEAT MENTIONS
+                # static dot intersection
+                id_intersections.append([x in dataset[i][6] for x in dataset[i][5]])
+
+                # next partner HEURISTIC (dis-)confirm
+                #dataset[i].word_idxs: List[Sentence], Sentence = List[int]
+                next_partner_confirms.append([
+                    has_words(sentence, confirm_word_set, self.word_dict)
+                    for sentence in (dataset[i].word_idxs[1:] + [[]])
+                ])
+                next_partner_disconfirms.append([
+                    has_words(sentence, disconfirm_word_set, self.word_dict)
+                    for sentence in (dataset[i].word_idxs[1:] + [[]])
+                ])
+                # / MBP
                 non_pronoun_refs.append(dataset[i].non_pronoun_referent_idxs)
                 ref_disagreements.append(dataset[i].referent_disagreements)
                 partner_ref_disagreements.append(dataset[i].partner_referent_disagreements)
@@ -165,12 +244,23 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 i += 1
                 pbar.update(1)
 
+            # transpose data to be time x batch x seq (words, references, etc)
             inpts, lens, tgts = [], [], []
             ref_inpts, ref_tgts, all_num_markables = [], [], []
             partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables = [], [], []
             partner_ref_tgts = []
+            # MBP
+            # dont forget to use id_intersections
+            next_partner_ref_inpts, next_partner_ref_tgts_our_view, next_all_partner_num_markables = [], [], []
+            next_partner_ref_tgts = []
+            next_partner_ref_intersect_refs = []
+            next_partner_ref_complement_refs = []
+            batch_next_partner_confirms, batch_next_partner_disconfirms = [], []
+            # / MBP
             non_pronoun_ref_inpts, non_pronoun_ref_tgts, all_non_pronoun_num_markables = [], [], []
             is_self = []
+            # dial_len = number of turns in longest conversation
+            # want to index into time s of each dialogue in the batch
             for s in range(dial_len):
                 batch = []
                 for dial in dials:
@@ -243,6 +333,42 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 partner_ref_tgts.append(partner_ref_tgt)
                 all_partner_num_markables.append(partner_num_markables)
 
+                # MBP
+                # process references into RNN-ingestible format
+                next_partner_ref_inpt, next_partner_ref_tgt_our_view, next_partner_num_markables = process_referents(
+                    [this_refs[s] for this_refs in next_partner_refs_our_view],
+                    max_mentions=self.max_mentions_per_utterance,
+                )
+                next_partner_ref_inpt_, next_partner_ref_tgt, _ = process_referents(
+                    [this_refs[s] for this_refs in next_partner_refs],
+                    max_mentions=self.max_mentions_per_utterance,
+                )
+                assert (
+                    next_partner_ref_inpt is None
+                    and next_partner_ref_inpt_ is None
+                ) or torch.allclose(next_partner_ref_inpt, next_partner_ref_inpt_)
+
+                next_partner_ref_inpts.append(next_partner_ref_inpt)
+                next_partner_ref_tgts_our_view.append(next_partner_ref_tgt_our_view)
+                next_partner_ref_tgts.append(next_partner_ref_tgt)
+                next_all_partner_num_markables.append(next_partner_num_markables)
+
+                # find intersection and complement with partner response and our utt
+                next_partner_ref_intersect_refs.append([
+                    x[s] for x in next_partner_refs_intersect_ref
+                ])
+                next_partner_ref_complement_refs.append([
+                    x[s] for x in next_partner_refs_complement_ref
+                ])
+                batch_next_partner_confirms.append([
+                    x[s] for x in next_partner_confirms
+                ])
+                batch_next_partner_disconfirms.append([
+                    x[s] for x in next_partner_disconfirms
+                ])
+                # what should the shapes / types be here...?
+                # / MBP
+
                 assert self.max_mentions_per_utterance is None
                 non_pronoun_ref_inpt, non_pronoun_ref_tgt, non_pronoun_num_markables = process_referents(
                     [this_refs[s] for this_refs in non_pronoun_refs]
@@ -294,13 +420,26 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
 
             batches.append(ReferenceSentenceInstance(
                 ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt,
-                scenario_ids, real_ids, partner_real_ids, agents, chat_ids, sel_idxs,
+                scenario_ids, real_ids, partner_real_ids,
+                torch.tensor(id_intersections),
+                agents, chat_ids, sel_idxs,
                 lens, rev_idxs, hid_idxs, all_num_markables, is_self,
                 partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables,
-                ref_disagreements, partner_ref_disagreements,
-                partner_ref_tgts, is_selection,
-                non_pronoun_ref_inpts, non_pronoun_ref_tgts, all_non_pronoun_num_markables,
-                is_augmented,
+                next_partner_ref_inpts, next_partner_ref_tgts_our_view, next_all_partner_num_markables, # MBP
+                # MBP
+                next_partner_ref_intersect_ref = torch.tensor(next_partner_ref_intersect_refs),
+                next_partner_ref_complement_ref = torch.tensor(next_partner_ref_complement_refs),
+                next_partner_confirm = torch.tensor(batch_next_partner_confirms, dtype=bool), 
+                next_partner_disconfirm = torch.tensor(batch_next_partner_disconfirms, dtype=bool),
+                # / MBP
+                referent_disagreements = ref_disagreements,
+                partner_referent_disagreements = partner_ref_disagreements,
+                partner_ref_tgt = partner_ref_tgts,
+                is_selection = is_selection,
+                non_pronoun_ref_inpt = non_pronoun_ref_inpts,
+                non_pronoun_ref_tgt = non_pronoun_ref_tgts,
+                non_pronoun_num_markables = all_non_pronoun_num_markables,
+                is_augmented = is_augmented,
             ))
 
         pbar.close()

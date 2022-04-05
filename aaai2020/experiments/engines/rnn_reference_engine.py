@@ -3,6 +3,9 @@ from collections import namedtuple
 import copy
 import pprint
 import time
+import math
+
+import wandb
 
 import numpy as np
 import torch
@@ -15,6 +18,9 @@ import utils
 from engines import EngineBase
 from models.reference_predictor import ReferencePredictor
 from models.utils import bit_to_int_array
+
+def ps(xs):
+    for x in xs: print(x.shape)
 
 CAN_CONFIRM_VALUES = {
     False: 0,
@@ -37,6 +43,12 @@ ForwardRet = namedtuple(
      'next_mention_loss', 'next_mention_stop_loss', 'next_mention_stats',
      # 'next_mention_correct', 'next_mention_gold_positive', 'next_mention_pred_positive',
      # 'next_mention_true_positive', 'next_mention_num_dots', 'next_mention_em_num', 'next_mention_em_denom',
+     "next_partner_ref_intersect_loss", # MBP
+     "next_partner_ref_intersect_stats", # MBP
+     "next_partner_ref_complement_loss", # MBP
+     "next_partner_ref_complement_stats", # MBP
+     "next_partner_confirm_loss", # MBP
+     "next_partner_confirm_stats", # MBP
      'is_selection_loss', 'is_selection_stats',
      'l1_loss',
      'relation_swapped_ref_loss', 'relation_swapped_partner_ref_loss'
@@ -92,12 +104,22 @@ def add_loss_args(parser):
                        help='selection loss weight')
     group.add_argument('--next_mention_weight', type=float, default=1.0,
                        help='next mention loss weight')
+    group.add_argument('--next_partner_reference_weight', type=float, default=1.0, # MBP
+                       help='next partner reference loss weight') # MBP
+    group.add_argument('--next_partner_confirm_weight', type=float, default=1.0, # MBP
+                       help='next partner confirmation loss weight') # MBP
     group.add_argument('--is_selection_weight', type=float, default=1.0,
                        help='is selection loss weight')
     group.add_argument('--next_mention_stop_weight', type=float, default=1.0,
                        help='next mention stop loss weight')
     group.add_argument('--next_mention_start_epoch', type=int,
                        help='only supervise next mention in this epoch onward (to allow pretraining)')
+    # MBP
+    group.add_argument('--next_partner_reference_start_epoch', type=int,
+                       help='only supervise next partner ref in this epoch onward (to allow pretraining)')
+    group.add_argument('--next_partner_confirm_start_epoch', type=int,
+                       help='only supervise next partner confirm in this epoch onward (to allow pretraining)')
+    # / MBP
     group.add_argument('--selection_start_epoch', type=int,
                        help='only supervise selection in this epoch onward (to allow pretraining)')
     group.add_argument('--lang_only_self', action='store_true')
@@ -377,6 +399,16 @@ class RnnReferenceEngine(EngineBase):
             if not self.args.next_mention_start_epoch or (epoch >= self.args.next_mention_start_epoch):
                 loss += self.args.next_mention_stop_weight * forward_ret.next_mention_stop_loss
 
+        # MBP
+        if self.args.next_partner_reference_weight > 0 and forward_ret.next_partner_ref_intersect_loss is not None:
+            if not self.args.next_partner_reference_start_epoch or (epoch >= self.args.next_partner_reference_start_epoch):
+                loss += self.args.next_partner_reference_weight * forward_ret.next_partner_ref_intersect_loss
+
+        if self.args.next_partner_confirm_weight > 0 and forward_ret.next_partner_confirm_loss is not None:
+            if not self.args.next_partner_confirm_start_epoch or (epoch >= self.args.next_partner_confirm_start_epoch):
+                loss += self.args.next_partner_confirm_weight * forward_ret.next_partner_confirm_loss
+        # / MBP
+
         if self.args.relation_swap_augmentation and self.args.relation_swapped_ref_and_partner_ref_weight > 0 and forward_ret.relation_swapped_ref_loss is not None:
             loss += self.args.relation_swapped_ref_and_partner_ref_weight * forward_ret.relation_swapped_ref_loss
 
@@ -411,25 +443,7 @@ class RnnReferenceEngine(EngineBase):
         with torch.no_grad():
             return self._forward(batch, epoch, corpus, allow_relation_swap=False)
 
-    def _pass(self, dataset, batch_fn, split_name, use_tqdm, epoch, corpus):
-        start_time = time.time()
-
-        metrics = {}
-
-        for batch in tqdm.tqdm(dataset, ncols=80) if use_tqdm else dataset:
-            # for batch in trainset:
-            # lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
-            forward_ret = batch_fn(batch, epoch, corpus)
-            batch_metrics = flatten_metrics(forward_ret._asdict())
-            metrics = utils.sum_dicts(metrics, batch_metrics)
-
-        print("{} word_attn_loss: {:.4f}".format(split_name, metrics['word_attn_loss']))
-        print("{} feed_attn_loss: {:.4f}".format(split_name, metrics['feed_attn_loss']))
-
-        # pprint.pprint({'{}_{}'.format(name, k): v for k, v in total_attn_ref_stats.items()})
-
-        time_elapsed = time.time() - start_time
-
+    def aggregate(self, metrics, dataset):
         aggregate_metrics = {
             'lang_loss': metrics['lang_loss'] / len(dataset),
             'spatial_lang_loss': metrics['spatial_lang_loss'] / len(dataset),
@@ -437,11 +451,26 @@ class RnnReferenceEngine(EngineBase):
             'partner_ref_loss': metrics['partner_ref_loss'] / len(dataset),
             'next_mention_loss': metrics['next_mention_loss'] / len(dataset),
             'next_mention_stop_loss': metrics['next_mention_stop_loss'] / len(dataset),
+            # MBP
+            # next partner ref intersect
+            "next_partner_ref_intersect_loss":
+                metrics["next_partner_ref_intersect_loss"]
+                / len(dataset),
+            "next_partner_ref_intersect_accuracy":
+                metrics["next_partner_ref_intersect_correct"]
+                / metrics["next_partner_ref_intersect_num_dots"]
+                if metrics["next_partner_ref_intersect_num_dots"] > 0 else 0,
+            "next_partner_ref_intersect_exact_match":
+                metrics["next_partner_ref_intersect_exact_match_num"]
+                / metrics["next_partner_ref_intersect_exact_match_denom"]
+                if metrics["next_partner_ref_intersect_exact_match_denom"] > 0 else 0,
+            # next partner confirm
+            "next_partner_confirm_loss": metrics["next_partner_confirm_loss"] / len(dataset),
+            # / MBP
             'select_loss': metrics['sel_loss'] / len(dataset),
             'is_selection_loss': metrics['is_selection_loss'] / len(dataset),
             # do select_accuracy here b/c we won't call add_metrics on select
             'select_accuracy': metrics['sel_correct'] / metrics['sel_num_dots'],
-            'time': time_elapsed,
             'correct_ppl': np.exp(metrics['unnormalized_lang_loss'] / metrics['num_words']),
             'spatial_lang_ppl': np.exp(metrics['unnormalized_spatial_lang_loss'] / metrics['num_spatial_words']),
             'l1_loss': metrics['l1_loss'] / len(dataset),
@@ -451,10 +480,42 @@ class RnnReferenceEngine(EngineBase):
         add_metrics(metrics, aggregate_metrics, "ref")
         add_metrics(metrics, aggregate_metrics, "partner_ref")
         add_metrics(metrics, aggregate_metrics, "next_mention")
+        # MBP
+        add_metrics(metrics, aggregate_metrics, "next_partner_ref_intersect")
+        add_metrics(metrics, aggregate_metrics, "next_partner_confirm")
+        # / MBP
         if self.args.next_mention_prediction_type == 'multi_reference':
             add_metrics(metrics, aggregate_metrics, "next_mention_expanded")
         add_metrics(metrics, aggregate_metrics, "is_selection", compute_em=False, compute_baseline=True)
         # pprint.pprint(metrics)
+        return aggregate_metrics
+
+    def _pass(self, dataset, batch_fn, split_name, use_tqdm, epoch, corpus):
+        start_time = time.time()
+
+        metrics = {}
+
+        for batch_idx, batch in enumerate(tqdm.tqdm(dataset, ncols=80) if use_tqdm else dataset):
+            # for batch in trainset:
+            # lang_loss, ref_loss, ref_correct, ref_total, sel_loss, word_attn_loss, feed_attn_loss, sel_correct, sel_total, ref_positive, attn_ref_stats = batch_fn(batch)
+            forward_ret = batch_fn(batch, epoch, corpus)
+            batch_metrics = flatten_metrics(forward_ret._asdict())
+            metrics = utils.sum_dicts(metrics, batch_metrics)
+            if self.args.wandb and split_name == "train":
+                wandb.log({
+                    f"train_{k}": v for k,v in self.aggregate(metrics, dataset).items()
+                })
+
+        print("{} word_attn_loss: {:.4f}".format(split_name, metrics['word_attn_loss']))
+        print("{} feed_attn_loss: {:.4f}".format(split_name, metrics['feed_attn_loss']))
+
+        # pprint.pprint({'{}_{}'.format(name, k): v for k, v in total_attn_ref_stats.items()})
+
+        time_elapsed = time.time() - start_time
+
+        aggregate_metrics = self.aggregate(metrics, dataset)
+        aggregate_metrics['time'] = time_elapsed
+
         return aggregate_metrics
 
     def train_pass(self, trainset, trainset_stats, epoch, corpus):
@@ -499,6 +560,10 @@ class RnnReferenceEngine(EngineBase):
                 metrics['next_mention_stop_loss'] *= self.args.next_mention_stop_weight
                 metrics['is_selection_loss'] *= self.args.is_selection_weight
                 metrics['l1_loss'] *= self.args.l1_loss_weight
+                # MBP
+                metrics['next_partner_ref_intersect_loss'] *= self.args.next_partner_reference_weight
+                metrics['next_partner_confirm_loss'] *= self.args.next_partner_confirm_weight
+                # / MBP
 
                 metrics['relation_swapped_ref_loss'] *= self.args.relation_swapped_ref_and_partner_ref_weight
                 metrics['relation_swapped_partner_ref_loss'] *= self.args.relation_swapped_ref_and_partner_ref_weight
@@ -524,6 +589,24 @@ class RnnReferenceEngine(EngineBase):
                          'next_mention_expanded_exact_match']
                     )
                 quantities.append(['l1_loss'])
+                # MBP
+                if self.args.next_partner_reference_prediction:
+                    quantities.append([
+                        "next_partner_ref_intersect_loss",
+                        "next_partner_ref_intersect_accuracy",
+                        "next_partner_ref_intersect_precision",
+                        "next_partner_ref_intersect_recall",
+                        "next_partner_ref_intersect_exact_match",
+                    ])
+                if self.args.next_partner_confirm_prediction:
+                    quantities.append([
+                        "next_partner_confirm_loss",
+                        "next_partner_confirm_accuracy",
+                        "next_partner_confirm_precision",
+                        "next_partner_confirm_recall",
+                        "next_partner_confirm_exact_match",
+                    ])
+                # / MBP
                 for line_metrics in quantities:
                     print('epoch {:03d} \t '.format(epoch) + ' \t '.join(
                         ('%s_%s {%s:.4f}' % (split_name, metric, metric)).format(**metrics)
@@ -550,6 +633,9 @@ class RnnReferenceEngine(EngineBase):
                 self.logger.histo_summary(tag, value.data.cpu().numpy(), epoch)
                 self.logger.histo_summary(
                     tag + '/grad', value.grad.data.cpu().numpy(), epoch)
+        if self.args.wandb:
+            wandb.log({f"train_epoch_{k}": v for k,v in train_metrics.items()})
+            wandb.log({f"valid_{k}": v for k,v in train_metrics.items()})
 
         return metrics
 
@@ -561,17 +647,24 @@ class RnnReferenceEngine(EngineBase):
 
         rs_weights = self.args.relation_swapped_ref_and_partner_ref_weight if self.args.relation_swap_augmentation else 0.0
 
-        return metrics['lang_loss'] * self.args.lang_weight \
-               + metrics['spatial_lang_loss'] * self.args.spatial_lang_weight \
-               + metrics['select_loss'] * self.args.sel_weight \
-               + metrics['ref_loss'] * self.args.ref_weight \
-               + metrics['partner_ref_loss'] * self.args.partner_ref_weight \
-               + metrics['next_mention_loss'] * self.args.next_mention_weight \
-               + metrics['next_mention_stop_loss'] * self.args.next_mention_stop_weight \
-               + metrics['is_selection_loss'] * self.args.is_selection_weight \
-               + metrics['l1_loss'] * self.args.l1_loss_weight \
-               + metrics['relation_swapped_ref_loss'] * rs_weights \
-               + metrics['relation_swapped_partner_ref_loss'] * rs_weights
+        return (
+            metrics['lang_loss'] * self.args.lang_weight 
+            + metrics['spatial_lang_loss'] * self.args.spatial_lang_weight 
+            + metrics['select_loss'] * self.args.sel_weight 
+            + metrics['ref_loss'] * self.args.ref_weight 
+            + metrics['partner_ref_loss'] * self.args.partner_ref_weight 
+            + metrics['next_mention_loss'] * self.args.next_mention_weight 
+            + metrics['next_mention_stop_loss'] * self.args.next_mention_stop_weight 
+            + metrics['is_selection_loss'] * self.args.is_selection_weight 
+            + metrics['l1_loss'] * self.args.l1_loss_weight 
+            + metrics['relation_swapped_ref_loss'] * rs_weights 
+            + metrics['relation_swapped_partner_ref_loss'] * rs_weights
+            # MBP
+            + metrics["next_partner_ref_intersect_loss"] * self.args.next_partner_reference_weight
+            # TODO: ADD COMPLEMENT LOSS (and prediction)
+            + metrics["next_partner_confirm_loss"] * self.args.next_partner_confirm_weight
+            # / MBP
+        )
 
     def train(self, corpus, model_filename_fn):
         best_model, best_combined_valid_loss = copy.deepcopy(self.model), 1e100
@@ -593,18 +686,22 @@ class RnnReferenceEngine(EngineBase):
                 self.scheduler.step(combined_valid_loss)
 
             if combined_valid_loss < best_combined_valid_loss:
-                print(
-                    f"update best model -- valid combined: {combined_valid_loss:.4f}\t" +
+                print(f"update best model -- valid combined: {combined_valid_loss:.4f}\t" +
                     '\t'.join(
                         f'{name} {metrics["valid"][name]:.4f}'
-                        for name in ['lang_loss',
-                                     'select_loss', 'select_accuracy',
-                                     'ref_loss', 'partner_ref_loss',
-                                     'next_mention_loss', 'next_mention_stop_loss',
-                                     'is_selection_loss',
-                                     'l1_loss',
-                                     'relation_swapped_ref_loss', 'relation_swapped_partner_ref_loss',
-                                     ]
+                        for name in [
+                            'lang_loss',
+                            'select_loss', 'select_accuracy',
+                            'ref_loss', 'partner_ref_loss',
+                            'next_mention_loss', 'next_mention_stop_loss',
+                            'is_selection_loss',
+                            'l1_loss',
+                            'relation_swapped_ref_loss', 'relation_swapped_partner_ref_loss',
+                             # MBP
+                             "next_partner_ref_intersect_loss",
+                             "next_partner_confirm_loss",
+                             # / MBP
+                        ]
                     )
                 )
                 best_combined_valid_loss = combined_valid_loss
@@ -649,10 +746,17 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
     def _forward(self, batch, epoch, corpus, allow_relation_swap):
         if self.args.word_attention_supervised or self.args.feed_attention_supervised or self.args.mark_dots_mentioned:
             assert self.args.lang_only_self
-        ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids, real_ids, partner_real_ids, _, _,\
-        sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self, partner_ref_inpts, partner_ref_tgts_our_view,\
-        partner_num_markables, ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view,\
-        is_selection, non_pronoun_ref_inpts, non_pronoun_ref_tgts, non_pronoun_num_markables, is_augmented = batch
+        (
+            ctx, inpts, tgts, ref_inpts, ref_tgts, sel_tgt, scenario_ids,
+            real_ids, partner_real_ids, id_intersection, _, _,
+            sel_idx, lens, rev_idxs, hid_idxs, num_markables, is_self,
+            partner_ref_inpts, partner_ref_tgts_our_view, partner_num_markables,
+            next_partner_ref_inpt, next_partner_ref_tgt_our_view, next_partner_num_markables, # MBP
+            next_partner_ref_intersect_ref, next_partner_ref_complement_ref, # MBP
+            next_partner_confirm, next_partner_disconfirm, # MBP
+            ref_disagreements, partner_ref_disagreements, partner_ref_tgts_their_view,
+            is_selection, non_pronoun_ref_inpts, non_pronoun_ref_tgts, non_pronoun_num_markables, is_augmented,
+        ) = batch
 
         ctx = Variable(ctx)
         bsz = ctx.size(0)
@@ -692,11 +796,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             dots_mentioned_num_markables = num_markables
 
         partner_dots_mentioned_our_view = make_dots_mentioned_multi(
-            partner_ref_tgts_our_view, self.args, bsz, num_dots
+            partner_ref_tgts_our_view, self.args, bsz, num_dots,
         )
         partner_dots_mentioned_our_view_per_ref = make_dots_mentioned_per_ref_multi(
-            partner_ref_tgts_our_view, self.args, bsz, num_dots
+            partner_ref_tgts_our_view, self.args, bsz, num_dots,
         )
+
+        # do not need to process next_partner_ref_intersect_ref: time x batch x 7
+        # since there is one per turn.
 
         # TODO: fix module structure so we can import this up top without a circular import
         from engines.beliefs import BeliefConstructor
@@ -714,9 +821,18 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
 
         can_confirm = make_can_confirm(is_self, partner_num_markables, partner_ref_tgts_our_view, resolution_strategy=self.args.confirmations_resolution_strategy)
 
-        state, outs, ref_outs_and_partner_ref_outs, sel_out, ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs,\
-        is_selection_outs, (reader_lang_hs, writer_lang_hs), l1_log_probs, next_mention_candidates,\
-        relation_swapped_ref_outs, relation_swapped_partner_ref_outs, has_relation_swap = self.model.forward(
+        (
+            state, outs, ref_outs_and_partner_ref_outs, sel_out,
+            ctx_attn_prob, feed_ctx_attn_prob, next_mention_outs,
+            is_selection_outs, (reader_lang_hs, writer_lang_hs),
+            l1_log_probs, next_mention_candidates,
+            # MBP
+            next_intersection, next_complement,
+            next_confirm, # last dim = confirm, disconfirm
+            # / MBP
+            relation_swapped_ref_outs, relation_swapped_partner_ref_outs,
+            has_relation_swap,
+        ) = self.model.forward(
             ctx, inpts, ref_inpts, sel_idx,
             num_markables, partner_num_markables,
             lens,
@@ -726,6 +842,7 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             compute_l1_probs=compute_l1_loss,
             tgts=tgts,
             ref_tgts=ref_tgts, partner_ref_tgts=partner_ref_tgts_our_view,
+            id_intersection = id_intersection, # MBP
             force_next_mention_num_markables=True,
             is_selection=is_selection,
             can_confirm=can_confirm,
@@ -816,10 +933,18 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
         assert len(partner_ref_inpts) == len(partner_ref_tgts_our_view) == len(partner_num_markables)
 
         # TODO: just index into the lists; the safety check isn't worth it
-        for sentence_ix, (ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out), ref_tgt, partner_ref_tgt,\
-            this_num_markables,this_partner_num_markables, this_ctx_attn_prob, this_feed_ctx_attn_prob, \
-            this_dots_mentioned, this_dots_mentioned_per_ref, inpt, tgt) in enumerate(utils.safe_zip(
-            ref_inpts, partner_ref_inpts, ref_outs_and_partner_ref_outs, ref_tgts, partner_ref_tgts_our_view,
+        for (
+            sentence_ix, (
+                ref_inpt, partner_ref_inpt, (ref_out, partner_ref_out),
+                ref_tgt, partner_ref_tgt,
+                this_num_markables, this_partner_num_markables,
+                this_ctx_attn_prob, this_feed_ctx_attn_prob, 
+                this_dots_mentioned, this_dots_mentioned_per_ref,
+                inpt, tgt,
+            )
+        ) in enumerate(utils.safe_zip(
+            ref_inpts, partner_ref_inpts, ref_outs_and_partner_ref_outs,
+            ref_tgts, partner_ref_tgts_our_view,
             num_markables, partner_num_markables, ctx_attn_prob, feed_ctx_attn_prob,
             dots_mentioned, dots_mentioned_per_ref, inpts, tgts)
         ):
@@ -1095,6 +1220,104 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             else:
                 next_mention_stop_loss = sum(next_mention_stop_losses) / next_mention_stats[loss_normalizer_name]
 
+        # MBP
+        # CALCULATE NEXT PARTNER REF
+        next_partner_ref_intersect_losses = []
+        next_partner_ref_intersect_stats = defaultdict(float)
+        next_partner_ref_complement_losses = []
+        next_partner_ref_complement_stats = defaultdict(float)
+        if self.args.next_partner_reference_prediction:
+            for i in range(len(next_intersection)):
+                T, N, D = next_partner_ref_intersect_ref.shape
+                T, N, D = next_partner_ref_complement_ref.shape
+                pred_intersect, _ = next_intersection[i]
+                pred_complement, _ = next_complement[i]
+                # supervise only for self, so pseudo_num_mentions = 1 iff is_self; 0 otherwise
+                # gold_num_mentions: bsz
+                gold_num_mentions = is_self[i].long()
+                # gold_dots_mentioned: bsz x 1 x 7
+                #gold_dots_mentioned = dots_mentioned[i].long().unsqueeze(1)
+                gold_intersect = next_partner_ref_intersect_ref[i].long()[:,None]
+                gold_complement = next_partner_ref_complement_ref[i].long()[:,None]
+
+                # TODO: fix this, it should check if gold dots is not empty
+                # hack; pass True for inpt because this method only uses it to ensure it's not null
+                if (~non_lang_instance_mask).any():
+                    _loss, _pred, _stats = self._ref_loss(
+                        True, gold_intersect, pred_intersect, gold_num_mentions,
+                        # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
+                        #collapse=expanded_next_mention_loss,
+                        mask=~non_lang_instance_mask,
+                    )
+                    next_partner_ref_intersect_stats = utils.sum_dicts(
+                        next_partner_ref_intersect_stats, _stats)
+                    # print("i: {}\tgold_dots_mentioned.sum(): {}\t(pred_dots_mentioned > 0).sum(): {}".format(i, gold_dots_mentioned.sum(), (pred_dots_mentioned > 0).sum()))
+                    # print("{} / {}".format(_correct, _total))
+                    next_partner_ref_intersect_losses.append(_loss)
+
+        # loss cleanup for next partner ref prediction
+        if (
+            next_partner_ref_intersect_stats["num_dots"] == 0
+            or not next_partner_ref_intersect_losses
+        ):
+            next_partner_ref_intersect_loss = None
+        else:
+            loss_normalizer_name = 'num_dots'
+            assert next_partner_ref_intersect_stats[loss_normalizer_name] != 0
+            next_partner_ref_intersect_loss = (
+                sum(next_partner_ref_intersect_losses)
+                / next_partner_ref_intersect_stats[loss_normalizer_name]
+            )
+        # TODO: NEXT PARTNER REF COMPLEMENT LOSS
+        next_partner_ref_complement_loss = 0
+        # / NEXT PARTNER REF
+
+        # NEXT PARTNER CONFIRM
+        next_partner_confirm_losses = []
+        next_partner_confirm_stats = defaultdict(float)
+        if self.args.next_partner_confirm_prediction:
+            T, N = next_partner_confirm.shape
+            T, N = next_partner_disconfirm.shape
+            next_partner_confirms = torch.stack(
+                (next_partner_confirm, next_partner_disconfirm), -1)
+            pred_confirms = torch.cat([c for c, _ in next_confirm])
+
+            # loss
+            """
+            bad_confirm_loss = torch.nn.functional.binary_cross_entropy_with_logits(
+                next_partner_confirms.float(),
+                pred_confirms,
+                reduction="none",
+            )
+            ploss = -(
+                next_partner_confirms.float() * pred_confirms.sigmoid().log()
+                + (1 - next_partner_confirms.float()) * (1 - pred_confirms.sigmoid()).log()
+            )
+            """
+
+            log_sigma = torch.nn.functional.logsigmoid(pred_confirms)
+            pos = log_sigma[next_partner_confirms]
+            neg = (log_sigma - pred_confirms)[~next_partner_confirms]
+            confirm_loss = -torch.cat([pos, neg]).mean()
+            next_partner_confirm_loss = confirm_loss
+
+            # stats
+            confirm_pred = pred_confirms.sigmoid() >= 0.5
+            next_partner_confirm_stats = {
+                "correct": (confirm_pred == next_partner_confirms).sum().item(),
+                "num_dots": next_partner_confirms.nelement(),
+                "gold_positive": next_partner_confirms.sum().item(),
+                "pred_positive": confirm_pred.sum().item(),
+                "true_positive": (confirm_pred & next_partner_confirms).sum().item(),
+                "exact_match_num": (confirm_pred == next_partner_confirms).all(-1).sum().item(),
+                "exact_match_denom": N * T,
+            }
+
+
+        # / NEXT PARTNER CONFIRM
+
+        # / MBP
+
         return ForwardRet(
             lang_loss=lang_loss,
             spatial_lang_loss=spatial_lang_loss,
@@ -1114,6 +1337,14 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
             next_mention_loss=next_mention_loss,
             next_mention_stop_loss=next_mention_stop_loss,
             next_mention_stats=next_mention_stats,
+            # MBP
+            next_partner_ref_intersect_loss = next_partner_ref_intersect_loss,
+            next_partner_ref_intersect_stats = next_partner_ref_intersect_stats,
+            next_partner_ref_complement_loss = next_partner_ref_complement_loss,
+            next_partner_ref_complement_stats = next_partner_ref_complement_stats,
+            next_partner_confirm_loss = next_partner_confirm_loss, # MBP
+            next_partner_confirm_stats = next_partner_confirm_stats, # MBP
+            # / MBP
             is_selection_loss=is_selection_loss,
             is_selection_stats=is_selection_stats,
             l1_loss=l1_loss,
