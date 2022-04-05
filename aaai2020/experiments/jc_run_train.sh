@@ -169,6 +169,13 @@ mbp_indicator_confirm_args="--next_partner_reference_prediction \
  --next_partner_confirm_prediction \
  "
 
+mbp_blind_confirm_args="--next_partner_reference_prediction \
+ --next_partner_reference_condition lang \
+ --next_partner_reference_blind \
+ --intersect_encoding_dim 1 \
+ --next_partner_confirm_prediction \
+ "
+
 this_name=plain-hierarchical-structured-recurrence
 mkdir -p ${out_dir}/${this_name} 2>/dev/null
 
@@ -279,6 +286,25 @@ done
 
 # train next partner reference by adding dot indicator features
 # additionally predict (dis-)confirmation
+function blind-confirm () {
+for fold in $@
+do
+  #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $mbp_blind_confirm_args \
+    $dot_recurrence_args \
+    --wandb \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}
+
+# train next partner reference by adding dot indicator features
+# additionally predict (dis-)confirmation
 # all partner response prediction independent
 function indicator-confirm-independent () {
 for fold in $@
@@ -296,5 +322,4 @@ do
     --train_response_model binary_dots
 done
 }
-
 
