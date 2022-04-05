@@ -160,6 +160,15 @@ mbp_deterministic_args="--next_partner_reference_prediction \
  --intersect_encoding_dim 0 \
  "
 
+mbp_indicator_confirm_args="--next_partner_reference_prediction \
+ --next_partner_reference_condition lang \
+ --next_partner_reference_intersect_encoder indicator \
+ --relation_include_intersect \
+ --relation_include_intersect_both \
+ --intersect_encoding_dim 1 \
+ --next_partner_confirm_prediction \
+ "
+
 this_name=plain-hierarchical-structured-recurrence
 mkdir -p ${out_dir}/${this_name} 2>/dev/null
 
@@ -248,3 +257,44 @@ do
     --train_response_model binary_dots
 done
 }
+
+# train next partner reference by adding dot indicator features
+# additionally predict (dis-)confirmation
+function indicator-confirm () {
+for fold in $@
+do
+  #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $mbp_indicator_confirm_args \
+    $dot_recurrence_args \
+    --wandb \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}
+
+# train next partner reference by adding dot indicator features
+# additionally predict (dis-)confirmation
+# all partner response prediction independent
+function indicator-confirm-independent () {
+for fold in $@
+do
+  #${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+  ${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $mbp_indicator_confirm_independent_args \
+    $dot_recurrence_args \
+    --wandb \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}
+
+

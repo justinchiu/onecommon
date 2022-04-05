@@ -79,7 +79,11 @@ class StructuredAttentionLayer(nn.Module):
         parser.set_defaults(structured_attention_marginalize=True)
         parser.add_argument('--structured_attention_asymmetric_pairs', action='store_true')
 
-    def __init__(self, args, n_hidden_layers, input_dim, hidden_dim, dropout_p, language_dim):
+    def __init__(
+        self, args, n_hidden_layers, input_dim, hidden_dim,
+        dropout_p, language_dim,
+        num_ent = 7,
+    ):
         super().__init__()
         self.args = args
         self.feedforward = FeedForward(n_hidden_layers, input_dim, hidden_dim, output_dim=2, dropout_p=dropout_p)
@@ -90,7 +94,8 @@ class StructuredAttentionLayer(nn.Module):
         if assymmetric_pairs:
             self.relation_dim += 4
 
-        self.num_ent = 7
+        # MBP: potentially allow for > 7 entities, i.e. dot mentions concatenated with confirms
+        self.num_ent = num_ent
 
         input_dim = self.relation_dim
         if self.args.structured_attention_language_conditioned:

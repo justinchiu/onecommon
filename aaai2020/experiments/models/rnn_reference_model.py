@@ -267,6 +267,7 @@ class RnnReferenceModel(nn.Module):
                             choices=['language_state', 'dot_context', 'turn'], default=[])
 
         # MBP
+        # predict next partner's dot references
         parser.add_argument('--next_partner_reference_prediction', action='store_true')
         parser.add_argument(
             '--next_partner_reference_condition',
@@ -289,6 +290,10 @@ class RnnReferenceModel(nn.Module):
             deterministic: output 1 if in collapsed_dots(utt) intersect state",
         )
         parser.add_argument('--intersect_encoding_dim', type=int, default=8)
+
+        # predict proxy for positive confirmation and negative disconfirmation
+        # ngram features that indicate (dis-)confirmation
+        parser.add_argument('--next_partner_confirm_prediction', action='store_true')
         # / MBP
 
         AttentionLayer.add_args(parser)
@@ -655,8 +660,14 @@ class RnnReferenceModel(nn.Module):
                     setattr(
                         self,
                         self._attention_name(attn_name),
-                        attention_constructors[attn_name](args, 2, input_dim, args.nhid_attn, dropout_p=args.dropout, language_dim=lang_input_dim)
+                        attention_constructors[attn_name](
+                            args, 2, input_dim, args.nhid_attn,
+                            dropout_p=args.dropout, language_dim=lang_input_dim)
                     )
+                # MBP
+                if attn_name == "next_partner_reference":
+                    self.next_partner_reference_input_dim = input_dim
+                # / MBP
             if self.args.tie_reference_attn and self.args.partner_reference_prediction:
                 self.ref_partner_attn = self.ref_attn
         else:
@@ -740,11 +751,17 @@ class RnnReferenceModel(nn.Module):
             self.between_mention_self_attn_layer = nn.Linear(args.nhid_lang * self.num_reader_directions, 1)
 
         # MBP
+        # next partner ref prediction
         self.do_next_partner_reference_prediction = vars(self.args).get(
             'next_partner_reference_prediction', False)
         self.next_partner_reference_condition = vars(self.args).get(
             'next_partner_reference_condition', None)
-        if self.do_next_partner_reference_prediction:
+
+        # next partner confirmation prediction
+        self.do_next_partner_confirm_prediction = vars(self.args).get(
+            'next_partner_confirm_prediction', False)
+
+        if self.do_next_partner_reference_prediction or self.do_next_partner_confirm_prediction:
             # already defined above self.ctx_encoder
             #ctx_encoder_ty = models.get_ctx_encoder_type(args.ctx_encoder_type)
             #self.intersect_ctx_encoder = IntersectionRelationalAttentionContextEncoder(
@@ -752,6 +769,18 @@ class RnnReferenceModel(nn.Module):
                 domain, args,
                 use_intersect_encoding = args.next_partner_reference_intersect_encoder == "indicator",
             )
+        if self.do_next_partner_confirm_prediction:
+            #self.next_partner_confirm_predictor = nn.Sequential(
+            self.next_partner_confirm_predictor = FeedForward(
+                n_hidden_layers = 2,
+                input_dim = self.next_partner_reference_input_dim,
+                hidden_dim = args.nembed_ctx,
+                output_dim = 2,
+            )
+                #nn.LogSigmoid(),
+                # output for confirmation and disconfirmation prediction
+            #)
+        # / MBP
 
     def initialize_state(self, ctx, belief_constructor) -> State:
         # ctx: bsz x 28 (4 features x 7 dots)
@@ -799,7 +828,11 @@ class RnnReferenceModel(nn.Module):
     def _attention_name(self, name):
         return '{}_attn'.format(name)
 
-    def _apply_attention(self, name, lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input=None, ctx=None):
+    def _apply_attention(
+        self, name, lang_input, input, ctx_differences,
+        num_markables, joint_factor_input,
+        lang_between_mentions_input=None, ctx=None,
+    ):
         if self.args.share_attn:
             return self.attn(lang_input, input, ctx_differences, num_markables, joint_factor_input, lang_between_mentions_input, ctx)
         elif self.args.separate_attn:
@@ -1112,25 +1145,38 @@ class RnnReferenceModel(nn.Module):
         id_intersection = None,
         dots_mentioned = None,
     ):
+        """ Returns (next partner ref intersect, next partner ref complement, next partner confirm)
+            next partner ref intersect: (dot marginals, dot config scores, None)
+                dot marginals: time x batch x num dots (p(dot = 1))
+                dot config: time x batch x 128 (2^7)
+            next partner ref complement: (dot marginals, dot config scores, None)
+                same as above
+            next partner confirm: time (=1) x batch x num dots x 2 p(confirm=1, disconfirm=1)
+        """
 
         # MBP: technically unnecessary, since latents already created using
         # intersection_encodings in next_partner_reference_latents, if necessary
-        ctx_h = (state.ctx_h
-            if self.args.next_partner_reference_blind or intersection_encodings is None
-            else intersection_encodings
-        )
+        #ctx_h = (state.ctx_h
+            #if self.args.next_partner_reference_blind or intersection_encodings is None
+            #else intersection_encodings
+        #)
 
         ctx_differences = state.ctx_differences
-        num_dots = ctx_h.size(1)
+        num_dots = state.ctx_h.size(1)
         # sum over time dimension to get a vector of size bsz
         states_expand = latents.latent_states.unsqueeze(2).expand(-1, -1, num_dots, -1)
+        input = torch.cat([states_expand, latents.ctx_h_with_beliefs], -1)
         if (latents.dots_mentioned_num_markables > 0).any():
+            # scores: (dot marginals, dot config scores, None)
+            # dot marginals: time x batch x num dots (p(dot = 1))
+            # dot config: time x batch x 128 (2^7)
             scores = self._apply_attention(
-                'next_partner_reference',
-                latents.latent_states,
+                name = 'next_partner_reference',
+                lang_input = latents.latent_states,
                 # MBP: latents.ctx_h_with_beliefs already used intersection_encodings
-                torch.cat([states_expand, latents.ctx_h_with_beliefs], -1),
-                ctx_differences, latents.dots_mentioned_num_markables,
+                input = input,
+                ctx_differences = ctx_differences,
+                num_markables = latents.dots_mentioned_num_markables,
                 joint_factor_input=state.dot_h_maybe_multi_structured,
                 ctx=state.ctx,
             )
@@ -1153,11 +1199,23 @@ class RnnReferenceModel(nn.Module):
             scores1 = scores1.view(s1shape)
             scores = (scores0, scores1, scores[2])
 
+        if self.do_next_partner_confirm_prediction:
+            # SUM OVER DOTS?!
+            # confirm_score: time (=1) x batch x sum(num dots) x 2 p(confirm=1, disconfirm=1)
+            confirm_input = torch.cat([
+                latents.latent_states, latents.ctx_h_with_beliefs.sum(-2),
+            ], -1)
+            confirm_scores = self.next_partner_confirm_predictor(confirm_input)
+        else:
+            confirm_scores = None
+
         return (
             # intersection prediction
             (scores, latents.dots_mentioned_num_markables),
             # complement prediction
             (None, latents.dots_mentioned_num_markables),
+            # confirm prediction
+            (confirm_scores, latents.dots_mentioned_num_markables),
         )
 
     def next_partner_reference_prediction(
@@ -1842,6 +1900,13 @@ class RnnReferenceModel(nn.Module):
             raise NotImplementedError
         else:
             next_partner_ref_latents = None
+
+
+        # just use next_partner_latents for next_partner_confirm_prediction
+        #if self.do_next_partner_confirm_prediction:
+            #next_partner_predictions = self.next_partner_confirm_predictor(
+                #torch.cat([writer_lang_hs[lens-1, torch.arange(bsz)], intersection_encodings], -1)
+            #)
 
         return (
             state, outs, (ref_out, partner_ref_out), sel_out,
@@ -2725,7 +2790,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         state = self.initialize_state(ctx, belief_constructor)
         # MBP
         # encode the ORACLE INTERSECTION of view.
-        if self.do_next_partner_reference_prediction:
+        if self.do_next_partner_reference_prediction or self.do_next_partner_confirm_prediction:
             intersection_encodings = self.intersect_ctx_encoder(
                 ctx,
                 relational_dot_mask = id_intersection.float()
@@ -2773,6 +2838,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         # MBP
         next_partner_intersect_outs = []
         next_partner_complement_outs = []
+        next_partner_confirm_outs = []
         # / MBP
 
         if vars(self.args).get('next_mention_prediction', False):
@@ -2895,7 +2961,9 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             # MBP
             if vars(self.args).get('next_partner_reference_prediction', False):
                 (
-                    next_partner_intersect_out, next_partner_complement_out,
+                    next_partner_intersect_out,
+                    next_partner_complement_out,
+                    next_partner_confirm_out,
                 ) = self.next_partner_reference_prediction_from_latents(
                     #state,
                     new_state, next_partner_ref_latents,
@@ -2904,11 +2972,13 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     dots_mentioned = dots_mentioned[i] if dots_mentioned is not None else None,
                 )
             else:
-                next_partner_intersect_out, next_partner_complement_out = None, None
+                next_partner_intersect_out = None
+                next_partner_complement_out = None
+                next_partner_confirm_out = None
             next_partner_intersect_outs.append(next_partner_intersect_out)
             next_partner_complement_outs.append(next_partner_complement_out)
+            next_partner_confirm_outs.append(next_partner_confirm_out)
             # / MBP
-
 
             state = new_state
             if compute_l1_probs and ref_inpt is not None:
@@ -3030,13 +3100,15 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
         else:
             sel_to_return = sel_outs[-1]
 
-
         return (
             state, all_outs, all_ref_outs, sel_to_return,
             all_ctx_attn_prob, all_feed_ctx_attn_prob, all_next_mention_outs,
             all_is_selection_outs, (all_reader_lang_h, all_writer_lang_h),
             l1_log_probs, all_next_mention_candidates,
-            next_partner_intersect_outs, next_partner_complement_outs, # MBP
+            # MBP
+            next_partner_intersect_outs, next_partner_complement_outs,
+            next_partner_confirm_outs,
+            # / MBP
             relation_swapped_ref_outs, relation_swapped_partner_ref_outs,
             has_relation_swaps,
         )
