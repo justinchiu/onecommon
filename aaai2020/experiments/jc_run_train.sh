@@ -167,6 +167,7 @@ mbp_indicator_confirm_args="--next_partner_reference_prediction \
  --relation_include_intersect_both \
  --intersect_encoding_dim 1 \
  --next_partner_confirm_prediction \
+ --next_partner_confirm_agg sum \
  "
 
 mbp_blind_confirm_args="--next_partner_reference_prediction \
@@ -174,6 +175,26 @@ mbp_blind_confirm_args="--next_partner_reference_prediction \
  --next_partner_reference_blind \
  --intersect_encoding_dim 1 \
  --next_partner_confirm_prediction \
+ "
+
+mbp_indicator_confirm_mean_args="--next_partner_reference_prediction \
+ --next_partner_reference_condition lang \
+ --next_partner_reference_intersect_encoder indicator \
+ --relation_include_intersect \
+ --relation_include_intersect_both \
+ --intersect_encoding_dim 1 \
+ --next_partner_confirm_prediction \
+ --next_partner_confirm_agg mean \
+ "
+
+mbp_indicator_confirm_attn_args="--next_partner_reference_prediction \
+ --next_partner_reference_condition lang \
+ --next_partner_reference_intersect_encoder indicator \
+ --relation_include_intersect \
+ --relation_include_intersect_both \
+ --intersect_encoding_dim 1 \
+ --next_partner_confirm_prediction \
+ --next_partner_confirm_agg attn \
  "
 
 this_name=plain-hierarchical-structured-recurrence
@@ -285,7 +306,7 @@ done
 }
 
 # train next partner reference by adding dot indicator features
-# additionally predict (dis-)confirmation
+# additionally predict (dis-)confirmation but BLIND to state
 function blind-confirm () {
 for fold in $@
 do
@@ -304,18 +325,17 @@ done
 }
 
 # train next partner reference by adding dot indicator features
-# additionally predict (dis-)confirmation
-# all partner response prediction independent
-function indicator-confirm-independent () {
+# additionally predict (dis-)confirmation using attn
+function indicator-confirm-attn () {
 for fold in $@
 do
-  #${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
-  ${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
+  #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
     $base_args \
     $hierarchical_args \
     $structured_attention_args \
-    $mbp_indicator_confirm_independent_args \
+    $mbp_indicator_confirm_attn_args \
     $dot_recurrence_args \
     --wandb \
     --fold_nums $fold \

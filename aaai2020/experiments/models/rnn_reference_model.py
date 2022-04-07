@@ -24,6 +24,10 @@ from models.utils import lengths_to_mask
 
 from torch.distributions import Gumbel
 
+# MBP
+from fairseq.modules.multihead_attention import MultiheadAttention
+# / MBP
+
 BIG_NEG = -1e6
 
 MAX_NUM_MENTIONS = 12
@@ -294,6 +298,13 @@ class RnnReferenceModel(nn.Module):
         # predict proxy for positive confirmation and negative disconfirmation
         # ngram features that indicate (dis-)confirmation
         parser.add_argument('--next_partner_confirm_prediction', action='store_true')
+
+        parser.add_argument(
+            '--next_partner_confirm_agg',
+            choices = ["sum", "mean", "attn"],
+            default = "attn",
+            help= "dot pooling for next partner confirm prediction.",
+        )
         # / MBP
 
         AttentionLayer.add_args(parser)
@@ -780,6 +791,22 @@ class RnnReferenceModel(nn.Module):
                 #nn.LogSigmoid(),
                 # output for confirmation and disconfirmation prediction
             #)
+            self.dot_mention_encoder = RelationalAttentionContextEncoder3(
+                domain, args,
+                use_intersect_encoding = True,
+            )
+
+            kvdim = self.args.dot_recurrence_dim + 2 * self.args.nembed_ctx
+            self.confirm_mha = MultiheadAttention(
+                self.args.nhid_lang,
+                num_heads = 4,
+                kdim = kvdim,
+                vdim = kvdim,
+            )
+            self.W_next_partner_confirm = nn.Parameter(torch.zeros(
+                self.args.dot_recurrence_dim + self.args.nembed_ctx, self.args.nhid_lang,
+            ))
+            torch.nn.init.xavier_uniform_(self.W_next_partner_confirm.data)
         # / MBP
 
     def initialize_state(self, ctx, belief_constructor) -> State:
@@ -1143,7 +1170,6 @@ class RnnReferenceModel(nn.Module):
         latents: NextPartnerReferenceLatents,
         intersection_encodings = None,
         id_intersection = None,
-        dots_mentioned = None,
     ):
         """ Returns (next partner ref intersect, next partner ref complement, next partner confirm)
             next partner ref intersect: (dot marginals, dot config scores, None)
@@ -1163,6 +1189,7 @@ class RnnReferenceModel(nn.Module):
 
         ctx_differences = state.ctx_differences
         num_dots = state.ctx_h.size(1)
+        dots_mentioned = latents.dots_mentioned
         # sum over time dimension to get a vector of size bsz
         states_expand = latents.latent_states.unsqueeze(2).expand(-1, -1, num_dots, -1)
         input = torch.cat([states_expand, latents.ctx_h_with_beliefs], -1)
@@ -1200,11 +1227,40 @@ class RnnReferenceModel(nn.Module):
             scores = (scores0, scores1, scores[2])
 
         if self.do_next_partner_confirm_prediction:
-            # SUM OVER DOTS?!
+            ctx_representation = latents.ctx_h_with_beliefs
+            if self.args.next_partner_confirm_agg == "sum":
+                latents.ctx_h_with_beliefs.sum(-2), # found mean was better
+            elif self.args.next_partner_confirm_agg == "mean":
+                latents.ctx_h_with_beliefs.mean(-2), # better than sum
+            elif self.args.next_partner_confirm_agg == "attn":
+                dot_mention_emb = self.dot_mention_encoder(
+                    state.ctx,
+                    relational_dot_mask = None,
+                    mask_ctx = False,
+                    id_intersection = dots_mentioned.float()
+                        if self.intersect_ctx_encoder.intersect_size == 1
+                        else dots_mentioned.int(),
+                )
+                # jointly attend to UTT = dots_mention_emb AND STATE = ctx_representation
+                # query = writer_lang_h = latents.latent_states
+
+                # everything must be time x batch x hid
+                query = latents.latent_states
+                kv = torch.cat([dot_mention_emb, ctx_representation[0]], -1).permute(1, 0, 2)
+                attn_out, attns = self.confirm_mha(
+                    query = query,
+                    key = kv,
+                    value = kv, 
+                )
+                # down-project
+                ctx_representation = torch.einsum(
+                    "ho,tbo->tbh", self.W_next_partner_confirm, attn_out,
+                )
+            else:
+                raise ValueError(
+                    f"Invalid next_partner_confirm_agg {self.args.next_partner_confirm_agg}")
+            confirm_input = torch.cat([latents.latent_states, ctx_representation], -1)
             # confirm_score: time (=1) x batch x sum(num dots) x 2 p(confirm=1, disconfirm=1)
-            confirm_input = torch.cat([
-                latents.latent_states, latents.ctx_h_with_beliefs.sum(-2),
-            ], -1)
             confirm_scores = self.next_partner_confirm_predictor(confirm_input)
         else:
             confirm_scores = None
@@ -2969,7 +3025,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                     new_state, next_partner_ref_latents,
                     intersection_encodings = intersection_encodings,
                     id_intersection = id_intersection,
-                    dots_mentioned = dots_mentioned[i] if dots_mentioned is not None else None,
+                    #dots_mentioned = dots_mentioned[i] if dots_mentioned is not None else None,
                 )
             else:
                 next_partner_intersect_out = None
