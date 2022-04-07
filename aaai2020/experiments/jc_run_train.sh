@@ -2,7 +2,7 @@
 script=""
 #script="bash"
 
-overall_name="jc-plain-hierarchical-structured-recurrence"
+overall_name="jc-partner"
 
 out_dir="expts/rel3_tsel_ref_dial_model_separate/${overall_name}"
 mkdir -p $out_dir 2>/dev/null
@@ -197,13 +197,13 @@ mbp_indicator_confirm_attn_args="--next_partner_reference_prediction \
  --next_partner_confirm_agg attn \
  "
 
-this_name=plain-hierarchical-structured-recurrence
-mkdir -p ${out_dir}/${this_name} 2>/dev/null
 
 # baseline model from fried without any next partner reference
 function baseline () {
 for fold in $@
 do
+  this_name=baseline
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
     $base_args \
@@ -220,6 +220,8 @@ done
 function blind () {
 for fold in $@
 do
+  this_name=blind
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
     $base_args \
@@ -237,6 +239,8 @@ done
 function mask () {
 for fold in $@
 do
+  this_name=mask
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
     $base_args \
@@ -254,6 +258,8 @@ done
 function indicator () {
 for fold in $@
 do
+  this_name=indicator
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
   #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
@@ -272,6 +278,8 @@ done
 function deterministic () {
 for fold in $@
 do
+  this_name=deterministic
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
   #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
@@ -291,6 +299,8 @@ done
 function indicator-confirm () {
 for fold in $@
 do
+  this_name=indicator-confirm
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
   #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
@@ -310,6 +320,8 @@ done
 function blind-confirm () {
 for fold in $@
 do
+  this_name=blind-confirm
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
   #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
@@ -329,6 +341,8 @@ done
 function indicator-confirm-attn () {
 for fold in $@
 do
+  this_name=indicator-confirm-attn
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
   #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
