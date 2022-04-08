@@ -357,3 +357,24 @@ do
 done
 }
 
+# train next partner reference by adding dot indicator features
+# additionally predict (dis-)confirmation using mean pooling
+function indicator-confirm-mean () {
+for fold in $@
+do
+  this_name=indicator-confirm-mean
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
+  #${script} ./train_rel3_tsel_ref_dial_model_separate_nocuda.sh \
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $mbp_indicator_confirm_mean_args \
+    $dot_recurrence_args \
+    --wandb \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}
+
