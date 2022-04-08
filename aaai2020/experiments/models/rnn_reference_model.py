@@ -1229,9 +1229,9 @@ class RnnReferenceModel(nn.Module):
         if self.do_next_partner_confirm_prediction:
             ctx_representation = latents.ctx_h_with_beliefs
             if self.args.next_partner_confirm_agg == "sum":
-                latents.ctx_h_with_beliefs.sum(-2), # found mean was better
+                ctx_representation = latents.ctx_h_with_beliefs.sum(-2) # found mean was better
             elif self.args.next_partner_confirm_agg == "mean":
-                latents.ctx_h_with_beliefs.mean(-2), # better than sum
+                ctx_representation = latents.ctx_h_with_beliefs.mean(-2) # better than sum
             elif self.args.next_partner_confirm_agg == "attn":
                 dot_mention_emb = self.dot_mention_encoder(
                     state.ctx,
