@@ -427,8 +427,8 @@ class ReferenceSentenceCorpus(ReferenceCorpus):
                 partner_ref_inpts, partner_ref_tgts_our_view, all_partner_num_markables,
                 next_partner_ref_inpts, next_partner_ref_tgts_our_view, next_all_partner_num_markables, # MBP
                 # MBP
-                next_partner_ref_intersect_ref = torch.tensor(next_partner_ref_intersect_refs),
-                next_partner_ref_complement_ref = torch.tensor(next_partner_ref_complement_refs),
+                next_partner_ref_intersect_ref = torch.tensor(np.array(next_partner_ref_intersect_refs)),
+                next_partner_ref_complement_ref = torch.tensor(np.array(next_partner_ref_complement_refs)),
                 next_partner_confirm = torch.tensor(batch_next_partner_confirms, dtype=bool), 
                 next_partner_disconfirm = torch.tensor(batch_next_partner_disconfirms, dtype=bool),
                 # / MBP

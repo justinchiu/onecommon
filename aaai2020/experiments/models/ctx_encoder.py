@@ -533,7 +533,17 @@ class RelationalAttentionContextEncoder3(nn.Module):
         )
         # ent_rel_pairs: bsz x 7 x 6 x feats=9
         # add intersection features
+
+        # HACK FOR PYTORCH 1.11
+        # instead of checking for nan which is slow, just do the first linear layer twice
+        if not self.training:
+            _ = self.relation_encoder[0](ent_rel_pairs)
+
         rel_emb = self.relation_encoder(ent_rel_pairs)
+        #if rel_emb.isnan().any():
+            #import pdb; pdb.set_trace()
+            #rel_emb = self.relation_encoder(ent_rel_pairs)
+        # / HACK
 
         if self.relation_pooling == 'mean':
             if relational_dot_mask is not None:
