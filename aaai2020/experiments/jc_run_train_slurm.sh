@@ -14,6 +14,7 @@
 #SBATCH --gres=gpu:1                  # Type/number of GPUs needed
 
 source /home/jtc257/.bashrc
-py19env
-bash jc_run_train.sh 9
+py111env
+source jc_run_train.sh
+indicator-confirm-mean 9
 

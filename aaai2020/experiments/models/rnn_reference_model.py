@@ -2845,7 +2845,7 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
 
         state = self.initialize_state(ctx, belief_constructor)
         # MBP
-        # encode the ORACLE INTERSECTION of view.
+        # encode the ORACLE INTERSECTION of our view.
         if self.do_next_partner_reference_prediction or self.do_next_partner_confirm_prediction:
             intersection_encodings = self.intersect_ctx_encoder(
                 ctx,
