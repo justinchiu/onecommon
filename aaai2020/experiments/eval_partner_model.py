@@ -130,6 +130,7 @@ def get_stats(dataset, N=100):
             print(" ".join(f"{x:.2f}" for x in marginal_prob_inclusion.tolist()))
 
             stats.append({
+                "chat_id": chat_id,
                 "marginal_prob_inclusion": marginal_prob_inclusion.tolist(),
                 "dot_intersection": int_np[0].tolist(),
                 "partner_model_losses": partner_model_losses,
