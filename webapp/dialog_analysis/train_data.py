@@ -149,15 +149,19 @@ def visualize_dialogue(dialogue):
     st.table(dialogue)
 
 dialogue_idxs = np.random.choice(len(finished_dialogues), 20, replace=False)
+dialogue_idxs = np.arange(20)
 
 subsampled = [finished_dialogues[idx] for idx in dialogue_idxs]
 
-# we only care about 'human' and 'pragmatic_confidence'
-def process_dialogue(dialogue_dict):
+def visualize_stats(stats):
     import pdb; pdb.set_trace()
-    scenario_id = dialogue_dict["scenario_id"]
-    dialogue = dialogue_dict["dialogue"]
-    agent_types = dialogue_dict["agent_types"]
+
+# we only care about 'human' and 'pragmatic_confidence'
+def process_dialogue(dialogue_dict, stats=None):
+    id = dialogue_dict["uuid"]
+    scenario_id = dialogue_dict["scenario_uuid"]
+    dialogue = get_dialogue(dialogue_dict)
+    agent_types = dialogue_dict["agents"]
 
     reward = dialogue_dict["outcome"]["reward"]
     event0 = dialogue_dict["events"][-2]
@@ -165,16 +169,35 @@ def process_dialogue(dialogue_dict):
     select0 = int((event0["data"] if event0["agent"] == 0 else event1["data"]).replace("\"", ""))
     select1 = int((event0["data"] if event1["agent"] == 0 else event1["data"]).replace("\"", ""))
 
+    st.write(f"Dialogue id {dialogue_dict['uuid']}")
+
     #board = boards[scenario_id]
-    import pdb; pdb.set_trace()
-    board = dialogue_dict[""]
+    board = dialogue_dict["scenario"]
     st.write("SUCCESS" if reward else "FAILURE")
     visualize_board(board, select0, select1)
     st.write(f"Agent 0: {agent_types['0']} || 1: {agent_types['1']}")
     visualize_dialogue(dialogue)
 
+    if stats is not None:
+        visualize_stats(stats)
 
-st.write(f"Dialogue idxs: {dialogue_idxs}")
-dialogue_id = st.select_slider("Dialogue number", options=list(range(len(dialogue_idxs))))
+id2dialogueidx = {
+    x["uuid"]: i
+    for i, x in enumerate(finished_dialogues)
+}
 
-process_dialogue(subsampled[dialogue_id])
+#st.write(f"Dialogue idxs: {dialogue_idxs}")
+#dialogue_id = st.select_slider("Dialogue number", options=list(range(len(dialogue_idxs))))
+
+# access any dialogue
+#dialogue_id = st.text_input("Dialogue uuid", value="C_492a4d5a0195493b8f8ee4f0fbe5ab8d")
+#process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]])
+
+# inspect train / valid partner models
+
+with open("../../aaai2020/experiments/analysis/train_partner_model_stats.json", "r") as f:
+    train_stats = json.load()
+idx = st.select_slider("Train dialogue number", options=list(range(len(train_stats))))
+stats = train_stats[idx]
+dialogue_id = stats["chat_id"]
+process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]], stats=stats)

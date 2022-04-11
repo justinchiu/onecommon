@@ -8,8 +8,8 @@ import json
 from functools import partial
 import numpy as np
 
-random.seed(1234)
-np.random.seed(1234)
+#random.seed(1234)
+#np.random.seed(1234)
 
 # Testing streamlit
 st.title("OneCommon Visualizations")
@@ -208,6 +208,11 @@ def visualize_dialogue(dialogue):
 dialogue_idxs = {
     k: np.random.choice(len(v), 20, replace=False)
     for k,v in finished_dialogues_by_ty.items()
+}
+dialogue_idxs = {
+    "human": [96, 74, 42, 83, 138, 2, 160, 192, 202, 176, 196, 182, 180, 193, 148, 146, 58, 99, 41, 120, 92, 117],
+    "pragmatic_confidence": [237, 29, 170, 131, 113, 92, 40, 65, 64, 74, 186, 71, 137, 190, 32, 66, 22, 111, 141, 59],
+    "uabaseline_same_opt": dialogue_idxs["uabaseline_same_opt"],
 }
 
 subsampled_by_ty = {
