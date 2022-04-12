@@ -1209,7 +1209,9 @@ class RnnReferenceModel(nn.Module):
             )
         else:
             scores = None
-        # TODO: why is the second element of scores so big for collapsed?
+
+        # complement scores
+        # TODO!
 
         if self.args.next_partner_reference_intersect_encoder == "deterministic":
             # if we are doing deterministic encoding, then we just deterministically
