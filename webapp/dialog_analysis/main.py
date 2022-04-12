@@ -236,6 +236,7 @@ def process_dialogue(dialogue_dict):
     select1 = int((event0["data"] if event1["agent"] == 0 else event1["data"]).replace("\"", ""))
 
     board = boards[scenario_id]
+    st.write(f"Chat scenario id: {scenario_id}")
     st.write("SUCCESS" if reward else "FAILURE")
     visualize_board(board, select0, select1)
     st.write(f"Agent 0: {agent_types['0']} || 1: {agent_types['1']}")
