@@ -78,7 +78,8 @@ def has_utt_len(x, L):
 def min_utt_len(L, xs):
     return [x for x in xs if has_utt_len(x, L)]
 
-finished_dialogues = get_selected(dialogues)
+#finished_dialogues = get_selected(dialogues)
+finished_dialogues = dialogues
 
 num_turns_mean = np.mean([len(get_dialogue(x)) for x in finished_dialogues])
 num_turns_med = np.median([len(get_dialogue(x)) for x in finished_dialogues])
@@ -154,7 +155,10 @@ dialogue_idxs = np.arange(20)
 subsampled = [finished_dialogues[idx] for idx in dialogue_idxs]
 
 def visualize_stats(stats):
-    import pdb; pdb.set_trace()
+    st.header("Partner model stats")
+    for k, v in stats.items():
+        st.write(k)
+        st.write(v)
 
 # we only care about 'human' and 'pragmatic_confidence'
 def process_dialogue(dialogue_dict, stats=None):
@@ -196,7 +200,7 @@ id2dialogueidx = {
 # inspect train / valid partner models
 
 with open("../../aaai2020/experiments/analysis/train_partner_model_stats.json", "r") as f:
-    train_stats = json.load()
+    train_stats = json.load(f)
 idx = st.select_slider("Train dialogue number", options=list(range(len(train_stats))))
 stats = train_stats[idx]
 dialogue_id = stats["chat_id"]
