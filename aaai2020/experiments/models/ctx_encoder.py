@@ -498,6 +498,11 @@ class RelationalAttentionContextEncoder3(nn.Module):
         self, ctx, relational_dot_mask=None,
         mask_ctx=False, id_intersection=None, # MBP
     ):
+        # MBP
+        if not hasattr(self, "use_intersect_encoding"):
+            self.use_intersect_encoding = False
+        # MBP
+
         # mask_ctx will annihilate all output for dots != 1
         # found not to be a good idea in prelim experiments, though
         # TODO: remove mask_ctx
@@ -524,6 +529,12 @@ class RelationalAttentionContextEncoder3(nn.Module):
             ctx = ctx.view(bsz, -1)
         # / MBP
         relation_include_angle = hasattr(self, 'args') and self.args.relation_include_angle
+        # MBP
+        if not hasattr(self.args, 'relation_include_intersect'):
+            self.args.relation_include_intersect = False
+        if not hasattr(self, 'relation_include_intersect_both'):
+            self.args.relation_include_intersect_both = False
+        # / MBP
         position, appearance, ent_rel_pairs = pairwise_differences(
             ctx, self.num_ent, self.dim_ent, self.args.relation_include, relation_include_angle,
             symmetric=False, include_self=(relational_dot_mask is not None),
@@ -600,6 +611,10 @@ class RelationalAttentionContextEncoder3(nn.Module):
             ex_min = ents.min(1).values.unsqueeze(1).expand_as(ents)
             # bsz x num_ent x relation_input_dim
             ex_max = ents.max(1).values.unsqueeze(1).expand_as(ents)
+            # MBP
+            if not hasattr(self, "intersect_size"):
+                self.intersect_size = 0
+            # / MBP
             # bsz x num_ent x relation_input_dim
             diffs_min = single_difference(
                 ents, ex_min, self.args.relation_include, relation_include_angle,

@@ -125,7 +125,7 @@ def prob_random():
 class ContextGenerator(object):
     """Dialogue context generator. Generates contexes from the file."""
 
-    def __init__(self, context_file):
+    def __init__(self, context_file, must_contain=None):
         self.ctxs = []
         with open(context_file, 'r') as f:
             ctx_data = []
@@ -133,7 +133,8 @@ class ContextGenerator(object):
                 ctx = line.strip().split()
                 ctx_data.append(ctx)
                 if len(ctx_data) == 5:
-                    self.ctxs.append(ctx_data)
+                    if must_contain is None or ctx_data[0][0] in must_contain:
+                        self.ctxs.append(ctx_data)
                     ctx_data = []
 
     def sample(self):

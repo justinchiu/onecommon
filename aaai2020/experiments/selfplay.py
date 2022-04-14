@@ -134,6 +134,8 @@ def make_parser():
                         help='repeat selfplay')
     parser.add_argument('--num_contexts', type=int, default=1000,
                         help='num_contexts')
+    parser.add_argument('--must_contain', nargs="*", 
+                        help='must contain scenarios')
 
 
     RnnAgent.add_args(parser)
@@ -194,10 +196,17 @@ def main():
 
         # dialog = Dialog([alice, bob], args, markable_detector)
         dialog = HierarchicalDialog([alice, bob], args, markable_detector)
-        ctx_gen = ContextGenerator(os.path.join(args.data, args.context_file + '.txt'))
+        ctx_gen = ContextGenerator(
+            os.path.join(args.data, args.context_file + '.txt'),
+            must_contain = args.must_contain,
+        )
         with open(os.path.join(args.data, args.context_file + '.json'), "r") as f:
             scenario_list = json.load(f)
-        scenarios = {scenario['uuid']: scenario for scenario in scenario_list}
+        scenarios = {
+            scenario['uuid']: scenario
+            for scenario in scenario_list
+            if args.must_contain is None or scenario["uuid"] in args.must_contain
+        }
         logger = DialogLogger(verbose=args.verbose, log_file=args.log_file, scenarios=scenarios)
 
         selfplay = SelfPlay(dialog, ctx_gen, args, logger, max_n = args.num_contexts)
