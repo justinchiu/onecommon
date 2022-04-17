@@ -35,9 +35,6 @@ from models.ctx_encoder import pairwise_differences
 #from mab.beta_bernoulli.problem import RankingAndSelectionProblem, belief_update
 # / POLICY BLOCK
 
-DBG = False
-#DBG = True
-
 GenerationOutput = namedtuple("GenerationOutput", [
     "dots_mentioned_per_ref",
     "num_markables",
@@ -108,6 +105,9 @@ class RnnAgent(Agent):
             #choices=['rnn', 'beta_bernoulli'],
             #default='rnn',
         #)
+        # MBP
+        parser.add_argument('--DBG_GEN', action='store_true')
+        # / MBP
 
     def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
                  ):
@@ -677,6 +677,8 @@ class RnnAgent(Agent):
             assert inference in ['beam', 'noised_beam', 'forgetful_noised_beam'] and self.args.language_rerank
 
         while best_generation_output is None:
+            if self.args.DBG_GEN:
+                self.dot_bags = []
             for dots_mentioned_per_ref in dots_mentioned_per_ref_candidates:
                 if dots_mentioned_per_ref is None:
                     dots_mentioned_per_ref = torch.zeros((1, 0, 7)).bool().to(device)
@@ -718,7 +720,7 @@ class RnnAgent(Agent):
                     ]
                     [print(x) for x in list_of_outputs]
 
-                if False and DBG:
+                if False and self.args.DBG_GEN:
                     # for example S_pGlR0nKz9pQ4ZWsw, construct triangle mention
                     x = torch.zeros(1, 4, 7, dtype=bool, device = 0)
                     x[0,0,2:4] = 1
@@ -770,15 +772,19 @@ class RnnAgent(Agent):
                     this_generation_output = GenerationOutput(
                         *((dots_mentioned_per_ref, this_num_markables) + write_output_tpl)
                     )
-                    list_of_outputs = [
-                        " ".join(sentence)
-                        for sentence in write_output_tpl[-1]["words"]
-                    ]
-                    [print(x) for x in list_of_outputs]
-                    print(dots_mentioned_per_ref)
-                    print(dots_mentioned_per_ref.any(-1))
-                    print("actual candidates")
-                    import pdb; pdb.set_trace()
+                    # MBP DBG
+                    if self.args.DBG_GEN:
+                        self.dot_bags.append(models.utils.bit_to_int_array(dots_mentioned).item())
+                        list_of_outputs = [
+                            " ".join(sentence)
+                            for sentence in write_output_tpl[-1]["words"]
+                        ]
+                        [print(x) for x in list_of_outputs]
+                        print(dots_mentioned_per_ref)
+                        print(dots_mentioned_per_ref.any(-1))
+                        print("actual candidates")
+                        import pdb; pdb.set_trace()
+                    # / MBP DBG
                     if self.args.language_rerank:
                         self.decoded_beam_best.append(self._decode(this_generation_output.outs, self.model.word_dict))
                         if dots_mentioned_per_ref is None or dots_mentioned_per_ref.size(1) == 0:
@@ -827,6 +833,9 @@ class RnnAgent(Agent):
                 else:
                     best_generation_output = this_generation_output
                     break
+            # FOR MEASURING NUM UNIQUE DOT BAGS
+            if self.args.DBG_GEN:
+                print(f"DBG: uniq {len(set(self.dot_bags))} out of {len(self.dot_bags)}")
             if best_generation_output is None:
                 dots_mentioned_per_ref_candidates = [self.next_mention_predictions[-1]]
                 dots_mentioned_per_ref_candidates = [
