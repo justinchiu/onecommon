@@ -223,12 +223,13 @@ def visualize_board(left_dots, right_dots, select0, select1, intersect):
         return f / f.sum(-1, keepdims=True)
 
     def entropy(px):
+        px = px[px > 0]
         return -(px * np.log(px)).sum(-1)
 
     def info_gain(prior, ask, response):
         Hs = entropy(prior)
         Hs_r = entropy(posterior(prior, ask, response))
-        return (Hs - Hs_r)[ask.astype(bool)].sum()
+        return Hs - Hs_r
 
     def expected_info_gain(prior, ask, p_response):
         Hs = entropy(prior)
@@ -236,6 +237,7 @@ def visualize_board(left_dots, right_dots, select0, select1, intersect):
         r1 = np.ones((7,), dtype=int)
         Hs_r0 = entropy(posterior(prior, ask, r0))
         Hs_r1 = entropy(posterior(prior, ask, r1))
+        import pdb; pdb.set_trace()
         EHs_r = (p_response * np.stack((Hs_r0, Hs_r1), 1)).sum(-1)
         return (Hs - EHs_r)[ask.astype(bool)].sum()
 
@@ -245,9 +247,13 @@ def visualize_board(left_dots, right_dots, select0, select1, intersect):
     p_r = p_response(state, ask)
     EdH = expected_info_gain(state, ask, p_r)
 
-    asks = [np.unpackbits(np.array([x], dtype=np.ubyte))[1:] for x in range(1, 128)]
+    # all possible dot configs with at least 1 unit
+    configs = np.array([
+        np.unpackbits(np.array([x], dtype=np.ubyte))[1:]
+        for x in range(128)
+    ])
     EdHs = []
-    for ask in asks:
+    for ask in configs[1:]:
         p_r = p_response(state, ask)
         EdH = expected_info_gain(state, ask, p_r)
         EdHs.append(EdH)
@@ -255,20 +261,31 @@ def visualize_board(left_dots, right_dots, select0, select1, intersect):
 
     # RESPONSES ARE IN PARALLEL, SO ASK ABOUT ALL 7 DOTS
     # RESPONSE IS FOR ALL DOTS JOINTLY
+    # ergo state prior/posterior are of size 2^7
+    # variational approximation to follow
+     
     def p_response(prior, ask):
+        assert prior.shape[0] == 2**7
         f = likelihood[:, ask] * prior
         f = f[:,ask.astype(bool),:].prod(1)
         return f.sum(-1).T
 
-    def posteriors(prior, ask):
-        f = likelihood[:, ask] * prior
-        f = f[:,ask.astype(bool),:].prod(1)
+    def posterior(prior, ask, response, configs):
+        prior = prior[:,None] * configs
+        f = likelihood[None, response, ask] * prior[:,:,None]
+        print(f.shape)
+        f = f[
+            np.arange(128)[:,None],
+            ask[None,:],
+            configs[:,:],
+        ].prod(1)
         # returns normalized f[response, state] = p(state | ask, response)
         return f / f.sum(-1, keepdims=True)
 
-    def info_gain(prior, ask, response):
+    def info_gain(prior, ask, response, configs):
         Hs = entropy(prior)
-        Hs_r = entropy(posterior(prior, ask, response))
+        Hs_r = entropy(posterior(prior, ask, response, configs))
+        import pdb; pdb.set_trace()
         return (Hs - Hs_r)[ask.astype(bool)].sum()
 
     def expected_info_gain(prior, ask, p_response):
@@ -280,8 +297,12 @@ def visualize_board(left_dots, right_dots, select0, select1, intersect):
         EHs_r = (p_response * np.stack((Hs_r0, Hs_r1), 1)).sum(-1)
         return (Hs - EHs_r)[ask.astype(bool)].sum()
 
-    p_s_ar = posterior(state, ask, 1)
-    dH = info_gain(state, ask, 1)
+    # uniform prior over all states
+    state = np.ones((128,)) / 128
+    ask = np.array([1 if x in [2,5] else 0 for x in range(7)])
+
+    p_s_ar = posterior(state, ask, 1, configs)
+    dH = info_gain(state, ask, 1, configs)
 
     p_r = p_response(state, ask)
     EdH = expected_info_gain(state, ask, p_r)
