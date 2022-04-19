@@ -180,46 +180,47 @@ class JointBelief(Belief):
         EHs_r = (p_response * np.array((Hs_r0, Hs_r1))).sum()
         return Hs - EHs_r
 
-num_dots = 7
+if __name__ == "__main__":
+    num_dots = 7
 
-ask = np.array([1 if x in [2,5] else 0 for x in range(num_dots)])
-response = np.array([1 if x in [2,5] else 0 for x in range(num_dots)])
-configs = np.array([
-    np.unpackbits(np.array([x], dtype=np.ubyte))[8 - num_dots:]
-    for x in range(2 ** num_dots)
-])
+    ask = np.array([1 if x in [2,5] else 0 for x in range(num_dots)])
+    response = np.array([1 if x in [2,5] else 0 for x in range(num_dots)])
+    configs = np.array([
+        np.unpackbits(np.array([x], dtype=np.ubyte))[8 - num_dots:]
+        for x in range(2 ** num_dots)
+    ])
 
-# refactor later into test
-belief = IndependentBelief(num_dots)
-p_s_ar = belief.posterior(belief.prior, ask, response)
-dH = belief.info_gain(belief.prior, ask, response)
+    # refactor later into test
+    belief = IndependentBelief(num_dots)
+    p_s_ar = belief.posterior(belief.prior, ask, response)
+    dH = belief.info_gain(belief.prior, ask, response)
 
-EdH = belief.expected_info_gain(belief.prior, ask)
+    EdH = belief.expected_info_gain(belief.prior, ask)
 
-EdHs = []
-for utt in configs[1:]:
-    EdH = belief.expected_info_gain(belief.prior, utt)
-    EdHs.append(EdH)
-EdHs = np.array(EdHs)
-print(EdHs)
+    EdHs = []
+    for utt in configs[1:]:
+        EdH = belief.expected_info_gain(belief.prior, utt)
+        EdHs.append(EdH)
+    EdHs = np.array(EdHs)
+    print(EdHs)
 
-# joint model
-belief = JointBelief(num_dots, overlap_size = 4)
-response = 1
-p_s_ar = belief.posterior(belief.prior, ask, response)
-dH = belief.info_gain(belief.prior, ask, response)
+    # joint model
+    belief = JointBelief(num_dots, overlap_size = 4)
+    response = 1
+    p_s_ar = belief.posterior(belief.prior, ask, response)
+    dH = belief.info_gain(belief.prior, ask, response)
 
-EdH = belief.expected_info_gain(belief.prior, ask)
+    EdH = belief.expected_info_gain(belief.prior, ask)
 
-EdHs = []
-for utt in configs:
-    p_r = belief.p_response(belief.prior, utt)
-    EdH = belief.expected_info_gain(belief.prior, utt)
-    EdHs.append(EdH)
-EdHs = np.array(EdHs)
-print(EdHs)
-#print(belief.configs[1:])
-print(EdHs.max(), EdHs.argmax(), configs[EdHs.argmax()])
+    EdHs = []
+    for utt in configs:
+        p_r = belief.p_response(belief.prior, utt)
+        EdH = belief.expected_info_gain(belief.prior, utt)
+        EdHs.append(EdH)
+    EdHs = np.array(EdHs)
+    print(EdHs)
+    #print(belief.configs[1:])
+    print(EdHs.max(), EdHs.argmax(), configs[EdHs.argmax()])
 
-import pdb; pdb.set_trace()
+    import pdb; pdb.set_trace()
 
