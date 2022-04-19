@@ -65,6 +65,15 @@ class Belief:
 
 
 class IndependentBelief(Belief):
+    """
+    Fully independent partner model
+    * response r: num_dots
+    * utterance u: num_dots
+    * state s: num_dots
+    p(r|u,s) = prod_i p(r_i|u_i,s_i)
+    Underestimates failures from large configurations due to
+    independence assumption.
+    """
     def __init__(self, num_dots):
         super().__init__(num_dots)
         # VERY PESSIMISTIC PRIOR
@@ -111,11 +120,16 @@ class IndependentBelief(Belief):
 
 
 
-class JointBelief(Belief):
-    """ RESPONSES ARE IN PARALLEL, SO ASK ABOUT ALL 7 DOTS
-        RESPONSE IS FOR ALL DOTS JOINTLY
-        ergo state prior/posterior are of size 2^7
-        variational approximation to follow
+class AndBelief(Belief):
+    """
+    Noisy-and model for response modeling.
+    Partner will (noisily) confirm an utterance if they see all dots mentioned.
+    * response r: 1
+    * utterance u: num_dots
+    * state s: num_dots
+    p(r=1|u,s) = prod_i p(r=1|u_i,s_i)
+    Accurately estimates failure of large configurations,
+    under-estimates failure of small configurations due to ignoring partial observability.
     """
 
     def __init__(self, num_dots, overlap_size=None):
@@ -124,6 +138,7 @@ class JointBelief(Belief):
         self.prior = np.ones((2 ** num_dots,))
         if overlap_size is not None:
             self.prior[self.configs.sum(-1) < overlap_size] = 0
+            #self.prior[self.configs.sum(-1) != overlap_size] = 0
         self.prior = self.prior / self.prior.sum()
 
         # initialize basic likelihood
@@ -148,7 +163,7 @@ class JointBelief(Belief):
                 likelihood *= self.likelihood[1,d,self.configs[s,i]]
             p_r1 += likelihood * p
             p_r0 += (1-likelihood) * p
-        #p_r0 = 1 - p_r1
+        #p_r0 = 1 - p_r1 # this is equivalent
         return np.array((p_r0, p_r1))
 
     def posterior(self, prior, ask, response):
@@ -180,6 +195,66 @@ class JointBelief(Belief):
         EHs_r = (p_response * np.array((Hs_r0, Hs_r1))).sum()
         return Hs - EHs_r
 
+class AndOrBelief(AndBelief):
+    """
+    Noisy-and-or model for response modeling.
+    Partner will (noisily) confirm an utterance if they see all dots mentioned
+    OR have matching dots in unobserved context.
+    * response r: 1
+    * utterance u: num_dots
+    * state s: num_dots
+    * unobserved partner dots z: num_dots - |s|
+    p(r=1|u,s) = prod_i p(r=1|u_i,s_i,z) = prod_i 1 - p(r=0|ui,si)p(r=0|ui,z)
+    Accurately estimates failure of small and large configurations.
+
+    Note on p(r=0|ui,z) = (8/9)^|z|:
+        color = light, medium, dark
+        size = small, medium, dark
+        Assume descriptions are all independent, so only 9 possibilities
+        for each dot in z
+        Size of z: remaining dots outside of s |z| = num_dots - |s|
+    """
+    def p_response(self, prior, ask):
+        # prior: num_configs * 7
+        # \sum_s p(r=1 | u, s)p(s)
+        # = \sum_s,z p(s)p(z|s) \prod_i 1-p(r=0|ui,si)p(r=0|ui,z)
+        # = \sum_s p(s) \prod_i 1-p(r=0|ui,si)(8/9)^{n-|s|}
+        p_r1 = 0
+        p_r0 = 0
+        for s,ps in enumerate(prior):
+            likelihood = 1
+            state_config = self.configs[s]
+            z = self.num_dots - state_config.sum()
+            for i,d in enumerate(ask):
+                if d == 1:
+                    disconfirm = self.likelihood[0,d,state_config[i]] * (8/9) ** z
+                    likelihood *= 1 - disconfirm
+            p_r1 += likelihood * ps
+            p_r0 += (1-likelihood) * ps
+        #p_r0 = 1 - p_r1 # this is equivalent
+        return np.array((p_r0, p_r1))
+
+    def posterior(self, prior, ask, response):
+        # p(r=., s | u) = \prod_i p(r=. | ui, si)p(s)
+        p_r0s_u = []
+        p_r1s_u = []
+        for s,p in enumerate(prior):
+            likelihood = 1
+            state_config = self.configs[s]
+            z = self.num_dots - state_config.sum()
+            for i,d in enumerate(ask):
+                if d == 1:
+                    disconfirm = self.likelihood[0,d,state_config[i]] * (8/9) ** z
+                    likelihood *= 1 - disconfirm
+            p_r1s_u.append(likelihood * p)
+            p_r0s_u.append((1-likelihood) * p)
+        p_r1s_u = np.array(p_r1s_u)
+        p_r0s_u = np.array(p_r0s_u)
+        p_s_ur1 = p_r1s_u / p_r1s_u.sum(-1, keepdims=True)
+        p_s_ur0 = p_r0s_u / p_r0s_u.sum(-1, keepdims=True)
+        return p_s_ur1 if response == 1 else p_s_ur0
+
+
 if __name__ == "__main__":
     num_dots = 7
 
@@ -205,7 +280,7 @@ if __name__ == "__main__":
     print(EdHs)
 
     # joint model
-    belief = JointBelief(num_dots, overlap_size = 4)
+    belief = AndBelief(num_dots, overlap_size = 4)
     response = 1
     p_s_ar = belief.posterior(belief.prior, ask, response)
     dH = belief.info_gain(belief.prior, ask, response)
@@ -219,8 +294,35 @@ if __name__ == "__main__":
         EdHs.append(EdH)
     EdHs = np.array(EdHs)
     print(EdHs)
-    #print(belief.configs[1:])
     print(EdHs.max(), EdHs.argmax(), configs[EdHs.argmax()])
 
-    import pdb; pdb.set_trace()
+    # po model
+    belief = AndOrBelief(num_dots, overlap_size = 4)
+    response = 1
+    p_s_ar = belief.posterior(belief.prior, ask, response)
+    dH = belief.info_gain(belief.prior, ask, response)
+
+    EdH = belief.expected_info_gain(belief.prior, ask)
+
+    EdHs = []
+    for utt in configs:
+        p_r = belief.p_response(belief.prior, utt)
+        EdH = belief.expected_info_gain(belief.prior, utt)
+        EdHs.append(EdH)
+    EdHs = np.array(EdHs)
+    print(EdHs)
+    print(EdHs.max(), EdHs.argmax(), configs[EdHs.argmax()])
+
+    prior = belief.prior
+    for t in range(5):
+        EdHs = []
+        for utt in configs:
+            EdH = belief.expected_info_gain(prior, utt)
+            EdHs.append(EdH)
+        EdHs = np.array(EdHs)
+        best_idx = EdHs.argmax()
+        next_utt = configs[best_idx]
+        next_prior = belief.posterior(prior, next_utt, 1)
+        import pdb; pdb.set_trace()
+        prior = next_prior
 
