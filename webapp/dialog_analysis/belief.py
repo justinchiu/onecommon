@@ -1,12 +1,21 @@
 import numpy as np
 from scipy.special import logsumexp as lse
+from scipy.special import comb
 
 #random.seed(1234)
 #np.random.seed(1234)
 
+np.seterr(all="raise")
+
+
+def safe_log(x, eps=1e-10):
+    result = np.where(x > eps, x, 0)
+    np.log(result, out=result, where=result > 0)
+    return result
+
 # discrete entropy
 def entropy(px):
-    Hx = np.where(px > 0, px * np.log(px), 0)
+    Hx = px * safe_log(px)
     return -(Hx).sum(-1)
 
 class Dot:
@@ -127,7 +136,7 @@ class AndBelief(Belief):
     * response r: 1
     * utterance u: num_dots
     * state s: num_dots
-    p(r=1|u,s) = prod_i p(r=1|u_i,s_i)
+    p(r=1|u,s) = prod_i p(r=1|u_i=1,s_i)
     Accurately estimates failure of large configurations,
     under-estimates failure of small configurations due to ignoring partial observability.
     """
@@ -139,6 +148,7 @@ class AndBelief(Belief):
         if overlap_size is not None:
             self.prior[self.configs.sum(-1) < overlap_size] = 0
             #self.prior[self.configs.sum(-1) != overlap_size] = 0
+            self.prior[-1] = 0
         self.prior = self.prior / self.prior.sum()
 
         # initialize basic likelihood
@@ -178,8 +188,10 @@ class AndBelief(Belief):
             p_r0s_u.append((1-likelihood) * p)
         p_r1s_u = np.array(p_r1s_u)
         p_r0s_u = np.array(p_r0s_u)
-        p_s_ur1 = p_r1s_u / p_r1s_u.sum(-1, keepdims=True)
-        p_s_ur0 = p_r0s_u / p_r0s_u.sum(-1, keepdims=True)
+        Z1 = p_r1s_u.sum(-1, keepdims=True)
+        p_s_ur1 = p_r1s_u / Z1 if Z1 > 0 else np.ones((2 ** self.num_dots,)) / 2 ** self.num_dots
+        Z2 = p_r0s_u.sum(-1, keepdims=True)
+        p_s_ur0 = p_r0s_u / Z2 if Z2 > 0 else np.ones((2 ** self.num_dots,)) / 2 ** self.num_dots
         return p_s_ur1 if response == 1 else p_s_ur0
 
     def info_gain(self, prior, ask, response):
@@ -200,12 +212,14 @@ class AndOrBelief(AndBelief):
     Noisy-and-or model for response modeling.
     Partner will (noisily) confirm an utterance if they see all dots mentioned
     OR have matching dots in unobserved context.
+    The OR happens at the dot-level.
     * response r: 1
     * utterance u: num_dots
     * state s: num_dots
     * unobserved partner dots z: num_dots - |s|
     p(r=1|u,s) = prod_i p(r=1|u_i,s_i,z) = prod_i 1 - p(r=0|ui,si)p(r=0|ui,z)
     Accurately estimates failure of small and large configurations.
+    As the OR happens at the dot level, does not prefer large configurations.
 
     Note on p(r=0|ui,z) = (8/9)^|z|:
         color = light, medium, dark
@@ -250,13 +264,92 @@ class AndOrBelief(AndBelief):
             p_r0s_u.append((1-likelihood) * p)
         p_r1s_u = np.array(p_r1s_u)
         p_r0s_u = np.array(p_r0s_u)
-        p_s_ur1 = p_r1s_u / p_r1s_u.sum(-1, keepdims=True)
-        p_s_ur0 = p_r0s_u / p_r0s_u.sum(-1, keepdims=True)
+        Z1 = p_r1s_u.sum(-1, keepdims=True)
+        p_s_ur1 = p_r1s_u / Z1 if Z1 > 0 else np.ones((2 ** self.num_dots,)) / 2 ** self.num_dots
+        Z0 = p_r0s_u.sum(-1, keepdims=True)
+        p_s_ur0 = p_r0s_u / Z0 if Z0 > 0 else np.ones((2 ** self.num_dots,)) / 2 ** self.num_dots
+        return p_s_ur1 if response == 1 else p_s_ur0
+
+class AndOrConfigBelief(AndBelief):
+    """
+    Noisy-and-or model for response modeling.
+    Partner will (noisily) confirm an utterance if they see all dots mentioned
+    OR have matching dots in unobserved context.
+    The OR happens at the config level.
+    * response r: 1
+    * utterance u: num_dots
+    * state s: num_dots
+    * unobserved partner dots z: num_dots - |s|
+
+    Noisy-AND for dots and state
+    p(r=1|u,s) = prod_i p(r=1|u_i,s_i)
+    p(r=0|u,s) = 1-p(r=1|u,s)
+    Noisy-OR
+    p(r=0|u,s,z) = 1-p(r=0|u,s)p(r=0|u,z)
+    Dot distractors
+    p(r=0|u,z) = 1 - |z|C|u| 9^-|u|
+
+    Accurately estimates failure of small and large configurations.
+
+    Note on p(r=0|u,z) = 1-|z|C|u|9^-|u|:
+        color = light, medium, dark
+        size = small, medium, dark
+        Assume descriptions are all independent, so only 9 possibilities
+        for each dot in z
+        Size of z: remaining dots outside of s |z| = num_dots - |s|
+    """
+    def p_response(self, prior, ask):
+        # prior: num_configs * 7
+        # \sum_s p(r=0|u,s)p(s)
+        # = \sum_s,z p(s)p(z|s) p(r=0|u,s)p(r=0|u,z)
+        # = \sum_s p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
+        # = \sum_s p(s)(1-\prod_i p(r=1|ui,si)) \sum_z p(z|s)p(r=0|u,z)
+        # = \sum_s p(s)(1-\prod_i p(r=1|ui,si)) |z|C|u|9^-|u|
+        p_r1 = 0
+        p_r0 = 0
+        for s,ps in enumerate(prior):
+            likelihood = 1
+            state_config = self.configs[s]
+            z = self.num_dots - state_config.sum()
+            u = int(ask.sum())
+            for i,d in enumerate(ask):
+                if d == 1:
+                    likelihood *= self.likelihood[1,d,state_config[i]]
+            distractor_prob = 1 - comb(z,u) * 9. ** (-u)
+            p_r0 += (1 - likelihood)*distractor_prob * ps
+            p_r1 += (1- (1-likelihood)*distractor_prob) * ps
+        #p_r0 = 1 - p_r1 # this is equivalent
+        return np.array((p_r0, p_r1))
+
+    def posterior(self, prior, ask, response):
+        # p(r=., s | u) = \prod_i p(r=. | ui, si)p(s)
+        p_r0s_u = []
+        p_r1s_u = []
+        for s,ps in enumerate(prior):
+            likelihood = 1
+            state_config = self.configs[s]
+            z = self.num_dots - state_config.sum()
+            u = int(ask.sum())
+            for i,d in enumerate(ask):
+                if d == 1:
+                    likelihood *= self.likelihood[1,d,state_config[i]]
+            distractor_prob = 1 - comb(z,u) * 9. ** (-u)
+            p_r0s_u.append((1-likelihood)*distractor_prob * ps)
+            p_r1s_u.append((1-(1-likelihood)*distractor_prob) * ps)
+        p_r1s_u = np.array(p_r1s_u)
+        p_r0s_u = np.array(p_r0s_u)
+        Z1 = p_r1s_u.sum(-1, keepdims=True)
+        p_s_ur1 = p_r1s_u / Z1 if Z1 > 0 else np.ones((2 ** self.num_dots,)) / 2 ** self.num_dots
+        Z0 = p_r0s_u.sum(-1, keepdims=True)
+        p_s_ur0 = p_r0s_u / Z0 if Z0 > 0 else np.ones((2 ** self.num_dots,)) / 2 ** self.num_dots
         return p_s_ur1 if response == 1 else p_s_ur0
 
 
 if __name__ == "__main__":
     num_dots = 7
+    overlap_size = 4
+    #num_dots = 3
+    #overlap_size = None
 
     ask = np.array([1 if x in [2,5] else 0 for x in range(num_dots)])
     response = np.array([1 if x in [2,5] else 0 for x in range(num_dots)])
@@ -266,6 +359,7 @@ if __name__ == "__main__":
     ])
 
     # refactor later into test
+    print("IND MODEL")
     belief = IndependentBelief(num_dots)
     p_s_ar = belief.posterior(belief.prior, ask, response)
     dH = belief.info_gain(belief.prior, ask, response)
@@ -280,7 +374,8 @@ if __name__ == "__main__":
     print(EdHs)
 
     # joint model
-    belief = AndBelief(num_dots, overlap_size = 4)
+    print("JOINT MODEL")
+    belief = AndBelief(num_dots, overlap_size = overlap_size)
     response = 1
     p_s_ar = belief.posterior(belief.prior, ask, response)
     dH = belief.info_gain(belief.prior, ask, response)
@@ -296,8 +391,41 @@ if __name__ == "__main__":
     print(EdHs)
     print(EdHs.max(), EdHs.argmax(), configs[EdHs.argmax()])
 
-    # po model
-    belief = AndOrBelief(num_dots, overlap_size = 4)
+    # po dot model
+    print("PO DOT MODEL")
+    belief = AndOrBelief(num_dots, overlap_size = overlap_size)
+    response = 1
+    p_s_ar = belief.posterior(belief.prior, ask, response)
+    dH = belief.info_gain(belief.prior, ask, response)
+
+    EdH = belief.expected_info_gain(belief.prior, ask)
+
+    EdHs = []
+    for utt in configs:
+        p_r = belief.p_response(belief.prior, utt)
+        EdH = belief.expected_info_gain(belief.prior, utt)
+        EdHs.append(EdH)
+    EdHs = np.array(EdHs)
+    print(EdHs)
+    print(EdHs.max(), EdHs.argmax(), configs[EdHs.argmax()])
+
+    """
+    prior = belief.prior
+    for t in range(5):
+        EdHs = []
+        for utt in configs:
+            EdH = belief.expected_info_gain(prior, utt)
+            EdHs.append(EdH)
+        EdHs = np.array(EdHs)
+        best_idx = EdHs.argmax()
+        next_utt = configs[best_idx]
+        next_prior = belief.posterior(prior, next_utt, 1)
+        prior = next_prior
+    """
+
+    # po config model
+    print("PO CONFIG MODEL")
+    belief = AndOrConfigBelief(num_dots, overlap_size = overlap_size)
     response = 1
     p_s_ar = belief.posterior(belief.prior, ask, response)
     dH = belief.info_gain(belief.prior, ask, response)
@@ -323,6 +451,7 @@ if __name__ == "__main__":
         best_idx = EdHs.argmax()
         next_utt = configs[best_idx]
         next_prior = belief.posterior(prior, next_utt, 1)
+        print(next_utt)
         import pdb; pdb.set_trace()
         prior = next_prior
 
