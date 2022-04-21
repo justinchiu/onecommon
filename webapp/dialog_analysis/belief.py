@@ -209,7 +209,7 @@ class AndBelief(Belief):
 
 class AndOrBelief(AndBelief):
     """
-    Noisy-and-or model for response modeling.
+    And-or model for response modeling.
     Partner will (noisily) confirm an utterance if they see all dots mentioned
     OR have matching dots in unobserved context.
     The OR happens at the dot-level.
@@ -272,7 +272,7 @@ class AndOrBelief(AndBelief):
 
 class AndOrConfigBelief(AndBelief):
     """
-    Noisy-and-or model for response modeling.
+    And-or model for response modeling.
     Partner will (noisily) confirm an utterance if they see all dots mentioned
     OR have matching dots in unobserved context.
     The OR happens at the config level.
@@ -282,12 +282,12 @@ class AndOrConfigBelief(AndBelief):
     * unobserved partner dots z: num_dots - |s|
 
     Noisy-AND for dots and state
-    p(r=1|u,s) = prod_i p(r=1|u_i,s_i)
-    p(r=0|u,s) = 1-p(r=1|u,s)
+        p(r=1|u,s) = prod_i p(r=1|u_i,s_i)
+        p(r=0|u,s) = 1-p(r=1|u,s)
     Noisy-OR
-    p(r=0|u,s,z) = 1-p(r=0|u,s)p(r=0|u,z)
+        p(r=0|u,s,z) = 1-p(r=0|u,s)p(r=0|u,z)
     Dot distractors
-    p(r=0|u,z) = 1 - |z|C|u| 9^-|u|
+        p(r=0|u,z) = 1 - |z|C|u| 9^-|u|
 
     Accurately estimates failure of small and large configurations.
 
