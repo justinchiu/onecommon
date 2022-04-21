@@ -77,6 +77,13 @@ class Belief:
     def expected_info_gain(self, prior, utt):
         raise NotImplementedError
 
+    def compute_EdHs(self, prior):
+        EdHs = []
+        for utt in self.configs:
+            EdH = belief.expected_info_gain(prior, utt)
+            EdHs.append(EdH)
+        return np.array(EdHs)
+
     def viz_belief(self, p, n=5):
         # decreasing order
         idxs = (-p).argsort()[:n]
@@ -358,17 +365,10 @@ if __name__ == "__main__":
         for x in range(2 ** num_dots)
     ])
 
-    def compute_EdH(belief):
-        EdHs = []
-        for utt in configs:
-            EdH = belief.expected_info_gain(belief.prior, utt)
-            EdHs.append(EdH)
-        return np.array(EdHs)
-
     # refactor later into test
     print("IND MODEL")
     belief = IndependentBelief(num_dots)
-    EdHs = compute_EdH(belief)
+    EdHs = belief.compute_EdHs(belief.prior)
     cs, hs = belief.viz_belief(EdHs)
     print(cs)
     print(hs)
@@ -376,7 +376,7 @@ if __name__ == "__main__":
     # joint model
     print("JOINT MODEL")
     belief = AndBelief(num_dots, overlap_size = overlap_size)
-    EdHs = compute_EdH(belief)
+    EdHs = belief.compute_EdHs(belief.prior)
     cs, hs = belief.viz_belief(EdHs)
     print(cs)
     print(hs)
@@ -384,7 +384,7 @@ if __name__ == "__main__":
     # po dot model
     print("PO DOT MODEL")
     belief = AndOrBelief(num_dots, overlap_size = overlap_size)
-    EdHs = compute_EdH(belief)
+    EdHs = belief.compute_EdHs(belief.prior)
     cs, hs = belief.viz_belief(EdHs)
     print(cs)
     print(hs)
@@ -392,7 +392,7 @@ if __name__ == "__main__":
     # po config model
     print("PO CONFIG MODEL")
     belief = AndOrConfigBelief(num_dots, overlap_size = overlap_size)
-    EdHs = compute_EdH(belief)
+    EdHs = belief.compute_EdHs(belief.prior)
     cs, hs = belief.viz_belief(EdHs)
     print(cs)
     print(hs)
@@ -414,11 +414,7 @@ if __name__ == "__main__":
 
     prior = belief.prior
     for t in range(10):
-        EdHs = []
-        for utt in configs:
-            EdH = belief.expected_info_gain(prior, utt)
-            EdHs.append(EdH)
-        EdHs = np.array(EdHs)
+        EdHs = belief.compute_EdHs(prior)
         best_idx = EdHs.argmax()
         next_utt = configs[best_idx]
         response = int(state.astype(bool)[next_utt.astype(bool)].all())
