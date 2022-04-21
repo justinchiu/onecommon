@@ -58,6 +58,7 @@ class Belief:
             np.unpackbits(np.array([x], dtype=np.ubyte))[8-num_dots:]
             for x in range(2 ** num_dots)
         ])
+        self.unif = np.ones((2, 2 ** self.num_dots)) / 2 ** self.num_dots
 
     def joint(self, prior, utt):
         raise NotImplementedError
@@ -340,8 +341,7 @@ class AndOrConfigBelief(AndBelief):
         # p(r=., s | u) = \prod_i p(r=. | ui, si)p(s)
         p_rs_u = self.joint(prior, utt)
         Z = p_rs_u.sum(1, keepdims=True)
-        unif = np.ones_like(p_rs_u) / 2 ** self.num_dots
-        p_s_ur = np.divide(p_rs_u, Z, out=unif, where=Z>0)
+        p_s_ur = np.divide(p_rs_u, Z, out=self.unif, where=Z>0)
         return p_s_ur[response]
 
 
