@@ -1,3 +1,5 @@
+import math
+
 import numpy as np
 from scipy.special import logsumexp as lse
 from scipy.special import comb
@@ -6,7 +8,6 @@ from scipy.special import comb
 #np.random.seed(1234)
 
 np.seterr(all="raise")
-
 
 def safe_log(x, eps=1e-10):
     result = np.where(x > eps, x, 0)
@@ -348,7 +349,7 @@ class AndOrConfigBelief(AndBelief):
 if __name__ == "__main__":
     num_dots = 7
     overlap_size = 4
-    #num_dots = 3
+    #num_dots = 4
     #overlap_size = None
 
     ask = np.array([1 if x in [2,5] else 0 for x in range(num_dots)])
@@ -358,91 +359,62 @@ if __name__ == "__main__":
         for x in range(2 ** num_dots)
     ])
 
+    def compute_EdH(belief):
+        EdHs = []
+        for utt in configs[1:]:
+            EdH = belief.expected_info_gain(belief.prior, utt)
+            EdHs.append(EdH)
+        return np.array(EdHs)
+
     # refactor later into test
     print("IND MODEL")
-    belief = IndependentBelief(num_dots)
-    p_s_ar = belief.posterior(belief.prior, ask, response)
-    dH = belief.info_gain(belief.prior, ask, response)
-
-    EdH = belief.expected_info_gain(belief.prior, ask)
-
-    EdHs = []
-    for utt in configs[1:]:
-        EdH = belief.expected_info_gain(belief.prior, utt)
-        EdHs.append(EdH)
-    EdHs = np.array(EdHs)
+    EdHs = compute_EdH(IndependentBelief(num_dots))
     print(EdHs)
 
     # joint model
     print("JOINT MODEL")
-    belief = AndBelief(num_dots, overlap_size = overlap_size)
-    response = 1
-    p_s_ar = belief.posterior(belief.prior, ask, response)
-    dH = belief.info_gain(belief.prior, ask, response)
-
-    EdH = belief.expected_info_gain(belief.prior, ask)
-
-    EdHs = []
-    for utt in configs:
-        p_r = belief.p_response(belief.prior, utt)
-        EdH = belief.expected_info_gain(belief.prior, utt)
-        EdHs.append(EdH)
-    EdHs = np.array(EdHs)
+    EdHs = compute_EdH(AndBelief(num_dots, overlap_size = overlap_size))
     print(EdHs)
     print(EdHs.max(), EdHs.argmax(), configs[EdHs.argmax()])
 
     # po dot model
     print("PO DOT MODEL")
-    belief = AndOrBelief(num_dots, overlap_size = overlap_size)
-    response = 1
-    p_s_ar = belief.posterior(belief.prior, ask, response)
-    dH = belief.info_gain(belief.prior, ask, response)
-
-    EdH = belief.expected_info_gain(belief.prior, ask)
-
-    EdHs = []
-    for utt in configs:
-        p_r = belief.p_response(belief.prior, utt)
-        EdH = belief.expected_info_gain(belief.prior, utt)
-        EdHs.append(EdH)
-    EdHs = np.array(EdHs)
+    EdHs = compute_EdH(AndOrBelief(num_dots, overlap_size = overlap_size))
     print(EdHs)
     print(EdHs.max(), EdHs.argmax(), configs[EdHs.argmax()])
-
-    """
-    prior = belief.prior
-    for t in range(5):
-        EdHs = []
-        for utt in configs:
-            EdH = belief.expected_info_gain(prior, utt)
-            EdHs.append(EdH)
-        EdHs = np.array(EdHs)
-        best_idx = EdHs.argmax()
-        next_utt = configs[best_idx]
-        next_prior = belief.posterior(prior, next_utt, 1)
-        prior = next_prior
-    """
 
     # po config model
     print("PO CONFIG MODEL")
     belief = AndOrConfigBelief(num_dots, overlap_size = overlap_size)
-    response = 1
-    p_s_ar = belief.posterior(belief.prior, ask, response)
-    dH = belief.info_gain(belief.prior, ask, response)
 
-    EdH = belief.expected_info_gain(belief.prior, ask)
-
-    EdHs = []
-    for utt in configs:
-        p_r = belief.p_response(belief.prior, utt)
-        EdH = belief.expected_info_gain(belief.prior, utt)
-        EdHs.append(EdH)
-    EdHs = np.array(EdHs)
+    EdHs = compute_EdH(belief)
     print(EdHs)
     print(EdHs.max(), EdHs.argmax(), configs[EdHs.argmax()])
 
+    print("20 questions simulation")
+
+    if overlap_size is not None:
+        intersect_size = math.ceil(num_dots / 2)
+    else:
+        intersect_size = overlap_size
+    state = np.random.gumbel(size=num_dots)
+    idxs1 = state.argsort()[:intersect_size]
+    idxs0 = state.argsort()[intersect_size:]
+    state[idxs1] = 1
+    state[idxs0] = 0
+
+    print("true state")
+    print(state)
+
+    def viz_belief(belief, p, n=5):
+        # decreasing order
+        idxs = (-p).argsort()[:n]
+        cs = belief.configs[idxs]
+        ps = p[idxs]
+        return cs, ps
+
     prior = belief.prior
-    for t in range(5):
+    for t in range(10):
         EdHs = []
         for utt in configs:
             EdH = belief.expected_info_gain(prior, utt)
@@ -450,8 +422,13 @@ if __name__ == "__main__":
         EdHs = np.array(EdHs)
         best_idx = EdHs.argmax()
         next_utt = configs[best_idx]
-        next_prior = belief.posterior(prior, next_utt, 1)
-        print(next_utt)
+        response = state.astype(bool)[next_utt.astype(bool)].all()
+        posterior = belief.posterior(prior, next_utt, response)
+        print(f"utt {next_utt}: response {response}")
+        print("posterior")
+        cs, ps = viz_belief(belief, posterior)
+        print(cs)
+        print(ps)
         import pdb; pdb.set_trace()
-        prior = next_prior
+        prior = posterior
 
