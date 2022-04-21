@@ -397,6 +397,25 @@ if __name__ == "__main__":
     print(cs)
     print(hs)
 
+    print("construct prior that is more certain")
+    belief = AndOrConfigBelief(num_dots, overlap_size = None)
+    a = [1,1,0,0,0,0,0]
+    b = [0,0,0,0,0,1,1]
+    c = [0,0,1,1,0,0,0]
+    a_idx = (configs == a).all(1).nonzero()[0]
+    b_idx = (configs == b).all(1).nonzero()[0]
+    c_idx = (configs == c).all(1).nonzero()[0]
+    prior = np.ones_like(belief.prior)
+    prior[a_idx] = 200
+    prior[b_idx] = 200
+    prior[c_idx] = 200
+    prior = prior / prior.sum()
+    EdHs = belief.compute_EdHs(belief.prior)
+    cs, hs = belief.viz_belief(EdHs)
+    print(cs)
+    print(hs)
+    import pdb; pdb.set_trace()
+
     print("20 questions simulation")
 
     if overlap_size is not None:
