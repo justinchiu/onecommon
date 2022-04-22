@@ -107,6 +107,9 @@ class RnnAgent(Agent):
         #)
         # MBP
         parser.add_argument('--DBG_GEN', action='store_true')
+        parser.add_argument('--DBG_PLAN', default="", type=str,
+            help="Output file path for top-k dot configurations during each turn at planning",
+        )
         # / MBP
 
     def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
@@ -595,21 +598,22 @@ class RnnAgent(Agent):
             )
         return can_confirm
 
-    def write(self, max_words=100, force_words=None, detect_markables=True, start_token=YOU_TOKEN,
-              dots_mentioned_per_ref_to_force=None,
-              dots_mentioned_num_markables_to_force=None,
-              ref_inpt=None,
-              # used for oracle beliefs
-              ref_tgt=None, partner_ref_tgt=None,
-              is_selection=None,
-              inference='sample',
-              beam_size=1,
-              sample_temperature_override=None,
-              can_confirm=None,
-              min_num_mentions=0,
-              max_num_mentions=12,
-              force_dots_mentioned=False,
-              ):
+    def write(
+        self, max_words=100, force_words=None, detect_markables=True, start_token=YOU_TOKEN,
+        dots_mentioned_per_ref_to_force=None,
+        dots_mentioned_num_markables_to_force=None,
+        ref_inpt=None,
+        # used for oracle beliefs
+        ref_tgt=None, partner_ref_tgt=None,
+        is_selection=None,
+        inference='sample',
+        beam_size=1,
+        sample_temperature_override=None,
+        can_confirm=None,
+        min_num_mentions=0,
+        max_num_mentions=12,
+        force_dots_mentioned=False,
+    ):
 
         if can_confirm is None:
             is_self = torch.ones(1).bool()

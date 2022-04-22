@@ -440,13 +440,14 @@ class HierarchicalDialog(Dialog):
             )
 
             # READER
-            reader.read(out_words,
-                        dots_mentioned=None,
-                        dots_mentioned_per_ref=None,
-                        dots_mentioned_num_markables=this_partner_num_markables,
-                        detect_markables=True,
-                        is_selection=this_is_selection,
-                        )
+            reader.read(
+                out_words,
+                dots_mentioned=None,
+                dots_mentioned_per_ref=None,
+                dots_mentioned_num_markables=this_partner_num_markables,
+                detect_markables=True,
+                is_selection=this_is_selection,
+            )
 
             words_left -= len(out_words)
             length += len(out_words)

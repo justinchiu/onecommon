@@ -1,3 +1,5 @@
+# duplicate in onecommon/webapp/dialog_analysis/belief.py
+ 
 import math
 
 import numpy as np
@@ -7,7 +9,6 @@ from scipy.special import comb
 #random.seed(1234)
 #np.random.seed(1234)
 
-np.seterr(all="raise")
 
 def safe_log(x, eps=1e-10):
     result = np.where(x > eps, x, 0)
@@ -289,9 +290,9 @@ class AndOrBelief(AndBelief):
         p_s_ur0 = p_r0s_u / Z0 if Z0 > 0 else np.ones((2 ** self.num_dots,)) / 2 ** self.num_dots
         return p_s_ur1 if response == 1 else p_s_ur0
 
-class AndOrConfigBelief(AndBelief):
+class OrAndBelief(AndBelief):
     """
-    And-or model for response modeling.
+    Or-and model for response modeling.
     Partner will (noisily) confirm an utterance if they see all dots mentioned
     OR have matching dots in unobserved context.
     The OR happens at the config level.
@@ -353,6 +354,8 @@ class AndOrConfigBelief(AndBelief):
 
 
 if __name__ == "__main__":
+    np.seterr(all="raise")
+
     num_dots = 7
     overlap_size = 4
     #num_dots = 4
@@ -391,7 +394,7 @@ if __name__ == "__main__":
 
     # po config model
     print("PO CONFIG MODEL")
-    belief = AndOrConfigBelief(num_dots, overlap_size = overlap_size)
+    belief = OrAndBelief(num_dots, overlap_size = overlap_size)
     EdHs = belief.compute_EdHs(belief.prior)
     cs, hs = belief.viz_belief(EdHs)
     print(cs)
