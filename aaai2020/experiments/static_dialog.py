@@ -129,6 +129,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             else:            
                 # gather next mention predictions from writer
                 if writer.reader_lang_hs:
+                    print("next mention")
                     is_self = torch.ones(1).bool()
                     can_confirm = writer.make_can_confirm(
                         is_self,
@@ -142,15 +143,17 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                         can_confirm=can_confirm,
                     )
                 else:
+                    print("first mention")
                     writer.first_mention(
                         dots_mentioned_num_markables_to_force=None,
                         min_num_mentions=0,
                         max_num_mentions=12,
                     )
-            nm = writer.next_mention_predictions
-            nm_multi = writer.next_mention_predictions_multi
+            nm_cands = writer.next_mention_candidates[-1]
+            nm = writer.next_mention_predictions[-1]
+            nm_multi = writer.next_mention_predictions_multi[-1]
             # int is easer to read
-            nms = torch.stack([x.any(0)[0] for x in nm_multi[0]]).int()
+            nms = torch.stack([x.any(0)[0] for x in nm_multi]).int() if nm_multi is not None else None
 
             # next mention predictions from planning
             EdHs = writer.belief.compute_EdHs(writer.prior)
@@ -164,6 +167,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print("mbp next mentions")
                 print(cs)
                 #import pdb; pdb.set_trace()
+                print("next mention candidates[-1]")
+                print(nm_cands.candidate_dots)
+                print(nm_cands.candidate_nm_scores)
 
 
             # update state for next turn
@@ -186,18 +192,21 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print("posterior")
                 print(cs)
                 print(ps)
-                import pdb; pdb.set_trace()
+
+                print("marginals")
+                marginals = reader.belief.marginals(reader.prior)
+                print([f"{x:.2f}" for x in marginals])
 
             # WRITER
-            writer.read(
-                out_words,
+            writer.args.reranking_confidence = False
+            writer.write(
+                force_words=[out_words],
                 start_token="YOU:",
-                dots_mentioned=None,
-                dots_mentioned_per_ref=None,
-                dots_mentioned_num_markables=this_partner_num_markables,
                 detect_markables=True,
                 is_selection=this_is_selection,
+                inference="sample",
             )
+            writer.args.reranking_confidence = True
 
             # READER
             reader.read(

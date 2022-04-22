@@ -1,5 +1,4 @@
-# duplicate in onecommon/webapp/dialog_analysis/belief.py
- 
+
 import math
 
 import numpy as np
@@ -90,6 +89,9 @@ class Belief:
         cs = self.configs[idxs]
         ps = p[idxs]
         return cs, ps
+
+    def marginals(self, p):
+        return (self.configs * p[:,None]).sum(0)
 
 
 class IndependentBelief(Belief):
@@ -400,23 +402,58 @@ if __name__ == "__main__":
     print(cs)
     print(hs)
 
-    print("construct prior that is more certain")
-    belief = AndOrConfigBelief(num_dots, overlap_size = None)
+    print("construct prior that elicits 3-mention")
+    belief = OrAndBelief(num_dots, overlap_size = None)
     a = [1,1,0,0,0,0,0]
-    b = [0,0,0,0,0,1,1]
-    c = [0,0,1,1,0,0,0]
+    b = [1,0,0,1,0,0,0]
+    c = [1,1,1,0,0,0,0]
     a_idx = (configs == a).all(1).nonzero()[0]
     b_idx = (configs == b).all(1).nonzero()[0]
     c_idx = (configs == c).all(1).nonzero()[0]
     prior = np.ones_like(belief.prior)
-    prior[a_idx] = 200
-    prior[b_idx] = 200
-    prior[c_idx] = 200
+    prior[a_idx] = 50
+    prior[b_idx] = 50
+    prior[c_idx] = 50
     prior = prior / prior.sum()
-    EdHs = belief.compute_EdHs(belief.prior)
+    EdHs = belief.compute_EdHs(prior)
     cs, hs = belief.viz_belief(EdHs)
     print(cs)
     print(hs)
+
+    print("give conflicting responses for single dot")
+    belief = OrAndBelief(num_dots, overlap_size = None)
+    u = np.array([1,0,0,0,0,0,0])
+    prior = belief.posterior(belief.prior,u,1)
+    print("marginals after positive")
+    print(belief.marginals(prior))
+    prior = belief.posterior(prior,u,0)
+    print("marginals after negative")
+    print(belief.marginals(prior))
+    prior = belief.posterior(prior,u,0)
+    print("marginals after second negative")
+    print(belief.marginals(prior))
+    EdHs = belief.compute_EdHs(prior)
+    cs, ps = belief.viz_belief(prior)
+    print(cs)
+    print(ps)
+
+    print("give conflicting responses for multi dot")
+    belief = OrAndBelief(num_dots, overlap_size = None)
+    u = np.array([1,1,0,0,0,0,0])
+    prior = belief.posterior(belief.prior,u,1)
+    print("marginals after positive")
+    print(belief.marginals(prior))
+    prior = belief.posterior(prior,u,0)
+    print("marginals after negative")
+    print(belief.marginals(prior))
+    prior = belief.posterior(prior,u,0)
+    print("marginals after second negative")
+    print(belief.marginals(prior))
+    EdHs = belief.compute_EdHs(prior)
+    cs, ps = belief.viz_belief(prior)
+    print(cs)
+    print(ps)
+
     import pdb; pdb.set_trace()
 
     print("20 questions simulation")
