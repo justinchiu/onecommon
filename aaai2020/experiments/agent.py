@@ -784,8 +784,8 @@ class RnnAgent(Agent):
                             for sentence in write_output_tpl[-1]["words"]
                         ]
                         [print(x) for x in list_of_outputs]
-                        print(dots_mentioned_per_ref)
-                        print(dots_mentioned_per_ref.any(-1))
+                        print(dots_mentioned_per_ref.int())
+                        print(dots_mentioned_per_ref.any(-1).int())
                         print("actual candidates")
                         import pdb; pdb.set_trace()
                     # / MBP DBG

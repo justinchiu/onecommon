@@ -46,9 +46,9 @@ class StaticDialogLogger:
         plan_mentions_language,
     ):
         self.turn["utterance_language"] = utterance_language
-        self.turn["utterance"] = utterance.tolist()
-        self.turn["prior_mentions"] = prior_mentions.tolist()
-        self.turn["plan_mentions"] = plan_mentions.tolist()
+        self.turn["utterance"] = utterance
+        self.turn["prior_mentions"] = prior_mentions
+        self.turn["plan_mentions"] = plan_mentions
         self.turn["prior_mentions_language "] = prior_mentions_language 
         self.turn["plan_mentions_language "] = plan_mentions_language
 
@@ -87,37 +87,77 @@ class StaticHierarchicalDialog(HierarchicalDialog):
         max_num_mentions = 10
 
         # hacked in for specific context
-        SENTENCES = [
-            "do you see two black dots close together ?",
-            "yes .",
-            "is one below and to the right of the other ?",
-            "no .",
-            "do you see a cluster of five grey dots ?",
-            "no .",
-            "do you see a cluster of four grey dots ?",
-            "no .",
-            "do you see a triangle of three grey dots ?",
-            "yes .",
-            "is there a big black dot below and to the left of it ?",
-            "yes .",
-        ]
-        UTTS = [
-            np.array([0,0,1,0,0,1,0]),
-            np.array([0,0,1,0,0,1,0]),
-            np.array([1,1,0,1,1,0,1]),
-            np.array([0,1,0,1,1,0,1]),
-            np.array([0,0,0,1,1,0,1]),
-            np.array([0,0,0,1,0,0,0]),
-            np.array([0,0,1,1,0,0,0]),
-        ]
-        RESPS = [
-            1,
-            0,
-            0,
-            0,
-            1,
-            1,
-        ]
+        if scenario_id == "S_pGlR0nKz9pQ4ZWsw":
+            YOU, THEM = 0, 1
+            SENTENCES = [
+                "do you see two black dots close together ?",
+                "yes .",
+                "is one below and to the right of the other ?",
+                "no .",
+                "do you see a cluster of five grey dots ?",
+                "no .",
+                "do you see a cluster of four grey dots ?",
+                "no .",
+                "do you see a triangle of three grey dots ?",
+                "yes .",
+                "is there a big black dot below and to the left of it ?",
+                "yes .",
+            ]
+            UTTS = [
+                np.array([0,0,1,0,0,1,0]),
+                None,
+                np.array([0,0,1,0,0,1,0]),
+                None,
+                np.array([1,1,0,1,1,0,1]),
+                None,
+                np.array([0,1,0,1,1,0,1]),
+                None,
+                np.array([0,0,0,1,1,0,1]),
+                None,
+                np.array([0,0,0,1,0,0,0]),
+                None,
+                np.array([0,0,1,1,0,0,0]),
+                None,
+            ]
+            RESPS = [
+                None,
+                1,
+                None,
+                0,
+                None,
+                0,
+                None,
+                0,
+                None,
+                1,
+                None,
+                1,
+            ]
+        elif scenario_id == "S_n0ocL412kqOAl9QR":
+            THEM, YOU = 0, 1
+            SENTENCES = [
+                "i have one black dot , it is all by itself",
+                "where it is",
+                "i have a small gray dot iwth a larger grey dot to its left . and a larger one to the left of it",
+                "let's choose the larger one",
+                "ok",
+            ]
+            UTTS = [
+                np.array([0,0,1,0,0,0,0]),
+                np.array([0,0,1,0,0,0,0]),
+                np.array([0,0,1,0,0,1,0]),
+                np.array([1,1,0,1,1,0,1]),
+                np.array([0,1,0,1,1,0,1]),
+            ]
+            RESPS = [
+                None,
+                0,
+                0,
+                0,
+                0,
+            ]
+        else:
+            raise ValueError(f"Invalid scenario id {scenario_id}")
         # / hacked in for specific context
 
         #max_sentences = self.args.max_sentences
@@ -159,7 +199,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
         expired = False
 
         sentence_ix = 0
-        read_idx = 0
 
         while sentence_ix < max_sentences:
             assert writer.state.turn == sentence_ix
@@ -227,7 +266,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             EdHs = writer.belief.compute_EdHs(writer.prior)
             cs, hs = writer.belief.viz_belief(EdHs, n=writer.args.next_mention_reranking_k)
 
-            if writer.agent_id == 0:
+            if writer.agent_id == YOU:
                 print("writer dots")
                 print(writer.dots)
                 print("prior next mentions")
@@ -242,9 +281,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 self.dialog_logger.start_turn()
                 self.dialog_logger.add_turn_utt(
                     utterance_language = SENTENCES[sentence_ix],
-                    utterance = UTTS[read_idx],
-                    prior_mentions = nms,
-                    plan_mentions = cs,
+                    utterance = UTTS[sentence_ix].tolist(),
+                    prior_mentions = nms.tolist(),
+                    plan_mentions = cs.tolist(),
                     prior_mentions_language = None,
                     plan_mentions_language = None,
                 )
@@ -256,17 +295,24 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             out_words = SENTENCES[sentence_ix].split() + ["<eos>"]
             print(SENTENCES[sentence_ix])
 
-            if reader.agent_id == 0:
+            if reader.agent_id == YOU:
                 # UPDATE AGENT 0 BELIEF
-                utt = UTTS[read_idx]
-                response = RESPS[read_idx]
+                utt = UTTS[sentence_ix-1]
+                response = RESPS[sentence_ix]
                 reader.prior = reader.belief.posterior(reader.prior, utt, response)
-                read_idx += 1
+
+                if UTTS[sentence_ix] is not None:
+                    # if they mention a new dot, we pretend we asked about it
+                    reader.prior = reader.belief.posterior(reader.prior, UTTS[sentence_ix], 1)
 
                 utt_str = np.array(reader.dots)[utt.astype(bool)]
                 cs, ps = reader.belief.viz_belief(reader.prior, n=5)
-                print("prev utt")
+                print("our prev utt")
                 print(utt_str)
+                if UTTS[sentence_ix] is not None:
+                    utt_str = np.array(reader.dots)[UTTS[sentence_ix].astype(bool)]
+                    print("their utt")
+                    print(utt_str)
                 print("posterior")
                 print(cs)
                 print(ps)
