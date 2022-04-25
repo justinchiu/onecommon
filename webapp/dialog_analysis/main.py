@@ -8,6 +8,8 @@ import json
 from functools import partial
 import numpy as np
 
+from dot import Dot
+
 #random.seed(1234)
 #np.random.seed(1234)
 
@@ -180,24 +182,28 @@ def select_html(item, shift=0):
     f = item["color"] # ignored
     return f'<circle cx="{x}" cy="{y}" r="{r}" fill="none" stroke="red" stroke-width="2" stroke-dasharray="3,3"  />'
 
-def visualize_board(board, select0, select1):
+def visualize_board(left_dots, right_dots, select0, select1, intersect):
     shift = 430
-    left_dots = board["kbs"][0]
-    right_dots = board["kbs"][1]
 
-    left_dots_html = map(dot_html, left_dots)
-    right_dots_html = map(partial(dot_html, shift=shift), right_dots)
-    select_left = list(filter(lambda x: int(x["id"]) == select0, left_dots))[0]
-    select_right = list(filter(lambda x: int(x["id"]) == select1, right_dots))[0]
+    left_dots_html = map(lambda x: x.html(), left_dots)
+    right_dots_html = map(lambda x: x.html(shift), right_dots)
+
+    intersect_dots = map(lambda x: x.intersect_html(), intersect)
+
+    select_left = list(filter(lambda x: int(x.id) == select0, left_dots))[0]
+    select_right = list(filter(lambda x: int(x.id) == select1, right_dots))[0]
+
+
     nl = "\n"
     html = f"""
     <svg width="860" height="430">
     <circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
     {nl.join(left_dots_html)}
-    {select_html(select_left)}
+    {nl.join(intersect_dots)}
+    {select_left.select_html()}
     <circle cx="645" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
     {nl.join(right_dots_html)}
-    {select_html(select_right, shift=shift)}
+    {select_right.select_html(shift=shift)}
     </svg>
     """
     components.html(html, height=430, width=860)
@@ -238,7 +244,12 @@ def process_dialogue(dialogue_dict):
     board = boards[scenario_id]
     st.write(f"Chat scenario id: {scenario_id}")
     st.write("SUCCESS" if reward else "FAILURE")
-    visualize_board(board, select0, select1)
+
+    b0 = [Dot(x) for x in board["kbs"][0]]
+    b1 = [Dot(x) for x in board["kbs"][1]]
+    intersect = [x for x in b0 for y in b1 if x.id == y.id]
+
+    visualize_board(b0, b1, select0, select1, intersect)
     st.write(f"Agent 0: {agent_types['0']} || 1: {agent_types['1']}")
     visualize_dialogue(dialogue)
 
