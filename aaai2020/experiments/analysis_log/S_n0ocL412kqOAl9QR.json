@@ -1,0 +1,250 @@
+[
+    {
+        "marginal_belief": [
+            0.4806201550387595,
+            0.4806201550387595,
+            0.6511627906976746,
+            0.4806201550387596,
+            0.4806201550387596,
+            0.4806201550387596,
+            0.4806201550387596
+        ],
+        "plan_mentions": null,
+        "plan_mentions_language ": null,
+        "prior_mentions": null,
+        "prior_mentions_language ": null,
+        "response": null,
+        "response_language": "i have one black dot , it is all by itself",
+        "response_utt": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+        ],
+        "utterance": null,
+        "utterance_language": null
+    },
+    {
+        "marginal_belief": [
+            0.47767542138031105,
+            0.47767542138031105,
+            0.5073379499290646,
+            0.47767542138031105,
+            0.47767542138031105,
+            0.7241248738554261,
+            0.47767542138031105
+        ],
+        "plan_mentions": [
+            [
+                1,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                1,
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                1,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                0
+            ]
+        ],
+        "plan_mentions_language ": null,
+        "prior_mentions": [
+            [
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                1
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                1
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                1
+            ]
+        ],
+        "prior_mentions_language ": null,
+        "response": 0,
+        "response_language": "i have a small gray dot iwth a larger grey dot to its left . and a larger one to the left of it",
+        "response_utt": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            0
+        ],
+        "utterance": [
+            0,
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+        ],
+        "utterance_language": "where it is"
+    },
+    {
+        "marginal_belief": [
+            0.3674696351751232,
+            0.8601389145612203,
+            0.6649475547271729,
+            0.8601389145612202,
+            0.8601389145612202,
+            0.806639242667491,
+            0.8601389145612202
+        ],
+        "plan_mentions": [
+            [
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                1,
+                1,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                1
+            ]
+        ],
+        "plan_mentions_language ": null,
+        "prior_mentions": [
+            [
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                1,
+                0,
+                0
+            ]
+        ],
+        "prior_mentions_language ": null,
+        "response": 0,
+        "response_language": "ok",
+        "response_utt": [
+            0,
+            1,
+            0,
+            1,
+            1,
+            0,
+            1
+        ],
+        "utterance": [
+            1,
+            1,
+            0,
+            1,
+            1,
+            0,
+            1
+        ],
+        "utterance_language": "let's choose the larger one"
+    }
+]

@@ -57,10 +57,13 @@ class StaticDialogLogger:
         response_language,
         response,
         marginal_belief,
+        response_utt=None,
     ):
         self.turn["response_language"] = response_language
         self.turn["response"] = response
         self.turn["marginal_belief"] = marginal_belief.tolist()
+        # SIMPLIFYING ASSUMP: ONLY A SINGLE UTT IN RESPONSE
+        self.turn["response_utt"] = response_utt
 
 
 class StaticHierarchicalDialog(HierarchicalDialog):
@@ -114,9 +117,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 None,
                 np.array([0,0,0,1,1,0,1]),
                 None,
-                np.array([0,0,0,1,0,0,0]),
-                None,
-                np.array([0,0,1,1,0,0,0]),
+                np.array([0,0,1,1,1,0,1]),
                 None,
             ]
             RESPS = [
@@ -297,22 +298,36 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
             if reader.agent_id == YOU:
                 # UPDATE AGENT 0 BELIEF
-                utt = UTTS[sentence_ix-1]
-                response = RESPS[sentence_ix]
-                reader.prior = reader.belief.posterior(reader.prior, utt, response)
+                response = None
+                if sentence_ix > 0:
+                    # update belief given partner response to our utterances
+                    utt = UTTS[sentence_ix-1]
+                    response = RESPS[sentence_ix]
+                    reader.prior = reader.belief.posterior(reader.prior, utt, response)
+                    utt_str = np.array(reader.dots)[utt.astype(bool)]
+                    print("our prev utt")
+                    print(utt_str)
+                else:
+                    # if the first turn is a read, give null data for utts
+                    self.dialog_logger.start_turn()
+                    self.dialog_logger.add_turn_utt(
+                        utterance_language = None,
+                        utterance = None,
+                        prior_mentions = None,
+                        plan_mentions = None,
+                        prior_mentions_language = None,
+                        plan_mentions_language = None,
+                    )
 
                 if UTTS[sentence_ix] is not None:
+                    # update belief with unsolicited partner info
                     # if they mention a new dot, we pretend we asked about it
                     reader.prior = reader.belief.posterior(reader.prior, UTTS[sentence_ix], 1)
-
-                utt_str = np.array(reader.dots)[utt.astype(bool)]
-                cs, ps = reader.belief.viz_belief(reader.prior, n=5)
-                print("our prev utt")
-                print(utt_str)
-                if UTTS[sentence_ix] is not None:
                     utt_str = np.array(reader.dots)[UTTS[sentence_ix].astype(bool)]
                     print("their utt")
                     print(utt_str)
+
+                cs, ps = reader.belief.viz_belief(reader.prior, n=5)
                 print("posterior")
                 print(cs)
                 print(ps)
@@ -325,6 +340,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     response_language = SENTENCES[sentence_ix],
                     response = response,
                     marginal_belief = marginals,
+                    response_utt = UTTS[sentence_ix].tolist()
+                        if UTTS[sentence_ix] is not None
+                        else None,
                 )
                 self.dialog_logger.end_turn()
 

@@ -89,6 +89,7 @@
         "prior_mentions_language ": null,
         "response": 1,
         "response_language": "yes .",
+        "response_utt": null,
         "utterance": [
             0,
             0,
@@ -190,6 +191,7 @@
         "prior_mentions_language ": null,
         "response": 0,
         "response_language": "no .",
+        "response_utt": null,
         "utterance": [
             0,
             0,
@@ -291,6 +293,7 @@
         "prior_mentions_language ": null,
         "response": 0,
         "response_language": "no .",
+        "response_utt": null,
         "utterance": [
             1,
             1,
@@ -392,6 +395,7 @@
         "prior_mentions_language ": null,
         "response": 0,
         "response_language": "no .",
+        "response_utt": null,
         "utterance": [
             0,
             1,
@@ -493,6 +497,7 @@
         "prior_mentions_language ": null,
         "response": 1,
         "response_language": "yes .",
+        "response_utt": null,
         "utterance": [
             0,
             0,
@@ -506,13 +511,13 @@
     },
     {
         "marginal_belief": [
-            0.40650913964456836,
-            0.26756943475035,
-            0.5731482769696027,
-            0.878082237892603,
-            0.7910923454142724,
-            0.5731482769696028,
-            0.7910923454142724
+            0.4332723070590966,
+            0.21232517879442886,
+            0.9347388213845368,
+            0.9776760863102651,
+            0.9776760863102651,
+            0.609475826025272,
+            0.9776760863102651
         ],
         "plan_mentions": [
             [
@@ -594,14 +599,15 @@
         "prior_mentions_language ": null,
         "response": 1,
         "response_language": "yes .",
+        "response_utt": null,
         "utterance": [
             0,
             0,
-            0,
+            1,
+            1,
             1,
             0,
-            0,
-            0
+            1
         ],
         "utterance_language": "is there a big black dot below and to the left of it ?"
     }
