@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -17,12 +19,15 @@ class Dot:
         for k,v in item.items():
             setattr(self, k, v)
 
-    def html(self, shift=0):
+    def html(self, shift=0, value=None):
         x = self.x + shift
         y = self.y
         r = self.size
         f = self.color
-        label = f'<text x="{x+12}" y="{y-12}" font-size="18">{self.id}</text>'
+        label = (f'<text x="{x+12}" y="{y-12}" font-size="18">{self.id}</text>'
+            if value is None
+            else f'<text x="{x+12}" y="{y-12}" font-size="18">{self.id} ({value:.2f})</text>'
+        )
         return f'<circle cx="{x}" cy="{y}" r="{r}" fill="{f}" /> {label}'
 
     def select_html(self, shift=0):
@@ -44,7 +49,7 @@ class Dot:
 
 
 # Testing streamlit
-st.title("OneCommon Visualizations")
+st.title("OneCommon Planning Visualization")
 
 #json_file = "experiments_nov-22/all_dialogues.json"
 json_file = "../../onecommon_human_experiments/dialogues_with_completion_info.json"
@@ -190,32 +195,11 @@ def visualize_board(left_dots, right_dots, select0, select1, intersect):
 def visualize_dialogue(dialogue):
     st.table(dialogue)
 
-dialogue_idxs = {
-    k: np.random.choice(len(v), 20, replace=False)
-    for k,v in finished_dialogues_by_ty.items()
-}
-dialogue_idxs = {
-    "human": [96, 74, 42, 83, 138, 2, 160, 192, 202, 176, 196, 182, 180, 193, 148, 146, 58, 99, 41, 120, 92, 117],
-    "pragmatic_confidence": [237, 29, 170, 131, 113, 92, 40, 65, 64, 74, 186, 71, 137, 190, 32, 66, 22, 111, 141, 59],
-    "uabaseline_same_opt": dialogue_idxs["uabaseline_same_opt"],
-}
-
-subsampled_by_ty = {
-    k: [v[idx] for idx in dialogue_idxs[k]]
-    for k,v in finished_dialogues_by_ty.items()
-}
-
-# we only care about 'human' and 'pragmatic_confidence'
-human = subsampled_by_ty["human"]
-robot = subsampled_by_ty["pragmatic_confidence"]
-
 """
 train_json_file = "../../aaai2020/experiments/data/onecommon/final_transcripts.json"
 with open(train_json_file, "r") as f:
     train_dialogues = json.load(f)
 id2dialogue = {x["scenario_uuid"]: x for x in train_dialogues}
-"""
-
 def process_dialogue(dialogue_dict):
     scenario_id = dialogue_dict["scenario_id"]
     dialogue = dialogue_dict["dialogue"]
@@ -240,16 +224,80 @@ def process_dialogue(dialogue_dict):
 
     st.write(f"Agent 0: {agent_types['0']} || 1: {agent_types['1']}")
     visualize_dialogue(dialogue)
+"""
+
+def visualize_board(left_dots, right_dots, mentions, intersect, beliefs=None):
+    shift = 430
+
+    left_dots_html = (map(lambda x: x.html(), left_dots)
+        if beliefs is None
+        else map(lambda x: x[0].html(value=x[1]), zip(left_dots, beliefs))
+    )
+    right_dots_html = map(lambda x: x.html(shift), right_dots)
+
+    mentions_html = map(lambda x: x.select_html(), mentions)
+    intersect_dots = map(lambda x: x.intersect_html(), intersect)
+
+    nl = "\n"
+    html = f"""
+    <svg width="860" height="430">
+    <circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
+    {nl.join(left_dots_html)}
+    {nl.join(intersect_dots)}
+    {nl.join(mentions_html)}
+    <circle cx="645" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
+    {nl.join(right_dots_html)}
+    </svg>
+    """
+    components.html(html, height=430, width=860)
+
+def visualize_dialogue(dialogue):
+    st.table(dialogue)
+
+def process_dialogue(scenario_id, dialogue):
+    board = boards[scenario_id]
+    st.write(f"Chat scenario id: {scenario_id}")
+
+    b0 = [Dot(x) for x in board["kbs"][0]]
+    b1 = [Dot(x) for x in board["kbs"][1]]
+    intersect = [x for x in b0 for y in b1 if x.id == y.id]
+
+    #turn = st.radio("Turn number", np.arange(len(dialogue)))
+    turn = st.number_input("Turn number", 0, len(dialogue)-1)
+
+    st.header("Dialogue so far")
+    for t in range(turn):
+        st.write(f"u: {dialogue[t]['utterance_language']} || r: {dialogue[t]['response_language']}")
+
+    turn = dialogue[turn]
+
+    display = st.radio("Display", ("prior", "plan", "posterior"))
+
+    if display == "prior":
+        st.header("Prior next mentions")
+        prior_mentions = turn["prior_mentions"]
+        prior_idx = st.radio("Prior number", np.arange(len(prior_mentions)))
+        mention = [x for i,x in enumerate(b0) if prior_mentions[prior_idx][i] == 1]
+        visualize_board(b0, b1, mention, intersect)
+    elif display == "plan":
+        st.header("Plan next mentions")
+        plan_mentions = turn["plan_mentions"]
+        plan_idx = st.radio("Plan number", np.arange(len(plan_mentions)))
+        mention = [x for i,x in enumerate(b0) if plan_mentions[plan_idx][i] == 1]
+        visualize_board(b0, b1, mention, intersect)
+    elif display == "posterior":
+        st.header("Input and belief posterior")    
+        st.write(f"Input utterance: {turn['utterance_language']} || response: {turn['response_language']}")
+        mention = [x for i,x in enumerate(b0) if turn["utterance"][i] == 1]
+        visualize_board(b0, b1, mention, intersect, beliefs=turn["marginal_belief"])
 
 
-#dialogues_type = st.selectbox("Human or robot dialogue", options=["robot", "human"])
-#st.write(f"Dialogue idxs: {dialogue_idxs['human' if dialogues_type == 'human' else 'pragmatic_confidence']}")
-#dialogues = human if dialogues_type == "human" else robot
-#dialogue_id = st.select_slider("Dialogue number", options=list(range(len(dialogues))))
 
-dialogues = robot
-dialogue_id = 3
+dir = "../../aaai2020/experiments/analysis_log"
+scenario_id = "S_pGlR0nKz9pQ4ZWsw"
+filepath = (Path(dir) / scenario_id).with_suffix(".json")
 
-process_dialogue(dialogues[dialogue_id])
+with filepath.open() as f:
+    dialogue = json.load(f)
 
-
+process_dialogue(scenario_id, dialogue)
