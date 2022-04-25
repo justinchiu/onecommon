@@ -9,8 +9,8 @@ shift
 shift
 shift
 
-log_file=${model_dir_a}/${name}_ctx-${shared_ctx_count}.selfplay.log
-out_file=${model_dir_a}/${name}_ctx-${shared_ctx_count}.selfplay.out
+log_file=analysis_log/${name}.log
+out_file=analysis_log/${name}.out
 
 rerank_args="--language_rerank --next_mention_reranking --language_beam_keep_all_finished \
 --reranking_confidence"
@@ -38,7 +38,7 @@ python -u test_planning_static.py \
   --cuda \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
-  --DBG_PLAN analysis_log/${name}.log \
+  --DBG_PLAN analysis_log/${name}.json \
   --DBG_GEN \
   --num_contexts 1000 \
   ${rerank_args} ${rerank_args2} ${rerank_args3} ${rerank_args4} \

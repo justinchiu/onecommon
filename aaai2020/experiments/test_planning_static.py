@@ -17,7 +17,7 @@ from utils import ContextGenerator
 from dialog import Dialog, DialogLogger, HierarchicalDialog
 from models.rnn_reference_model import RnnReferenceModel
 import domain
-from static_dialog import StaticHierarchicalDialog
+from static_dialog import StaticHierarchicalDialog, StaticDialogLogger
 
 import pprint
 

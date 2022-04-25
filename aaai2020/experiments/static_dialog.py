@@ -1,4 +1,7 @@
 import sys
+import json
+
+from pathlib import Path
 
 import numpy as np
 
@@ -12,6 +15,54 @@ from dialog import DialogLogger, HierarchicalDialog
 
 from belief import AndOrBelief, OrAndBelief
 
+"""
+Dialog: [Turn]
+Turn: [Utterance, Response, [PriorNextMention], [PlanNextMention]]
+PriorNextMention: Set[Dots]
+PlanNextMention: Set[Dots]
+"""
+
+class StaticDialogLogger:
+    def __init__(self, scenario_id, dir="analysis_log"):
+        self.filepath = (Path(dir) / scenario_id).with_suffix(".json")
+        self.dialogue = []
+
+    def dump_json(self):
+        with self.filepath.open("w") as f:
+            json.dump(self.dialogue, f, indent=4, sort_keys=True)
+
+    def start_turn(self):
+        self.turn = {}
+    def end_turn(self):
+        self.dialogue.append(self.turn)
+
+    def add_turn_utt(
+        self,
+        utterance_language,
+        utterance,
+        prior_mentions,
+        plan_mentions,
+        prior_mentions_language,
+        plan_mentions_language,
+    ):
+        self.turn["utterance_language"] = utterance_language
+        self.turn["utterance"] = utterance.tolist()
+        self.turn["prior_mentions"] = prior_mentions.tolist()
+        self.turn["plan_mentions"] = plan_mentions.tolist()
+        self.turn["prior_mentions_language "] = prior_mentions_language 
+        self.turn["plan_mentions_language "] = plan_mentions_language
+
+    def add_turn_resp(
+        self,
+        response_language,
+        response,
+        marginal_belief,
+    ):
+        self.turn["response_language"] = response_language
+        self.turn["response"] = response
+        self.turn["marginal_belief"] = marginal_belief.tolist()
+
+
 class StaticHierarchicalDialog(HierarchicalDialog):
     def __init__(
         self, agents, args, markable_detector,
@@ -24,6 +75,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
     def run(self, ctxs, logger, max_words=5000):
         scenario_id = ctxs[0][0]
+        self.dialog_logger = StaticDialogLogger(scenario_id)
 
         # setup for MBP
         dots = ctxs[2][0]
@@ -34,28 +86,42 @@ class StaticHierarchicalDialog(HierarchicalDialog):
         min_num_mentions = 0
         max_num_mentions = 10
 
-
+        # hacked in for specific context
         SENTENCES = [
             "do you see two black dots close together ?",
             "yes .",
             "is one below and to the right of the other ?",
             "no .",
+            "do you see a cluster of five grey dots ?",
+            "no .",
+            "do you see a cluster of four grey dots ?",
+            "no .",
             "do you see a triangle of three grey dots ?",
+            "yes .",
+            "is there a big black dot below and to the left of it ?",
             "yes .",
         ]
         UTTS = [
             np.array([0,0,1,0,0,1,0]),
             np.array([0,0,1,0,0,1,0]),
+            np.array([1,1,0,1,1,0,1]),
+            np.array([0,1,0,1,1,0,1]),
             np.array([0,0,0,1,1,0,1]),
+            np.array([0,0,0,1,0,0,0]),
+            np.array([0,0,1,1,0,0,0]),
         ]
         RESPS = [
             1,
             0,
+            0,
+            0,
+            1,
             1,
         ]
-        # / MBP
+        # / hacked in for specific context
 
-        max_sentences = self.args.max_sentences
+        #max_sentences = self.args.max_sentences
+        max_sentences = len(SENTENCES)
 
         for agent in self.agents:
             assert [] == agent.model.args.ref_beliefs \
@@ -126,6 +192,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 # pop off reader_lang_hs, writer_lang_hs
                 writer.reader_lang_hs.pop()
                 writer.writer_lang_hs.pop()
+                # writer.ref_preds
+                # writer.partner_ref_preds
             else:            
                 # gather next mention predictions from writer
                 if writer.reader_lang_hs:
@@ -171,6 +239,16 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print(nm_cands.candidate_dots)
                 print(nm_cands.candidate_nm_scores)
 
+                self.dialog_logger.start_turn()
+                self.dialog_logger.add_turn_utt(
+                    utterance_language = SENTENCES[sentence_ix],
+                    utterance = UTTS[read_idx],
+                    prior_mentions = nms,
+                    plan_mentions = cs,
+                    prior_mentions_language = None,
+                    plan_mentions_language = None,
+                )
+
 
             # update state for next turn
             #out_words = "do you see the black one ? <eos>".split()
@@ -196,6 +274,13 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print("marginals")
                 marginals = reader.belief.marginals(reader.prior)
                 print([f"{x:.2f}" for x in marginals])
+
+                self.dialog_logger.add_turn_resp(
+                    response_language = SENTENCES[sentence_ix],
+                    response = response,
+                    marginal_belief = marginals,
+                )
+                self.dialog_logger.end_turn()
 
             # WRITER
             writer.args.reranking_confidence = False
@@ -250,6 +335,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
             writer, reader = reader, writer
             sentence_ix += 1
+
+        self.dialog_logger.dump_json()
 
         choices = []
         for agent in self.agents:
