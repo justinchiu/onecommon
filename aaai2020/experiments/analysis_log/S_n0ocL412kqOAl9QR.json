@@ -1,5 +1,6 @@
 [
     {
+        "agent_id": 1,
         "marginal_belief": [
             0.4806201550387595,
             0.4806201550387595,
@@ -28,6 +29,7 @@
         "utterance_language": null
     },
     {
+        "agent_id": 1,
         "marginal_belief": [
             0.47767542138031105,
             0.47767542138031105,
@@ -138,6 +140,7 @@
         "utterance_language": "where it is"
     },
     {
+        "agent_id": 1,
         "marginal_belief": [
             0.3674696351751232,
             0.8601389145612203,

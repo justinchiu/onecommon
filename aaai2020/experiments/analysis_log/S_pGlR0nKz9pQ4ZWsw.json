@@ -1,5 +1,6 @@
 [
     {
+        "agent_id": 0,
         "marginal_belief": [
             0.47525002525507637,
             0.47525002525507637,
@@ -102,6 +103,7 @@
         "utterance_language": "do you see two black dots close together ?"
     },
     {
+        "agent_id": 0,
         "marginal_belief": [
             0.45968931097818416,
             0.45968931097818416,
@@ -204,6 +206,7 @@
         "utterance_language": "is one below and to the right of the other ?"
     },
     {
+        "agent_id": 0,
         "marginal_belief": [
             0.4496737921506051,
             0.4496737921506051,
@@ -306,6 +309,7 @@
         "utterance_language": "do you see a cluster of five grey dots ?"
     },
     {
+        "agent_id": 0,
         "marginal_belief": [
             0.453516019160691,
             0.4329661018623012,
@@ -408,6 +412,7 @@
         "utterance_language": "do you see a cluster of four grey dots ?"
     },
     {
+        "agent_id": 0,
         "marginal_belief": [
             0.4148077923630532,
             0.2873635659378511,
@@ -510,6 +515,7 @@
         "utterance_language": "do you see a triangle of three grey dots ?"
     },
     {
+        "agent_id": 0,
         "marginal_belief": [
             0.4332723070590966,
             0.21232517879442886,

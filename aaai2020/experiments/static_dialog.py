@@ -31,8 +31,8 @@ class StaticDialogLogger:
         with self.filepath.open("w") as f:
             json.dump(self.dialogue, f, indent=4, sort_keys=True)
 
-    def start_turn(self):
-        self.turn = {}
+    def start_turn(self, agent=0):
+        self.turn = {"agent_id": agent}
     def end_turn(self):
         self.dialogue.append(self.turn)
 
@@ -279,7 +279,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print(nm_cands.candidate_dots)
                 print(nm_cands.candidate_nm_scores)
 
-                self.dialog_logger.start_turn()
+                self.dialog_logger.start_turn(YOU)
                 self.dialog_logger.add_turn_utt(
                     utterance_language = SENTENCES[sentence_ix],
                     utterance = UTTS[sentence_ix].tolist(),
@@ -309,7 +309,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     print(utt_str)
                 else:
                     # if the first turn is a read, give null data for utts
-                    self.dialog_logger.start_turn()
+                    self.dialog_logger.start_turn(YOU)
                     self.dialog_logger.add_turn_utt(
                         utterance_language = None,
                         utterance = None,
