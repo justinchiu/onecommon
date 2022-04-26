@@ -56,11 +56,15 @@ class StaticDialogLogger:
         self,
         response_language,
         response,
+        configs,
+        belief,
         marginal_belief,
         response_utt=None,
     ):
         self.turn["response_language"] = response_language
         self.turn["response"] = response
+        self.turn["configs"] = configs.tolist()
+        self.turn["belief"] = belief.tolist()
         self.turn["marginal_belief"] = marginal_belief.tolist()
         # SIMPLIFYING ASSUMP: ONLY A SINGLE UTT IN RESPONSE
         self.turn["response_utt"] = response_utt
@@ -144,18 +148,18 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 "ok",
             ]
             UTTS = [
-                np.array([0,0,1,0,0,0,0]),
-                np.array([0,0,1,0,0,0,0]),
-                np.array([0,0,1,0,0,1,0]),
-                np.array([1,1,0,1,1,0,1]),
-                np.array([0,1,0,1,1,0,1]),
+                np.array([0,0,0,0,1,0,0]),
+                np.array([0,0,0,0,1,0,0]),
+                np.array([0,1,0,0,0,1,0]),
+                np.array([0,1,0,0,0,0,0]),
+                np.array([0,0,0,0,0,0,0]),
             ]
             RESPS = [
                 None,
                 0,
-                0,
-                0,
-                0,
+                None,
+                1,
+                None,
             ]
         else:
             raise ValueError(f"Invalid scenario id {scenario_id}")
@@ -185,6 +189,11 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
         # Agent 0 always goes first (static)
         writer, reader = self.agents
+        # first player depends on game
+        if scenario_id == "S_n0ocL412kqOAl9QR":
+            # Agent 1 (YOU) goes first
+            reader, writer = self.agents
+
 
         is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
         is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
@@ -288,6 +297,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     prior_mentions_language = None,
                     plan_mentions_language = None,
                 )
+                # writer.ref_preds
+                # writer.partner_ref_preds
 
 
             # update state for next turn
@@ -339,6 +350,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 self.dialog_logger.add_turn_resp(
                     response_language = SENTENCES[sentence_ix],
                     response = response,
+                    configs = cs,
+                    belief = ps,
                     marginal_belief = marginals,
                     response_utt = UTTS[sentence_ix].tolist()
                         if UTTS[sentence_ix] is not None
