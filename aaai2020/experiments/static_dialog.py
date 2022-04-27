@@ -44,15 +44,19 @@ class StaticDialogLogger:
         utterance,
         prior_mentions,
         plan_mentions,
+        plan2_mentions,
         prior_mentions_language,
         plan_mentions_language,
+        plan2_mentions_language,
     ):
         self.turn["utterance_language"] = utterance_language
         self.turn["utterance"] = utterance
         self.turn["prior_mentions"] = prior_mentions
         self.turn["plan_mentions"] = plan_mentions
+        self.turn["plan2_mentions"] = plan2_mentions
         self.turn["prior_mentions_language "] = prior_mentions_language 
         self.turn["plan_mentions_language "] = plan_mentions_language
+        self.turn["plan2_mentions_language "] = plan2_mentions_language
 
     def add_turn_resp(
         self,
@@ -61,6 +65,8 @@ class StaticDialogLogger:
         configs,
         belief,
         marginal_belief,
+        belief2,
+        marginal_belief2,
         response_utt=None,
     ):
         self.turn["response_language"] = response_language
@@ -68,6 +74,8 @@ class StaticDialogLogger:
         self.turn["configs"] = configs.tolist()
         self.turn["belief"] = belief.tolist()
         self.turn["marginal_belief"] = marginal_belief.tolist()
+        self.turn["belief2"] = belief2.tolist()
+        self.turn["marginal_belief2"] = marginal_belief2.tolist()
         # SIMPLIFYING ASSUMP: ONLY A SINGLE UTT IN RESPONSE
         self.turn["response_utt"] = response_utt
 
@@ -183,10 +191,11 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             agent.real_ids = real_ids
             agent.agent_id = agent_id
 
-            #agent.belief = OrAndBelief(num_dots)
-            # ctx: [x, y, size, color]
-            agent.belief = OrAndOrBelief(num_dots, process_ctx(ctx))
+            agent.belief = OrAndBelief(num_dots)
             agent.prior = agent.belief.prior
+            # ctx: [x, y, size, color]
+            agent.belief2 = OrAndOrBelief(num_dots, process_ctx(ctx))
+            agent.prior2 = agent.belief.prior
             agent.dots = ctxs[2][agent_id]
 
             # for each config, generate best referring expressions
@@ -292,8 +301,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
             this_partner_num_markables = torch.LongTensor([0])
 
-
-
             WRITE = False
             if WRITE:
                 out_words = writer.write(
@@ -345,6 +352,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             EdHs = writer.belief.compute_EdHs(writer.prior)
             cs, hs = writer.belief.viz_belief(EdHs, n=writer.args.next_mention_reranking_k)
 
+            EdHs2 = writer.belief2.compute_EdHs(writer.prior2)
+            cs2, hs2 = writer.belief2.viz_belief(EdHs2, n=writer.args.next_mention_reranking_k)
+
             if writer.agent_id == YOU:
                 print("writer dots")
                 print(writer.dots)
@@ -352,6 +362,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print(nms)
                 print("mbp next mentions")
                 print(cs)
+                print("mbp2 next mentions")
+                print(cs2)
                 #import pdb; pdb.set_trace()
                 print("next mention candidates[-1]")
                 print(nm_cands.candidate_dots)
@@ -363,8 +375,10 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     utterance = UTTS[sentence_ix].tolist(),
                     prior_mentions = nms.tolist(),
                     plan_mentions = cs.tolist(),
+                    plan2_mentions = cs2.tolist(),
                     prior_mentions_language = None,
                     plan_mentions_language = None,
+                    plan2_mentions_language = None,
                 )
                 # writer.ref_preds
                 # writer.partner_ref_preds
@@ -384,6 +398,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     utt = UTTS[sentence_ix-1]
                     response = RESPS[sentence_ix]
                     reader.prior = reader.belief.posterior(reader.prior, utt, response)
+                    reader.prior2 = reader.belief2.posterior(reader.prior2, utt, response)
                     utt_str = np.array(reader.dots)[utt.astype(bool)]
                     print("our prev utt")
                     print(utt_str)
@@ -395,14 +410,17 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                         utterance = None,
                         prior_mentions = None,
                         plan_mentions = None,
+                        plan2_mentions = None,
                         prior_mentions_language = None,
                         plan_mentions_language = None,
+                        plan2_mentions_language = None,
                     )
 
                 if UTTS[sentence_ix] is not None:
                     # update belief with unsolicited partner info
                     # if they mention a new dot, we pretend we asked about it
                     reader.prior = reader.belief.posterior(reader.prior, UTTS[sentence_ix], 1)
+                    reader.prior2 = reader.belief2.posterior(reader.prior2, UTTS[sentence_ix], 1)
                     utt_str = np.array(reader.dots)[UTTS[sentence_ix].astype(bool)]
                     print("their utt")
                     print(utt_str)
@@ -411,10 +429,17 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print("posterior")
                 print(cs)
                 print(ps)
-
                 print("marginals")
                 marginals = reader.belief.marginals(reader.prior)
                 print([f"{x:.2f}" for x in marginals])
+
+                cs2, ps2 = reader.belief2.viz_belief(reader.prior2, n=5)
+                print("posterior2")
+                print(cs2)
+                print(ps2)
+                print("marginals2")
+                marginals2 = reader.belief2.marginals(reader.prior2)
+                print([f"{x:.2f}" for x in marginals2])
 
                 self.dialog_logger.add_turn_resp(
                     response_language = SENTENCES[sentence_ix],
@@ -422,6 +447,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     configs = cs,
                     belief = ps,
                     marginal_belief = marginals,
+                    belief2 = ps2,
+                    marginal_belief2 = marginals2,
                     response_utt = UTTS[sentence_ix].tolist()
                         if UTTS[sentence_ix] is not None
                         else None,
