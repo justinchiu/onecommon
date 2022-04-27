@@ -104,7 +104,7 @@ class IndependentBelief(Belief):
     Underestimates failures from large configurations due to
     independence assumption.
     """
-    def __init__(self, num_dots):
+    def __init__(self, num_dots, correct=0.9):
         super().__init__(num_dots)
         # VERY PESSIMISTIC PRIOR
         # actually, this is incorrect.
@@ -115,7 +115,6 @@ class IndependentBelief(Belief):
         self.prior= np.stack((state_prior, 1-state_prior), 1)
 
         # initialize basic likelihood
-        correct = 0.9
         error = 1 - correct
         likelihood = np.ones((2,2,2)) * error
         # utt about something, get correct answer
@@ -162,7 +161,7 @@ class AndBelief(Belief):
     under-estimates failure of small configurations due to ignoring partial observability.
     """
 
-    def __init__(self, num_dots, overlap_size=None):
+    def __init__(self, num_dots, overlap_size=None, correct=0.9):
         super().__init__(num_dots, overlap_size)
 
         self.prior = np.ones((2 ** num_dots,))
@@ -173,7 +172,6 @@ class AndBelief(Belief):
         self.prior = self.prior / self.prior.sum()
 
         # initialize basic likelihood
-        correct = 0.9
         error = 1 - correct
         likelihood = np.ones((2,2,2)) * error
         # utt about something, get correct answer
@@ -382,10 +380,10 @@ class OrBelief(OrAndBelief):
         for each dot in z
         Size of z: remaining dots outside of s |z| = num_dots - |s|
     """
-    def __init__(self, num_dots, log_likelihood, overlap_size=None,):
-        super().__init__(num_dots, overlap_size)
-        self.log_likelihood = log_likelihood
-        self.likelihood = np.exp(log_likelihood)
+    def __init__(self, num_dots, log_likelihood, correct=0.95, overlap_size=None,):
+        super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
+        self.round_trip_log_likelihood = log_likelihood
+        self.round_trip_likelihood = np.exp(log_likelihood)
 
     def joint(self, prior, utt):
         # p(r | u,s)
@@ -402,7 +400,10 @@ class OrBelief(OrAndBelief):
             z = self.num_dots - state_config.sum()
             u = int(utt.sum())
             utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
-            likelihood = self.likelihood[utt_idx].item()
+            likelihood = self.round_trip_likelihood[utt_idx].item()
+            for i,d in enumerate(utt):
+                if d == 1:
+                    likelihood *= self.likelihood[1,d,state_config[i]]
             distractor_prob = 1 - comb(z,u) * 9. ** (-u)
             p_r0.append((1 - likelihood)*distractor_prob * ps)
             p_r1.append((1- (1-likelihood)*distractor_prob) * ps)
