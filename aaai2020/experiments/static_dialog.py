@@ -233,20 +233,22 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 ref_resolution_score = extra["ref_resolution_scores"][chosen_index]
                 return ref_resolution_score
 
-            log_likelihood = np.zeros((agent.belief.configs.shape[0],))
-            for c, config in enumerate(agent.belief.configs):
-                num_mentions = min(1, config.sum().item())
-                mention = torch.zeros(
-                    (1, num_mentions+1 if num_mentions > 1 else 1, 7),
-                    dtype=bool, device=0,
-                )
-                mention[0,0] = torch.from_numpy(config)
-                if num_mentions > 1:
-                    for i, x in enumerate(config.nonzero()[0]):
-                        mention[0,i+1,x] = 1
-                ref_resolution_score = get_beam(agent, mention)
-                log_likelihood[c] = ref_resolution_score
-            agent.belief = OrBelief(num_dots, log_likelihood)
+            #if True:
+            if False:
+                log_likelihood = np.zeros((agent.belief.configs.shape[0],))
+                for c, config in enumerate(agent.belief.configs):
+                    num_mentions = min(1, config.sum().item())
+                    mention = torch.zeros(
+                        (1, num_mentions+1 if num_mentions > 1 else 1, 7),
+                        dtype=bool, device=0,
+                    )
+                    mention[0,0] = torch.from_numpy(config)
+                    if num_mentions > 1:
+                        for i, x in enumerate(config.nonzero()[0]):
+                            mention[0,i+1,x] = 1
+                    ref_resolution_score = get_beam(agent, mention)
+                    log_likelihood[c] = ref_resolution_score
+                agent.belief = OrBelief(num_dots, log_likelihood)
             # uncomment this ^ to revert back
 
         device = self.agents[0].state.ctx_h.device
