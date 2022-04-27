@@ -15,7 +15,7 @@ from dialog import DialogLogger, HierarchicalDialog
 
 from agent import GenerationOutput
 
-from belief import AndOrBelief, OrAndBelief, OrBelief
+from belief import AndOrBelief, OrAndBelief, OrBelief, OrAndOrBelief, process_ctx
 
 """
 Dialog: [Turn]
@@ -183,7 +183,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             agent.real_ids = real_ids
             agent.agent_id = agent_id
 
-            agent.belief = OrAndBelief(num_dots)
+            #agent.belief = OrAndBelief(num_dots)
+            # ctx: [x, y, size, color]
+            agent.belief = OrAndOrBelief(num_dots, process_ctx(ctx))
             agent.prior = agent.belief.prior
             agent.dots = ctxs[2][agent_id]
 

@@ -8,6 +8,22 @@ from scipy.special import comb
 #random.seed(1234)
 #np.random.seed(1234)
 
+def process_ctx(ctx):
+    ctx = np.array(ctx, dtype=float).reshape(-1, 4)
+    # ctx: [x, y, size, color]
+    num_buckets = 4
+    min_ = ctx.min(0)
+    max_ = ctx.max(0)
+    min_size, max_size = min_[2], max_[2]
+    min_color, max_color = min_[3], max_[3]
+    size_buckets = np.linspace(min_size, max_size, num_buckets)
+    color_buckets = np.linspace(min_color, max_color, num_buckets)
+    sizes = ctx[:,2]
+    colors = ctx[:,3]
+
+    size_idxs = (size_buckets[:-1,None] <= sizes) & (sizes <= size_buckets[1:,None])
+    color_idxs = (color_buckets[:-1,None] <= colors) & (colors <= color_buckets[1:,None])
+    return np.stack((size_idxs.T.nonzero()[1], color_idxs.T.nonzero()[1]), 1)
 
 def safe_log(x, eps=1e-10):
     result = np.where(x > eps, x, 0)
@@ -58,6 +74,7 @@ class Belief:
             np.unpackbits(np.array([x], dtype=np.ubyte))[8-num_dots:]
             for x in range(2 ** num_dots)
         ])
+        self.num_configs = 2 ** num_dots
 
     def joint(self, prior, utt):
         raise NotImplementedError
@@ -329,10 +346,10 @@ class OrAndBelief(AndBelief):
         p_r1 = []
         p_r0 = []
         for s,ps in enumerate(prior):
-            likelihood = 1
             state_config = self.configs[s]
             z = self.num_dots - state_config.sum()
             u = int(utt.sum())
+            likelihood = 1
             for i,d in enumerate(utt):
                 if d == 1:
                     likelihood *= self.likelihood[1,d,state_config[i]]
@@ -382,8 +399,8 @@ class OrBelief(OrAndBelief):
     """
     def __init__(self, num_dots, log_likelihood, correct=0.95, overlap_size=None,):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
-        self.round_trip_log_likelihood = log_likelihood
-        self.round_trip_likelihood = np.exp(log_likelihood)
+        self.config_log_likelihood = log_likelihood
+        self.config_likelihood = np.exp(log_likelihood)
 
     def joint(self, prior, utt):
         # p(r | u,s)
@@ -400,10 +417,89 @@ class OrBelief(OrAndBelief):
             z = self.num_dots - state_config.sum()
             u = int(utt.sum())
             utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
-            likelihood = self.round_trip_likelihood[utt_idx].item()
+            likelihood = self.config_likelihood[utt_idx].item()
             for i,d in enumerate(utt):
                 if d == 1:
                     likelihood *= self.likelihood[1,d,state_config[i]]
+            distractor_prob = 1 - comb(z,u) * 9. ** (-u)
+            p_r0.append((1 - likelihood)*distractor_prob * ps)
+            p_r1.append((1- (1-likelihood)*distractor_prob) * ps)
+        return np.array((p_r0, p_r1))
+
+class OrAndOrBelief(OrAndBelief):
+    """
+    Or-and-or model for response modeling.
+    Partner will (noisily) confirm an utterance if they see all dots mentioned
+    OR have matching dots in unobserved context.
+    The OR happens at the config level.
+    * response r: {0,1}
+    * utterance u: num_dots
+    * state s: num_dots
+    * unobserved partner dots z: num_dots - |s|
+
+    OR at the config for state / distractors
+        p(r=0|u,s,z) = 1-p(r=0|u,s)p(r=0|u,z)
+    Dot distractors
+        p(r=0|u,z) = 1 - |z|C|u| 9^-|u|
+    AND for dots and state
+        p(r=1|u,s) = prod_i p(r=1|u_i,s)
+        p(r=0|u,s) = 1-p(r=1|u,s)
+    Or for each dot
+        p(r=1|u_i,s) = 0.9 if any s_j == u_i
+
+    Accurately estimates failure of small and large configurations.
+
+    Note on p(r=0|u,z) = 1-|z|C|u|9^-|u|:
+        color = light, medium, dark
+        size = small, medium, dark
+        Assume descriptions are all independent, so only 9 possibilities
+        for each dot in z
+        Size of z: remaining dots outside of s |z| = num_dots - |s|
+    """
+
+    def __init__(
+        self,
+        num_dots,
+        dots,
+        correct=0.9,
+        overlap_size=None,
+    ):
+        super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
+
+        self.dots = dots
+
+        # initialize likelihood
+        error = 1 - correct
+        likelihood = np.ones((2,num_dots,2**num_dots)) * error
+
+        for c, config in enumerate(self.configs):
+            # utt about something, get correct answer
+            for i, dot in enumerate(dots):
+                if dot in dots[config.astype(bool)]:
+                    likelihood[1,i,c] = correct
+                else:
+                    likelihood[0,i,c] = correct
+        self.likelihood = likelihood
+
+    def joint(self, prior, utt):
+        # p(r | u,s)
+        # prior: num_configs * 7
+        # p(r=0|u,s)p(s)
+        # = \sum_z p(s)p(z|s) p(r=0|u,s)p(r=0|u,z)
+        # = p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
+        # = p(s)p(r=0|u,s) |z|C|u|9^-|u|
+        p_r1 = []
+        p_r0 = []
+        for s,ps in enumerate(prior):
+            likelihood = 1
+            state_config = self.configs[s]
+            z = self.num_dots - state_config.sum()
+            u = int(utt.sum())
+            #utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
+            likelihood = 1
+            for i,d in enumerate(utt):
+                if d == 1:
+                    likelihood *= self.likelihood[1,i,s]
             distractor_prob = 1 - comb(z,u) * 9. ** (-u)
             p_r0.append((1 - likelihood)*distractor_prob * ps)
             p_r1.append((1- (1-likelihood)*distractor_prob) * ps)
