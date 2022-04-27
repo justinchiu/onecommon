@@ -354,6 +354,61 @@ class OrAndBelief(AndBelief):
         p_s_ur = np.divide(p_rs_u, Z, out=unif, where=Z>0)
         return p_s_ur[response]
 
+class OrBelief(OrAndBelief):
+    """
+    Or model for response modeling.
+    Partner will (noisily) confirm an utterance if they see all dots mentioned
+    OR have matching dots in unobserved context.
+    The OR happens at the config level.
+    * response r: 1
+    * utterance u: num_dots
+    * state s: num_dots
+    * unobserved partner dots z: num_dots - |s|
+
+    Normal model for dots and state
+        p(r=1|u,s) = initialization
+        p(r=0|u,s) = 1-p(r=1|u,s)
+    Noisy-OR
+        p(r=0|u,s,z) = 1-p(r=0|u,s)p(r=0|u,z)
+    Dot distractors
+        p(r=0|u,z) = 1 - |z|C|u| 9^-|u|
+
+    Accurately estimates failure of small and large configurations.
+
+    Note on p(r=0|u,z) = 1-|z|C|u|9^-|u|:
+        color = light, medium, dark
+        size = small, medium, dark
+        Assume descriptions are all independent, so only 9 possibilities
+        for each dot in z
+        Size of z: remaining dots outside of s |z| = num_dots - |s|
+    """
+    def __init__(self, num_dots, log_likelihood, overlap_size=None,):
+        super().__init__(num_dots, overlap_size)
+        self.log_likelihood = log_likelihood
+        self.likelihood = np.exp(log_likelihood)
+
+    def joint(self, prior, utt):
+        # p(r | u,s)
+        # prior: num_configs * 7
+        # p(r=0|u,s)p(s)
+        # = \sum_z p(s)p(z|s) p(r=0|u,s)p(r=0|u,z)
+        # = p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
+        # = p(s)p(r=0|u,s) |z|C|u|9^-|u|
+        p_r1 = []
+        p_r0 = []
+        for s,ps in enumerate(prior):
+            likelihood = 1
+            state_config = self.configs[s]
+            z = self.num_dots - state_config.sum()
+            u = int(utt.sum())
+            utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
+            likelihood = self.likelihood[utt_idx].item()
+            distractor_prob = 1 - comb(z,u) * 9. ** (-u)
+            p_r0.append((1 - likelihood)*distractor_prob * ps)
+            p_r1.append((1- (1-likelihood)*distractor_prob) * ps)
+        return np.array((p_r0, p_r1))
+
+
 
 if __name__ == "__main__":
     np.seterr(all="raise")

@@ -13,7 +13,9 @@ from corpora import data
 import domain
 from dialog import DialogLogger, HierarchicalDialog
 
-from belief import AndOrBelief, OrAndBelief
+from agent import GenerationOutput
+
+from belief import AndOrBelief, OrAndBelief, OrBelief
 
 """
 Dialog: [Turn]
@@ -185,6 +187,68 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             agent.prior = agent.belief.prior
             agent.dots = ctxs[2][agent_id]
 
+            # for each config, generate best referring expressions
+             
+            # think this can only handle bsz 1 right now?
+            # dots_mentioned_per_ref: bsz x num_markables x 7 (bool)
+            # this_num_markables: bsz (int), num mentions in each utt
+            # dots_mentioned: bsz x 7 (bool), collapsed mentions over num_markables
+            def get_beam(writer, dots_mentioned_per_ref):
+                this_num_markables = torch.LongTensor([dots_mentioned_per_ref.size(1)]).to(0)
+                dots_mentioned = dots_mentioned_per_ref.any(1)
+                can_confirm = torch.tensor([False])
+                write_output_tpl = writer.model.write_beam(
+                    writer.state, max_words,
+                    32,
+                    start_token="YOU:",
+                    dots_mentioned=dots_mentioned,
+                    dots_mentioned_per_ref=dots_mentioned_per_ref,
+                    dots_mentioned_num_markables=this_num_markables,
+                    generation_beliefs=None,
+                    is_selection=None,
+                    gumbel_noise=False,
+                    gumbel_noise_forgetful=True,
+                    read_one_best=False,
+                    temperature=0.25,
+                    keep_all_finished=True,
+                    can_confirm=can_confirm,
+                )
+                this_generation_output = GenerationOutput(
+                    *((dots_mentioned_per_ref, this_num_markables) + write_output_tpl)
+                )
+                """
+                list_of_outputs = [
+                    " ".join(sentence)
+                    for sentence in write_output_tpl[-1]["words"]
+                ]
+                """
+                #[print(x) for x in list_of_outputs]
+                outs, extra = writer.rerank_language(
+                    this_generation_output.outs, this_generation_output.extra,
+                    dots_mentioned, dots_mentioned_per_ref,
+                    None, can_confirm, None,
+                )
+                chosen_index = extra["chosen_index"]
+                joint_score = extra["joint_scores"][chosen_index]
+                ref_resolution_score = extra["ref_resolution_scores"][chosen_index]
+                return ref_resolution_score
+
+            log_likelihood = np.zeros((agent.belief.configs.shape[0],))
+            for c, config in enumerate(agent.belief.configs):
+                num_mentions = min(1, config.sum().item())
+                mention = torch.zeros(
+                    (1, num_mentions+1 if num_mentions > 1 else 1, 7),
+                    dtype=bool, device=0,
+                )
+                mention[0,0] = torch.from_numpy(config)
+                if num_mentions > 1:
+                    for i, x in enumerate(config.nonzero()[0]):
+                        mention[0,i+1,x] = 1
+                ref_resolution_score = get_beam(agent, mention)
+                log_likelihood[c] = ref_resolution_score
+            agent.belief = OrBelief(num_dots, log_likelihood)
+            # uncomment this ^ to revert back
+
         device = self.agents[0].state.ctx_h.device
 
         # Agent 0 always goes first (static)
@@ -223,6 +287,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             # BEGIN COPY
 
             this_partner_num_markables = torch.LongTensor([0])
+
 
 
             WRITE = False

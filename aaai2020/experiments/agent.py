@@ -698,6 +698,7 @@ class RnnAgent(Agent):
 
                 # MBP DEBUGGING
                 def get_beam(dots_mentioned_per_ref):
+                    import pdb; pdb.set_trace()
                     this_num_markables = torch.LongTensor([dots_mentioned_per_ref.size(1)]).to(device)
                     dots_mentioned = dots_mentioned_per_ref.any(1)
                     write_output_tpl = self.model.write_beam(
@@ -724,7 +725,8 @@ class RnnAgent(Agent):
                     ]
                     [print(x) for x in list_of_outputs]
 
-                if False and self.args.DBG_GEN:
+                #if False and self.args.DBG_GEN:
+                if self.args.DBG_GEN:
                     # for example S_pGlR0nKz9pQ4ZWsw, construct triangle mention
                     x = torch.zeros(1, 4, 7, dtype=bool, device = 0)
                     x[0,0,2:4] = 1
@@ -796,7 +798,9 @@ class RnnAgent(Agent):
                             this_generation_score = None
                         else:
                             outs, extra = self.rerank_language(
-                                this_generation_output.outs, this_generation_output.extra, dots_mentioned, dots_mentioned_per_ref, is_selection, can_confirm, generation_beliefs
+                                this_generation_output.outs, this_generation_output.extra,
+                                dots_mentioned, dots_mentioned_per_ref, is_selection, can_confirm,
+                                generation_beliefs,
                             )
                             this_generation_output = this_generation_output._replace(outs=outs, extra=extra)
                             if self.args.reranking_confidence and len(dots_mentioned_per_ref_candidates) > 1:

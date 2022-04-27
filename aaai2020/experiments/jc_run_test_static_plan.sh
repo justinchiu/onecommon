@@ -40,7 +40,6 @@ python -u test_planning_static.py \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
   --DBG_PLAN analysis_log/${name}.json \
-  --DBG_GEN \
   --num_contexts 1000 \
   ${rerank_args} ${rerank_args2} ${rerank_args3} ${rerank_args4} \
   --log_file=${log_file} $@
