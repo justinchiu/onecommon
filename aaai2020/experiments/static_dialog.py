@@ -45,18 +45,22 @@ class StaticDialogLogger:
         prior_mentions,
         plan_mentions,
         plan2_mentions,
+        plan3_mentions,
         prior_mentions_language,
         plan_mentions_language,
         plan2_mentions_language,
+        plan3_mentions_language,
     ):
         self.turn["utterance_language"] = utterance_language
         self.turn["utterance"] = utterance
         self.turn["prior_mentions"] = prior_mentions
         self.turn["plan_mentions"] = plan_mentions
         self.turn["plan2_mentions"] = plan2_mentions
+        self.turn["plan3_mentions"] = plan3_mentions
         self.turn["prior_mentions_language "] = prior_mentions_language 
         self.turn["plan_mentions_language "] = plan_mentions_language
         self.turn["plan2_mentions_language "] = plan2_mentions_language
+        self.turn["plan3_mentions_language "] = plan3_mentions_language
 
     def add_turn_resp(
         self,
@@ -67,6 +71,8 @@ class StaticDialogLogger:
         marginal_belief,
         belief2,
         marginal_belief2,
+        belief3,
+        marginal_belief3,
         response_utt=None,
     ):
         self.turn["response_language"] = response_language
@@ -76,6 +82,8 @@ class StaticDialogLogger:
         self.turn["marginal_belief"] = marginal_belief.tolist()
         self.turn["belief2"] = belief2.tolist()
         self.turn["marginal_belief2"] = marginal_belief2.tolist()
+        self.turn["belief3"] = belief3.tolist()
+        self.turn["marginal_belief3"] = marginal_belief3.tolist()
         # SIMPLIFYING ASSUMP: ONLY A SINGLE UTT IN RESPONSE
         self.turn["response_utt"] = response_utt
 
@@ -194,9 +202,12 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             agent.belief = OrAndBelief(num_dots)
             agent.prior = agent.belief.prior
             # ctx: [x, y, size, color]
-            agent.belief2 = OrAndOrBelief(num_dots, process_ctx(ctx))
-            agent.prior2 = agent.belief.prior
+            agent.belief2 = OrAndOrBelief(num_dots, ctx)
+            agent.prior2 = agent.belief2.prior
             agent.dots = ctxs[2][agent_id]
+
+            agent.belief3 = OrBelief(num_dots, ctx)
+            agent.prior3 = agent.belief3.prior
 
             # for each config, generate best referring expressions
              
@@ -355,6 +366,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             EdHs2 = writer.belief2.compute_EdHs(writer.prior2)
             cs2, hs2 = writer.belief2.viz_belief(EdHs2, n=writer.args.next_mention_reranking_k)
 
+            EdHs3 = writer.belief3.compute_EdHs(writer.prior3)
+            cs3, hs3 = writer.belief3.viz_belief(EdHs3, n=writer.args.next_mention_reranking_k)
+
             if writer.agent_id == YOU:
                 print("writer dots")
                 print(writer.dots)
@@ -364,6 +378,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print(cs)
                 print("mbp2 next mentions")
                 print(cs2)
+                print("mbp3 next mentions")
+                print(cs3)
                 #import pdb; pdb.set_trace()
                 print("next mention candidates[-1]")
                 print(nm_cands.candidate_dots)
@@ -376,9 +392,11 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     prior_mentions = nms.tolist(),
                     plan_mentions = cs.tolist(),
                     plan2_mentions = cs2.tolist(),
+                    plan3_mentions = cs3.tolist(),
                     prior_mentions_language = None,
                     plan_mentions_language = None,
                     plan2_mentions_language = None,
+                    plan3_mentions_language = None,
                 )
                 # writer.ref_preds
                 # writer.partner_ref_preds
@@ -399,6 +417,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     response = RESPS[sentence_ix]
                     reader.prior = reader.belief.posterior(reader.prior, utt, response)
                     reader.prior2 = reader.belief2.posterior(reader.prior2, utt, response)
+                    reader.prior3 = reader.belief3.posterior(reader.prior3, utt, response)
                     utt_str = np.array(reader.dots)[utt.astype(bool)]
                     print("our prev utt")
                     print(utt_str)
@@ -411,9 +430,11 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                         prior_mentions = None,
                         plan_mentions = None,
                         plan2_mentions = None,
+                        plan3_mentions = None,
                         prior_mentions_language = None,
                         plan_mentions_language = None,
                         plan2_mentions_language = None,
+                        plan3_mentions_language = None,
                     )
 
                 if UTTS[sentence_ix] is not None:
@@ -421,6 +442,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     # if they mention a new dot, we pretend we asked about it
                     reader.prior = reader.belief.posterior(reader.prior, UTTS[sentence_ix], 1)
                     reader.prior2 = reader.belief2.posterior(reader.prior2, UTTS[sentence_ix], 1)
+                    reader.prior3 = reader.belief3.posterior(reader.prior3, UTTS[sentence_ix], 1)
                     utt_str = np.array(reader.dots)[UTTS[sentence_ix].astype(bool)]
                     print("their utt")
                     print(utt_str)
@@ -441,6 +463,14 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 marginals2 = reader.belief2.marginals(reader.prior2)
                 print([f"{x:.2f}" for x in marginals2])
 
+                cs3, ps3 = reader.belief3.viz_belief(reader.prior3, n=5)
+                print("posterior3")
+                print(cs3)
+                print(ps3)
+                print("marginals3")
+                marginals3 = reader.belief3.marginals(reader.prior3)
+                print([f"{x:.2f}" for x in marginals3])
+
                 self.dialog_logger.add_turn_resp(
                     response_language = SENTENCES[sentence_ix],
                     response = response,
@@ -449,6 +479,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     marginal_belief = marginals,
                     belief2 = ps2,
                     marginal_belief2 = marginals2,
+                    belief3 = ps3,
+                    marginal_belief3 = marginals3,
                     response_utt = UTTS[sentence_ix].tolist()
                         if UTTS[sentence_ix] is not None
                         else None,
