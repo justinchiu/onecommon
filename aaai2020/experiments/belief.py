@@ -10,7 +10,6 @@ from scipy.special import comb
 #np.random.seed(1234)
 
 def process_ctx(ctx):
-    ctx = np.array(ctx, dtype=float).reshape(-1, 4)
     # ctx: [x, y, size, color]
     num_buckets = 4
     min_ = ctx.min(0)
@@ -400,55 +399,64 @@ class OrBelief(OrAndBelief):
     """
     def __init__(self, num_dots, ctx, correct=0.95, overlap_size=None,):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
-        self.ctx = ctx
-        self.size_color = process_ctx(ctx)
-        self.xy = ctx[:,:2]
+        self.ctx = np.array(ctx, dtype=float).reshape(num_dots, 4)
+        self.size_color = process_ctx(self.ctx)
+        self.xy = self.ctx[:,:2]
         # initialize config_likelihood based on configuration resolution
-        self.config_likelihood = np.zeros((self.num_configs), dtype=float)
+        self.config_likelihood = np.zeros(
+            (self.num_configs, self.num_configs), dtype=float)
         for u, utt in enumerate(self.configs):
-            self.config_likelihood[u] = correct if self.can_resolve_utt(utt) else 1 - correct
+            for s, config in enumerate(self.configs):
+                self.config_likelihood[u,s] = (
+                    correct if self.can_resolve_utt(utt, config) else 1 - correct
+                )
 
-    def can_resolve_utt(self, utt):
+    def can_resolve_utt(self, utt, config):
         size_color = self.size_color
         xy = self.xy
 
         utt_size = utt.sum().item()
+        config_size = config.sum().item()
+        if utt_size == 0 or config_size == 0:
+            return False
+
+        utt_sc = size_color[utt.astype(bool)]
+        utt_xy = xy[utt.astype(bool)]
+        if utt_size == 1:
+            return (utt_sc == size_color[config.astype(bool)]).all(-1).any()
 
         arange = np.arange(self.num_dots)
         perms = np.array(list(itertools.permutations(np.arange(utt_size))))
         num_perms = perms.shape[0]
         pairwise_combs = np.array(list(itertools.combinations(np.arange(utt_size), 2)))
 
-        utt_sc = size_color[utt.astype(bool)]
-        utt_xy = xy[utt.astype(bool)]
         utt_pairwise_xy = utt_xy[pairwise_combs]
         utt_rel_xy = utt_pairwise_xy[:,0] > utt_pairwise_xy[:,1]
 
-        for config in self.configs:
-            # get all dot combinations of size utt_size
-            config_ids = arange[config.astype(bool)]
-            combs = np.array(list(itertools.combinations(config_ids, utt_size)))
-            for comb in combs:
-                comb_sc = size_color[comb]
-                comb_xy = xy[comb]
+        # get all dot combinations of size utt_size
+        config_ids = arange[config.astype(bool)]
+        combs = np.array(list(itertools.combinations(config_ids, utt_size)))
+        for comb in combs:
+            comb_sc = size_color[comb]
+            comb_xy = xy[comb]
 
-                # this checks if all dots have a match, just to filter?
-                sc_match = (utt_sc[:,None] == comb_sc[None,:]).all(-1).any(1).all()
+            # this checks if all dots have a match, just to filter?
+            sc_match = (utt_sc[:,None] == comb_sc[None,:]).all(-1).any(1).all()
 
-                if sc_match:
-                    # check if there is a permutation that matches
-                    sc_perms = comb_sc[perms]
-                    xy_perms = comb_xy[perms]
+            if sc_match:
+                # check if there is a permutation that matches
+                sc_perms = comb_sc[perms]
+                xy_perms = comb_xy[perms]
 
-                    sc_matches = (utt_sc == sc_perms).reshape(num_perms, -1).all(-1)
-                    xy_potential_matches = xy_perms[sc_matches]
-                    for xy_config in xy_potential_matches:
-                        config_pairwise_xy = xy_config[pairwise_combs]
-                        config_rel_xy = config_pairwise_xy[:,0] > config_pairwise_xy[:,1]
+                sc_matches = (utt_sc == sc_perms).reshape(num_perms, -1).all(-1)
+                xy_potential_matches = xy_perms[sc_matches]
+                for xy_config in xy_potential_matches:
+                    config_pairwise_xy = xy_config[pairwise_combs]
+                    config_rel_xy = config_pairwise_xy[:,0] > config_pairwise_xy[:,1]
 
-                        xy_match = (utt_rel_xy == config_rel_xy).all()
-                        if xy_match:
-                            return True
+                    xy_match = (utt_rel_xy == config_rel_xy).all()
+                    if xy_match:
+                        return True
         return False
 
     def joint(self, prior, utt):
@@ -465,10 +473,10 @@ class OrBelief(OrAndBelief):
             z = self.num_dots - state_config.sum()
             u = int(utt.sum())
             utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
-            likelihood = self.config_likelihood[utt_idx].item()
-            for i,d in enumerate(utt):
-                if d == 1:
-                    likelihood *= self.likelihood[1,d,state_config[i]]
+            likelihood = self.config_likelihood[utt_idx,s].item()
+            #for i,d in enumerate(utt):
+                #if d == 1:
+                    #likelihood *= self.likelihood[1,d,state_config[i]]
             distractor_prob = 1 - comb(z,u) * 9. ** (-u)
             p_r0.append((1 - likelihood)*distractor_prob * ps)
             p_r1.append((1- (1-likelihood)*distractor_prob) * ps)
@@ -514,7 +522,9 @@ class OrAndOrBelief(OrAndBelief):
     ):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
 
-        self.dots = dots
+        # just size and color though
+        dots = np.array(dots, dtype=float).reshape(num_dots, 4)
+        self.dots = process_ctx(dots)
 
         # initialize likelihood
         error = 1 - correct
