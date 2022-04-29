@@ -127,6 +127,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 "yes .",
                 "is there a big black dot below and to the left of it ?",
                 "yes .",
+                "is there a pair of two big black dots below the triangle, with the left black dot larger than the right?",
+                "no .",
             ]
             UTTS = [
                 np.array([0,0,1,0,0,1,0]),
@@ -140,6 +142,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 np.array([0,0,0,1,1,0,1]),
                 None,
                 np.array([0,0,1,1,1,0,1]),
+                None,
+                np.array([0,0,1,1,1,1,1]),
                 None,
             ]
             RESPS = [
@@ -155,6 +159,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 1,
                 None,
                 1,
+                None,
+                0,
             ]
         elif scenario_id == "S_n0ocL412kqOAl9QR":
             THEM, YOU = 0, 1
