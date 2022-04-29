@@ -704,5 +704,5 @@ if __name__ == "__main__":
 
     utt = np.array([1,0,1,1,0,0,0])
 
-
-                    import pdb; pdb.set_trace()
+    belief = OrBelief(num_dots, ctx)
+    can_resolve = belief.can_resolve_utt(utt)
