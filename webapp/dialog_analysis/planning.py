@@ -259,7 +259,7 @@ def process_dialogue(scenario_id, dialogue):
 
     turn = dialogue[turn]
 
-    display = st.radio("Display", ("prior", "plan", "posterior"))
+    display = st.radio("Display", ("prior", "plan", "plan2", "posterior", "posterior2"))
 
     if display == "prior":
         st.header("Prior next mentions")
@@ -275,9 +275,9 @@ def process_dialogue(scenario_id, dialogue):
             visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
         else:
             st.write("No prior next mentions")
-    elif display == "plan":
+    elif display == "plan" or display == "plan2":
         st.header("Plan next mentions")
-        plan_mentions = turn["plan_mentions"]
+        plan_mentions = turn["plan_mentions" if display == "plan" else "plan2_mentions"]
         if plan_mentions is not None:
             plan_idx = st.radio("Plan number", np.arange(len(plan_mentions)))
             if turn["agent_id"] == 0:
@@ -289,7 +289,7 @@ def process_dialogue(scenario_id, dialogue):
             visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
         else:
             st.write("No plan mentions")
-    elif display == "posterior":
+    elif display == "posterior" or display == "posterior2":
         st.header("Input and belief posterior")    
         st.write(f"Input utterance: {turn['utterance_language']} || response: {turn['response_language']}")
         if turn["agent_id"] == 0:
@@ -304,18 +304,23 @@ def process_dialogue(scenario_id, dialogue):
                 if turn["utterance"] is not None else None
             )
             mention0 = None
+        marginals = turn["marginal_belief" if display == "posterior" else "marginal_belief2"]
         visualize_board(
             b0, b1, mention0, mention1, intersect0, intersect1,
-            left_beliefs=turn["marginal_belief"] if turn["agent_id"] == 0 else None,
-            right_beliefs=turn["marginal_belief"] if turn["agent_id"] == 1 else None,
+            left_beliefs=marginals if turn["agent_id"] == 0 else None,
+            right_beliefs=marginals if turn["agent_id"] == 1 else None,
         )
-        visualize_beliefs(b0 if turn["agent_id"] == 0 else b1, turn["configs"], turn["belief"])
+        visualize_beliefs(
+            b0 if turn["agent_id"] == 0 else b1,
+            turn["configs"],
+            turn["belief" if display == "posterior" else "belief2"],
+        )
 
 
 
 dir = "../../aaai2020/experiments/analysis_log"
 scenario_id = "S_pGlR0nKz9pQ4ZWsw"
-scenario_id = "S_n0ocL412kqOAl9QR"
+#scenario_id = "S_n0ocL412kqOAl9QR"
 
 filepath = (Path(dir) / scenario_id).with_suffix(".json")
 
