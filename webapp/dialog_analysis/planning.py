@@ -315,7 +315,7 @@ def process_dialogue(scenario_id, dialogue):
 
 dir = "../../aaai2020/experiments/analysis_log"
 scenario_id = "S_pGlR0nKz9pQ4ZWsw"
-scenario_id = "S_n0ocL412kqOAl9QR"
+#scenario_id = "S_n0ocL412kqOAl9QR"
 
 filepath = (Path(dir) / scenario_id).with_suffix(".json")
 

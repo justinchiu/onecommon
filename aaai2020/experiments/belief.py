@@ -1,6 +1,7 @@
 
 import math
 
+import itertools
 import numpy as np
 from scipy.special import logsumexp as lse
 from scipy.special import comb
@@ -397,10 +398,58 @@ class OrBelief(OrAndBelief):
         for each dot in z
         Size of z: remaining dots outside of s |z| = num_dots - |s|
     """
-    def __init__(self, num_dots, log_likelihood, correct=0.95, overlap_size=None,):
+    def __init__(self, num_dots, ctx, correct=0.95, overlap_size=None,):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
-        self.config_log_likelihood = log_likelihood
-        self.config_likelihood = np.exp(log_likelihood)
+        self.ctx = ctx
+        self.size_color = process_ctx(ctx)
+        self.xy = ctx[:,:2]
+        # initialize config_likelihood based on configuration resolution
+        self.config_likelihood = np.zeros((self.num_configs), dtype=float)
+        for u, utt in enumerate(self.configs):
+            self.config_likelihood[u] = correct if self.can_resolve_utt(utt) else 1 - correct
+
+    def can_resolve_utt(self, utt):
+        size_color = self.size_color
+        xy = self.xy
+
+        utt_size = utt.sum().item()
+
+        arange = np.arange(self.num_dots)
+        perms = np.array(list(itertools.permutations(np.arange(utt_size))))
+        num_perms = perms.shape[0]
+        pairwise_combs = np.array(list(itertools.combinations(np.arange(utt_size), 2)))
+
+        utt_sc = size_color[utt.astype(bool)]
+        utt_xy = xy[utt.astype(bool)]
+        utt_pairwise_xy = utt_xy[pairwise_combs]
+        utt_rel_xy = utt_pairwise_xy[:,0] > utt_pairwise_xy[:,1]
+
+        for config in self.configs:
+            # get all dot combinations of size utt_size
+            config_ids = arange[config.astype(bool)]
+            combs = np.array(list(itertools.combinations(config_ids, utt_size)))
+            for comb in combs:
+                comb_sc = size_color[comb]
+                comb_xy = xy[comb]
+
+                # this checks if all dots have a match, just to filter?
+                sc_match = (utt_sc[:,None] == comb_sc[None,:]).all(-1).any(1).all()
+
+                if sc_match:
+                    # check if there is a permutation that matches
+                    sc_perms = comb_sc[perms]
+                    xy_perms = comb_xy[perms]
+
+                    sc_matches = (utt_sc == sc_perms).reshape(num_perms, -1).all(-1)
+                    xy_potential_matches = xy_perms[sc_matches]
+                    for xy_config in xy_potential_matches:
+                        config_pairwise_xy = xy_config[pairwise_combs]
+                        config_rel_xy = config_pairwise_xy[:,0] > config_pairwise_xy[:,1]
+
+                        xy_match = (utt_rel_xy == config_rel_xy).all()
+                        if xy_match:
+                            return True
+        return False
 
     def joint(self, prior, utt):
         # p(r | u,s)
@@ -408,11 +457,10 @@ class OrBelief(OrAndBelief):
         # p(r=0|u,s)p(s)
         # = \sum_z p(s)p(z|s) p(r=0|u,s)p(r=0|u,z)
         # = p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
-        # = p(s)p(r=0|u,s) |z|C|u|9^-|u|
+        # = p(s)(1 - p(r=1|u,s)) |z|C|u|9^-|u|
         p_r1 = []
         p_r0 = []
         for s,ps in enumerate(prior):
-            likelihood = 1
             state_config = self.configs[s]
             z = self.num_dots - state_config.sum()
             u = int(utt.sum())
@@ -474,6 +522,7 @@ class OrAndOrBelief(OrAndBelief):
 
         for c, config in enumerate(self.configs):
             # utt about something, get correct answer
+            # if bucketed attributes match
             for i, dot in enumerate(dots):
                 if dot in dots[config.astype(bool)]:
                     likelihood[1,i,c] = correct
@@ -606,8 +655,6 @@ if __name__ == "__main__":
     print(cs)
     print(ps)
 
-    import pdb; pdb.set_trace()
-
     print("20 questions simulation")
 
     if overlap_size is not None:
@@ -620,6 +667,7 @@ if __name__ == "__main__":
     state[idxs1] = 1
     state[idxs0] = 0
 
+    """
     print("true state")
     print(state)
 
@@ -635,6 +683,26 @@ if __name__ == "__main__":
         cs, ps = belief.viz_belief(posterior)
         print(cs)
         print(ps)
-        import pdb; pdb.set_trace()
         prior = posterior
+    """
 
+    print("spatial context tests")
+    ctx = np.array([
+        0.635, -0.4,   2/3, -1/6,  # 8
+        0.395, -0.7,   0.0,  3/4,  # 11
+        -0.74,  0.09,  2/3, -2/3,  # 13
+        -0.24, -0.63, -1/3, -1/6,  # 15
+        0.15,  -0.58,  0.0,  0.24, # 40
+        -0.295, 0.685, 0.0, -8/9,  # 50
+        0.035, -0.79, -2/3,  0.56, # 77
+    ], dtype=float).reshape(-1, 4)
+    ids = np.array(['8', '11', '13', '15', '40', '50', '77'], dtype=int)
+
+    # goes in init
+    size_color = process_ctx(ctx)
+    xy = ctx[:,:2]
+
+    utt = np.array([1,0,1,1,0,0,0])
+
+
+                    import pdb; pdb.set_trace()
