@@ -259,7 +259,11 @@ def process_dialogue(scenario_id, dialogue):
 
     turn = dialogue[turn]
 
-    display = st.radio("Display", ("prior", "plan", "plan2", "posterior", "posterior2"))
+    display = st.radio("Display", (
+        "prior",
+        "plan", "plan2", "plan3",
+        "posterior", "posterior2", "posterior3",
+    ))
 
     if display == "prior":
         st.header("Prior next mentions")
@@ -275,9 +279,14 @@ def process_dialogue(scenario_id, dialogue):
             visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
         else:
             st.write("No prior next mentions")
-    elif display == "plan" or display == "plan2":
+    elif display == "plan" or display == "plan2" or display == "plan3":
         st.header("Plan next mentions")
-        plan_mentions = turn["plan_mentions" if display == "plan" else "plan2_mentions"]
+        if display == "plan":
+            plan_mentions = turn["plan_mentions"]
+        elif display == "plan2":
+            plan_mentions = turn["plan2_mentions"]
+        elif display == "plan3":
+            plan_mentions = turn["plan3_mentions"]
         if plan_mentions is not None:
             plan_idx = st.radio("Plan number", np.arange(len(plan_mentions)))
             if turn["agent_id"] == 0:
@@ -289,7 +298,7 @@ def process_dialogue(scenario_id, dialogue):
             visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
         else:
             st.write("No plan mentions")
-    elif display == "posterior" or display == "posterior2":
+    elif display == "posterior" or display == "posterior2" or display == "posterior3":
         st.header("Input and belief posterior")    
         st.write(f"Input utterance: {turn['utterance_language']} || response: {turn['response_language']}")
         if turn["agent_id"] == 0:
@@ -304,16 +313,27 @@ def process_dialogue(scenario_id, dialogue):
                 if turn["utterance"] is not None else None
             )
             mention0 = None
-        marginals = turn["marginal_belief" if display == "posterior" else "marginal_belief2"]
+        if display == "posterior":
+            marginals = turn["marginal_belief"]
+        elif display == "posterior2":
+            marginals = turn["marginal_belief2"]
+        elif display == "posterior3":
+            marginals = turn["marginal_belief3"]
         visualize_board(
             b0, b1, mention0, mention1, intersect0, intersect1,
             left_beliefs=marginals if turn["agent_id"] == 0 else None,
             right_beliefs=marginals if turn["agent_id"] == 1 else None,
         )
+        if display == "posterior":
+            belief = turn["belief"]
+        elif display == "posterior2":
+            belief = turn["belief2"]
+        elif display == "posterior3":
+            belief = turn["belief3"]
         visualize_beliefs(
             b0 if turn["agent_id"] == 0 else b1,
             turn["configs"],
-            turn["belief" if display == "posterior" else "belief2"],
+            belief,
         )
 
 
