@@ -207,6 +207,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
             agent.belief = OrAndBelief(num_dots)
             agent.prior = agent.belief.prior
+
             # ctx: [x, y, size, color]
             agent.belief2 = OrAndOrBelief(num_dots, ctx)
             agent.prior2 = agent.belief2.prior
