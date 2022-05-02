@@ -14,7 +14,7 @@ random.seed(1234)
 np.random.seed(1234)
 
 # Testing streamlit
-st.title("OneCommon Partner Response Visualizations")
+st.title("OneCommon Train Data Visualizations")
 
 #json_file = "experiments_nov-22/all_dialogues.json"
 json_file = "../../aaai2020/experiments/data/onecommon/final_transcripts.json"

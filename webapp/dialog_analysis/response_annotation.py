@@ -93,6 +93,7 @@ def process_dialogue(dialogue_dict):
     board = dialogue_dict["scenario"]
     agent_types = dialogue_dict["agents"]
 
+    st.write("Chat id: {id}")
     st.write(f"Chat scenario id: {scenario_id}")
 
     b0 = [Dot(x) for x in board["kbs"][0]]
