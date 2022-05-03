@@ -242,6 +242,16 @@ def get_referent_ids(referentss, markabless, dialogue_id):
 
 db = ResponseDB()
 
+st.write("""Annotation instructions:\n
+* Response = none if response does not directly confirm all dots
+    asked about in the previous turn.
+    Follow up questions should be marked as none.\n
+* Response = confirm if all dots that were asked about in prev are
+    confirmed\n
+* Response = disconfirm if all dots that were asked about in prev are
+    disconfirmed\n
+""")
+
 referent_path = Path("../aaai2020/annotation/aggregated_referent_annotation.json")
 markable_path = Path("../aaai2020/annotation/markable_annotation.json")
 
