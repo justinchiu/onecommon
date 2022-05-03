@@ -12,6 +12,7 @@ import numpy as np
 
 from dot import Dot, visualize_board
 
+
 random.seed(1234)
 np.random.seed(1234)
 
@@ -152,7 +153,7 @@ def process_dialogue(dialogue_dict, mentions):
 
     response = st.radio("Response is", ["none", "confirmation", "disconfirmation"])
     if st.button("Submit"):
-        # log
+        # log to db
         st.write(id, turn+1, 1-agent, response)
 
 def get_referent_ids(referents, markables):
@@ -218,6 +219,7 @@ id2dialogueidx = {
     x["uuid"]: i
     for i, x in enumerate(finished_dialogues)
 }
+intersect_size = st.number_input("Intersect size", 4, 6)
 
 idx = st.select_slider("Train dialogue number", options=list(range(len(finished_dialogues))))
 dialogue = finished_dialogues[idx]
