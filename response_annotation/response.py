@@ -4,7 +4,7 @@ from sqlite3 import Connection
 import streamlit as st
 
 class ResponseDB:
-    DB_PATH = "response_data/response.db"
+    DB_PATH = "response.db"
     NONE = 0
     CONFIRM = 1
     DISCONFIRM = 2
