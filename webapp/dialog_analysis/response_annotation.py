@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -86,14 +88,15 @@ finished_dialogues = dialogues
 def visualize_dialogue(dialogue):
     st.table(dialogue)
 
-def process_dialogue(dialogue_dict):
+def process_dialogue(dialogue_dict, mentions):
+    # mentions: [(Agent id, [[Dot id]])]
     id = dialogue_dict["uuid"]
     scenario_id = dialogue_dict["scenario_uuid"]
     dialogue = get_dialogue(dialogue_dict)
     board = dialogue_dict["scenario"]
     agent_types = dialogue_dict["agents"]
 
-    st.write("Chat id: {id}")
+    st.write(f"Chat id: {id}")
     st.write(f"Chat scenario id: {scenario_id}")
 
     b0 = [Dot(x) for x in board["kbs"][0]]
@@ -102,10 +105,17 @@ def process_dialogue(dialogue_dict):
     intersect1 = [x for x in b1 for y in b0 if x.id == y.id]
 
     reward = dialogue_dict["outcome"]["reward"]
-    event0 = dialogue_dict["events"][-2]
-    event1 = dialogue_dict["events"][-1]
-    select_id0 = int((event0["data"] if event0["agent"] == 0 else event1["data"]).replace("\"", ""))
-    select_id1 = int((event0["data"] if event1["agent"] == 0 else event1["data"]).replace("\"", ""))
+    #event0 = dialogue_dict["events"][-2]
+    #event1 = dialogue_dict["events"][-1]
+    #select_id0 = int((event0["data"] if event0["agent"] == 0 else event1["data"]).replace("\"", ""))
+    #select_id1 = int((event0["data"] if event1["agent"] == 0 else event1["data"]).replace("\"", ""))
+    events = dialogue_dict["events"]
+    event0 = [x["data"] for x in events if x["action"] == "select" and x["agent"] == 0]
+    event1 = [x["data"] for x in events if x["action"] == "select" and x["agent"] == 1]
+    # take last selection, if for some reason there are multiple
+    # i think humans might be allowed to revise?
+    select_id0 = [int(x.replace("\"", "")) for x in event0][-1]
+    select_id1 = [int(x.replace("\"", "")) for x in event1][-1]
     # set mentions = [selections]
     mentions0 = list(filter(lambda x: x.id == select_id0, b0))
     mentions1 = list(filter(lambda x: x.id == select_id1, b1))
@@ -120,8 +130,89 @@ def process_dialogue(dialogue_dict):
     #turn = dialogue[turn]
     st.write("SUCCESS" if reward else "FAILURE")
 
-    visualize_board(b0, b1, mentions0, mentions1, intersect0, intersect1)
+    #visualize_board(b0, b1, mentions0, mentions1, intersect0, intersect1)
     visualize_dialogue(dialogue)
+
+    num_turns = len(events)
+    turn = st.number_input("Turn no", 0, num_turns-1)
+
+    agent = mentions[turn][0]
+    turn_mention_ids = set([x for xs in mentions[turn][1] for x in xs])
+    turn_mentions = [x for x in (b0 if agent == 0 else b1) if x.id in turn_mention_ids]
+
+    mentions0 = turn_mentions if agent == 0 else None
+    mentions1 = turn_mentions if agent == 1 else None
+    visualize_board(b0, b1, mentions0, mentions1, intersect0, intersect1)
+    LEFT = "left"
+    RIGHT = "right"
+    st.write(f"Current utterance {LEFT if agent == 0 else RIGHT}")
+    st.write(dialogue[turn])
+    st.write(f"Response {RIGHT if agent == 0 else LEFT}")
+    st.write(dialogue[turn+1])
+
+    response = st.radio("Response is", ["none", "confirmation", "disconfirmation"])
+    if st.button("Submit"):
+        # log
+        st.write(id, turn+1, 1-agent, response)
+
+def get_referent_ids(referents, markables):
+    # referents: {M#: Markable}
+    # markables: {markables: List[DetailedMarkable], text: Str}
+    # return List[(agent, dot ids)]
+    #chunked_text = markables["text"].split("\n")
+    #start_idx = [0] + [len(x) for x in chunked_text]
+    text = markables["text"]
+    split_text = text.split("\n")
+    markables = markables["markables"]
+    idxs = [0]
+    for i, char in enumerate(text):
+        if char == "\n":
+            idxs.append(i)
+    idxs.append(len(text))
+
+    num_turns = len(idxs) - 2
+
+    markable_idx = 0
+
+    mentions = []
+    for turn_idx in range(len(split_text)):
+        turn_start = idxs[turn_idx]
+        turn_end = idxs[turn_idx+1]
+
+        agent_text = int(split_text[turn_idx][0])
+        mentions.append((agent_text, []))
+
+        markable_start = markables[markable_idx]["start"]
+        markable_end = markables[markable_idx]["end"]
+        #while markable_start < turn_end and turn_start < markable_end:
+        while turn_start <= markable_start and markable_end <= turn_end:
+            #print(markable_start, markable_end)
+            #print(turn_start, turn_end)
+
+            markable_id = markables[markable_idx]["markable_id"]
+            refs = referents[markable_id]["referents"]
+            ref_ids = [int(x.split("_")[-1]) for x in refs]
+
+            agent_markable = int(refs[0].split("_")[1])
+            assert agent_text == agent_markable
+
+            mentions[-1][1].append(ref_ids)
+
+            markable_idx += 1
+            if markable_idx >= len(markables):
+                break
+            markable_start = markables[markable_idx]["start"]
+            markable_end = markables[markable_idx]["end"]
+
+    return mentions
+
+referent_path = Path("../../aaai2020/annotation/aggregated_referent_annotation.json")
+markable_path = Path("../../aaai2020/annotation/markable_annotation.json")
+
+with referent_path.open() as f:
+    referents = json.load(f)
+with markable_path.open() as f:
+    markables = json.load(f)
 
 id2dialogueidx = {
     x["uuid"]: i
@@ -129,4 +220,7 @@ id2dialogueidx = {
 }
 
 idx = st.select_slider("Train dialogue number", options=list(range(len(finished_dialogues))))
-process_dialogue(finished_dialogues[idx])
+dialogue = finished_dialogues[idx]
+id = dialogue["uuid"]
+mentions = get_referent_ids(referents[id], markables[id])
+process_dialogue(dialogue, mentions)
