@@ -167,7 +167,14 @@ def process_dialogue(dialogue_dict, mentions, db):
     st.write(f"Response {RIGHT if agent == 0 else LEFT}")
     st.write(dialogue[turn+1])
 
-    response = st.radio("Response is", ["none", "confirmation", "disconfirmation"])
+    prev_results = db.get_id_turn(id, turn+1)
+    if len(prev_results) > 0:
+        st.write("Previous results")
+        st.write(prev_results)
+    else:
+        st.write("No previous results")
+
+    response = st.radio("Response is", [0,1,2], format_func=lambda x: db.R2S[x])
     if st.button("Submit"):
         # log to db
         # turn is the response turn
@@ -204,6 +211,10 @@ def get_referent_ids(referentss, markabless, dialogue_id):
 
         agent_text = int(split_text[turn_idx][0])
         mentions.append((agent_text, []))
+
+        if markable_idx >= len(markables):
+            # break out of outer loop
+            break
 
         markable_start = markables[markable_idx]["start"]
         markable_end = markables[markable_idx]["end"]
@@ -248,9 +259,11 @@ intersect_size2d = {
     for k in range(4, 7)
 }
 intersect_size = st.number_input("Intersect size", 4, 6)
+#intersect_size=4
 sized_dialogues = intersect_size2d[intersect_size]
 
 idx = st.select_slider("Train dialogue number", options=list(range(len(sized_dialogues))))
+#idx = 1
 dialogue = sized_dialogues[idx]
 id = dialogue["uuid"]
 mentions = get_referent_ids(referents, markables, id)

@@ -5,6 +5,10 @@ import streamlit as st
 
 class ResponseDB:
     DB_PATH = "response_data/response.db"
+    NONE = 0
+    CONFIRM = 1
+    DISCONFIRM = 2
+    R2S = ["none", "confirm", "disconfirm"]
 
     def __init__(self):
         # establish connection
@@ -13,6 +17,8 @@ class ResponseDB:
         # create table if it doesnt already exist
         table_string = "CREATE TABLE IF NOT EXISTS responses (conv text, turn integer, agent integer, response integer)"
         cur.execute(table_string)
+        self.con.commit()
+        cur.close()
 
     @st.cache(hash_funcs={Connection: id})
     def get_connection(self):
@@ -31,7 +37,8 @@ class ResponseDB:
             "insert into responses values (?, ?, ?, ?)",
             (dialogue_id, turn, agent, response),
         )
-        cur.commit()
+        self.con.commit()
+        cur.close()
 
     def get_id(self, dialogue_id):
         cur = self.con.cursor()
@@ -40,4 +47,32 @@ class ResponseDB:
             {"id": dialogue_id},
         )
         results = cur.fetchall()
+        cur.close()
         return results
+
+    def get_id_turn(self, dialogue_id, turn):
+        cur = self.con.cursor()
+        cur.execute(
+            "select * from responses where conv=:id and turn=:turn",
+            {
+                "id": dialogue_id,
+                "turn": turn,
+            },
+        )
+        results = cur.fetchall()
+        cur.close()
+        return results
+
+    def get_all(self):
+        cur = self.con.cursor()
+        cur.execute(
+            "select * from responses",
+        )
+        results = cur.fetchall()
+        cur.close()
+        return results
+
+if __name__ == "__main__":
+    db = ResponseDB()
+    print(db.get_id("C_d550ba11ac90479ba603ee5ec8279aae"))
+    print(db.get_all())
