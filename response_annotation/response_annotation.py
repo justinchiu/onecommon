@@ -11,7 +11,7 @@ from functools import partial
 import numpy as np
 
 from dot import Dot, visualize_board
-
+from response import ResponseDB
 
 random.seed(1234)
 np.random.seed(1234)
@@ -20,7 +20,7 @@ np.random.seed(1234)
 st.title("OneCommon Partner Response Visualizations")
 
 #json_file = "experiments_nov-22/all_dialogues.json"
-json_file = "../../aaai2020/experiments/data/onecommon/final_transcripts.json"
+json_file = "../aaai2020/experiments/data/onecommon/final_transcripts.json"
 
 with open(json_file, "r") as f:
     dialogues = json.load(f)
@@ -89,7 +89,19 @@ finished_dialogues = dialogues
 def visualize_dialogue(dialogue):
     st.table(dialogue)
 
-def process_dialogue(dialogue_dict, mentions):
+def get_intersect(board):
+    b0 = [Dot(x) for x in board["kbs"][0]]
+    b1 = [Dot(x) for x in board["kbs"][1]]
+    intersect0 = [x for x in b0 for y in b1 if x.id == y.id]
+    intersect1 = [x for x in b1 for y in b0 if x.id == y.id]
+    return intersect0, intersect1
+
+def intersect_size(board):
+    i0, i1 = get_intersect(board)
+    assert len(i0) == len(i1)
+    return len(i0)
+
+def process_dialogue(dialogue_dict, mentions, db):
     # mentions: [(Agent id, [[Dot id]])]
     id = dialogue_dict["uuid"]
     scenario_id = dialogue_dict["scenario_uuid"]
@@ -137,16 +149,20 @@ def process_dialogue(dialogue_dict, mentions):
     num_turns = len(events)
     turn = st.number_input("Turn no", 0, num_turns-1)
 
-    agent = mentions[turn][0]
-    turn_mention_ids = set([x for xs in mentions[turn][1] for x in xs])
-    turn_mentions = [x for x in (b0 if agent == 0 else b1) if x.id in turn_mention_ids]
+    mentions0, mentions1 = None, None
+    agent = events[turn]["agent"]
+    if mentions is not None:
+        assert agent == mentions[turn][0]
+        turn_mention_ids = set([x for xs in mentions[turn][1] for x in xs])
+        turn_mentions = [x for x in (b0 if agent == 0 else b1) if x.id in turn_mention_ids]
 
-    mentions0 = turn_mentions if agent == 0 else None
-    mentions1 = turn_mentions if agent == 1 else None
+        mentions0 = turn_mentions if agent == 0 else None
+        mentions1 = turn_mentions if agent == 1 else None
+
     visualize_board(b0, b1, mentions0, mentions1, intersect0, intersect1)
     LEFT = "left"
     RIGHT = "right"
-    st.write(f"Current utterance {LEFT if agent == 0 else RIGHT}")
+    st.write(f"Prev utterance {LEFT if agent == 0 else RIGHT}")
     st.write(dialogue[turn])
     st.write(f"Response {RIGHT if agent == 0 else LEFT}")
     st.write(dialogue[turn+1])
@@ -154,9 +170,15 @@ def process_dialogue(dialogue_dict, mentions):
     response = st.radio("Response is", ["none", "confirmation", "disconfirmation"])
     if st.button("Submit"):
         # log to db
-        st.write(id, turn+1, 1-agent, response)
+        # turn is the response turn
+        # st.write(id, turn+1, 1-agent, response)
+        db.add(id, turn+1, 1-agent, response)
 
-def get_referent_ids(referents, markables):
+def get_referent_ids(referentss, markabless, dialogue_id):
+    if dialogue_id not in referentss or dialogue_id not in markabless:
+        return None
+    referents = referentss[dialogue_id]
+    markables = markabless[dialogue_id]
     # referents: {M#: Markable}
     # markables: {markables: List[DetailedMarkable], text: Str}
     # return List[(agent, dot ids)]
@@ -207,8 +229,10 @@ def get_referent_ids(referents, markables):
 
     return mentions
 
-referent_path = Path("../../aaai2020/annotation/aggregated_referent_annotation.json")
-markable_path = Path("../../aaai2020/annotation/markable_annotation.json")
+db = ResponseDB()
+
+referent_path = Path("../aaai2020/annotation/aggregated_referent_annotation.json")
+markable_path = Path("../aaai2020/annotation/markable_annotation.json")
 
 with referent_path.open() as f:
     referents = json.load(f)
@@ -219,10 +243,15 @@ id2dialogueidx = {
     x["uuid"]: i
     for i, x in enumerate(finished_dialogues)
 }
+intersect_size2d = {
+    k: [x for x in finished_dialogues if intersect_size(x["scenario"]) == k]
+    for k in range(4, 7)
+}
 intersect_size = st.number_input("Intersect size", 4, 6)
+sized_dialogues = intersect_size2d[intersect_size]
 
-idx = st.select_slider("Train dialogue number", options=list(range(len(finished_dialogues))))
-dialogue = finished_dialogues[idx]
+idx = st.select_slider("Train dialogue number", options=list(range(len(sized_dialogues))))
+dialogue = sized_dialogues[idx]
 id = dialogue["uuid"]
-mentions = get_referent_ids(referents[id], markables[id])
-process_dialogue(dialogue, mentions)
+mentions = get_referent_ids(referents, markables, id)
+process_dialogue(dialogue, mentions, db)
