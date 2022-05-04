@@ -7,6 +7,8 @@ from transformers import (
     TrainingArguments,
 )
 
+from datasets import load_metric
+
 from response import ResponseDb
 
 class SimpleDataset(torch.utils.data.Dataset):
@@ -24,7 +26,7 @@ class SimpleDataset(torch.utils.data.Dataset):
 
 training_args = TrainingArguments(
     output_dir='./results',          # output directory
-    num_train_epochs=3,              # total number of training epochs
+    num_train_epochs=10,             # total number of training epochs
     per_device_train_batch_size=16,  # batch size per device during training
     per_device_eval_batch_size=64,   # batch size for evaluation
     warmup_steps=500,                # number of warmup steps for learning rate scheduler
@@ -45,22 +47,29 @@ data = db.get_all()
 texts = [x[-2] for x in data]
 labels = [x[-1] for x in data]
 tokenized_texts = tokenizer(texts,truncation=True,padding=True)
-pred_dataset = SimpleDataset(tokenized_texts, labels)
+
+N = len(texts)
+
+train_tokenized_texts = tokenizer(texts[:N - N//4], truncation=True, padding=True)
+valid_tokenized_texts = tokenizer(texts[N-N//4:], truncation=True, padding=True)
+train_labels = labels[:N - N//4]
+valid_labels = labels[N-N//4:]
+
+train_dataset = SimpleDataset(train_tokenized_texts, train_labels)
+valid_dataset = SimpleDataset(valid_tokenized_texts, valid_labels)
 
 trainer = Trainer(
     model=model,                         # the instantiated 🤗 Transformers model to be trained
     args=training_args,                  # training arguments, defined above
-    train_dataset=pred_dataset,          # training dataset
-    eval_dataset=pred_dataset,           # evaluation dataset
+    train_dataset=train_dataset,          # training dataset
+    eval_dataset=valid_dataset,           # evaluation dataset
 )
 
 trainer.train()
 
-predictions = trainer.predict(pred_dataset)
+predictions = trainer.predict(valid_dataset)
+preds = np.argmax(predictions.predictions, axis=-1)
 
-preds = predictions.predictions.argmax(-1)
-labels = pd.Series(preds).map(model.config.id2label)
-scores = (np.exp(predictions[0])/np.exp(predictions[0]).sum(-1,keepdims=True)).max(1)
-
-df = pd.DataFrame(list(zip(texts,preds,labels,scores)), columns=['text','pred','label','score'])
-print(df.head())
+metric = load_metric("accuracy")
+accuracy = metric.compute(predictions=preds, references=predictions.label_ids)
+print(accuracy)
