@@ -224,13 +224,16 @@ def get_referent_ids(referentss, markabless, dialogue_id):
             #print(turn_start, turn_end)
 
             markable_id = markables[markable_idx]["markable_id"]
+            if markables[markable_idx]["predicative"] is not None:
+                # refers to same thing as before
+                markable_id = markables[markable_idx]["predicative"]
             refs = referents[markable_id]["referents"]
             ref_ids = [int(x.split("_")[-1]) for x in refs]
 
-            agent_markable = int(refs[0].split("_")[1])
-            assert agent_text == agent_markable
-
-            mentions[-1][1].append(ref_ids)
+            if len(refs) > 0:
+                agent_markable = int(refs[0].split("_")[1])
+                assert agent_text == agent_markable
+                mentions[-1][1].append(ref_ids)
 
             markable_idx += 1
             if markable_idx >= len(markables):
@@ -272,8 +275,9 @@ intersect_size = st.number_input("Intersect size", 4, 6)
 #intersect_size=4
 sized_dialogues = intersect_size2d[intersect_size]
 
-idx = st.select_slider("Train dialogue number", options=list(range(len(sized_dialogues))))
-#idx = 1
+#idx = st.select_slider("Train dialogue number", options=list(range(len(sized_dialogues))))
+idx = st.number_input("Train dialogue number", 0, len(sized_dialogues))
+#idx = 3
 dialogue = sized_dialogues[idx]
 id = dialogue["uuid"]
 mentions = get_referent_ids(referents, markables, id)
