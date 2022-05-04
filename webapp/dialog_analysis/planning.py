@@ -239,7 +239,7 @@ def visualize_dialogue(dialogue):
 def visualize_beliefs(dots, configs, belief):
     st.write("Configs (Belief)")
     for row, b in zip(configs, belief):
-        st.write(f'{" ".join([x.id for on, x in zip(row, dots) if on])} ({b:.4f})')
+        st.write(f'{" ".join([str(x.id) for on, x in zip(row, dots) if on])} ({b:.4f})')
 
 def process_dialogue(scenario_id, dialogue):
     board = boards[scenario_id]
