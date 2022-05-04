@@ -15,7 +15,7 @@ class ResponseDB:
         self.con = self.get_connection()
         cur = self.con.cursor()
         # create table if it doesnt already exist
-        table_string = "CREATE TABLE IF NOT EXISTS responses (conv text, turn integer, agent integer, response integer)"
+        table_string = "CREATE TABLE IF NOT EXISTS responses (conv text, turn integer, agent integer, utt text, resp text, response integer)"
         cur.execute(table_string)
         self.con.commit()
         cur.close()
@@ -30,12 +30,11 @@ class ResponseDB:
     #def __del__(self):
         #self.con.close()
 
-    def add(self, dialogue_id, turn, agent, response):
-        #cur.execute(f"insert into responses values ('{dialogue_id}', {turn}, {agent}, {response})")
+    def add(self, dialogue_id, turn, agent, utt, resp, response):
         cur = self.con.cursor()
         cur.execute(
-            "insert into responses values (?, ?, ?, ?)",
-            (dialogue_id, turn, agent, response),
+            "insert into responses values (?, ?, ?, ?, ?, ?)",
+            (dialogue_id, turn, agent, utt, resp, response),
         )
         self.con.commit()
         cur.close()

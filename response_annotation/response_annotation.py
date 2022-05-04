@@ -178,8 +178,8 @@ def process_dialogue(dialogue_dict, mentions, db):
     if st.button("Submit"):
         # log to db
         # turn is the response turn
-        # st.write(id, turn+1, 1-agent, response)
-        db.add(id, turn+1, 1-agent, response)
+        # st.write(id, turn+1, 1-agent, dialogue[turn], dialogue[turn+1], response)
+        db.add(id, turn+1, 1-agent, dialogue[turn], dialogue[turn+1], response)
 
 def get_referent_ids(referentss, markabless, dialogue_id):
     if dialogue_id not in referentss or dialogue_id not in markabless:
