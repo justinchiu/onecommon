@@ -3,7 +3,7 @@ from sqlite3 import Connection
 
 import streamlit as st
 
-class ResponseDB:
+class ResponseDb:
     DB_PATH = "response.db"
     NONE = 0
     CONFIRM = 1
@@ -20,7 +20,6 @@ class ResponseDB:
         self.con.commit()
         cur.close()
 
-    @st.cache(hash_funcs={Connection: id})
     def get_connection(self):
         """Put the connection in cache to reuse if path does not change between Streamlit reruns.
         NB : https://stackoverflow.com/questions/48218065/programmingerror-sqlite-objects-created-in-a-thread-can-only-be-used-in-that-sa
@@ -70,6 +69,14 @@ class ResponseDB:
         results = cur.fetchall()
         cur.close()
         return results
+
+class StResponseDb(ResponseDb):
+    @st.cache(hash_funcs={Connection: id})
+    def get_connection(self):
+        """Put the connection in cache to reuse if path does not change between Streamlit reruns.
+        NB : https://stackoverflow.com/questions/48218065/programmingerror-sqlite-objects-created-in-a-thread-can-only-be-used-in-that-sa
+        """
+        return sqlite3.connect(self.DB_PATH, check_same_thread=False)
 
 if __name__ == "__main__":
     db = ResponseDB()

@@ -11,7 +11,7 @@ from functools import partial
 import numpy as np
 
 from dot import Dot, visualize_board
-from response import ResponseDB
+from response import StResponseDb
 
 random.seed(1234)
 np.random.seed(1234)
@@ -243,7 +243,7 @@ def get_referent_ids(referentss, markabless, dialogue_id):
 
     return mentions
 
-db = ResponseDB()
+db = StResponseDb()
 
 st.write("""Annotation instructions:\n
 * Response = none if response does not directly confirm all dots
