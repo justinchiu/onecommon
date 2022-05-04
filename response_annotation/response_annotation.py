@@ -162,9 +162,9 @@ def process_dialogue(dialogue_dict, mentions, db):
     visualize_board(b0, b1, mentions0, mentions1, intersect0, intersect1)
     LEFT = "left"
     RIGHT = "right"
-    st.write(f"Prev utterance {LEFT if agent == 0 else RIGHT}")
+    st.write(f"**Prev utterance ({LEFT if agent == 0 else RIGHT})**")
     st.write(dialogue[turn])
-    st.write(f"Response {RIGHT if agent == 0 else LEFT}")
+    st.write(f"**Response ({RIGHT if agent == 0 else LEFT})**")
     st.write(dialogue[turn+1])
 
     prev_results = db.get_id_turn(id, turn+1)
