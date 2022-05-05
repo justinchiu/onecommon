@@ -12,6 +12,7 @@ from torch import autograd
 import torch.nn as nn
 
 from agent import *
+from belief_agent import BeliefAgent
 import utils
 from utils import ContextGenerator
 from dialog import Dialog, DialogLogger, HierarchicalDialog
@@ -180,7 +181,8 @@ def main():
 
         # alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
         alice_model = utils.load_model(args.alice_model_file, prefix_dir=None, map_location='cpu')
-        alice_ty = get_agent_type(alice_model, args.smart_alice)
+        #alice_ty = get_agent_type(alice_model, args.smart_alice)
+        alice_ty = BeliefAgent
         alice_merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(alice_model.args)))
         alice = alice_ty(alice_model, alice_merged_args, name='Alice', train=False, markable_detector=markable_detector)
 

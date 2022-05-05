@@ -1,6 +1,8 @@
 import sys
 import json
 
+import time
+
 from pathlib import Path
 
 import numpy as np
@@ -14,7 +16,7 @@ import domain
 from dialog import DialogLogger, HierarchicalDialog
 
 from agent import GenerationOutput
-
+from belief_agent import BeliefAgent
 from belief import AndOrBelief, OrAndBelief, OrBelief, OrAndOrBelief, process_ctx
 
 """
@@ -66,7 +68,6 @@ class StaticDialogLogger:
         self,
         response_language,
         response,
-        configs,
         belief,
         marginal_belief,
         belief2,
@@ -77,7 +78,6 @@ class StaticDialogLogger:
     ):
         self.turn["response_language"] = response_language
         self.turn["response"] = response
-        self.turn["configs"] = configs.tolist()
         self.turn["belief"] = belief.tolist()
         self.turn["marginal_belief"] = marginal_belief.tolist()
         self.turn["belief2"] = belief2.tolist()
@@ -205,16 +205,19 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             agent.real_ids = real_ids
             agent.agent_id = agent_id
 
-            agent.belief = OrAndBelief(num_dots)
-            agent.prior = agent.belief.prior
+            agent.belief1 = OrAndBelief(num_dots)
+            agent.prior1 = agent.belief1.prior
 
             # ctx: [x, y, size, color]
             agent.belief2 = OrAndOrBelief(num_dots, ctx)
             agent.prior2 = agent.belief2.prior
             agent.dots = ctxs[2][agent_id]
 
+            start_time = time.perf_counter()
             agent.belief3 = OrBelief(num_dots, ctx)
             agent.prior3 = agent.belief3.prior
+            end_time = time.perf_counter()
+            print(f"Took {end_time - start_time}s to initialize OrBelief")
 
             # for each config, generate best referring expressions
              
@@ -367,14 +370,23 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             nms = torch.stack([x.any(0)[0] for x in nm_multi]).int() if nm_multi is not None else None
 
             # next mention predictions from planning
-            EdHs = writer.belief.compute_EdHs(writer.prior)
-            cs, hs = writer.belief.viz_belief(EdHs, n=writer.args.next_mention_reranking_k)
+            if isinstance(writer, BeliefAgent):
+                EdHs = writer.belief.compute_EdHs(writer.prior)
+                cs, hs = writer.belief.viz_belief(EdHs, n=writer.args.next_mention_reranking_k)
+            else:
+                cs = None
+
+            EdHs1 = writer.belief1.compute_EdHs(writer.prior1)
+            cs1, hs1 = writer.belief1.viz_belief(EdHs1, n=writer.args.next_mention_reranking_k)
 
             EdHs2 = writer.belief2.compute_EdHs(writer.prior2)
             cs2, hs2 = writer.belief2.viz_belief(EdHs2, n=writer.args.next_mention_reranking_k)
 
+            start_time = time.perf_counter()
             EdHs3 = writer.belief3.compute_EdHs(writer.prior3)
             cs3, hs3 = writer.belief3.viz_belief(EdHs3, n=writer.args.next_mention_reranking_k)
+            end_time = time.perf_counter()
+            print(f"Took {end_time - start_time}s to plan with OrBelief")
 
             if writer.agent_id == YOU:
                 print("writer dots")
@@ -383,6 +395,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print(nms)
                 print("mbp next mentions")
                 print(cs)
+                print("mbp1 next mentions")
+                print(cs1)
                 print("mbp2 next mentions")
                 print(cs2)
                 print("mbp3 next mentions")
@@ -397,7 +411,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     utterance_language = SENTENCES[sentence_ix],
                     utterance = UTTS[sentence_ix].tolist(),
                     prior_mentions = nms.tolist(),
-                    plan_mentions = cs.tolist(),
+                    plan_mentions = cs1.tolist(),
                     plan2_mentions = cs2.tolist(),
                     plan3_mentions = cs3.tolist(),
                     prior_mentions_language = None,
@@ -415,6 +429,31 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             out_words = SENTENCES[sentence_ix].split() + ["<eos>"]
             print(SENTENCES[sentence_ix])
 
+            # WRITER
+            writer.args.reranking_confidence = False
+            writer.write(
+                force_words=[out_words],
+                start_token="YOU:",
+                detect_markables=True,
+                is_selection=this_is_selection,
+                inference="sample",
+            )
+            writer.args.reranking_confidence = True
+            # TODO: HACK FOR NOW, include in agent.write
+            if isinstance(writer, BeliefAgent):
+                writer.next_mention_plans.append(UTTS[sentence_ix])
+
+            # READER
+            reader.read(
+                out_words,
+                dots_mentioned=None,
+                dots_mentioned_per_ref=None,
+                dots_mentioned_num_markables=this_partner_num_markables,
+                detect_markables=True,
+                is_selection=this_is_selection,
+            )
+
+            # MBP
             if reader.agent_id == YOU:
                 # UPDATE AGENT 0 BELIEF
                 response = None
@@ -422,7 +461,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     # update belief given partner response to our utterances
                     utt = UTTS[sentence_ix-1]
                     response = RESPS[sentence_ix]
-                    reader.prior = reader.belief.posterior(reader.prior, utt, response)
+                    # reader.prior is updated in reader.read()
+                    #reader.prior = reader.belief.posterior(reader.prior, utt, response)
+                    reader.prior1 = reader.belief1.posterior(reader.prior1, utt, response)
                     reader.prior2 = reader.belief2.posterior(reader.prior2, utt, response)
                     reader.prior3 = reader.belief3.posterior(reader.prior3, utt, response)
                     utt_str = np.array(reader.dots)[utt.astype(bool)]
@@ -447,20 +488,32 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 if UTTS[sentence_ix] is not None:
                     # update belief with unsolicited partner info
                     # if they mention a new dot, we pretend we asked about it
-                    reader.prior = reader.belief.posterior(reader.prior, UTTS[sentence_ix], 1)
+                    # reader.prior is updated in reader.read()
+                    #reader.prior = reader.belief.posterior(reader.prior, UTTS[sentence_ix], 1)
+                    reader.prior1 = reader.belief1.posterior(reader.prior1, UTTS[sentence_ix], 1)
                     reader.prior2 = reader.belief2.posterior(reader.prior2, UTTS[sentence_ix], 1)
                     reader.prior3 = reader.belief3.posterior(reader.prior3, UTTS[sentence_ix], 1)
                     utt_str = np.array(reader.dots)[UTTS[sentence_ix].astype(bool)]
                     print("their utt")
                     print(utt_str)
 
-                cs, ps = reader.belief.viz_belief(reader.prior, n=5)
-                print("posterior")
-                print(cs)
-                print(ps)
-                print("marginals")
-                marginals = reader.belief.marginals(reader.prior)
-                print([f"{x:.2f}" for x in marginals])
+
+                if isinstance(reader, BeliefAgent):
+                    cs, ps = reader.belief.viz_belief(reader.prior, n=5)
+                    print("posterior")
+                    print(cs)
+                    print(ps)
+                    print("marginals")
+                    marginals = reader.belief.marginals(reader.prior)
+                    print([f"{x:.2f}" for x in marginals])
+
+                cs1, ps1 = reader.belief1.viz_belief(reader.prior1, n=5)
+                print("posterior1")
+                print(cs1)
+                print(ps1)
+                print("marginals1")
+                marginals1 = reader.belief1.marginals(reader.prior1)
+                print([f"{x:.2f}" for x in marginals1])
 
                 cs2, ps2 = reader.belief2.viz_belief(reader.prior2, n=5)
                 print("posterior2")
@@ -481,9 +534,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 self.dialog_logger.add_turn_resp(
                     response_language = SENTENCES[sentence_ix],
                     response = response,
-                    configs = cs,
-                    belief = ps,
-                    marginal_belief = marginals,
+                    belief = ps1,
+                    marginal_belief = marginals1,
                     belief2 = ps2,
                     marginal_belief2 = marginals2,
                     belief3 = ps3,
@@ -493,27 +545,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                         else None,
                 )
                 self.dialog_logger.end_turn()
-
-            # WRITER
-            writer.args.reranking_confidence = False
-            writer.write(
-                force_words=[out_words],
-                start_token="YOU:",
-                detect_markables=True,
-                is_selection=this_is_selection,
-                inference="sample",
-            )
-            writer.args.reranking_confidence = True
-
-            # READER
-            reader.read(
-                out_words,
-                dots_mentioned=None,
-                dots_mentioned_per_ref=None,
-                dots_mentioned_num_markables=this_partner_num_markables,
-                detect_markables=True,
-                is_selection=this_is_selection,
-            )
+            # / MBP
 
             words_left -= len(out_words)
             length += len(out_words)

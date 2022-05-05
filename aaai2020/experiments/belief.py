@@ -6,6 +6,8 @@ import numpy as np
 from scipy.special import logsumexp as lse
 from scipy.special import comb
 
+import torch
+
 #random.seed(1234)
 #np.random.seed(1234)
 
@@ -34,6 +36,18 @@ def safe_log(x, eps=1e-10):
 def entropy(px):
     Hx = px * safe_log(px)
     return -(Hx).sum(-1)
+
+# convert plan to sequence of mentions
+def expand_plan(plan):
+    # plan: {0,1}^7
+    num_dots = plan.sum().item()
+    if num_dots <= 1:
+        mentions = plan
+    else:
+        mentions = np.zeros((num_dots + 1, 1, 7))
+        mentions[0,0] = plan
+        mentions[np.arange(1,num_dots+1), 0, plan.nonzero()[0]] = 1
+    return torch.tensor(mentions)
 
 class Dot:
     def __init__(self, item):
