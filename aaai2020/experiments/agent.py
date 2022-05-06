@@ -112,8 +112,10 @@ class RnnAgent(Agent):
         )
         # / MBP
 
-    def __init__(self, model: HierarchicalRnnReferenceModel, args, name='Alice', train=False, markable_detector=None,
-                 ):
+    def __init__(
+        self, model: HierarchicalRnnReferenceModel,
+        args, name='Alice', train=False, markable_detector=None,
+    ):
         super(RnnAgent, self).__init__()
         self.model: HierarchicalRnnReferenceModel = model
         self.reference_predictor = ReferencePredictor(model.args)

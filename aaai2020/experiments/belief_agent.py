@@ -17,6 +17,18 @@ DISCONFIRM = 2
 
 class BeliefAgent(RnnAgent):
 
+    @staticmethod
+    def add_args(parser):
+        super().add_args(parser)
+        parser.add_argument(
+            "--belief",
+            choices = [
+                "or", "and", "andor", "orand", "orandor",
+            ],
+            default = "or",
+            help = "Partner response model",
+        )
+
     # same init as RnnAgent, initialize belief in feed_context
     def __init__(self, *args, **kvargs):
         super().__init__(*args, **kvargs)
@@ -28,7 +40,18 @@ class BeliefAgent(RnnAgent):
     def feed_context(self, context, belief_constructor):
         super().feed_context(context, belief_constructor)
         self.num_dots = 7
-        self.belief = OrBelief(self.num_dots, context)
+        if self.args.belief == "or":
+            self.belief = OrBelief(self.num_dots, context)
+        elif self.args.belief == "and":
+            self.belief = AndBelief(self.num_dots, context)
+        elif self.args.belief == "andor":
+            self.belief = AndOrBelief(self.num_dots, context)
+        elif self.args.belief == "orand":
+            self.belief = OrBelief(self.num_dots, context)
+        elif self.args.belief == "orandor":
+            self.belief = OrAndOrBelief(self.num_dots, context)
+        else:
+            raise ValueError
         self.prior = self.belief.prior
         self.next_mention_plans = []
 
