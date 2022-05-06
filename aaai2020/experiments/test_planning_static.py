@@ -198,18 +198,26 @@ def main():
                 model.cuda()
             model.eval()
 
+        train_data_path = "data/onecommon/final_transcripts.json"
+        with open(train_data_path, "r") as f:
+            dialogues = json.load(f)
+        # hack must_contain to include dialogues in final_transcripts
+        must_contain = [d["scenario"]["uuid"] for d in dialogues]
+
         # dialog = Dialog([alice, bob], args, markable_detector)
-        dialog = StaticHierarchicalDialog([alice, bob], args, markable_detector)
+        dialog = StaticHierarchicalDialog([alice, bob], args, markable_detector, dialogues)
         ctx_gen = ContextGenerator(
-            os.path.join(args.data, args.context_file + '.txt'),
-            must_contain = args.must_contain,
+            'data/onecommon/static/train_context_9.txt',
+            #must_contain = args.must_contain,
+            must_contain = must_contain,
         )
-        with open(os.path.join(args.data, args.context_file + '.json'), "r") as f:
+        with open(os.path.join('data/onecommon/static/scenarios.json'), "r") as f:
             scenario_list = json.load(f)
         scenarios = {
             scenario['uuid']: scenario
             for scenario in scenario_list
-            if args.must_contain is None or scenario["uuid"] in args.must_contain
+            #if args.must_contain is None or scenario["uuid"] in args.must_contain
+            if args.must_contain is None or scenario["uuid"] in must_contain
         }
         logger = DialogLogger(verbose=args.verbose, log_file=args.log_file, scenarios=scenarios)
 

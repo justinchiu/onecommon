@@ -9,6 +9,8 @@ import numpy as np
 
 import torch
 
+from nltk import word_tokenize
+
 from engines.beliefs import BlankBeliefConstructor
 from metric import MetricsContainer
 from corpora import data
@@ -85,18 +87,30 @@ class StaticDialogLogger:
         self.turn["belief3"] = belief3.tolist()
         self.turn["marginal_belief3"] = marginal_belief3.tolist()
         # SIMPLIFYING ASSUMP: ONLY A SINGLE UTT IN RESPONSE
-        self.turn["response_utt"] = response_utt
+        self.turn["response_utt"] = (
+            response_utt.tolist()
+            if response_utt is not None
+            else None
+        )
 
 
 class StaticHierarchicalDialog(HierarchicalDialog):
     def __init__(
         self, agents, args, markable_detector,
+        dialogues,
         markable_detector_corpus=None,
     ):
         super().__init__(
             agents, args, markable_detector,
             markable_detector_corpus=markable_detector_corpus,
         )
+        # map from scenario to training conversation,
+        # not sure if the logger relies on scenarios or something
+        # TODO rewrite to use conversation id, since static
+        self.dialogues = {
+            x["scenario"]["uuid"]: x
+            for x in dialogues
+        }
 
     def run(self, ctxs, logger, max_words=5000):
         scenario_id = ctxs[0][0]
@@ -111,6 +125,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
         min_num_mentions = 0
         max_num_mentions = 10
 
+        """
         # hacked in for specific context
         if scenario_id == "S_pGlR0nKz9pQ4ZWsw":
             YOU, THEM = 0, 1
@@ -188,6 +203,16 @@ class StaticHierarchicalDialog(HierarchicalDialog):
         else:
             raise ValueError(f"Invalid scenario id {scenario_id}")
         # / hacked in for specific context
+        """
+        # lets just assume we go first
+        YOU, THEM = 0,1
+
+        # TODO(URGENT): DO WE NEED TO TOKENIZE?
+        SENTENCES = [
+            event["data"]
+            for event in self.dialogues[scenario_id]["events"]
+            if event["action"] == "message"
+        ]
 
         #max_sentences = self.args.max_sentences
         max_sentences = len(SENTENCES)
@@ -323,7 +348,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             # update state for next turn
             #out_words = "do you see the black one ? <eos>".split()
             #out_words = input("input utterance: ").split() + ["<eos>"]
-            out_words = SENTENCES[sentence_ix].split() + ["<eos>"]
+            tokens = word_tokenize(SENTENCES[sentence_ix].lower().strip())
+            out_words = tokens + ["<eos>"]
             print(SENTENCES[sentence_ix])
 
             # WRITER
@@ -390,7 +416,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     utterance = writer.ref_preds[-1].any(0)[0].int().tolist()
                         if writer.ref_preds[-1] is not None
                         else None,
-                    prior_mentions = nms.tolist(),
+                    prior_mentions = nms.tolist() if nms is not None else None,
                     plan_mentions = cs1.tolist(),
                     plan2_mentions = cs2.tolist(),
                     plan3_mentions = cs3.tolist(),
@@ -418,7 +444,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             if reader.agent_id == YOU:
                 # UPDATE AGENT 0 BELIEF
                 response = None
-                if sentence_ix > 0:
+                if sentence_ix > 0 and reader.ref_preds[-2] is not None:
                     # update belief given partner response to our utterances
                     #print(reader.ref_preds[-1].any(0)[0].int().tolist())
                     #print(reader.ref_preds[-2].any(0)[0].int().tolist())
@@ -463,9 +489,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     reader.prior1 = reader.belief1.posterior(reader.prior1, side_info, 1)
                     reader.prior2 = reader.belief2.posterior(reader.prior2, side_info, 1)
                     reader.prior3 = reader.belief3.posterior(reader.prior3, side_info, 1)
-                    utt_str = np.array(reader.dots)[UTTS[sentence_ix].astype(bool)]
-                    print("their utt")
-                    print(utt_str)
 
 
                 if isinstance(reader, BeliefAgent):
@@ -501,6 +524,13 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 marginals3 = reader.belief3.marginals(reader.prior3)
                 print([f"{x:.2f}" for x in marginals3])
 
+                their_utt = None
+                if reader.partner_ref_preds[-1] is not None:
+                    their_utt = reader.partner_ref_preds[-1].any(0)[0].cpu().numpy()
+                    utt_str = np.array(reader.dots)[their_utt]
+                    print("their utt")
+                    print(utt_str)
+
                 self.dialog_logger.add_turn_resp(
                     response_language = SENTENCES[sentence_ix],
                     response = response,
@@ -510,8 +540,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     marginal_belief2 = marginals2,
                     belief3 = ps3,
                     marginal_belief3 = marginals3,
-                    response_utt = UTTS[sentence_ix].tolist()
-                        if UTTS[sentence_ix] is not None
+                    response_utt = their_utt.astype(int)
+                        if their_utt is not None
                         else None,
                 )
                 self.dialog_logger.end_turn()
