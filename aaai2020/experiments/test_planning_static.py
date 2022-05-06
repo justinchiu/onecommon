@@ -188,7 +188,8 @@ def main():
 
         # bob_model = utils.load_model(args.bob_model_file + '_' + str(seed) + '.th')
         bob_model = utils.load_model(args.bob_model_file, prefix_dir=None, map_location='cpu')
-        bob_ty = get_agent_type(bob_model, args.smart_bob)
+        #bob_ty = get_agent_type(bob_model, args.smart_bob)
+        bob_ty = BeliefAgent
         bob_merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(bob_model.args)))
         bob = bob_ty(bob_model, bob_merged_args, name='Bob', train=False, markable_detector=markable_detector)
 

@@ -36,6 +36,8 @@ class BeliefAgent(RnnAgent):
         self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
         self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
             response_pretrained_path)
+        # hack, oh well
+        self.args.belief = "or"
 
     def feed_context(self, context, belief_constructor):
         super().feed_context(context, belief_constructor)
@@ -53,7 +55,10 @@ class BeliefAgent(RnnAgent):
         else:
             raise ValueError
         self.prior = self.belief.prior
+        # per-turn accumulators
         self.next_mention_plans = []
+        self.responses = []
+        self.side_infos = []
 
     def read(
         self, inpt_words, *args, **kwargs,
@@ -79,6 +84,7 @@ class BeliefAgent(RnnAgent):
             response = 1 if label == CONFIRM else 0
             self.prior = self.belief.posterior(self.prior, plan, response)
         # side info belief update
+        side_info = None
         if partner_mentions_per_ref is not None:
             # TODO: not ideal. prefer to MARGINALIZE over partner mentions
             # UNCERTAINTY IS IMPORTANT HERE
@@ -92,10 +98,13 @@ class BeliefAgent(RnnAgent):
                 if plan is not None
                 else partner_mentions_collapsed
             )
-            self.prior = self.belief.posterior(self.prior, side_info, 1)
+            if side_info is not None and side_info.any():
+                self.prior = self.belief.posterior(self.prior, side_info, 1)
 
         # add None to next_mention_plans, since reading turn => no generation
         self.next_mention_plans.append(None)
+        self.responses.append(label)
+        self.side_infos.append(side_info)
 
 
     def write(self, *args, **kwargs):
@@ -129,9 +138,14 @@ class BeliefAgent(RnnAgent):
 
         if kwargs["force_words"] is not None:
             # set plan to the resolved refs of the forced utt
-            plan = self.ref_preds[-1].any(0)[0].cpu().int().numpy()
+            plan = (self.ref_preds[-1].any(0)[0].cpu().int().numpy()
+                if self.ref_preds[-1] is not None
+                else None
+            )
 
         # add plan to next_mention_plan history
         self.next_mention_plans.append(plan)
+        self.responses.append(None)
+        self.side_infos.append(None)
 
         return output

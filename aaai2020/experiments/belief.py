@@ -192,7 +192,7 @@ class AndBelief(Belief):
     under-estimates failure of small configurations due to ignoring partial observability.
     """
 
-    def __init__(self, num_dots, overlap_size=None, correct=0.9):
+    def __init__(self, num_dots, context=None, overlap_size=None, correct=0.9):
         super().__init__(num_dots, overlap_size)
 
         self.prior = np.ones((2 ** num_dots,))

@@ -318,56 +318,34 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             else:
                 this_is_selection = None
 
-            # BEGIN COPY
-
             this_partner_num_markables = torch.LongTensor([0])
 
-            WRITE = False
-            if WRITE:
-                out_words = writer.write(
-                    max_words=words_left,
-                    detect_markables=True,
-                    start_token='YOU:',
-                    is_selection=this_is_selection,
-                    inference=self.args.language_inference,
-                    beam_size=self.args.language_beam_size,
-                    sample_temperature_override=self.args.language_sample_temperature,
-                    min_num_mentions=min_num_mentions,
-                    max_num_mentions=max_num_mentions,
-                )
-                # pop off reader_lang_hs, writer_lang_hs
-                writer.reader_lang_hs.pop()
-                writer.writer_lang_hs.pop()
-                # writer.ref_preds
-                # writer.partner_ref_preds
-            else:            
-                # gather next mention predictions from writer
-                if writer.reader_lang_hs:
-                    print("next mention")
-                    is_self = torch.ones(1).bool()
-                    can_confirm = writer.make_can_confirm(
-                        is_self,
-                        vars(writer.model.args).get("confirmations_resolution_strategy", "any"),
-                    )
-                    writer.next_mention(
-                        lens=torch.LongTensor([writer.reader_lang_hs[-1].size(0)]).to(writer.device),
-                        dots_mentioned_num_markables_to_force=None,
-                        min_num_mentions=0,
-                        max_num_mentions=12,
-                        can_confirm=can_confirm,
-                    )
-                else:
-                    print("first mention")
-                    writer.first_mention(
-                        dots_mentioned_num_markables_to_force=None,
-                        min_num_mentions=0,
-                        max_num_mentions=12,
-                    )
+            # update state for next turn
+            #out_words = "do you see the black one ? <eos>".split()
+            #out_words = input("input utterance: ").split() + ["<eos>"]
+            out_words = SENTENCES[sentence_ix].split() + ["<eos>"]
+            print(SENTENCES[sentence_ix])
+
+            # WRITER
+            writer.args.reranking_confidence = False
+            writer.write(
+                force_words=[out_words],
+                start_token="YOU:",
+                detect_markables=True,
+                is_selection=this_is_selection,
+                inference="sample",
+            )
+            writer.args.reranking_confidence = True
+
+
+            # gather next mention predictions from writer
             nm_cands = writer.next_mention_candidates[-1]
             nm = writer.next_mention_predictions[-1]
             nm_multi = writer.next_mention_predictions_multi[-1]
             # int is easer to read
-            nms = torch.stack([x.any(0)[0] for x in nm_multi]).int() if nm_multi is not None else None
+            nms = torch.stack([
+                x.any(0)[0] for x in nm_multi
+            ]).int() if nm_multi is not None else None
 
             # next mention predictions from planning
             if isinstance(writer, BeliefAgent):
@@ -409,7 +387,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 self.dialog_logger.start_turn(YOU)
                 self.dialog_logger.add_turn_utt(
                     utterance_language = SENTENCES[sentence_ix],
-                    utterance = UTTS[sentence_ix].tolist(),
+                    utterance = writer.ref_preds[-1].any(0)[0].int().tolist()
+                        if writer.ref_preds[-1] is not None
+                        else None,
                     prior_mentions = nms.tolist(),
                     plan_mentions = cs1.tolist(),
                     plan2_mentions = cs2.tolist(),
@@ -423,25 +403,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 # writer.partner_ref_preds
 
 
-            # update state for next turn
-            #out_words = "do you see the black one ? <eos>".split()
-            #out_words = input("input utterance: ").split() + ["<eos>"]
-            out_words = SENTENCES[sentence_ix].split() + ["<eos>"]
-            print(SENTENCES[sentence_ix])
-
-            # WRITER
-            writer.args.reranking_confidence = False
-            writer.write(
-                force_words=[out_words],
-                start_token="YOU:",
-                detect_markables=True,
-                is_selection=this_is_selection,
-                inference="sample",
-            )
-            writer.args.reranking_confidence = True
-            # TODO: HACK FOR NOW, include in agent.write
-            if isinstance(writer, BeliefAgent):
-                writer.next_mention_plans.append(UTTS[sentence_ix])
 
             # READER
             reader.read(
@@ -459,13 +420,17 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 response = None
                 if sentence_ix > 0:
                     # update belief given partner response to our utterances
-                    utt = UTTS[sentence_ix-1]
-                    response = RESPS[sentence_ix]
-                    # reader.prior is updated in reader.read()
-                    #reader.prior = reader.belief.posterior(reader.prior, utt, response)
-                    reader.prior1 = reader.belief1.posterior(reader.prior1, utt, response)
-                    reader.prior2 = reader.belief2.posterior(reader.prior2, utt, response)
-                    reader.prior3 = reader.belief3.posterior(reader.prior3, utt, response)
+                    #print(reader.ref_preds[-1].any(0)[0].int().tolist())
+                    #print(reader.ref_preds[-2].any(0)[0].int().tolist())
+                    utt = reader.ref_preds[-2].any(0)[0].int().cpu().numpy()
+                    #utt = UTTS[sentence_ix-1]
+                    #response = RESPS[sentence_ix]
+                    label = reader.responses[-1]
+                    if label != 0:
+                        response = 1 if label == 1 else 0
+                        reader.prior1 = reader.belief1.posterior(reader.prior1, utt, response)
+                        reader.prior2 = reader.belief2.posterior(reader.prior2, utt, response)
+                        reader.prior3 = reader.belief3.posterior(reader.prior3, utt, response)
                     utt_str = np.array(reader.dots)[utt.astype(bool)]
                     print("our prev utt")
                     print(utt_str)
@@ -485,14 +450,19 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                         plan3_mentions_language = None,
                     )
 
-                if UTTS[sentence_ix] is not None:
+                side_info = reader.side_infos[-1]
+                if side_info is not None and side_info.any():
+                #if UTTS[sentence_ix] is not None:
                     # update belief with unsolicited partner info
                     # if they mention a new dot, we pretend we asked about it
                     # reader.prior is updated in reader.read()
                     #reader.prior = reader.belief.posterior(reader.prior, UTTS[sentence_ix], 1)
-                    reader.prior1 = reader.belief1.posterior(reader.prior1, UTTS[sentence_ix], 1)
-                    reader.prior2 = reader.belief2.posterior(reader.prior2, UTTS[sentence_ix], 1)
-                    reader.prior3 = reader.belief3.posterior(reader.prior3, UTTS[sentence_ix], 1)
+                    #reader.prior1 = reader.belief1.posterior(reader.prior1, UTTS[sentence_ix], 1)
+                    #reader.prior2 = reader.belief2.posterior(reader.prior2, UTTS[sentence_ix], 1)
+                    #reader.prior3 = reader.belief3.posterior(reader.prior3, UTTS[sentence_ix], 1)
+                    reader.prior1 = reader.belief1.posterior(reader.prior1, side_info, 1)
+                    reader.prior2 = reader.belief2.posterior(reader.prior2, side_info, 1)
+                    reader.prior3 = reader.belief3.posterior(reader.prior3, side_info, 1)
                     utt_str = np.array(reader.dots)[UTTS[sentence_ix].astype(bool)]
                     print("their utt")
                     print(utt_str)
