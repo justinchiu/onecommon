@@ -13,18 +13,19 @@ import torch
 
 def process_ctx(ctx):
     # ctx: [x, y, size, color]
+    eps = 1e-3
     num_buckets = 4
     min_ = ctx.min(0)
     max_ = ctx.max(0)
     min_size, max_size = min_[2], max_[2]
     min_color, max_color = min_[3], max_[3]
-    size_buckets = np.linspace(min_size, max_size, num_buckets)
-    color_buckets = np.linspace(min_color, max_color, num_buckets)
+    size_buckets = np.linspace(min_size, max_size + eps, num_buckets)
+    color_buckets = np.linspace(min_color, max_color + eps, num_buckets)
     sizes = ctx[:,2]
     colors = ctx[:,3]
 
-    size_idxs = (size_buckets[:-1,None] <= sizes) & (sizes <= size_buckets[1:,None])
-    color_idxs = (color_buckets[:-1,None] <= colors) & (colors <= color_buckets[1:,None])
+    size_idxs = (size_buckets[:-1,None] <= sizes) & (sizes < size_buckets[1:,None])
+    color_idxs = (color_buckets[:-1,None] <= colors) & (colors < color_buckets[1:,None])
     return np.stack((size_idxs.T.nonzero()[1], color_idxs.T.nonzero()[1]), 1)
 
 def safe_log(x, eps=1e-10):
