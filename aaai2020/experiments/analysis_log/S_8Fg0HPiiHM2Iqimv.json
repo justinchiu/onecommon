@@ -165,7 +165,24 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "large",
+            "light",
+            "grey",
+            "dots",
+            ",",
+            "one",
+            "is",
+            "slightly",
+            "lighter",
+            "than",
+            "the",
+            "other",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 1,
@@ -204,7 +221,26 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "tiny",
+            "black",
+            "dot",
+            "with",
+            "a",
+            "large",
+            "light",
+            "gray",
+            "dot",
+            "to",
+            "the",
+            "left",
+            "of",
+            "it",
+            "<eos>"
+        ],
         "response": null,
         "response_language": "Two very dark very small dots with medium light grey in the middle?",
         "response_utt": [
@@ -393,7 +429,28 @@
                 1
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "large",
+            "light",
+            "grey",
+            "dots",
+            ".",
+            "one",
+            "is",
+            "on",
+            "the",
+            "right",
+            "and",
+            "a",
+            "bit",
+            "above",
+            "the",
+            "other",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 1,
@@ -423,7 +480,7 @@
                 0
             ],
             [
-                1,
+                0,
                 0,
                 0,
                 0,
@@ -432,18 +489,34 @@
                 1
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "yes",
+            ",",
+            "i",
+            "see",
+            "that",
+            "one",
+            ".",
+            "let",
+            "'s",
+            "pick",
+            "the",
+            "smaller",
+            "one",
+            ".",
+            "<selection>"
+        ],
         "response": null,
         "response_language": "okay tell me what you see",
         "response_utt": null,
         "utterance": [
+            1,
+            1,
             0,
             0,
             0,
             0,
-            0,
-            0,
-            0
+            1
         ],
         "utterance_language": "no two dark dots"
     },
@@ -613,7 +686,30 @@
                 1
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "large",
+            "light",
+            "grey",
+            "dots",
+            ".",
+            "the",
+            "light",
+            "one",
+            "is",
+            "below",
+            "and",
+            "to",
+            "the",
+            "right",
+            "of",
+            "the",
+            "larger",
+            "one",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 1,
@@ -625,7 +721,7 @@
                 1
             ],
             [
-                1,
+                0,
                 1,
                 0,
                 0,
@@ -634,44 +730,52 @@
                 1
             ],
             [
+                0,
                 1,
-                1,
                 0,
                 0,
                 0,
                 0,
-                1
+                0
             ],
             [
-                1,
+                0,
+                0,
                 1,
                 0,
                 0,
                 0,
-                1,
-                1
+                0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "see",
+            "two",
+            "small",
+            "black",
+            "dots",
+            "<eos>"
+        ],
         "response": null,
         "response_language": "they kind of make a triangle but are somewhat distant of each other?",
         "response_utt": [
             1,
-            0,
-            0,
-            1,
             1,
             0,
-            0
+            0,
+            0,
+            0,
+            1
         ],
         "utterance": [
             1,
-            0,
-            0,
-            1,
             1,
             0,
-            0
+            0,
+            0,
+            0,
+            1
         ],
         "utterance_language": "I see 3 large light grey dots somewhat apart from each other but they together"
     },
@@ -841,14 +945,44 @@
                 1
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "large",
+            "light",
+            "grey",
+            "dots",
+            ".",
+            "one",
+            "is",
+            "very",
+            "light",
+            "and",
+            "the",
+            "other",
+            "is",
+            "on",
+            "the",
+            "left",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
-                0,
-                0,
-                0,
-                0,
                 1,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                1,
+                0,
+                0,
+                0,
+                0,
                 0,
                 1
             ],
@@ -869,29 +1003,40 @@
                 0,
                 0,
                 1
-            ],
-            [
-                1,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "yes",
+            ",",
+            "is",
+            "the",
+            "one",
+            "on",
+            "the",
+            "top",
+            "darker",
+            "and",
+            "darker",
+            "than",
+            "the",
+            "one",
+            "on",
+            "the",
+            "right",
+            "?",
+            "<eos>"
+        ],
         "response": null,
         "response_language": "small and very dark?",
         "response_utt": null,
         "utterance": [
             1,
             1,
-            1,
-            1,
-            1,
             0,
-            1
+            0,
+            0,
+            0,
+            0
         ],
         "utterance_language": "more of a line. I also have 3 close together on the other side of my cirlce but one is very dark grey"
     },

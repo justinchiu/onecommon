@@ -165,7 +165,26 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "dots",
+            "that",
+            "are",
+            "almost",
+            "on",
+            "the",
+            "left",
+            ".",
+            "one",
+            "is",
+            "smaller",
+            "than",
+            "the",
+            "other",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 1,
@@ -204,7 +223,22 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "cluster",
+            "of",
+            "three",
+            "dots",
+            ",",
+            "one",
+            "large",
+            "and",
+            "one",
+            "black",
+            "<eos>"
+        ],
         "response": null,
         "response_language": "the left two are closer and the right is darkest?",
         "response_utt": [

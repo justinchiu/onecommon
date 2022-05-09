@@ -165,7 +165,21 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "black",
+            "dots",
+            ",",
+            "one",
+            "is",
+            "smaller",
+            "than",
+            "the",
+            "other",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 0,
@@ -204,7 +218,29 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "large",
+            "light",
+            "gray",
+            "dot",
+            "with",
+            "a",
+            "slightly",
+            "smaller",
+            "black",
+            "dot",
+            "above",
+            "and",
+            "to",
+            "the",
+            "right",
+            "of",
+            "it",
+            "<eos>"
+        ],
         "response": 1,
         "response_language": "yes! click that large light one!",
         "response_utt": [

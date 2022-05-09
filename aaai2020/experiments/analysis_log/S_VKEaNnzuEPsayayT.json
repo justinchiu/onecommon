@@ -165,7 +165,39 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "line",
+            "of",
+            "three",
+            "dots",
+            ".",
+            "a",
+            "large",
+            "dark",
+            "gray",
+            "one",
+            "and",
+            "a",
+            "small",
+            "dark",
+            "grey",
+            "dot",
+            ".",
+            "and",
+            "a",
+            "medium",
+            "size",
+            "black",
+            "dot",
+            "on",
+            "the",
+            "bottom",
+            "right",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 1,
@@ -204,7 +236,25 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "cluster",
+            "of",
+            "4",
+            "dots",
+            ",",
+            "2",
+            "dark",
+            ",",
+            "one",
+            "large",
+            "and",
+            "light",
+            "grey",
+            "<eos>"
+        ],
         "response": null,
         "response_language": "I have a large light grey dot with 3 smaller ones above it",
         "response_utt": [
@@ -218,12 +268,12 @@
         ],
         "utterance": [
             1,
+            0,
+            0,
             1,
             1,
             1,
-            1,
-            1,
-            1
+            0
         ],
         "utterance_language": "Hello I have one dot larger than the rest"
     },
@@ -393,9 +443,48 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "cluster",
+            "of",
+            "3",
+            "dots",
+            ",",
+            "the",
+            "medium",
+            "gray",
+            "is",
+            "to",
+            "the",
+            "right",
+            "and",
+            "a",
+            "small",
+            "black",
+            "one",
+            "to",
+            "the",
+            "right",
+            "and",
+            "above",
+            "the",
+            "smaller",
+            "one",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
+                1,
+                0,
+                0,
+                1,
+                1,
+                1,
+                0
+            ],
+            [
                 0,
                 0,
                 0,
@@ -409,7 +498,7 @@
                 0,
                 0,
                 1,
-                0,
+                1,
                 0,
                 0
             ],
@@ -419,20 +508,23 @@
                 0,
                 1,
                 0,
-                1,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                1,
-                1,
                 1,
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "see",
+            "that",
+            "one",
+            ".",
+            "let",
+            "'s",
+            "pick",
+            "that",
+            "one",
+            "<selection>"
+        ],
         "response": 1,
         "response_language": "I think so, yea",
         "response_utt": null,

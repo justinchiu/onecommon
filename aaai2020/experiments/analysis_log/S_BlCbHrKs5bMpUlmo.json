@@ -165,7 +165,39 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "2",
+            "dots",
+            "that",
+            "are",
+            "almost",
+            "in",
+            "a",
+            "vertical",
+            "line",
+            ".",
+            "the",
+            "one",
+            "on",
+            "top",
+            "is",
+            "very",
+            "light",
+            "gray",
+            "and",
+            "the",
+            "one",
+            "on",
+            "the",
+            "right",
+            "is",
+            "a",
+            "little",
+            "darker",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 0,
@@ -204,7 +236,23 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "large",
+            "black",
+            "dot",
+            "by",
+            "itself",
+            ".",
+            "do",
+            "you",
+            "see",
+            "it",
+            "?",
+            "<eos>"
+        ],
         "response": null,
         "response_language": "a massive black dot  with medium grey dots to the left   above and bleow it",
         "response_utt": [

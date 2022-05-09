@@ -165,7 +165,30 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "black",
+            "dots",
+            "with",
+            "a",
+            "large",
+            "dark",
+            "grey",
+            "dot",
+            "to",
+            "the",
+            "right",
+            "and",
+            "slightly",
+            "above",
+            "a",
+            "tiny",
+            "black",
+            "dot",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 0,
@@ -204,7 +227,28 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "small",
+            "black",
+            "dot",
+            "with",
+            "a",
+            "larger",
+            "light",
+            "grey",
+            "dot",
+            "below",
+            "it",
+            "and",
+            "slightly",
+            "to",
+            "the",
+            "left",
+            "<eos>"
+        ],
         "response": null,
         "response_language": "two dark grey med sized dots that look almost identical?",
         "response_utt": [
@@ -218,12 +262,12 @@
         ],
         "utterance": [
             0,
-            0,
-            0,
             1,
             0,
-            1,
-            0
+            0,
+            0,
+            0,
+            1
         ],
         "utterance_language": "i have a large light grey dot above a smaller dark grey dot"
     },
@@ -393,7 +437,41 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "cluster",
+            "of",
+            "3",
+            "dots",
+            ".",
+            "one",
+            "is",
+            "on",
+            "the",
+            "right",
+            "and",
+            "a",
+            "dark",
+            "dot",
+            "to",
+            "the",
+            "right",
+            "and",
+            "a",
+            "lighter",
+            "grey",
+            "dot",
+            "to",
+            "the",
+            "right",
+            "and",
+            "slightly",
+            "above",
+            ".",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 1,
@@ -423,16 +501,36 @@
                 0
             ],
             [
-                1,
                 0,
                 1,
                 0,
                 0,
                 0,
-                0
+                0,
+                1
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "small",
+            "black",
+            "dot",
+            "with",
+            "a",
+            "larger",
+            "light",
+            "grey",
+            "dot",
+            "below",
+            "it",
+            "and",
+            "to",
+            "the",
+            "left",
+            "<eos>"
+        ],
         "response": 1,
         "response_language": "yes! click the top one!",
         "response_utt": [

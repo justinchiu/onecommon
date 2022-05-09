@@ -165,7 +165,37 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "dots",
+            "very",
+            "close",
+            "together",
+            ".",
+            "the",
+            "one",
+            "on",
+            "the",
+            "left",
+            "is",
+            "smaller",
+            "and",
+            "light",
+            ",",
+            "the",
+            "one",
+            "on",
+            "the",
+            "right",
+            "is",
+            "very",
+            "large",
+            "and",
+            "black",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 0,
@@ -204,7 +234,21 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "large",
+            "dots",
+            ",",
+            "one",
+            "black",
+            "and",
+            "one",
+            "light",
+            "grey",
+            "<eos>"
+        ],
         "response": null,
         "response_language": "I have a cluster of 4 dots in a C shape. On one end is a large black dot and on the other is a small light dot",
         "response_utt": [

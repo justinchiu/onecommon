@@ -165,7 +165,26 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "small",
+            "dots",
+            ".",
+            "one",
+            "is",
+            "slightly",
+            "lower",
+            "and",
+            "to",
+            "the",
+            "right",
+            "of",
+            "the",
+            "other",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 0,
@@ -204,7 +223,23 @@
                 1
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "small",
+            "black",
+            "dot",
+            "by",
+            "itself",
+            ".",
+            "do",
+            "you",
+            "see",
+            "it",
+            "?",
+            "<eos>"
+        ],
         "response": 1,
         "response_language": "yes, is it your largest dot? it is for me",
         "response_utt": [

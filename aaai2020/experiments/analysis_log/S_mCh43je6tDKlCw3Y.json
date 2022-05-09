@@ -165,7 +165,23 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "2",
+            "dark",
+            "dots",
+            ",",
+            "one",
+            "is",
+            "slightly",
+            "larger",
+            "and",
+            "a",
+            "medium",
+            "grey",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 0,
@@ -204,14 +220,27 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "two",
+            "dots",
+            "close",
+            "together",
+            ".",
+            "one",
+            "black",
+            "and",
+            "one",
+            "light",
+            "grey",
+            "<eos>"
+        ],
         "response": 1,
         "response_language": "ok i see it, let's pick it, the black one",
         "response_utt": [
             0,
             0,
             1,
-            0,
+            1,
             0,
             0,
             0

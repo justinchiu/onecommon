@@ -88,6 +88,8 @@
             ]
         ],
         "plan2_mentions_language ": null,
+        "plan2_partner_ref": null,
+        "plan2_plan": null,
         "plan3_mentions": [
             [
                 1,
@@ -126,7 +128,73 @@
                 0
             ]
         ],
-        "plan3_mentions_language ": null,
+        "plan3_mentions_language ": "i have two dots that are almost on a horizontal line . the one on the left is smaller and darker . the one on the right is the largest and very dark <eos>",
+        "plan3_partner_ref": [
+            [
+                [
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "plan3_plan": [
+            [
+                [
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
         "plan_mentions": [
             [
                 1,
@@ -166,6 +234,8 @@
             ]
         ],
         "plan_mentions_language ": null,
+        "plan_partner_ref": null,
+        "plan_plan": null,
         "prior_mentions": [
             [
                 0,
@@ -204,7 +274,73 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": "i have one large black dot . it is all by itself <eos>",
+        "prior_partner_ref": [
+            [
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "prior_plan": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
         "response": null,
         "response_language": "Do you see 3 dots in a triangle shape? ",
         "response_utt": [
@@ -218,10 +354,10 @@
         ],
         "utterance": [
             0,
-            1,
             0,
             0,
             1,
+            0,
             0,
             0
         ],
@@ -230,52 +366,52 @@
     {
         "agent_id": 0,
         "belief": [
-            0.060191861687770125,
-            0.06000821348894,
-            0.06000821348894,
-            0.06000821348894,
-            0.06000821348894
+            0.0625459914052495,
+            0.06225996371515683,
+            0.06225996371515683,
+            0.06225996371515683,
+            0.06225996371515683
         ],
         "belief2": [
-            0.013930731804899538,
-            0.013930731804899538,
-            0.013930731804899538,
-            0.013930731804899538,
-            0.013846048284362204
+            0.014054956695996672,
+            0.014054956695996672,
+            0.014054956695996672,
+            0.014054956695996672,
+            0.013926993651914766
         ],
         "belief3": [
-            0.06099700725800264,
-            0.06097059495769172,
-            0.06097059495769172,
-            0.06097059495769172,
-            0.06097059495769172
+            0.062450105024702475,
+            0.06240954715721391,
+            0.06240954715721391,
+            0.06240954715721391,
+            0.06240954715721391
         ],
         "marginal_belief": [
-            0.9854371340589422,
-            0.4985934722131734,
-            0.9854371340589422,
-            0.4985934722131734,
-            0.4985934722131734,
-            0.9854371340589423,
-            0.4985934722131734
+            0.9984230126609589,
+            0.4995646525159788,
+            0.9984230126609587,
+            0.4995646525159788,
+            0.4995646525159788,
+            0.9984230126609587,
+            0.49956465251597887
         ],
         "marginal_belief2": [
-            0.6661485419733408,
-            0.4992123751454557,
-            0.6630538652129965,
-            0.4992123751454556,
-            0.6630538652129965,
-            0.6661485419733411,
-            0.49921237514545563
+            0.6663453284851453,
+            0.4991835351365918,
+            0.6659543748918958,
+            0.4991835351365918,
+            0.6659543748918958,
+            0.6663453284851452,
+            0.4991835351365918
         ],
         "marginal_belief3": [
-            0.9850450461319469,
-            0.4987038364047801,
-            0.9850450461319467,
-            0.4987038364047802,
-            0.4987038364047802,
-            0.9850450461319469,
-            0.4987038364047802
+            0.9990148015086054,
+            0.4998300455986529,
+            0.9990148015086054,
+            0.4998300455986529,
+            0.4998300455986529,
+            0.9990148015086053,
+            0.4998300455986529
         ],
         "plan2_mentions": [
             [
@@ -316,6 +452,8 @@
             ]
         ],
         "plan2_mentions_language ": null,
+        "plan2_partner_ref": null,
+        "plan2_plan": null,
         "plan3_mentions": [
             [
                 1,
@@ -354,7 +492,113 @@
                 0
             ]
         ],
-        "plan3_mentions_language ": null,
+        "plan3_mentions_language ": "i have a cluster of 4 dots . the top one is smaller and black , the one on the right is larger and medium gray , and the one on the right is a little bigger and slightly darker , and the one on the left is a little smaller and slightly larger and a little higher <eos>",
+        "plan3_partner_ref": [
+            [
+                [
+                    1,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "plan3_plan": [
+            [
+                [
+                    1,
+                    0,
+                    1,
+                    0,
+                    1,
+                    1,
+                    0
+                ],
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                ]
+            ]
+        ],
         "plan_mentions": [
             [
                 0,
@@ -394,6 +638,8 @@
             ]
         ],
         "plan_mentions_language ": null,
+        "plan_partner_ref": null,
+        "plan_plan": null,
         "prior_mentions": [
             [
                 1,
@@ -432,7 +678,93 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": "i have a triangle of dots . they are both dark grey . they are all small . the one on the right is smaller and slightly smaller <eos>",
+        "prior_partner_ref": [
+            [
+                [
+                    1,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    1,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "prior_plan": [
+            [
+                [
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0
+                ],
+                [
+                    1,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0
+                ],
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                ],
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
         "response": 1,
         "response_language": "yes I see the same triangle shape. want to select the bottom largest dot? ",
         "response_utt": [

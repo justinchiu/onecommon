@@ -2,234 +2,6 @@
     {
         "agent_id": 0,
         "belief": [
-            0.0078125,
-            0.0078125,
-            0.0078125,
-            0.0078125,
-            0.0078125
-        ],
-        "belief2": [
-            0.0078125,
-            0.0078125,
-            0.0078125,
-            0.0078125,
-            0.0078125
-        ],
-        "belief3": [
-            0.0078125,
-            0.0078125,
-            0.0078125,
-            0.0078125,
-            0.0078125
-        ],
-        "marginal_belief": [
-            0.5,
-            0.5,
-            0.5,
-            0.5,
-            0.5,
-            0.5,
-            0.5
-        ],
-        "marginal_belief2": [
-            0.5,
-            0.5,
-            0.5,
-            0.5,
-            0.5,
-            0.5,
-            0.5
-        ],
-        "marginal_belief3": [
-            0.5,
-            0.5,
-            0.5,
-            0.5,
-            0.5,
-            0.5,
-            0.5
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                1,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
-        "plan2_mentions_language ": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
-        "plan3_mentions_language ": null,
-        "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ]
-        ],
-        "plan_mentions_language ": null,
-        "prior_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1
-            ]
-        ],
-        "prior_mentions_language ": null,
-        "response": null,
-        "response_language": "Do you have a tiny light gray?",
-        "response_utt": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0
-        ],
-        "utterance": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            0
-        ],
-        "utterance_language": "do you see a light gray super small dot off by itself?"
-    },
-    {
-        "agent_id": 0,
-        "belief": [
             0.010537790697674417,
             0.010416666666666666,
             0.010416666666666666,
@@ -393,17 +165,40 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "dots",
+            "that",
+            "are",
+            "very",
+            "close",
+            "together",
+            ".",
+            "the",
+            "one",
+            "on",
+            "the",
+            "left",
+            "is",
+            "larger",
+            "and",
+            "lighter",
+            ".",
+            "the",
+            "one",
+            "on",
+            "the",
+            "right",
+            "is",
+            "smaller",
+            "and",
+            "very",
+            "light",
+            "<eos>"
+        ],
         "prior_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
             [
                 0,
                 0,
@@ -414,13 +209,22 @@
                 1
             ],
             [
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
                 0,
                 0,
                 1,
                 0,
                 0,
-                1,
-                0
+                1
             ],
             [
                 1,
@@ -432,11 +236,26 @@
                 1
             ]
         ],
-        "prior_mentions_language ": null,
-        "response": 1,
-        "response_language": "yep! near the bottom?",
-        "response_utt": null,
-        "utterance": [
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "large",
+            "black",
+            "dot",
+            "by",
+            "itself",
+            ".",
+            "do",
+            "you",
+            "have",
+            "it",
+            "?",
+            "<eos>"
+        ],
+        "response": null,
+        "response_language": "Do you have a tiny light gray?",
+        "response_utt": [
             0,
             0,
             0,
@@ -445,7 +264,16 @@
             1,
             0
         ],
-        "utterance_language": "Is it off by itself?"
+        "utterance": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+        ],
+        "utterance_language": "do you see a light gray super small dot off by itself?"
     },
     {
         "agent_id": 0,
@@ -613,7 +441,295 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "small",
+            "light",
+            "grey",
+            "dots",
+            ",",
+            "one",
+            "on",
+            "the",
+            "right",
+            "and",
+            "above",
+            "the",
+            "other",
+            "<eos>"
+        ],
+        "prior_mentions": [
+            [
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                1
+            ]
+        ],
+        "prior_mentions_language ": [
+            "yes",
+            "it",
+            "is",
+            ".",
+            "let",
+            "'s",
+            "pick",
+            "it",
+            "<selection>"
+        ],
+        "response": 1,
+        "response_language": "yep! near the bottom?",
+        "response_utt": null,
+        "utterance": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            1,
+            0
+        ],
+        "utterance_language": "Is it off by itself?"
+    },
+    {
+        "agent_id": 0,
+        "belief": [
+            0.014685940420448197,
+            0.014185327204384186,
+            0.014185327204384186,
+            0.014185327204384186,
+            0.014185327204384186
+        ],
+        "belief2": [
+            0.014685940420448197,
+            0.014185327204384186,
+            0.014185327204384186,
+            0.014185327204384186,
+            0.014185327204384186
+        ],
+        "belief3": [
+            0.014390310075652533,
+            0.014147781906188732,
+            0.014147781906188732,
+            0.014147781906188732,
+            0.014147781906188732
+        ],
+        "marginal_belief": [
+            0.47189482871699584,
+            0.47189482871699584,
+            0.47189482871699584,
+            0.47189482871699584,
+            0.47189482871699584,
+            0.8465229204000237,
+            0.47189482871699584
+        ],
+        "marginal_belief2": [
+            0.47189482871699584,
+            0.47189482871699584,
+            0.47189482871699584,
+            0.47189482871699584,
+            0.47189482871699584,
+            0.8465229204000237,
+            0.47189482871699584
+        ],
+        "marginal_belief3": [
+            0.4779898802768207,
+            0.4779898802768207,
+            0.4779898802768207,
+            0.4779898802768207,
+            0.4779898802768207,
+            0.8750696415031061,
+            0.4779898802768207
+        ],
+        "plan2_mentions": [
+            [
+                1,
+                0,
+                0,
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                1,
+                0,
+                0,
+                0,
+                1,
+                0,
+                1
+            ],
+            [
+                1,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                0
+            ]
+        ],
+        "plan2_mentions_language ": null,
+        "plan3_mentions": [
+            [
+                0,
+                0,
+                0,
+                1,
+                0,
+                1,
+                1
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                1
+            ],
+            [
+                0,
+                0,
+                0,
+                1,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                0
+            ]
+        ],
+        "plan3_mentions_language ": null,
+        "plan_mentions": [
+            [
+                0,
+                0,
+                1,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                1
+            ],
+            [
+                0,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                1,
+                1,
+                0
+            ]
+        ],
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "triangle",
+            "of",
+            "3",
+            "dots",
+            ".",
+            "the",
+            "top",
+            "one",
+            "is",
+            "the",
+            "lightest",
+            "and",
+            "largest",
+            ",",
+            "the",
+            "one",
+            "on",
+            "the",
+            "left",
+            "is",
+            "smaller",
+            "and",
+            "light",
+            "grey",
+            ".",
+            "the",
+            "one",
+            "on",
+            "the",
+            "right",
+            "is",
+            "very",
+            "large",
+            "and",
+            "black",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 0,
@@ -644,15 +760,25 @@
             ],
             [
                 0,
+                0,
+                0,
+                0,
                 1,
-                0,
-                0,
-                0,
                 0,
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "yes",
+            ",",
+            "let",
+            "'s",
+            "pick",
+            "the",
+            "black",
+            "one",
+            "<selection>"
+        ],
         "response": 1,
         "response_language": "done",
         "response_utt": null,

@@ -165,7 +165,33 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "large",
+            "dots",
+            "close",
+            "together",
+            ".",
+            "the",
+            "one",
+            "on",
+            "the",
+            "left",
+            "is",
+            "black",
+            "and",
+            "the",
+            "one",
+            "on",
+            "the",
+            "right",
+            "is",
+            "light",
+            "grey",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 1,
@@ -204,7 +230,25 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "large",
+            "black",
+            "dot",
+            ",",
+            "above",
+            "and",
+            "to",
+            "the",
+            "right",
+            "of",
+            "it",
+            "is",
+            "a",
+            "light",
+            "grey",
+            "dot",
+            "<eos>"
+        ],
         "response": 1,
         "response_language": "Ah yes hard to miss, take the black one!",
         "response_utt": [

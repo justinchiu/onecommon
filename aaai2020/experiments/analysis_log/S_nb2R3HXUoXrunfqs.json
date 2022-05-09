@@ -88,6 +88,8 @@
             ]
         ],
         "plan2_mentions_language ": null,
+        "plan2_partner_ref": null,
+        "plan2_plan": null,
         "plan3_mentions": [
             [
                 0,
@@ -126,7 +128,73 @@
                 0
             ]
         ],
-        "plan3_mentions_language ": null,
+        "plan3_mentions_language ": "i have two large dots , the one on the left is smaller and lighter . the one on the right is larger and darker <eos>",
+        "plan3_partner_ref": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                ]
+            ]
+        ],
+        "plan3_plan": [
+            [
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                ]
+            ]
+        ],
         "plan_mentions": [
             [
                 1,
@@ -166,6 +234,8 @@
             ]
         ],
         "plan_mentions_language ": null,
+        "plan_partner_ref": null,
+        "plan_plan": null,
         "prior_mentions": [
             [
                 0,
@@ -204,7 +274,73 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": "i have a small black dot by itself . do you have it ? <eos>",
+        "prior_partner_ref": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "prior_plan": [
+            [
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
         "response": 0,
         "response_language": "I don't see that one. I have a large, dark gray dot that's NW of a smaller, lighter gray dot",
         "response_utt": [

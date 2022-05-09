@@ -88,6 +88,8 @@
             ]
         ],
         "plan2_mentions_language ": null,
+        "plan2_partner_ref": null,
+        "plan2_plan": null,
         "plan3_mentions": [
             [
                 0,
@@ -126,7 +128,73 @@
                 0
             ]
         ],
-        "plan3_mentions_language ": null,
+        "plan3_mentions_language ": "i have two large dots , one small and one on the right and larger <eos>",
+        "plan3_partner_ref": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "plan3_plan": [
+            [
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ]
+            ]
+        ],
         "plan_mentions": [
             [
                 1,
@@ -166,6 +234,8 @@
             ]
         ],
         "plan_mentions_language ": null,
+        "plan_partner_ref": null,
+        "plan_plan": null,
         "prior_mentions": [
             [
                 0,
@@ -204,7 +274,73 @@
                 1
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": "i have a large light gray dot with a smaller lighter dot to the right of it <eos>",
+        "prior_partner_ref": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "prior_plan": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ]
+            ]
+        ],
         "response": 1,
         "response_language": "I have enough of it. The medium dot i have is the darkest and to the left is a larger lighter one",
         "response_utt": [
@@ -316,6 +452,8 @@
             ]
         ],
         "plan2_mentions_language ": null,
+        "plan2_partner_ref": null,
+        "plan2_plan": null,
         "plan3_mentions": [
             [
                 1,
@@ -354,7 +492,113 @@
                 1
             ]
         ],
-        "plan3_mentions_language ": null,
+        "plan3_mentions_language ": "i see a cluster of 4 dots . the bottom one is lighter and a little larger and a little lower than the one on the left and a smaller dark gray dot to the right and a little higher and a little darker grey <eos>",
+        "plan3_partner_ref": [
+            [
+                [
+                    1,
+                    1,
+                    1,
+                    0,
+                    1,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            ]
+        ],
+        "plan3_plan": [
+            [
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    1,
+                    1,
+                    1
+                ],
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            ]
+        ],
         "plan_mentions": [
             [
                 0,
@@ -394,6 +638,8 @@
             ]
         ],
         "plan_mentions_language ": null,
+        "plan_partner_ref": null,
+        "plan_plan": null,
         "prior_mentions": [
             [
                 0,
@@ -432,7 +678,33 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": "i do n't have that <eos>",
+        "prior_partner_ref": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "prior_plan": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
         "response": null,
         "response_language": "I have a very big dot light gray and a small dot light gray to the right",
         "response_utt": [
@@ -450,7 +722,7 @@
             0,
             0,
             0,
-            0,
+            1,
             0
         ],
         "utterance_language": "I don't see that"

@@ -165,7 +165,21 @@
                 0
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language ": [
+            "i",
+            "have",
+            "two",
+            "large",
+            "dots",
+            ",",
+            "one",
+            "medium",
+            "grey",
+            "and",
+            "one",
+            "black",
+            "<eos>"
+        ],
         "prior_mentions": [
             [
                 0,
@@ -204,7 +218,23 @@
                 0
             ]
         ],
-        "prior_mentions_language ": null,
+        "prior_mentions_language ": [
+            "i",
+            "have",
+            "a",
+            "large",
+            "black",
+            "dot",
+            "by",
+            "itself",
+            ".",
+            "do",
+            "you",
+            "have",
+            "it",
+            "?",
+            "<eos>"
+        ],
         "response": null,
         "response_language": "hmm, i see two small dots, the darker one is up and to the left",
         "response_utt": [
