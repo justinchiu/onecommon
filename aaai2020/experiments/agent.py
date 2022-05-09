@@ -615,6 +615,7 @@ class RnnAgent(Agent):
         min_num_mentions=0,
         max_num_mentions=12,
         force_dots_mentioned=False,
+        do_update = True,
     ):
 
         if can_confirm is None:
@@ -862,7 +863,7 @@ class RnnAgent(Agent):
         self.reader_lang_hs.append(best_generation_output.reader_and_writer_lang_hs[0])
         self.writer_lang_hs.append(best_generation_output.reader_and_writer_lang_hs[1])
 
-        self.state = best_generation_output.state
+        if do_update: self.state = best_generation_output.state
 
         if detect_markables:
             assert self.markable_detector is not None
@@ -896,9 +897,12 @@ class RnnAgent(Agent):
             self.ref_resolution_scores.append(extra['ref_resolution_scores'][extra['chosen_index']].item())
             self.language_model_scores.append(extra['output_logprobs'][extra['chosen_index']].item())
         # JC: doesnt look like the next mention candidate is used here
-        self.update_dot_h(ref_inpt=ref_inpt, partner_ref_inpt=None,
-                          num_markables=num_markables, partner_num_markables=None,
-                          ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
+        if do_update:
+            self.update_dot_h(
+                ref_inpt=ref_inpt, partner_ref_inpt=None,
+                num_markables=num_markables, partner_num_markables=None,
+                ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt,
+            )
         # partner next mentions;
         # we probably don't actually need to do this
         # self.next_mention(lens=torch.LongTensor([reader_lang_hs.size(0)]).to(self.device),
@@ -909,7 +913,8 @@ class RnnAgent(Agent):
             assert len(sel_idx) == 1
             # add one to offset from the start_token
             self.selection(sel_idx[0] + 1)
-        self.state = self.state._replace(turn=self.state.turn+1)
+        if do_update:
+            self.state = self.state._replace(turn=self.state.turn+1)
         self.timesteps += 1
         self.is_selection()
 

@@ -107,19 +107,21 @@ class BeliefAgent(RnnAgent):
         self.side_infos.append(side_info)
 
 
-    def write(self, *args, **kwargs):
+    def write(self, force_words=None, *args, **kwargs):
+        dots_mentioned_per_ref_to_force = None
         # if write is given forced_words, then throw away plan. otherwise
-        if kwargs["force_words"] is None:
+        if force_words is None:
             # generate next mention plan
             EdHs = self.belief.compute_EdHs(self.prior)
             cs, hs = self.belief.viz_belief(EdHs, n=4)
+            # TODO: MULTIPLE PLANS
             plan = cs[0]
             # convert plan to dots_mentioned
             dots_mentioned = expand_plan(plan)
             # heuristic: produce next mentions per ref
             #dots_mentioned_per_ref_to_force = [dots_mentioned]
             # dots_mentioned_per_ref_to_force: num_mentions x bsz=1 x num_dots=7
-            dots_mentioned_per_ref_to_force = dots_mentioned
+            dots_mentioned_per_ref_to_force = dots_mentioned.transpose(0,1)
 
             # clobber kwargs
             #kwargs["dots_mentioned_per_ref_to_force"] = dots_mentioned_per_ref_to_force
@@ -130,13 +132,21 @@ class BeliefAgent(RnnAgent):
             #kwargs["dots_mentioned_num_markables_to_force"] = dots_mentioned_num_markables_to_force
 
             # override if not set
-            kwargs.setdefault(
-                "dots_mentioned_per_ref_to_force", dots_mentioned_per_ref_to_force)
-            kwargs.setdefault("force_dots_mentioned", True)
+            #kwargs.setdefault(
+                #"dots_mentioned_per_ref_to_force", dots_mentioned_per_ref_to_force)
+            #kwargs.setdefault("force_dots_mentioned", True)
+            #import pdb; pdb.set_trace()
         
-        output = super().write(*args, **kwargs)
+        #output = super().write(*args, **kwargs)
+        #import pdb; pdb.set_trace()
+        output = super().write(
+            force_dots_mentioned = dots_mentioned_per_ref_to_force is not None,
+            dots_mentioned_per_ref_to_force=dots_mentioned_per_ref_to_force,
+            *args, **kwargs,
+        )
 
-        if kwargs["force_words"] is not None:
+        #if kwargs["force_words"] is not None:
+        if force_words is not None:
             # set plan to the resolved refs of the forced utt
             plan = (self.ref_preds[-1].any(0)[0].cpu().int().numpy()
                 if self.ref_preds[-1] is not None
@@ -149,3 +159,5 @@ class BeliefAgent(RnnAgent):
         self.side_infos.append(None)
 
         return output
+
+

@@ -19,7 +19,10 @@ from dialog import DialogLogger, HierarchicalDialog
 
 from agent import GenerationOutput
 from belief_agent import BeliefAgent
-from belief import AndOrBelief, OrAndBelief, OrBelief, OrAndOrBelief, process_ctx
+from belief import (
+    AndOrBelief, OrAndBelief, OrBelief, OrAndOrBelief,
+    process_ctx, expand_plan,
+)
 
 """
 Dialog: [Turn]
@@ -27,6 +30,42 @@ Turn: [Utterance, Response, [PriorNextMention], [PlanNextMention]]
 PriorNextMention: Set[Dots]
 PlanNextMention: Set[Dots]
 """
+
+def undo_state(writer):
+    # line numbers might be a little off
+    # rnn state (agent.py:866,899)
+    # feed in do_update=False to write, no list to pop
+    # lang hs (agent.py:)
+    writer.reader_lang_hs.pop() # agent.py:863
+    writer.writer_lang_hs.pop() # agent.py:864
+    # ref pred (agent.py:883)
+    writer.ref_outs.pop() # agent.py:290
+    writer.ref_preds.pop() # agent.py:296
+    # these two should be None
+    writer.partner_ref_outs.pop() # agent.py:888
+    writer.partner_ref_preds.pop() # agent.py:889
+    writer.words.pop() # agent.py:891
+    writer.sents.pop() # agent.py:892
+    # extras
+    writer.extras.pop() # agent.py:893
+    if len(writer.joint_scores) > 0:
+        writer.joint_scores.pop() # agent.py:896
+        writer.ref_resolution_scores.pop() # agent.py:897
+        writer.language_model_scores.pop() # agent.py:898
+    # next mentions (agent.py:636,642)
+    if len(writer.next_mention_latents) > 0:
+        writer.next_mention_latents.pop() # agent.py:955,974
+        writer.next_mention_candidates.pop() # agent.py:957,976
+        writer.next_mention_predictions.pop() # agent.py:958,977
+        writer.next_mention_predictions_multi.pop() # agent.py:959,978
+        writer.next_mention_indices_sorted.pop() # agent.py:960,979
+    # markables (agent.py:878-881)
+    writer.ref_inpts.pop()
+    writer.markables.pop()
+    writer.partner_ref_inpts.pop()
+    writer.partner_markables.pop()
+    # selection (agent.py:919)
+    writer.is_selection_outs.pop() # agent.py:983
 
 class StaticDialogLogger:
     def __init__(self, scenario_id, dir="analysis_log"):
@@ -125,85 +164,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
         min_num_mentions = 0
         max_num_mentions = 10
 
-        """
-        # hacked in for specific context
-        if scenario_id == "S_pGlR0nKz9pQ4ZWsw":
-            YOU, THEM = 0, 1
-            SENTENCES = [
-                "do you see two black dots close together ?",
-                "yes .",
-                "is one below and to the right of the other ?",
-                "no .",
-                "do you see a cluster of five grey dots ?",
-                "no .",
-                "do you see a cluster of four grey dots ?",
-                "no .",
-                "do you see a triangle of three grey dots ?",
-                "yes .",
-                "is there a big black dot below and to the left of it ?",
-                "yes .",
-                "is there a pair of two big black dots below the triangle, with the left black dot larger than the right?",
-                "no .",
-            ]
-            UTTS = [
-                np.array([0,0,1,0,0,1,0]),
-                None,
-                np.array([0,0,1,0,0,1,0]),
-                None,
-                np.array([1,1,0,1,1,0,1]),
-                None,
-                np.array([0,1,0,1,1,0,1]),
-                None,
-                np.array([0,0,0,1,1,0,1]),
-                None,
-                np.array([0,0,1,1,1,0,1]),
-                None,
-                np.array([0,0,1,1,1,1,1]),
-                None,
-            ]
-            RESPS = [
-                None,
-                1,
-                None,
-                0,
-                None,
-                0,
-                None,
-                0,
-                None,
-                1,
-                None,
-                1,
-                None,
-                0,
-            ]
-        elif scenario_id == "S_n0ocL412kqOAl9QR":
-            THEM, YOU = 0, 1
-            SENTENCES = [
-                "i have one black dot , it is all by itself",
-                "where it is",
-                "i have a small gray dot iwth a larger grey dot to its left . and a larger one to the left of it",
-                "let's choose the larger one",
-                "ok",
-            ]
-            UTTS = [
-                np.array([0,0,0,0,1,0,0]),
-                np.array([0,0,0,0,1,0,0]),
-                np.array([0,1,0,0,0,1,0]),
-                np.array([0,1,0,0,0,0,0]),
-                np.array([0,0,0,0,0,0,0]),
-            ]
-            RESPS = [
-                None,
-                0,
-                None,
-                1,
-                None,
-            ]
-        else:
-            raise ValueError(f"Invalid scenario id {scenario_id}")
-        # / hacked in for specific context
-        """
+
         # lets just assume we go first
         YOU, THEM = 0,1
 
@@ -294,6 +255,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             if False:
                 log_likelihood = np.zeros((agent.belief.configs.shape[0],))
                 for c, config in enumerate(agent.belief.configs):
+                    # rewrite of expand_plan
                     num_mentions = min(1, config.sum().item())
                     mention = torch.zeros(
                         (1, num_mentions+1 if num_mentions > 1 else 1, 7),
@@ -345,24 +307,26 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
             this_partner_num_markables = torch.LongTensor([0])
 
-            # update state for next turn
+            # WORDS FOR WRITING WITH FORCE_WORDS
             #out_words = "do you see the black one ? <eos>".split()
             #out_words = input("input utterance: ").split() + ["<eos>"]
             tokens = word_tokenize(SENTENCES[sentence_ix].lower().strip())
             out_words = tokens + ["<eos>"]
-            print(SENTENCES[sentence_ix])
+            #print(SENTENCES[sentence_ix])
 
-            # WRITER
-            writer.args.reranking_confidence = False
-            writer.write(
-                force_words=[out_words],
-                start_token="YOU:",
+            # prior language
+            prior_lang = super(type(writer), writer).write(
+                max_words=words_left,
                 detect_markables=True,
+                start_token='YOU:',
                 is_selection=this_is_selection,
-                inference="sample",
+                inference=writer.args.language_inference,
+                beam_size=writer.args.language_beam_size,
+                sample_temperature_override=writer.args.language_sample_temperature,
+                min_num_mentions=min_num_mentions,
+                max_num_mentions=max_num_mentions,
+                do_update = False,
             )
-            writer.args.reranking_confidence = True
-
 
             # gather next mention predictions from writer
             nm_cands = writer.next_mention_candidates[-1]
@@ -372,6 +336,40 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             nms = torch.stack([
                 x.any(0)[0] for x in nm_multi
             ]).int() if nm_multi is not None else None
+
+            # POP STATE, planning gets fresh state (from static dialog)
+            undo_state(writer)
+
+            """
+            # DBG: check if repeat is exactly the same
+            # prior language
+            prior_lang2 = super(type(writer), writer).write(
+                max_words=words_left,
+                detect_markables=True,
+                start_token='YOU:',
+                is_selection=this_is_selection,
+                inference=writer.args.language_inference,
+                beam_size=writer.args.language_beam_size,
+                sample_temperature_override=writer.args.language_sample_temperature,
+                min_num_mentions=min_num_mentions,
+                max_num_mentions=max_num_mentions,
+                do_update = False,
+            )
+
+            # gather next mention predictions from writer
+            nm_cands2 = writer.next_mention_candidates[-1]
+            nm2 = writer.next_mention_predictions[-1]
+            nm_multi2 = writer.next_mention_predictions_multi[-1]
+            # int is easer to read
+            nms2 = torch.stack([
+                x.any(0)[0] for x in nm_multi
+            ]).int() if nm_multi is not None else None
+
+            # POP STATE, planning gets fresh state (from static dialog)
+            undo_state(writer)
+            import pdb; pdb.set_trace()
+            # / DBG
+            """
 
             # next mention predictions from planning
             if isinstance(writer, BeliefAgent):
@@ -392,6 +390,35 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             end_time = time.perf_counter()
             print(f"Took {end_time - start_time}s to plan with OrBelief")
 
+            #import pdb; pdb.set_trace()
+            plan_lang = writer.write(
+                max_words=words_left,
+                detect_markables=True,
+                start_token='YOU:',
+                is_selection=this_is_selection,
+                inference=writer.args.language_inference,
+                beam_size=writer.args.language_beam_size,
+                sample_temperature_override=writer.args.language_sample_temperature,
+                min_num_mentions=min_num_mentions,
+                max_num_mentions=max_num_mentions,
+                do_update = False,
+            )
+
+            # POP OFF STATE TO RESUME STATIC DIALOG
+            undo_state(writer)
+
+            # WRITER, force words
+            writer.args.reranking_confidence = False
+            writer.write(
+                force_words=[out_words],
+                start_token="YOU:",
+                detect_markables=True,
+                is_selection=this_is_selection,
+                inference="sample",
+            )
+            writer.args.reranking_confidence = True
+
+            # LOGGING
             if writer.agent_id == YOU:
                 print("writer dots")
                 print(writer.dots)
@@ -406,9 +433,13 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print("mbp3 next mentions")
                 print(cs3)
                 #import pdb; pdb.set_trace()
-                print("next mention candidates[-1]")
-                print(nm_cands.candidate_dots)
-                print(nm_cands.candidate_nm_scores)
+                #print("next mention candidates[-1]")
+                #print(nm_cands.candidate_dots)
+                #print(nm_cands.candidate_nm_scores)
+                print("prior language")
+                print(" ".join(prior_lang))
+                print("plan language")
+                print(" ".join(plan_lang))
 
                 self.dialog_logger.start_turn(YOU)
                 self.dialog_logger.add_turn_utt(
@@ -420,15 +451,11 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     plan_mentions = cs1.tolist(),
                     plan2_mentions = cs2.tolist(),
                     plan3_mentions = cs3.tolist(),
-                    prior_mentions_language = None,
-                    plan_mentions_language = None,
+                    prior_mentions_language = prior_lang,
+                    plan_mentions_language = plan_lang,
                     plan2_mentions_language = None,
                     plan3_mentions_language = None,
                 )
-                # writer.ref_preds
-                # writer.partner_ref_preds
-
-
 
             # READER
             reader.read(
@@ -707,3 +734,5 @@ class StaticHierarchicalDialog(HierarchicalDialog):
         #    logger.dump('debug: %s %s' % (' '.join(ctx), ' '.join(choice)))
 
         return conv, agree, rewards
+
+
