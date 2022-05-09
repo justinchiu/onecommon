@@ -355,7 +355,7 @@ class RnnAgent(Agent):
              ref_tgt=None, partner_ref_tgt=None,
              detect_markables=False,
              is_selection=None,
-             can_confirm=None,
+             can_confirm=None, do_update = True,
              ):
 
         if can_confirm is None:
@@ -472,17 +472,19 @@ class RnnAgent(Agent):
         self.ref_preds.append(None)
         self.words.append(self.model.word2var(start_token).unsqueeze(0))
         self.words.append(Variable(inpt))
-        self.update_dot_h(ref_inpt=None, partner_ref_inpt=partner_ref_inpt,
-                          num_markables=None, partner_num_markables=partner_num_markables,
-                          ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
+        if do_update:
+            self.update_dot_h(ref_inpt=None, partner_ref_inpt=partner_ref_inpt,
+                              num_markables=None, partner_num_markables=partner_num_markables,
+                              ref_tgt=ref_tgt, partner_ref_tgt=partner_ref_tgt)
         if (self.selection_word_index == inpt).any():
             sel_idx = (self.selection_word_index == inpt.flatten()).nonzero()
             assert len(sel_idx) == 1
             # add one to offset from the start_token
             self.selection(sel_idx[0] + 1)
-        self.state = self.state._replace(turn=self.state.turn+1)
-        self.timesteps += 1
-        self.is_selection()
+        if do_update:
+            self.state = self.state._replace(turn=self.state.turn+1)
+            self.timesteps += 1
+            self.is_selection()
         #assert (torch.cat(self.words).size(0) == torch.cat(self.lang_hs).size(0))
 
     def rerank_language(self, outs, extra, dots_mentioned, dots_mentioned_per_ref, is_selection, can_confirm, generation_beliefs):
@@ -857,7 +859,7 @@ class RnnAgent(Agent):
         assert best_generation_output is not None
         self.dots_mentioned_per_ref_chosen.append(best_generation_output.dots_mentioned_per_ref)
 
-        if best_generation_output.logprobs is not None:
+        if do_update and best_generation_output.logprobs is not None:
             self.logprobs.extend(best_generation_output.logprobs)
 
         self.reader_lang_hs.append(best_generation_output.reader_and_writer_lang_hs[0])
@@ -915,8 +917,8 @@ class RnnAgent(Agent):
             self.selection(sel_idx[0] + 1)
         if do_update:
             self.state = self.state._replace(turn=self.state.turn+1)
-        self.timesteps += 1
-        self.is_selection()
+            self.timesteps += 1
+            self.is_selection()
 
         """if self.args.visualize_referents:
             #utterance = self._decode(outs, self.model.word_dict)[1:-1]

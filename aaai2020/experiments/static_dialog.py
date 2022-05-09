@@ -31,11 +31,13 @@ PriorNextMention: Set[Dots]
 PlanNextMention: Set[Dots]
 """
 
-def undo_state(writer):
+def undo_state_writer(writer):
     # line numbers might be a little off
     # rnn state (agent.py:866,899)
     # feed in do_update=False to write, no list to pop
-    # lang hs (agent.py:)
+    # lang hs (agent.py)
+    writer.dots_mentioned_per_ref_chosen.pop() # agent.py:858
+    #writer.logprobs.pop() # agent.py:861, added do_update guard
     writer.reader_lang_hs.pop() # agent.py:863
     writer.writer_lang_hs.pop() # agent.py:864
     # ref pred (agent.py:883)
@@ -65,7 +67,28 @@ def undo_state(writer):
     writer.partner_ref_inpts.pop()
     writer.partner_markables.pop()
     # selection (agent.py:919)
-    writer.is_selection_outs.pop() # agent.py:983
+    #writer.is_selection_outs.pop() # agent.py:983
+    # ^ gated the above behind do_update
+
+def undo_state_reader(reader):
+    # line numbers might be off
+    reader.sents.pop() # agent.py:365
+    reader.reader_lang_hs.pop() # agent.py:381
+    reader.writer_lang_hs.pop() # agent.py:382
+
+    reader.ref_inpts.pop() # agent.py:393
+    reader.markables.pop() # agent.py:394
+    reader.partner_ref_inpts.pop() # agent.py:395
+    reader.partner_markables.pop() # agent.py:396
+
+    reader.partner_ref_outs.pop() # agent.py:469
+    reader.partner_ref_preds.pop() # agent.py:470
+
+    reader.ref_outs.pop() # agent.py:471
+    reader.ref_preds.pop() # agent.py:472
+    reader.words.pop() # agent.py:473
+    reader.words.pop() # agent.py:474
+
 
 class StaticDialogLogger:
     def __init__(self, scenario_id, dir="analysis_log"):
@@ -83,16 +106,25 @@ class StaticDialogLogger:
 
     def add_turn_utt(
         self,
-        utterance_language,
-        utterance,
-        prior_mentions,
-        plan_mentions,
-        plan2_mentions,
-        plan3_mentions,
-        prior_mentions_language,
-        plan_mentions_language,
-        plan2_mentions_language,
-        plan3_mentions_language,
+        utterance_language = None,
+        utterance = None,
+        prior_mentions = None,
+        plan_mentions = None,
+        plan2_mentions = None,
+        plan3_mentions = None,
+        prior_mentions_language = None,
+        plan_mentions_language = None,
+        plan2_mentions_language = None,
+        plan3_mentions_language = None,
+        prior_plan = None,
+        plan_plan = None,
+        plan1_plan = None,
+        plan2_plan = None,
+        plan3_plan = None,
+        prior_partner_ref = None,
+        plan_partner_ref = None,
+        plan2_partner_ref = None,
+        plan3_partner_ref = None,
     ):
         self.turn["utterance_language"] = utterance_language
         self.turn["utterance"] = utterance
@@ -104,6 +136,15 @@ class StaticDialogLogger:
         self.turn["plan_mentions_language "] = plan_mentions_language
         self.turn["plan2_mentions_language "] = plan2_mentions_language
         self.turn["plan3_mentions_language "] = plan3_mentions_language
+        # ROUNDTRIP
+        self.turn["prior_plan"] = prior_plan
+        self.turn["plan_plan"] = plan_plan
+        self.turn["plan2_plan"] = plan2_plan
+        self.turn["plan3_plan"] = plan3_plan
+        self.turn["prior_partner_ref"] = prior_partner_ref
+        self.turn["plan_partner_ref"] = plan_partner_ref
+        self.turn["plan2_partner_ref"] = plan2_partner_ref
+        self.turn["plan3_partner_ref"] = plan3_partner_ref
 
     def add_turn_resp(
         self,
@@ -205,71 +246,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             end_time = time.perf_counter()
             print(f"Took {end_time - start_time}s to initialize OrBelief")
 
-            # for each config, generate best referring expressions
-             
-            # think this can only handle bsz 1 right now?
-            # dots_mentioned_per_ref: bsz x num_markables x 7 (bool)
-            # this_num_markables: bsz (int), num mentions in each utt
-            # dots_mentioned: bsz x 7 (bool), collapsed mentions over num_markables
-            def get_beam(writer, dots_mentioned_per_ref):
-                this_num_markables = torch.LongTensor([dots_mentioned_per_ref.size(1)]).to(0)
-                dots_mentioned = dots_mentioned_per_ref.any(1)
-                can_confirm = torch.tensor([False])
-                write_output_tpl = writer.model.write_beam(
-                    writer.state, max_words,
-                    32,
-                    start_token="YOU:",
-                    dots_mentioned=dots_mentioned,
-                    dots_mentioned_per_ref=dots_mentioned_per_ref,
-                    dots_mentioned_num_markables=this_num_markables,
-                    generation_beliefs=None,
-                    is_selection=None,
-                    gumbel_noise=False,
-                    gumbel_noise_forgetful=True,
-                    read_one_best=False,
-                    temperature=0.25,
-                    keep_all_finished=True,
-                    can_confirm=can_confirm,
-                )
-                this_generation_output = GenerationOutput(
-                    *((dots_mentioned_per_ref, this_num_markables) + write_output_tpl)
-                )
-                """
-                list_of_outputs = [
-                    " ".join(sentence)
-                    for sentence in write_output_tpl[-1]["words"]
-                ]
-                """
-                #[print(x) for x in list_of_outputs]
-                outs, extra = writer.rerank_language(
-                    this_generation_output.outs, this_generation_output.extra,
-                    dots_mentioned, dots_mentioned_per_ref,
-                    None, can_confirm, None,
-                )
-                chosen_index = extra["chosen_index"]
-                joint_score = extra["joint_scores"][chosen_index]
-                ref_resolution_score = extra["ref_resolution_scores"][chosen_index]
-                return ref_resolution_score
-
-            #if True:
-            if False:
-                log_likelihood = np.zeros((agent.belief.configs.shape[0],))
-                for c, config in enumerate(agent.belief.configs):
-                    # rewrite of expand_plan
-                    num_mentions = min(1, config.sum().item())
-                    mention = torch.zeros(
-                        (1, num_mentions+1 if num_mentions > 1 else 1, 7),
-                        dtype=bool, device=0,
-                    )
-                    mention[0,0] = torch.from_numpy(config)
-                    if num_mentions > 1:
-                        for i, x in enumerate(config.nonzero()[0]):
-                            mention[0,i+1,x] = 1
-                    ref_resolution_score = get_beam(agent, mention)
-                    log_likelihood[c] = ref_resolution_score
-                agent.belief = OrBelief(num_dots, log_likelihood)
-            # uncomment this ^ to revert back
-
         device = self.agents[0].state.ctx_h.device
 
         # Agent 0 always goes first (static)
@@ -278,7 +254,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
         if scenario_id == "S_n0ocL412kqOAl9QR":
             # Agent 1 (YOU) goes first
             reader, writer = self.agents
-
 
         is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
         is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
@@ -314,6 +289,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             out_words = tokens + ["<eos>"]
             #print(SENTENCES[sentence_ix])
 
+            # PLAN ROUNDTRIP
             # prior language
             prior_lang = super(type(writer), writer).write(
                 max_words=words_left,
@@ -337,8 +313,32 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 x.any(0)[0] for x in nm_multi
             ]).int() if nm_multi is not None else None
 
+            # get reference predictions from reader
+            reader.read(
+                prior_lang,
+                dots_mentioned=None,
+                dots_mentioned_per_ref=None,
+                dots_mentioned_num_markables=this_partner_num_markables,
+                detect_markables=True,
+                is_selection=this_is_selection,
+                do_update = False,
+            )
+            # THESE ARE THE DEVIATIONS
+            # roundtrip words -> my refs
+            prior_ref = (writer.dots_mentioned_per_ref_chosen[-1].int().cpu().numpy()
+                if writer.dots_mentioned_per_ref_chosen[-1] is not None
+                else None
+            )
+            # roundtrip words -> their refs
+            prior_partner_ref = (reader.partner_ref_preds[-1].cpu().numpy()
+                if reader.partner_ref_preds[-1] is not None
+                else None
+            )
+
             # POP STATE, planning gets fresh state (from static dialog)
-            undo_state(writer)
+            undo_state_writer(writer)
+            undo_state_reader(reader)
+            # / PLAN ROUNDTRIP
 
             """
             # DBG: check if repeat is exactly the same
@@ -366,7 +366,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             ]).int() if nm_multi is not None else None
 
             # POP STATE, planning gets fresh state (from static dialog)
-            undo_state(writer)
+            undo_state_writer(writer)
             import pdb; pdb.set_trace()
             # / DBG
             """
@@ -391,6 +391,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             print(f"Took {end_time - start_time}s to plan with OrBelief")
 
             #import pdb; pdb.set_trace()
+            # PLAN ROUNDTRIP
             plan_lang = writer.write(
                 max_words=words_left,
                 detect_markables=True,
@@ -403,9 +404,32 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 max_num_mentions=max_num_mentions,
                 do_update = False,
             )
+            # get reference predictions from reader
+            reader.read(
+                plan_lang,
+                dots_mentioned=None,
+                dots_mentioned_per_ref=None,
+                dots_mentioned_num_markables=this_partner_num_markables,
+                detect_markables=True,
+                is_selection=this_is_selection,
+                do_update = False,
+            )
+            # THESE ARE THE DEVIATIONS
+            # roundtrip words -> my refs
+            plan_ref = (writer.dots_mentioned_per_ref_chosen[-1].int().cpu().numpy()
+                if writer.dots_mentioned_per_ref_chosen[-1] is not None
+                else None
+            )
+            # roundtrip words -> their refs
+            plan_partner_ref = (reader.partner_ref_preds[-1].cpu().numpy()
+                if reader.partner_ref_preds[-1] is not None
+                else None
+            )
 
             # POP OFF STATE TO RESUME STATIC DIALOG
-            undo_state(writer)
+            undo_state_writer(writer)
+            undo_state_reader(reader)
+            # / PLAN ROUNDTRIP
 
             # WRITER, force words
             writer.args.reranking_confidence = False
@@ -438,8 +462,16 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 #print(nm_cands.candidate_nm_scores)
                 print("prior language")
                 print(" ".join(prior_lang))
+                print("prior plan")
+                print(prior_ref)
+                print("prior partner ref")
+                print(prior_partner_ref)
                 print("plan language")
                 print(" ".join(plan_lang))
+                print("plan plan")
+                print(plan_ref)
+                print("plan partner ref")
+                print(plan_partner_ref)
 
                 self.dialog_logger.start_turn(YOU)
                 self.dialog_logger.add_turn_utt(
@@ -451,10 +483,20 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     plan_mentions = cs1.tolist(),
                     plan2_mentions = cs2.tolist(),
                     plan3_mentions = cs3.tolist(),
-                    prior_mentions_language = prior_lang,
-                    plan_mentions_language = plan_lang,
+                    prior_mentions_language = " ".join(prior_lang),
+                    plan_mentions_language = None,
                     plan2_mentions_language = None,
-                    plan3_mentions_language = None,
+                    plan3_mentions_language = " ".join(plan_lang),
+                    prior_plan = prior_ref.tolist(),
+                    plan_plan = None,
+                    plan2_plan = None,
+                    plan3_plan = plan_ref.tolist(),
+                    prior_partner_ref = prior_partner_ref.tolist()
+                        if prior_partner_ref is not None else None,
+                    plan_partner_ref = None,
+                    plan2_partner_ref = None,
+                    plan3_partner_ref = plan_partner_ref.tolist()
+                        if plan_partner_ref is not None else None,
                 )
 
             # READER

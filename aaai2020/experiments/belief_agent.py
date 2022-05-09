@@ -123,22 +123,6 @@ class BeliefAgent(RnnAgent):
             # dots_mentioned_per_ref_to_force: num_mentions x bsz=1 x num_dots=7
             dots_mentioned_per_ref_to_force = dots_mentioned.transpose(0,1)
 
-            # clobber kwargs
-            #kwargs["dots_mentioned_per_ref_to_force"] = dots_mentioned_per_ref_to_force
-            #kwargs["force_dots_mentioned"] = True
-            # if you force dots_mentioned, dont need to set num_markables
-            # num_markables_to_force is just for forcing num_markables but letting model
-            # generate mentions.
-            #kwargs["dots_mentioned_num_markables_to_force"] = dots_mentioned_num_markables_to_force
-
-            # override if not set
-            #kwargs.setdefault(
-                #"dots_mentioned_per_ref_to_force", dots_mentioned_per_ref_to_force)
-            #kwargs.setdefault("force_dots_mentioned", True)
-            #import pdb; pdb.set_trace()
-        
-        #output = super().write(*args, **kwargs)
-        #import pdb; pdb.set_trace()
         output = super().write(
             force_dots_mentioned = dots_mentioned_per_ref_to_force is not None,
             dots_mentioned_per_ref_to_force=dots_mentioned_per_ref_to_force,
