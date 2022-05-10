@@ -1203,28 +1203,646 @@
             0.49108589951377624,
             0.49108589951377624
         ],
-        "plan2_mentions": null,
+        "plan2_mentions": [
+            [
+                1,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                1
+            ],
+            [
+                0,
+                0,
+                1,
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                1,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                1,
+                0,
+                1,
+                0,
+                0,
+                1
+            ],
+            [
+                1,
+                0,
+                1,
+                0,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                1
+            ],
+            [
+                0,
+                1,
+                0,
+                1,
+                1,
+                0,
+                0
+            ]
+        ],
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": null,
-        "plan3_mentions_language": null,
-        "plan3_partner_ref": null,
-        "plan3_plan": null,
-        "plan_beam_lm": null,
-        "plan_beam_ref_res": null,
-        "plan_beam_sents": null,
-        "plan_mentions": null,
+        "plan3_mentions": [
+            [
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                1,
+                0,
+                1,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                1,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                0,
+                1,
+                1,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                1,
+                0,
+                1,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                1,
+                1,
+                0,
+                0
+            ]
+        ],
+        "plan3_mentions_language": "i have two dark dots . one is on the left and a medium grey on the bottom <eos>",
+        "plan3_partner_ref": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    1,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "plan3_plan": [
+            [
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            ]
+        ],
+        "plan_beam_lm": [
+            -16.55970001220703,
+            -20.46184730529785,
+            -22.845760345458984,
+            -20.970134735107422,
+            -26.385948181152344,
+            -24.01422691345215,
+            -21.213972091674805,
+            -20.243059158325195,
+            -21.858470916748047,
+            -14.321793556213379,
+            -20.411264419555664,
+            -14.668431282043457,
+            -29.068544387817383,
+            -18.00992202758789,
+            -28.93614387512207,
+            -29.1951847076416,
+            -28.490276336669922,
+            -19.739227294921875,
+            -23.705169677734375,
+            -21.247982025146484,
+            -20.50149154663086,
+            -24.98447036743164,
+            -20.72503089904785,
+            -20.69452667236328,
+            -24.71110725402832,
+            -22.657068252563477,
+            -16.261940002441406,
+            -29.18256950378418,
+            -12.026811599731445,
+            -15.009883880615234,
+            -13.463781356811523,
+            -21.137537002563477
+        ],
+        "plan_beam_ref_res": [
+            -25.319686889648438,
+            -23.792449951171875,
+            -26.531593322753906,
+            -1000000000.0,
+            -1000000000.0,
+            -1000000000.0,
+            -25.115108489990234,
+            -23.722732543945312,
+            -1000000000.0,
+            -34.77792739868164,
+            -12.703685760498047,
+            -28.915019989013672,
+            -1000000000.0,
+            -17.586742401123047,
+            -1000000000.0,
+            -1000000000.0,
+            -1000000000.0,
+            -1000000000.0,
+            -1000000000.0,
+            -18.301414489746094,
+            -24.578720092773438,
+            -1000000000.0,
+            -26.151710510253906,
+            -24.97967529296875,
+            -1000000000.0,
+            -31.183395385742188,
+            -24.321456909179688,
+            -1000000000.0,
+            -28.47441864013672,
+            -37.841163635253906,
+            -24.315322875976562,
+            -25.147743225097656
+        ],
+        "plan_beam_sents": [
+            "i have two dark dots , one on the left and one on the left <eos>",
+            "i have two dark dots , one is slightly lower and to the left of a smaller and slightly lighter dot <eos>",
+            "i have two black dots , one is slightly larger and to the right and a medium gray on the bottom <eos>",
+            "i have two dark dots , one on the right and a little smaller and a little smaller <eos>",
+            "i have two dark dots , one on the left is a little smaller and a little smaller and a little lower . <eos>",
+            "i have two dark dots , one on the left is a little smaller and a little larger and a little smaller <eos>",
+            "i have two dark dots , one is slightly lower and to the left of a smaller and slightly darker dot . <eos>",
+            "i have two dark dots , one is slightly lower and to the left of a smaller and slightly lighter <eos>",
+            "i have two dark dots , one on the right and a little smaller and a little to the left <eos>",
+            "i have two dark dots , one is slightly lower and to the right of the other <eos>",
+            "i have two dark dots . one is on the left and a medium grey on the bottom <eos>",
+            "i have two dark dots , one is slightly lower and to the left of the other <eos>",
+            "i have two dark dots , one on the left is a little smaller and a little smaller and a little larger and a bit to the left <eos>",
+            "i have two dark dots . one is on the left and a medium grey <eos>",
+            "i have two dark dots , one on the left is a little smaller and a little smaller and a little larger and a little smaller <eos>",
+            "i have two dark dots , one on the left is a little smaller and a little smaller and a little larger and a little to the right <eos>",
+            "i have two dark dots , one on the left is a little larger and a bit to the right and a little lower and to the right <eos>",
+            "i have two dark dots , one on the left is a little smaller and a little smaller <eos>",
+            "i have two dark dots , one is slightly to the right and a little higher and a little larger <eos>",
+            "i have two dark dots . one is on the left and a medium grey on the top <eos>",
+            "i have two dark dots , one is slightly lower and to the left of a smaller and slightly darker dot <eos>",
+            "i have two dark dots , one is slightly to the right and a little higher and a little larger . <eos>",
+            "i have two dark dots , one is slightly lower and to the left of a smaller and slightly darker <eos>",
+            "i have two dark dots , one is slightly lower and to the left of a slightly smaller and slightly lighter <eos>",
+            "i have two dark dots , one is a little to the right and a little larger and a bit to the right . <eos>",
+            "i have two dark dots , the one on the left is slightly larger and lighter . the one on the right is a little darker <eos>",
+            "i have two dark dots , one on the left and one on the right <eos>",
+            "i have two dark dots , one on the left is a little smaller and a little smaller and a little larger and a bit to the right . <eos>",
+            "i have two black dots , one is slightly larger than the other <eos>",
+            "i have two black dots , one is slightly to the right and above the other <eos>",
+            "i have two dark dots . one is to the left of the other <eos>",
+            "i have two dark dots , one is slightly lower and to the left of a slightly smaller and slightly lighter dot <eos>"
+        ],
+        "plan_mentions": [
+            [
+                1,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                1,
+                1,
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                1,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1
+            ]
+        ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
         "plan_plan": null,
-        "prior_beam_lm": null,
-        "prior_beam_ref_res": null,
-        "prior_beam_sents": null,
-        "prior_mentions": null,
-        "prior_mentions_language": null,
-        "prior_partner_ref": null,
-        "prior_plan": null,
+        "prior_beam_lm": [
+            -6.679971694946289,
+            -12.154541969299316,
+            -24.437000274658203,
+            -7.979759216308594,
+            -12.31168270111084,
+            -7.1325883865356445,
+            -26.050493240356445,
+            -22.14827537536621,
+            -7.248912334442139,
+            -12.154541969299316,
+            -20.461862564086914,
+            -24.191864013671875,
+            -19.167381286621094,
+            -18.94215202331543,
+            -7.248912334442139,
+            -12.341301918029785,
+            -13.436385154724121,
+            -26.230680465698242,
+            -8.153735160827637,
+            -7.248912334442139,
+            -14.654111862182617,
+            -17.577919006347656,
+            -7.248912334442139,
+            -25.963659286499023,
+            -13.241923332214355,
+            -20.793642044067383,
+            -25.822134017944336,
+            -14.991776466369629,
+            -7.248912334442139,
+            -7.248912334442139,
+            -7.261692047119141,
+            -7.1325883865356445
+        ],
+        "prior_beam_ref_res": [
+            -1000000000.0,
+            -1000000000.0,
+            -0.008209228515625,
+            -0.0013885498046875,
+            -1000000000.0,
+            -0.001617431640625,
+            -1000000000.0,
+            -1000000000.0,
+            -0.0084686279296875,
+            -1000000000.0,
+            -1000000000.0,
+            -0.008392333984375,
+            -0.0014801025390625,
+            -0.00152587890625,
+            -0.0084686279296875,
+            -1000000000.0,
+            -1000000000.0,
+            -0.0020599365234375,
+            -0.0091552734375,
+            -0.0084686279296875,
+            -1000000000.0,
+            -1000000000.0,
+            -0.0084686279296875,
+            -0.0029296875,
+            -1000000000.0,
+            -0.0010223388671875,
+            -0.001220703125,
+            -1000000000.0,
+            -0.0084686279296875,
+            -0.0084686279296875,
+            -0.0015411376953125,
+            -0.001617431640625
+        ],
+        "prior_beam_sents": [
+            "i have a large black dot by itself <eos>",
+            "i have a large black dot . it is on the left of the circle . <eos>",
+            "i have one very large black dot , it is on the left side of the circle . it is in the middle of the circle . <eos>",
+            "i have one large black dot by itself . do you have it ? <eos>",
+            "i have a large black dot . it is on the right of the circle . <eos>",
+            "i have a large black dot by itself . do you have it ? <eos>",
+            "i have one very large black dot . it is medium size and large and almost on the left . <eos>",
+            "i have one very large black dot . it is medium size and large and almost black . <eos>",
+            "i have a large black dot by itself . do you have that ? <eos>",
+            "i have a large black dot . it is on the left of the circle . <eos>",
+            "i have one very large black dot . it is on the right of the circle , the same size <eos>",
+            "i have one very large black dot , it is on the left side of the circle . it is in the middle of the circle <eos>",
+            "i have one very large black dot , it is on the left side of the circle . let 's choose it <eos>",
+            "i have one very large black dot , it is on the left side of the circle . let 's pick it <eos>",
+            "i have a large black dot by itself . do you have that ? <eos>",
+            "i have a large black dot . it is on the left of the circle <eos>",
+            "i have one very large black dot . it is on the right of the circle . <eos>",
+            "i have one very large black dot , it is the largest of the circle . it is a little larger . <eos>",
+            "i have one large black dot by itself . do you have that ? <eos>",
+            "i have a large black dot by itself . do you have that ? <eos>",
+            "i have one large black dot . it is almost in the center of the circle . <eos>",
+            "i have one very large black dot . it is medium size and medium size . <eos>",
+            "i have a large black dot by itself . do you have that ? <eos>",
+            "i have one very large black dot , it is the largest of the circle . it is a little larger <eos>",
+            "i have one very large black dot . it is on the left of the circle . <eos>",
+            "i have one very large black dot , it is on the left side of the circle . let 's choose it . <selection>",
+            "i have one very large black dot , it is on the right side of the circle . it is the largest and the darkest <eos>",
+            "i have one very large black dot , it is on the left of the circle . <eos>",
+            "i have a large black dot by itself . do you have that ? <eos>",
+            "i have a large black dot by itself . do you have that ? <eos>",
+            "i have a large black dot by itself . do you see it ? <eos>",
+            "i have a large black dot by itself . do you have it ? <eos>"
+        ],
+        "prior_mentions": [
+            [
+                0,
+                1,
+                0,
+                0,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                1,
+                1,
+                0
+            ]
+        ],
+        "prior_mentions_language": "i have a large black dot by itself . do you have it ? <eos>",
+        "prior_partner_ref": [
+            [
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "prior_plan": [
+            [
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
         "response": null,
         "response_language": "standing away from the other dots. if it is so, let us select that large black dot",
         "response_utt": [
@@ -1236,8 +1854,16 @@
             0,
             0
         ],
-        "utterance": null,
-        "utterance_language": null
+        "utterance": [
+            0,
+            1,
+            0,
+            0,
+            0,
+            0,
+            0
+        ],
+        "utterance_language": "large black dot towards the bottom"
     },
     {
         "agent_id": 1,
