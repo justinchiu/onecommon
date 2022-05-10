@@ -1,6 +1,5 @@
 [
     {
-        "agent_id": 0,
         "belief": [
             0.04362161512158105,
             0.04355501848650505,
@@ -1489,6 +1488,15 @@
             -23.06871795654297,
             -1000000000.0
         ],
+        "plan_beam_seed": [
+            0,
+            1,
+            0,
+            0,
+            1,
+            0,
+            0
+        ],
         "plan_beam_sents": [
             "i have two dots that are black , the one on the left is a bit bigger and a bit larger . the one on the left is a little higher and a little darker . <eos>",
             "i have two dots that are almost on the right , one is light gray and the other is black <eos>",
@@ -1843,8 +1851,15 @@
                 ]
             ]
         ],
+        "reader_id": 1,
         "response": null,
+        "response_label": 0,
         "response_language": "I see 5 dots forming a deformed sideways Z shape and two dots far below it almost forming vertically",
+        "response_logits": [
+            -0.0008515069494023919,
+            -7.886513710021973,
+            -7.651340484619141
+        ],
         "response_utt": [
             1,
             1,
@@ -1863,10 +1878,10 @@
             0,
             0
         ],
-        "utterance_language": "Do you see a face of dots with the nose being very light and smaller than the eyes?"
+        "utterance_language": "Do you see a face of dots with the nose being very light and smaller than the eyes?",
+        "writer_id": 0
     },
     {
-        "agent_id": 1,
         "belief": [
             0.08157857187592735,
             0.08157857187592735,
@@ -3375,6 +3390,15 @@
             -1000000000.0,
             -1000000000.0
         ],
+        "plan_beam_seed": [
+            1,
+            0,
+            0,
+            1,
+            0,
+            0,
+            1
+        ],
         "plan_beam_sents": [
             "i have a cluster of three dots . one is light grey and the other is small and light grey . the one on the right is a little smaller and to the right <eos>",
             "i have a cluster of three dots . one is light grey and the other is small and light grey . the one on the right is bigger and darker . <eos>",
@@ -3729,8 +3753,15 @@
                 ]
             ]
         ],
+        "reader_id": 0,
         "response": null,
+        "response_label": 0,
         "response_language": "Okay the first triangle in that Z is it what I just described?",
+        "response_logits": [
+            -0.000966915744356811,
+            -7.452106475830078,
+            -7.859042167663574
+        ],
         "response_utt": [
             1,
             1,
@@ -3749,30 +3780,30 @@
             0,
             1
         ],
-        "utterance_language": "I see 5 dots forming a deformed sideways Z shape and two dots far below it almost forming vertically"
+        "utterance_language": "I see 5 dots forming a deformed sideways Z shape and two dots far below it almost forming vertically",
+        "writer_id": 1
     },
     {
-        "agent_id": 0,
         "belief": [
-            0.05420544356046138,
-            0.05366051743772127,
-            0.05366051743772127,
-            0.05366051743772127,
-            0.05366051743772127
+            0.1083460724593302,
+            0.10829085123875123,
+            0.10829085123875123,
+            0.10829085123875123,
+            0.10829085123875123
         ],
         "belief2": [
-            0.036624301301828574,
-            0.036624301301828574,
-            0.03625611801255782,
-            0.03625611801255782,
-            0.03625611801255782
+            0.0476337532288861,
+            0.047557231962690585,
+            0.047557231962690585,
+            0.047557231962690585,
+            0.047557231962690585
         ],
         "belief3": [
-            0.038518742760587636,
-            0.038518742760587636,
-            0.03843562488126403,
-            0.03843562488126403,
-            0.03843562488126403
+            0.10902174902521072,
+            0.10901387855531286,
+            0.10901387855531286,
+            0.10901387855531286,
+            0.10901387855531286
         ],
         "configs": [
             [
@@ -4929,31 +4960,31 @@
             ]
         ],
         "marginal_belief": [
-            0.9730910072469284,
-            0.9730910072469284,
-            0.49305066152830535,
-            0.49305066152830535,
-            0.49305066152830535,
-            0.49305066152830535,
-            0.8885861829153824
+            0.9872002663560262,
+            0.9872002663560262,
+            0.49956477795996057,
+            0.8995547526570884,
+            0.49956477795996046,
+            0.49956477795996046,
+            0.9872002663560263
         ],
         "marginal_belief2": [
-            0.9752378399125889,
-            0.6574760006116257,
-            0.4943181401725455,
-            0.4943181401725455,
-            0.4943181401725455,
-            0.6574760006116257,
-            0.8906438931064697
+            0.9871852783283367,
+            0.606662136561344,
+            0.49957296174029875,
+            0.5874317423918076,
+            0.49957296174029875,
+            0.7803398554590678,
+            0.9871852783283368
         ],
         "marginal_belief3": [
-            0.9783625973192307,
-            0.6568311139270648,
-            0.49592901075590823,
-            0.49592901075590823,
-            0.49592901075590823,
-            0.6568311139270648,
-            0.932081707018507
+            0.9772449990676193,
+            0.9337967777193884,
+            0.4989708001132749,
+            0.9120834803469953,
+            0.498970800113275,
+            0.5206840974856681,
+            0.9772449990676193
         ],
         "plan2_mentions": [
             [
@@ -5280,6 +5311,15 @@
             -8.999580383300781,
             -24.97888946533203,
             -1000000000.0
+        ],
+        "plan_beam_seed": [
+            1,
+            1,
+            0,
+            1,
+            0,
+            0,
+            1
         ],
         "plan_beam_sents": [
             "i have a cluster of 4 dots , one is light and the other is smaller and the one on the right is tiny and light . the top one is smaller and very light . <eos>",
@@ -5635,8 +5675,15 @@
                 ]
             ]
         ],
+        "reader_id": 1,
         "response": null,
+        "response_label": 0,
         "response_language": "yeah I presume so, I don't see a mouth to it though",
+        "response_logits": [
+            -0.0009869233472272754,
+            -7.683807373046875,
+            -7.549775123596191
+        ],
         "response_utt": [
             1,
             1,
@@ -5655,30 +5702,30 @@
             0,
             1
         ],
-        "utterance_language": "Okay the first triangle in that Z is it what I just described?"
+        "utterance_language": "Okay the first triangle in that Z is it what I just described?",
+        "writer_id": 0
     },
     {
-        "agent_id": 1,
         "belief": [
-            0.08157857187592735,
-            0.08157857187592735,
-            0.08157857187592735,
-            0.08157857187592735,
-            0.08157857187592735
+            0.08799672582272143,
+            0.08694914575340332,
+            0.08694914575340332,
+            0.08694914575340332,
+            0.0859015656840852
         ],
         "belief2": [
-            0.0417302222901831,
-            0.0417302222901831,
-            0.0417302222901831,
-            0.0417302222901831,
-            0.0417302222901831
+            0.0430081966843013,
+            0.0430081966843013,
+            0.0430081966843013,
+            0.0430081966843013,
+            0.04249619434282153
         ],
         "belief3": [
-            0.06964532334550522,
-            0.06964532334550522,
-            0.06964532334550522,
-            0.06964532334550522,
-            0.06964532334550522
+            0.07962323807700827,
+            0.07916563326047373,
+            0.07916563326047373,
+            0.07916563326047373,
+            0.0787080284439392
         ],
         "configs": [
             [
@@ -6835,38 +6882,56 @@
             ]
         ],
         "marginal_belief": [
-            0.8963667787570241,
-            0.8963667787570241,
-            0.498490122400148,
-            0.8963667787570242,
-            0.498490122400148,
-            0.498490122400148,
-            0.8963667787570241
+            0.9531217562013902,
+            0.8948039091669172,
+            0.49290703826060694,
+            0.8948039091669173,
+            0.4929070382606069,
+            0.4929070382606069,
+            0.8948039091669174
         ],
         "marginal_belief2": [
-            0.6416983693809226,
-            0.8981451687348192,
-            0.6416983693809225,
-            0.8981451687348192,
-            0.6416983693809225,
-            0.49923136866453904,
-            0.6416983693809225
+            0.652823951427948,
+            0.8969307412925654,
+            0.6396420100196044,
+            0.8969307412925654,
+            0.6528239514279477,
+            0.49535860095573714,
+            0.6396420100196044
         ],
         "marginal_belief3": [
-            0.7630699162863869,
-            0.7630699162863869,
-            0.4991507962402619,
-            0.7630699162863869,
-            0.4991507962402619,
-            0.4991507962402619,
-            0.763069916286387
+            0.8671991977454385,
+            0.7906548065432034,
+            0.49065872260877685,
+            0.7906548065432034,
+            0.49065872260877685,
+            0.49065872260877685,
+            0.7906548065432036
         ],
         "plan2_mentions": [
             [
                 0,
                 0,
                 1,
+                0,
                 1,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
+                0,
+                1,
+                0,
                 1,
                 0,
                 0
@@ -6882,45 +6947,9 @@
             ],
             [
                 0,
-                0,
                 1,
                 1,
                 0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
                 1,
                 0,
                 0
@@ -6931,8 +6960,26 @@
                 1,
                 0,
                 1,
+                1,
+                0
+            ],
+            [
+                1,
+                0,
+                1,
+                1,
+                1,
                 0,
                 0
+            ],
+            [
+                0,
+                0,
+                1,
+                1,
+                1,
+                0,
+                1
             ]
         ],
         "plan2_mentions_language": null,
@@ -6942,24 +6989,6 @@
             [
                 1,
                 0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                1,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                1,
-                0,
                 1,
                 0,
                 0,
@@ -6970,56 +6999,85 @@
                 1,
                 0,
                 0,
+                0,
                 1,
                 0,
-                0,
-                0
+                1
             ],
             [
                 1,
-                0,
                 1,
                 0,
                 0,
+                1,
                 0,
-                0
+                1
             ],
             [
+                1,
+                1,
                 0,
                 0,
                 0,
                 1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
+                1
             ],
             [
                 1,
                 0,
                 0,
+                1,
+                0,
+                1,
+                1
+            ],
+            [
+                1,
+                1,
+                1,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                1,
+                1,
+                0,
                 0,
                 1,
                 0,
                 0
+            ],
+            [
+                0,
+                1,
+                1,
+                0,
+                0,
+                0,
+                1
             ]
         ],
-        "plan3_mentions_language": "yes i see it , i have a light gray dot to the left and a slightly smaller lighter dot to the right and below that <eos>",
+        "plan3_mentions_language": "yes i see that , i have a small light gray dot to the left and a medium black dot to the left and above a larger dark grey dot <eos>",
         "plan3_partner_ref": [
             [
                 [
+                    0,
+                    0,
+                    0,
                     1,
                     0,
                     0,
+                    1
+                ]
+            ],
+            [
+                [
                     0,
+                    0,
+                    0,
+                    1,
                     0,
                     0,
                     0
@@ -7027,35 +7085,24 @@
             ],
             [
                 [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
                     1,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
                     0
                 ]
             ],
             [
                 [
-                    1,
                     0,
                     0,
                     0,
                     0,
                     0,
-                    0
-                ]
-            ],
-            [
-                [
-                    1,
                     0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
+                    1
                 ]
             ]
         ],
@@ -7064,9 +7111,9 @@
                 [
                     1,
                     0,
-                    0,
-                    0,
                     1,
+                    0,
+                    0,
                     0,
                     1
                 ],
@@ -7082,9 +7129,9 @@
                 [
                     0,
                     0,
-                    0,
-                    0,
                     1,
+                    0,
+                    0,
                     0,
                     0
                 ],
@@ -7100,143 +7147,152 @@
             ]
         ],
         "plan_beam_lm": [
-            -35.461265563964844,
-            -34.83686065673828,
-            -20.828243255615234,
-            -23.34000015258789,
-            -30.296621322631836,
-            -21.138761520385742,
-            -29.76787567138672,
-            -32.40580749511719,
-            -28.44964027404785,
-            -34.10877990722656,
-            -32.3347053527832,
-            -21.181909561157227,
-            -28.1379451751709,
-            -20.658870697021484,
-            -22.731245040893555,
-            -28.38605499267578,
-            -21.803688049316406,
-            -28.209474563598633,
-            -39.72419357299805,
-            -31.083023071289062,
-            -19.97430419921875,
-            -25.273330688476562,
-            -23.629854202270508,
-            -33.20808410644531,
-            -21.346145629882812,
-            -31.742773056030273,
-            -22.115768432617188,
-            -32.398841857910156,
-            -32.82847595214844,
-            -22.786575317382812,
-            -40.536495208740234,
-            -31.84018325805664
+            -25.642154693603516,
+            -19.490436553955078,
+            -19.884552001953125,
+            -22.88175392150879,
+            -19.99392318725586,
+            -17.993770599365234,
+            -34.01397705078125,
+            -36.002098083496094,
+            -18.601064682006836,
+            -15.665998458862305,
+            -26.333473205566406,
+            -24.640180587768555,
+            -40.153011322021484,
+            -17.42426300048828,
+            -34.79829406738281,
+            -26.20637321472168,
+            -20.383947372436523,
+            -20.027816772460938,
+            -19.42803955078125,
+            -20.299827575683594,
+            -37.87099838256836,
+            -17.079547882080078,
+            -21.464616775512695,
+            -34.57636260986328,
+            -26.264114379882812,
+            -26.146183013916016,
+            -39.32914733886719,
+            -20.89887237548828,
+            -30.07280731201172,
+            -35.769351959228516,
+            -28.508846282958984,
+            -42.35649871826172
         ],
         "plan_beam_ref_res": [
             -1000000000.0,
             -1000000000.0,
+            -19.43499755859375,
+            -23.69549560546875,
+            -19.526458740234375,
+            -1000000000.0,
+            -24.337493896484375,
+            -1000000000.0,
+            -1000000000.0,
+            -1000000000.0,
+            -16.654190063476562,
+            -26.673599243164062,
+            -36.83946990966797,
+            -1000000000.0,
+            -16.31548309326172,
+            -24.322410583496094,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
+            -34.667236328125,
             -1000000000.0,
             -1000000000.0,
-            -16.91733169555664,
-            -12.912612915039062,
+            -15.9688720703125,
             -1000000000.0,
             -1000000000.0,
-            -21.774444580078125,
+            -36.58824157714844,
+            -1000000000.0,
+            -24.563560485839844,
             -1000000000.0,
             -1000000000.0,
-            -20.95357894897461,
-            -1000000000.0,
-            -17.30074691772461,
-            -1000000000.0,
-            -20.956863403320312,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0,
-            -21.092063903808594,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0,
-            -13.435569763183594,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0
+            -28.61896514892578
+        ],
+        "plan_beam_seed": [
+            1,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1
         ],
         "plan_beam_sents": [
-            "yes i see it , i have a light gray dot that is a little smaller and a little larger than the other two . <eos>",
-            "yes i see it , i have a light gray dot that is a little smaller and a little larger than the other one . <eos>",
-            "yes i see it . is the light grey dot to the right of the larger one ? <eos>",
-            "yes i see it . is the light grey dot on the left of the dark grey dot ? <eos>",
-            "yes i have that . the light one is the smallest and lightest and the middle one is the largest ? <eos>",
-            "yes i have that . the light one is to the right and below the larger one . <eos>",
-            "yes i have that . the light one is the smallest and the other is the largest <eos>",
-            "yes i have that . the light one is the smallest and the other is the largest and darkest <eos>",
-            "yes i see it , i have a light gray dot to the left and a medium gray dot below and to the right of it <eos>",
-            "yes i see it , i have a light gray dot to the left and a slightly smaller lighter dot to the right and below that <eos>",
-            "yes i have that . the light one is the smallest and lightest and the middle one is the largest and darkest <eos>",
-            "yes i see it . the light grey is to the left of the large one <eos>",
-            "yes i see it , i have a light gray dot to the left and a medium gray dot below and to the left of it . <eos>",
-            "yes i have that . the light one is in the middle of the larger one . <eos>",
-            "yes i see it . is the light grey dot to the right of the large dark grey dot ? <eos>",
-            "yes i see it , i have a light gray dot to the left and a medium gray dot below and to the left of it <eos>",
-            "yes i have that . the light one is the right of the larger one . <eos>",
-            "yes i see it , i have a light gray dot to the left and a medium gray dot below and to the right of it . <eos>",
-            "yes i see it , i have a light gray dot that is a little smaller and a little bit to the left of the light grey one . <eos>",
-            "yes i see it , i have a light gray dot to the left and a medium gray dot below and to the left of the large one . <eos>",
-            "yes i see it . is the light grey one to the right of the larger one ? <eos>",
-            "yes i have that . the light one is to the right and slightly below a larger darker dot . <eos>",
-            "yes i see it . is the light grey dot to the right of the large dark gray dot ? <eos>",
-            "yes i have that . the light one is the smallest and the other one is to the right of the larger one <eos>",
-            "yes i see it . is the light grey dot to the right of the large one ? <eos>",
-            "yes i have that . the light one is the smallest and lightest and the one on the right is larger and darker ? <eos>",
-            "yes i see it . the light grey is to the left of the large one . <eos>",
-            "yes i see it , i have a light gray dot to the left and a slightly smaller lighter dot to the right and below it <eos>",
-            "yes i have that . the light one is the smallest and the other is the largest and darkest ? <eos>",
-            "yes i have that . the light one is in the middle of the large dark gray dot ? <eos>",
-            "yes i see it , i have a light gray dot that is a little smaller and a little bit to the left of the light grey dot . <eos>",
-            "yes i have that . the light one is the smallest and lightest and the middle one is the largest and darkest ? <eos>"
+            "yes , i have that . the light one is on the left and slightly above the other one . <eos>",
+            "yes i have that . the light one is in the middle of the black one . <eos>",
+            "yes , i have that . the light one has a dark grey dot to the right of it <eos>",
+            "i think i have that . is there a light gray dot to the left of it and a dark grey dot ? <eos>",
+            "yes , i have that . the light one has a dark grey dot to the right of it ? <eos>",
+            "yes i have that . the light one is to the left of the darker one . <eos>",
+            "yes i see that , i have a small light gray dot to the left and a medium black dot to the left and above a larger dot . <eos>",
+            "yes i see that , i have a small light grey dot to the right of a dark gray dot that is a little larger and a bit darker . <eos>",
+            "i think i have that . is there a light gray dot to the left of the dark one ? <eos>",
+            "i think i have that . is there a light gray dot to the left of it ? <eos>",
+            "yes i have that . the light one is in the middle of the black one . let 's click the large one <selection>",
+            "i think i have that . is there a light gray dot to the left of it and a dark grey dot to the right ? <eos>",
+            "yes i see that , i have a small light grey dot to the right of a dark gray dot that is a little larger and a bit larger than the other one . <eos>",
+            "i think i have that . is there a light grey dot to the right of the black dot ? <eos>",
+            "yes i see that , i have a small light gray dot to the left and a medium black dot to the left and above a large dark grey dot . <eos>",
+            "i think i have that . is there a light gray dot to the left of it and a little lower than the other one ? <eos>",
+            "yes , i have that . the light one is on the left of the dark one . <eos>",
+            "yes i have that . the light one is the darkest of the two ? <eos>",
+            "yes , i have that . the light one is on the left of the black one . <eos>",
+            "yes i have that . the light one is the darkest of the two <eos>",
+            "yes i see that , i have a small light grey dot to the right of a large dark grey dot . i have a large dark dot on the right side <eos>",
+            "i think i have that . is there a light gray dot to the left of the black one ? <eos>",
+            "yes i have that . the light one is in the middle of the dark grey dot . <eos>",
+            "yes i see that , i have a small light gray dot to the left and a medium black dot to the left and above a larger dark grey dot <eos>",
+            "yes i see that , i have a small light grey dot to the right of a large dark grey dot . <eos>",
+            "yes i see that , i have a small light grey dot to the right of a large dark dot . <eos>",
+            "yes i see that , i have a small light grey dot to the right of a dark gray dot that is a little larger and a bit larger than the other <eos>",
+            "yes i have that . the light one is the darkest of the two . <eos>",
+            "yes i see that , i have a small light gray dot to the left and a medium black dot to the left and above it <eos>",
+            "yes i see that , i have a small light grey dot to the right of a dark gray dot that is a little larger and a bit larger <eos>",
+            "yes i see that , i have a small light grey dot to the right of a dark gray dot that is the same size . <eos>",
+            "yes i see that , i have a small light grey dot to the right of a large dark grey dot . i have a large dark dot that is on the left of the circle . <eos>"
         ],
         "plan_mentions": [
             [
                 0,
                 0,
                 0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
                 1,
                 0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
                 1,
-                0,
-                0,
-                1
+                0
             ],
             [
                 0,
                 0,
                 1,
+                1,
+                0,
+                0,
+                0
+            ],
+            [
                 0,
                 0,
                 0,
-                1
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
+                0,
+                1,
+                0,
+                0,
+                0,
+                0
             ],
             [
                 0,
@@ -7248,17 +7304,8 @@
                 0
             ],
             [
-                0,
                 1,
                 0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
                 0,
                 0,
                 1,
@@ -7267,7 +7314,16 @@
             ],
             [
                 0,
+                0,
+                0,
+                0,
+                0,
                 1,
+                1
+            ],
+            [
+                1,
+                0,
                 0,
                 0,
                 0,
@@ -7521,8 +7577,15 @@
                 ]
             ]
         ],
+        "reader_id": 0,
         "response": null,
+        "response_label": 0,
         "response_language": "Haha no mouth! Click the nose!",
+        "response_logits": [
+            -0.06551229953765869,
+            -2.8700389862060547,
+            -5.003302097320557
+        ],
         "response_utt": [
             1,
             0,
@@ -7541,30 +7604,30 @@
             0,
             0
         ],
-        "utterance_language": "yeah I presume so, I don't see a mouth to it though"
+        "utterance_language": "yeah I presume so, I don't see a mouth to it though",
+        "writer_id": 1
     },
     {
-        "agent_id": 0,
         "belief": [
-            0.05609951817759407,
-            0.05488219154159273,
-            0.05488219154159273,
-            0.05488219154159273,
-            0.05488219154159273
+            0.11315556475654259,
+            0.11042111391507162,
+            0.11042111391507162,
+            0.11042111391507162,
+            0.10777639279502707
         ],
         "belief2": [
-            0.03780391870639879,
-            0.03780391870639879,
-            0.0369835958465688,
-            0.0369835958465688,
-            0.0369835958465688
+            0.050414068150976446,
+            0.04915573918762583,
+            0.04915573918762583,
+            0.04915573918762583,
+            0.04915573918762583
         ],
         "belief3": [
-            0.039110123614581466,
-            0.039110123614581466,
-            0.03880272545159195,
-            0.03880272545159195,
-            0.03880272545159195
+            0.11162849701069638,
+            0.110341131573869,
+            0.110341131573869,
+            0.110341131573869,
+            0.10906919831873235
         ],
         "configs": [
             [
@@ -8721,31 +8784,31 @@
             ]
         ],
         "marginal_belief": [
-            0.9850714103190826,
-            0.9744810937511672,
-            0.49052069765343376,
-            0.49052069765343376,
-            0.49052069765343376,
-            0.49052069765343376,
-            0.8888013251452234
+            0.9976964261580525,
+            0.9869918313417914,
+            0.49335161573628,
+            0.897354539847388,
+            0.49335161573628,
+            0.49335161573628,
+            0.9869918313417912
         ],
         "marginal_belief2": [
-            0.9864414635099067,
-            0.6566759438551674,
-            0.4916659447480002,
-            0.4916659447480002,
-            0.4916659447480002,
-            0.6566759438551674,
-            0.8905171744287554
+            0.9972706617146899,
+            0.6019881796939894,
+            0.4933660413065076,
+            0.5822810158745142,
+            0.4933660413065076,
+            0.7799076352074902,
+            0.9869542930827059
         ],
         "marginal_belief3": [
-            0.9833673636386574,
-            0.6571810148217607,
-            0.4946950016194792,
-            0.4946950016194792,
-            0.49711914259136414,
-            0.6571810148217607,
-            0.9341688238119337
+            0.9848620643871496,
+            0.9363562657467316,
+            0.49597416112228093,
+            0.9141235954690706,
+            0.500247460851846,
+            0.5182068313999418,
+            0.9805887646575846
         ],
         "plan2_mentions": [
             [
@@ -8759,15 +8822,6 @@
             ],
             [
                 0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
                 0,
                 0,
                 1,
@@ -8777,15 +8831,6 @@
             ],
             [
                 0,
-                0,
-                0,
-                1,
-                1,
-                1,
-                0
-            ],
-            [
-                1,
                 1,
                 0,
                 0,
@@ -8798,18 +8843,9 @@
                 1,
                 0,
                 0,
-                1,
-                1,
-                0
-            ],
-            [
-                1,
-                0,
                 0,
                 1,
-                0,
-                1,
-                0
+                1
             ],
             [
                 0,
@@ -8819,6 +8855,33 @@
                 0,
                 1,
                 1
+            ],
+            [
+                0,
+                1,
+                0,
+                1,
+                0,
+                1,
+                1
+            ],
+            [
+                1,
+                1,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                0,
+                1,
+                1,
+                0
             ]
         ],
         "plan2_mentions_language": null,
@@ -8836,27 +8899,9 @@
             ],
             [
                 1,
-                1,
                 0,
                 1,
                 0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                1,
-                0,
-                0,
-                1,
                 0,
                 0,
                 1
@@ -8866,39 +8911,57 @@
                 1,
                 0,
                 0,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
                 0,
                 0,
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
+                1,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0
+            ],
+            [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
                 1
             ],
             [
                 1,
                 0,
-                1,
-                1,
                 0,
-                0,
-                0
-            ],
-            [
-                1,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                1,
                 0,
                 1,
-                0,
-                0,
                 0,
                 1
             ]
         ],
-        "plan3_mentions_language": "i have a cluster of 4 dots . the top one is light gray and the largest is light grey and the top one is small and light grey . the bottom one is a little smaller and lighter grey <eos>",
+        "plan3_mentions_language": "i have a cluster of 4 dots . the top one is light gray and the largest one is the same size . the one on the left is smallest and lightest , and the one on the right is a little smaller and lighter . <eos>",
         "plan3_partner_ref": [
             [
                 [
@@ -9006,133 +9069,133 @@
             ]
         ],
         "plan_beam_lm": [
-            -39.705684661865234,
-            -33.63466262817383,
-            -38.44934844970703,
-            -36.83515930175781,
-            -45.66249465942383,
-            -33.77311325073242,
-            -56.61806869506836,
-            -54.22431182861328,
-            -38.7993278503418,
-            -34.96904373168945,
-            -50.39980697631836,
-            -30.710418701171875,
-            -42.25566482543945,
-            -33.62493896484375,
-            -57.182456970214844,
-            -43.93232345581055,
-            -33.38919448852539,
-            -43.63444900512695,
-            -36.97209548950195,
-            -43.011470794677734,
-            -43.260257720947266,
-            -43.32706832885742,
-            -33.849143981933594,
-            -42.0150146484375,
-            -42.297096252441406,
-            -48.15479278564453,
-            -33.313533782958984,
-            -37.54124450683594,
-            -42.88473892211914,
-            -53.96463394165039,
-            -53.66449737548828,
-            -37.7507209777832
+            -45.01533508300781,
+            -46.55473327636719,
+            -39.006805419921875,
+            -35.00550079345703,
+            -44.762020111083984,
+            -35.40377426147461,
+            -46.65237045288086,
+            -32.566410064697266,
+            -49.8531608581543,
+            -40.94023132324219,
+            -46.2333869934082,
+            -47.24766159057617,
+            -35.130653381347656,
+            -45.646915435791016,
+            -53.37969970703125,
+            -50.42174530029297,
+            -34.9450798034668,
+            -33.507808685302734,
+            -33.35820388793945,
+            -36.558876037597656,
+            -52.08953094482422,
+            -50.11165237426758,
+            -53.81366729736328,
+            -54.180992126464844,
+            -40.91401290893555,
+            -34.807647705078125,
+            -33.787330627441406,
+            -44.36208724975586,
+            -55.78202819824219,
+            -37.12608337402344,
+            -43.4386100769043,
+            -53.59808349609375
         ],
         "plan_beam_ref_res": [
+            -24.958999633789062,
+            -7.68896484375,
+            -1000000000.0,
+            -1000000000.0,
+            -25.749862670898438,
+            -1000000000.0,
+            -25.30559539794922,
+            -1000000000.0,
+            -1000000000.0,
+            -1000000000.0,
+            -23.311111450195312,
+            -35.900482177734375,
+            -1000000000.0,
+            -35.73728942871094,
+            -33.06396484375,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
-            -8.384246826171875,
+            -1000000000.0,
+            -31.03173828125,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
+            -20.733436584472656,
             -1000000000.0,
             -1000000000.0,
-            -17.327789306640625,
-            -1000000000.0,
-            -15.608200073242188,
+            -10.237899780273438,
             -1000000000.0,
             -1000000000.0,
-            -1000000000.0,
-            -38.41680145263672,
-            -1000000000.0,
-            -1000000000.0,
-            -18.158462524414062,
-            -15.161514282226562,
-            -19.211456298828125,
-            -1000000000.0,
-            -22.033660888671875,
-            -16.10302734375,
-            -17.837265014648438,
-            -37.14710235595703,
-            -1000000000.0,
-            -15.143569946289062,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0
+            -35.94219970703125,
+            -32.210784912109375
+        ],
+        "plan_beam_seed": [
+            1,
+            1,
+            0,
+            1,
+            0,
+            0,
+            1
         ],
         "plan_beam_sents": [
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a tiny light grey dot . the top one is a little smaller and lighter dot <eos>",
-            "i have a cluster of 4 dots , one is light grey and the other is small and medium grey . the top is a tiny light grey . <eos>",
-            "i have a cluster of 4 dots . one is light grey , the other is a tiny light grey dot . and the bottom one is a little smaller and light grey dot <eos>",
-            "i have a cluster of 4 dots . one is light grey , the other is a little smaller and lighter , the one on the left is very small and light grey . <eos>",
-            "i have a cluster of 4 dots . the top one is light gray and the largest is light grey and the top one is small and light grey . the bottom one is a little smaller and lighter grey <eos>",
-            "i have a cluster of 4 dots . one is light grey , the other is a little smaller and lighter , the one on the left is smaller . <eos>",
-            "i have a cluster of 4 dots . the top one is light gray and the largest is light grey and the top one is small and light grey . the bottom one is a little smaller and lighter and the larger one is above and to the right <eos>",
-            "i have a cluster of 4 dots . the top one is light gray and the largest is light grey and the top one is small and light grey . the bottom one is a little smaller and lighter and a little higher than the larger one <eos>",
-            "i have a cluster of 4 dots . one is light grey , the other is a little smaller and lighter , the one on the left is smaller and very light gray . <eos>",
-            "i have a cluster of 4 dots . the top one is light grey , the bottom is small , and the bottom is a tiny light grey dot <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a tiny light grey dot . the top one is a little smaller and lighter grey and the lower one is a little larger <eos>",
-            "i have a cluster of 5 dots . two light grey one and a small light grey dot . i have a large dark gray dot <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a tiny light grey dot . the smaller one is to the right and above the larger one <eos>",
-            "i have a cluster of 4 dots , one is light grey and the other is small and medium grey . the top is the largest and darkest . <eos>",
-            "i have a cluster of 4 dots . the top one is light gray and the largest is light grey and the top one is small and light grey . the bottom one is a little smaller and lighter and the larger one is above and to the right . <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a little smaller and lighter dot . and the left one is a little smaller and light gray <eos>",
-            "i have a cluster of 5 dots . two light grey one and a small light grey dot . i have a large dark gray dot to the left of it <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a little smaller and lighter dot . and the left one is a little smaller and light grey <eos>",
-            "i have a cluster of 4 dots . one is light grey , the other is a little smaller and lighter , the one on the left is smaller and very light . <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a tiny light grey dot . the smaller one is to the right and below the large one <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a tiny light grey dot . the top one is a bit smaller and lighter than the large one <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a tiny light grey dot . the smaller one is to the right and below the large one . <eos>",
-            "i have a cluster of 4 dots . the top one is light grey , the bottom is small and light grey , the bottom is the largest and darkest <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a tiny light grey dot . the smaller one is to the right and below that <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a tiny light grey dot . the smaller one is to the right and above the larger one . <eos>",
-            "i have a cluster of 4 dots , the top one is lighter and the largest one is the largest and the top one is light grey , and the bottom one is a little smaller and lighter . <eos>",
-            "i have a cluster of 5 dots . two light grey one and a small light grey dot . i have a large dark gray dot to the right of it <eos>",
-            "i have a cluster of 4 dots . one is light grey , the other is a tiny light grey dot . and the one on the left is a little smaller and light gray . <eos>",
-            "i have a cluster of 3 dots . the top one is light grey , the bottom one is a tiny light grey dot . the smaller one is to the right and above the large one <eos>",
-            "i have a cluster of 4 dots . the top one is light gray and the largest is light grey and the top one is small and light grey . the bottom one is a little smaller and lighter and a little higher than the top one <eos>",
-            "i have a cluster of 4 dots . the top one is light gray and the largest is light grey and the top one is small and light grey . the bottom one is a little smaller and lighter , and the bottom one is the largest <eos>",
-            "i have a cluster of 4 dots . one is light grey , the other is a tiny light grey dot . and the bottom one is a little smaller and lighter dot <eos>"
+            "i see a cluster of 3 dots , the top one is light grey and the one on the left is tiny and light , the one on the right is small and light , the bottom one is the largest and darkest . <eos>",
+            "i have a cluster of 4 dots . the top one is light gray and the largest one is the same size . the one on the left is smallest and lightest , and the one on the right is a little smaller and lighter . <eos>",
+            "i have a cluster of 4 dots . the top one is light gray , the bottom is small and light grey , and the top one is a little smaller and lighter grey . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the one on the right is smaller and light grey . <eos>",
+            "i see a cluster of 3 dots , the top one is light grey and the one on the left is tiny and light , the one on the right is small and light , the bottom one is the same size . <eos>",
+            "i have a cluster of 4 dots . one is light grey and the other is small and light grey . the right one is a little smaller and light grey . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the top one is a little smaller and lighter . the top one is the largest and darkest . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small , and the one on the right is tiny and light grey . <eos>",
+            "i have a cluster of 4 dots . the top one is light gray and the largest one is the same size . the one on the left is smallest and lightest . the top one is light grey and to the right of the top one <eos>",
+            "i have a cluster of 4 dots . the top one is light gray and the largest one is the darkest and tiny , the bottom is a tiny light grey dot <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the top one is a little smaller and lighter . the top one is the largest and darkest <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the top one is a little smaller and lighter . the top one is a bit smaller . <eos>",
+            "i have a cluster of 4 dots , one is light grey and the other is small and light grey . the bottom one is a little smaller and lighter . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the top one is a little smaller and lighter . the top one is a little smaller . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey , and the one on the left is a little smaller and lighter , and the top one is a little smaller and a little bit to the right . <eos>",
+            "i have a cluster of 4 dots . the top one is light gray and the largest one is the same size . the one on the left is smaller and lighter . the top one is smaller and the darker one <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the top one is a small light gray dot <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light gray , and the left one is a little smaller . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the one on the right is the largest and darkest <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the top one is a small light gray dot . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey , and the one on the left is a little smaller and lighter , and the top one is a little smaller and a little bigger <eos>",
+            "i have a cluster of 4 dots . the top one is light gray and the largest one is the same size . the one on the left is smaller and lighter . the top one is smaller and the one on the right <eos>",
+            "i see a cluster of 3 dots , the top one is light grey and the one on the left is tiny and light , the one on the right is smallest and lightest , the one on the left is a little smaller , and the one on the right is larger and darker <eos>",
+            "i see a cluster of 3 dots , the top one is light grey and the one on the left is tiny and light , the one on the right is smallest and lightest , the one on the left is a little smaller , and the one on the right is the largest and darkest <eos>",
+            "i have a cluster of 4 dots , one is light grey and the other is small and light grey . the top one is a little smaller . it is the same color . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the one on the right is smaller and light . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey . the one on the right is the largest and darkest . <eos>",
+            "i have a cluster of 4 dots . the top one is light gray and the largest one is the same size . the one on the left is smaller and lighter , and the one on the right is a little smaller . <eos>",
+            "i see a cluster of 3 dots , the top one is light grey and the one on the left is tiny and light , the one on the right is smallest and lightest , the one on the left is a little smaller , and the one on the left is larger and slightly darker <eos>",
+            "i have a cluster of 4 dots . the top one is light gray and the largest one is the same size and the one on the right is small and light . <eos>",
+            "i see a cluster of 3 dots , the top one is light grey and the one on the left is tiny and light , the one on the right is small and light , the bottom one is a little smaller . <eos>",
+            "i see a cluster of 3 dots , one is light grey and the other is small and light grey , and the one on the left is a little smaller and lighter , and the top one is a little smaller and a little bit to the left . <eos>"
         ],
         "plan_mentions": [
             [
                 0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
                 1,
                 0,
                 0,
                 0,
+                1,
                 0
             ],
             [
                 0,
+                0,
+                0,
                 1,
+                0,
                 1,
-                0,
-                0,
-                0,
                 0
             ],
             [
@@ -9140,8 +9203,26 @@
                 1,
                 0,
                 0,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
                 0,
                 1,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                1,
+                0,
+                0,
+                0,
                 0
             ],
             [
@@ -9155,10 +9236,10 @@
             ],
             [
                 0,
-                1,
-                0,
                 0,
                 1,
+                1,
+                0,
                 0,
                 0
             ],
@@ -9166,125 +9247,116 @@
                 0,
                 0,
                 0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
                 0,
                 0,
                 1,
-                0
+                1
             ]
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
         "plan_plan": null,
         "prior_beam_lm": [
-            -12.132880210876465,
-            -11.574913024902344,
-            -11.828088760375977,
-            -12.168510437011719,
-            -11.242767333984375,
-            -14.154191017150879,
-            -13.006292343139648,
-            -11.907071113586426,
-            -16.452346801757812,
-            -12.452747344970703,
-            -11.907071113586426,
-            -10.830766677856445,
-            -12.66331958770752,
-            -12.49647331237793,
-            -13.220564842224121,
-            -13.204084396362305,
-            -13.369709968566895,
-            -12.08312702178955,
-            -14.462392807006836,
-            -11.370058059692383,
-            -10.830766677856445,
-            -13.740387916564941,
-            -15.035614967346191,
-            -12.283578872680664,
-            -13.162267684936523,
-            -11.885293006896973,
-            -15.07530689239502,
-            -11.574913024902344,
-            -11.464587211608887,
-            -11.892446517944336,
-            -12.403608322143555,
-            -14.881349563598633
+            -12.37014389038086,
+            -11.563028335571289,
+            -13.025264739990234,
+            -12.352831840515137,
+            -11.886516571044922,
+            -11.675497055053711,
+            -11.855344772338867,
+            -10.537016868591309,
+            -11.761554718017578,
+            -13.17676830291748,
+            -14.116448402404785,
+            -12.832815170288086,
+            -10.988211631774902,
+            -14.138164520263672,
+            -11.899327278137207,
+            -11.969155311584473,
+            -13.037474632263184,
+            -17.513086318969727,
+            -12.289912223815918,
+            -11.788839340209961,
+            -15.506945610046387,
+            -12.882680892944336,
+            -11.628960609436035,
+            -12.768935203552246,
+            -13.446856498718262,
+            -15.107830047607422,
+            -12.050349235534668,
+            -13.677507400512695,
+            -11.204751968383789,
+            -12.026379585266113,
+            -11.999348640441895,
+            -12.846903800964355
         ],
         "prior_beam_ref_res": [
-            -0.0159454345703125,
-            -0.0365142822265625,
-            -0.22998809814453125,
-            -0.09844207763671875,
-            -0.17844390869140625,
-            -0.4139862060546875,
-            -0.45926666259765625,
-            -0.22686767578125,
-            -0.042938232421875,
-            -0.6928558349609375,
-            -0.22686767578125,
-            -0.16895294189453125,
-            -0.20827484130859375,
-            -0.09006500244140625,
-            -0.74560546875,
-            -0.8310623168945312,
-            -0.6192626953125,
-            -0.0242156982421875,
-            -0.41434478759765625,
-            -0.01556396484375,
-            -0.16895294189453125,
-            -0.523101806640625,
-            -0.7131195068359375,
-            -0.0426025390625,
-            -0.09661865234375,
-            -0.21915435791015625,
-            -1.1681289672851562,
-            -0.0365142822265625,
-            -0.2536773681640625,
-            -0.04105377197265625,
-            -0.0372314453125,
-            -0.1251373291015625
+            -0.0691070556640625,
+            -0.43065643310546875,
+            -0.01953125,
+            -0.22434234619140625,
+            -0.145538330078125,
+            -0.02266693115234375,
+            -0.01361083984375,
+            -1000000000.0,
+            -0.0120697021484375,
+            -1.6126327514648438,
+            -0.07910919189453125,
+            -0.143585205078125,
+            -0.2250823974609375,
+            -0.01529693603515625,
+            -0.21555328369140625,
+            -0.01483154296875,
+            -0.0250396728515625,
+            -0.16342926025390625,
+            -0.0511016845703125,
+            -0.22533416748046875,
+            -1000000000.0,
+            -0.1755218505859375,
+            -0.0289764404296875,
+            -0.0572509765625,
+            -0.014923095703125,
+            -0.0165863037109375,
+            -0.04583740234375,
+            -0.0370635986328125,
+            -0.05153656005859375,
+            -0.05728912353515625,
+            -0.01929473876953125,
+            -0.0181121826171875
         ],
         "prior_beam_sents": [
-            "i have a large dark grey dot with a tiny light grey dot to the left of it <eos>",
-            "i have a large dark grey dot with a tiny light grey dot below it <eos>",
-            "i have a large gray dot with a tiny light gray dot above and to the right of it <eos>",
-            "i have a large medium grey dot with a tiny light grey dot to the right of it <eos>",
-            "i have a large grey dot with a small light gray dot below it <eos>",
-            "i have a large light gray dot with a small light gray dot to the left of it . <eos>",
-            "i have a large light gray dot with a small light gray dot to the left of it <eos>",
-            "i have a large dark grey dot with a tiny light grey dot to the right of it <eos>",
-            "i have a large medium gray dot with a smaller light gray dot to its left and slightly above <eos>",
-            "i have a large medium gray dot with a smaller light grey dot below it <eos>",
-            "i have a large dark grey dot with a tiny light grey dot to the right of it <eos>",
-            "i have a large gray dot with a small light grey dot below it <eos>",
-            "i see a large medium gray dot with a small light gray dot below it <eos>",
-            "i have a large dark grey dot with a tiny light grey dot below and to the left of it <eos>",
-            "large dark grey dot with a small light grey dot to its right ? <eos>",
-            "large dark gray dot with a small light grey dot below it <eos>",
-            "i have a large medium gray dot with a smaller light grey dot above and to the right of it <eos>",
-            "i have a large medium grey dot with a tiny light gray dot below it <eos>",
-            "i see a large medium gray dot with a small light gray dot below it and slightly to the right <eos>",
-            "i have a large grey dot with a tiny light grey dot above it <eos>",
-            "i have a large gray dot with a small light grey dot below it <eos>",
-            "i have a large medium gray dot with a smaller light grey dot above and to the right of it . <eos>",
-            "large dark gray dot with a small light grey dot below it and slightly to the left ? <eos>",
-            "i have a large grey dot with a tiny light grey dot above and to the left of it . <eos>",
-            "i have a large medium gray dot with a smaller light grey dot above and to the left of it <eos>",
-            "i have a large grey dot with a tiny light grey dot above and to the right of it <eos>",
-            "large dark gray dot with a small light grey dot below it and slightly to the right ? <eos>",
-            "i have a large dark grey dot with a tiny light grey dot below it <eos>",
-            "i have a large gray dot with a small light grey dot to the right of it <eos>",
-            "i have a large grey dot with a small light gray dot above and to the left of it <eos>",
+            "i see a large grey dot with a tiny light grey dot to the right of it <eos>",
+            "i have a large dark gray dot with a small light grey dot below it <eos>",
+            "i see a large dark grey dot with a tiny light grey dot above and to the left of it <eos>",
+            "i have a large dark grey dot with a tiny light gray dot above and to the right of it <eos>",
+            "i have a large dark gray dot with a tiny light grey dot to the right of it <eos>",
+            "i have a large medium grey dot with a tiny light grey dot below it <eos>",
+            "i have a large dark gray dot with a tiny light grey dot above it <eos>",
+            "is there a large medium grey dot to the right of it ? <eos>",
+            "i have a large dark grey dot with a tiny light grey dot above it <eos>",
+            "i see that one . is there a small light grey dot above it ? <eos>",
+            "i see a large medium gray dot with a tiny light grey dot below it and slightly to the right <eos>",
+            "i see a large dark grey dot with a tiny light grey dot to the right of it <eos>",
+            "i have a large gray dot with a small light gray dot below it <eos>",
+            "i see a large medium gray dot with a tiny light grey dot below it and slightly to the left <eos>",
+            "i have a large medium grey dot with a small light gray dot below it <eos>",
+            "i have a large medium grey dot with a tiny light grey dot above it <eos>",
+            "i have a large medium gray dot with a tiny light grey dot to its right <eos>",
+            "is the large one to the left of the small light grey dot ? if so click the large one ! <selection>",
             "i have a large medium grey dot with a tiny light grey dot to the left of it <eos>",
-            "i have a large dark grey dot with a tiny light grey dot to its right and slightly above <eos>"
+            "i have a large gray dot with a small light gray dot above and to the right of it <eos>",
+            "is the large one to the left of the small light one ? <eos>",
+            "i have a large dark grey dot with a tiny light gray dot above and to the right of it . <eos>",
+            "i have a large medium gray dot with a tiny light gray dot below it <eos>",
+            "i see a large medium gray dot with a tiny light grey dot to the right of it <eos>",
+            "i have a large medium grey dot with a tiny light grey dot below it and slightly to the left <eos>",
+            "i have a large medium gray dot with a tiny light grey dot to its left and slightly above <eos>",
+            "i have a large medium grey dot with a tiny light grey dot to the right of it <eos>",
+            "i have a large medium gray dot with a tiny light grey dot to its left <eos>",
+            "i have a large grey dot with a small light grey dot above it <eos>",
+            "i have a large medium gray dot with a tiny light gray dot to the right of it <eos>",
+            "i have a large dark grey dot with a tiny light grey dot above and to the left of it <eos>",
+            "i have a large dark grey dot with a tiny light gray dot above and to the left of it . <eos>"
         ],
         "prior_mentions": [
             [
@@ -9307,30 +9379,30 @@
             ],
             [
                 1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                0,
+                0,
+                1,
+                0,
+                0,
+                1
+            ],
+            [
+                1,
                 1,
                 0,
                 0,
                 0,
                 0,
                 0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                1
             ],
             [
                 1,
@@ -9360,7 +9432,7 @@
                 1
             ]
         ],
-        "prior_mentions_language": "i have a large grey dot with a tiny light grey dot above it <eos>",
+        "prior_mentions_language": "i have a large dark grey dot with a tiny light grey dot above it <eos>",
         "prior_partner_ref": [
             [
                 [
@@ -9427,8 +9499,15 @@
                 ]
             ]
         ],
+        "reader_id": 1,
         "response": 1,
+        "response_label": 1,
         "response_language": "I'm down for a gamble",
+        "response_logits": [
+            -3.110887050628662,
+            -0.1827186793088913,
+            -2.100165367126465
+        ],
         "response_utt": [
             1,
             0,
@@ -9440,37 +9519,37 @@
         ],
         "utterance": [
             1,
-            0,
-            0,
             1,
             0,
             0,
-            0
+            0,
+            0,
+            1
         ],
-        "utterance_language": "Haha no mouth! Click the nose!"
+        "utterance_language": "Haha no mouth! Click the nose!",
+        "writer_id": 0
     },
     {
-        "agent_id": 1,
         "belief": [
-            0.09827823683914827,
-            0.0977139314598966,
-            0.0977139314598966,
-            0.0977139314598966,
-            0.09743177877027075
+            0.1109913364302153,
+            0.10961411499835019,
+            0.10961411499835019,
+            0.10961411499835019,
+            0.10829346301041828
         ],
         "belief2": [
-            0.04724997622161428,
-            0.04724997622161428,
-            0.04724997622161428,
-            0.04724997622161428,
-            0.04697867082777606
+            0.049690071683412496,
+            0.049690071683412496,
+            0.049690071683412496,
+            0.049690071683412496,
+            0.04907349895013133
         ],
         "belief3": [
-            0.10089671272018066,
-            0.100765847982541,
-            0.100765847982541,
-            0.100765847982541,
-            0.10070041561372117
+            0.11625652634507098,
+            0.11558004086225358,
+            0.11558004086225358,
+            0.11558004086225358,
+            0.11491194814050647
         ],
         "configs": [
             [
@@ -10627,37 +10706,46 @@
             ]
         ],
         "marginal_belief": [
-            0.9817354393070449,
-            0.8976102176793747,
-            0.49682987819987623,
-            0.9817354393070447,
-            0.49682987819987623,
-            0.49682987819987623,
-            0.8976102176793748
+            0.994761065034925,
+            0.9870994737429755,
+            0.4962755301440503,
+            0.8984042130487782,
+            0.4962755301440503,
+            0.4962755301440503,
+            0.9870994737429755
         ],
         "marginal_belief2": [
-            0.6611284604162724,
-            0.8982888420031802,
-            0.6411362360222543,
-            0.9818608608374096,
-            0.6611284604162724,
-            0.49731289756781366,
-            0.6411362360222543
+            0.6638275037654229,
+            0.9871453733766833,
+            0.6622219963456193,
+            0.898560469951283,
+            0.6638275037654229,
+            0.4965422411785965,
+            0.6622219963456193
         ],
         "marginal_belief3": [
-            0.9531428639220474,
-            0.8761594688032346,
-            0.49424795104630237,
-            0.9531428639220476,
-            0.4942479510463024,
-            0.4942479510463024,
-            0.8761594688032346
+            0.9876485348911563,
+            0.9813100408668998,
+            0.4971164190154718,
+            0.9351118933197624,
+            0.4971164190154718,
+            0.4971164190154718,
+            0.9813100408668998
         ],
         "plan2_mentions": [
             [
                 0,
                 0,
                 1,
+                0,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                1,
                 1,
                 1,
                 0,
@@ -10674,33 +10762,15 @@
             ],
             [
                 0,
-                0,
                 1,
                 1,
                 0,
+                1,
                 0,
-                1
+                0
             ],
             [
-                0,
-                0,
-                0,
                 1,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
                 0,
                 1,
                 0,
@@ -10712,15 +10782,24 @@
                 0,
                 0,
                 1,
+                0,
                 1,
-                0,
-                0,
+                1,
                 0
             ],
             [
                 0,
                 0,
+                1,
+                1,
+                1,
                 0,
+                1
+            ],
+            [
+                0,
+                1,
+                1,
                 1,
                 1,
                 0,
@@ -10744,15 +10823,6 @@
                 1,
                 0,
                 0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                1,
-                0,
-                0,
                 0,
                 1,
                 0,
@@ -10760,21 +10830,12 @@
             ],
             [
                 1,
-                0,
                 1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
                 0,
                 0,
                 1,
                 0,
-                1,
-                0,
-                0
+                1
             ],
             [
                 1,
@@ -10782,36 +10843,65 @@
                 0,
                 1,
                 0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
                 1,
-                1,
-                0,
-                0
+                1
             ],
             [
                 1,
+                1,
+                1,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                1,
+                1,
                 0,
                 0,
                 0,
                 1,
+                1
+            ],
+            [
+                1,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0
+            ],
+            [
+                1,
+                1,
+                1,
+                0,
+                0,
                 0,
                 0
             ]
         ],
-        "plan3_mentions_language": "i have that . the light grey one is on the left and a dark gray to the right and below a medium dark gray dot <eos>",
+        "plan3_mentions_language": "i have that . the light grey one is a dark grey dot , and a medium black dot to the left of the large one <eos>",
         "plan3_partner_ref": [
             [
                 [
                     1,
-                    0,
-                    0,
                     1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
+                ]
+            ],
+            [
+                [
+                    1,
+                    0,
+                    0,
+                    0,
                     0,
                     0,
                     0
@@ -10822,10 +10912,10 @@
                     0,
                     0,
                     0,
-                    1,
                     0,
                     0,
-                    0
+                    0,
+                    1
                 ]
             ],
             [
@@ -10837,6 +10927,17 @@
                     0,
                     1,
                     0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    1
                 ]
             ]
         ],
@@ -10881,111 +10982,147 @@
             ]
         ],
         "plan_beam_lm": [
-            -34.437740325927734,
-            -27.7711181640625,
-            -45.75279998779297,
-            -35.514949798583984,
-            -33.6440544128418,
-            -36.04450988769531,
-            -42.37845230102539,
-            -35.36127853393555,
-            -28.734386444091797,
-            -36.40496826171875,
-            -27.879390716552734,
-            -27.98765754699707,
-            -19.077613830566406,
-            -36.55556106567383,
-            -54.71285629272461,
-            -31.170467376708984,
-            -36.99644470214844,
-            -18.152698516845703,
-            -49.43855285644531,
-            -36.09386444091797,
-            -19.458425521850586,
-            -35.79218673706055,
-            -27.420446395874023,
-            -34.29464340209961,
-            -26.583255767822266,
-            -35.98366928100586,
-            -31.113000869750977,
-            -25.89183235168457,
-            -31.180776596069336,
-            -36.20439529418945,
-            -25.929725646972656,
-            -27.95768165588379
+            -21.202117919921875,
+            -38.12839126586914,
+            -37.12971115112305,
+            -21.400989532470703,
+            -36.05580139160156,
+            -33.82770919799805,
+            -37.180381774902344,
+            -36.332542419433594,
+            -29.65387725830078,
+            -25.450010299682617,
+            -21.909215927124023,
+            -33.94424057006836,
+            -33.656532287597656,
+            -35.937007904052734,
+            -35.39032745361328,
+            -34.2859992980957,
+            -35.13867950439453,
+            -25.767091751098633,
+            -21.188440322875977,
+            -43.77627944946289,
+            -21.608211517333984,
+            -29.22587013244629,
+            -29.29874610900879,
+            -22.95119285583496,
+            -23.571338653564453,
+            -20.360084533691406,
+            -21.119731903076172,
+            -26.770551681518555,
+            -37.18183517456055,
+            -36.378665924072266,
+            -36.634307861328125,
+            -29.588769912719727
         ],
         "plan_beam_ref_res": [
-            -17.58617401123047,
             -1000000000.0,
             -1000000000.0,
-            -22.95098876953125,
-            -61.32802963256836,
-            -18.04535675048828,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0,
-            -20.4991455078125,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0,
-            -51.90616226196289,
+            -26.45868682861328,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
-            -16.311767578125,
+            -29.565898895263672,
+            -1000000000.0,
+            -1000000000.0,
+            -26.496715545654297,
+            -25.843429565429688,
+            -1000000000.0,
+            -27.523624420166016,
+            -1000000000.0,
+            -1000000000.0,
+            -1000000000.0,
+            -1000000000.0,
+            -25.58013916015625,
+            -1000000000.0,
+            -34.46758270263672,
+            -31.64126205444336,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
             -1000000000.0,
-            -27.68199920654297,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0,
-            -1000000000.0
+            -24.848155975341797,
+            -27.422828674316406,
+            -27.78942108154297,
+            -34.98514175415039
+        ],
+        "plan_beam_seed": [
+            1,
+            0,
+            1,
+            0,
+            0,
+            0,
+            1
         ],
         "plan_beam_sents": [
-            "i have that . the light grey one is on the left and a dark gray to the right and below a medium grey dot <eos>",
-            "i have a triangle of three dots , the lighter one is to the right and slightly darker than the one on the right . <eos>",
-            "i have a cluster of 4 dots , the small dot is on the right , but a little darker grey and the one on the right is larger <eos>",
-            "i have a cluster of 3 dots , the light one is the darkest , one is to the right and below the other <eos>",
-            "i see that . i see two dots on the left , the one on the left is light grey , the other is on the right <eos>",
-            "i have a line of 3 dots . the lightest one is the lightest , the top one is black and the largest is the darkest <eos>",
-            "i have a cluster of 4 dots , the small dot is on the right , but a little darker grey and the one on the right <eos>",
-            "i have a cluster of 3 dots , the light one is the darkest , the one on the left is a little darker and darker . <eos>",
-            "i have a cluster of 4 dots , the one on the right is light grey , the bottom one is slightly darker . <eos>",
-            "i have a line of 3 dots . the lightest one is the lightest , the top one is black and the largest is the largest <eos>",
-            "i have that . the light gray one is on the left and the darker one to the right and slightly above ? <eos>",
-            "i have that . the light gray one is on the left and the top one is the darkest ? <eos>",
-            "i have the same thing , is the lighter one below the larger one ? <eos>",
-            "i see that . i see two dots on the left , the one on the left is light grey , the other is the largest and darkest <eos>",
-            "i have a cluster of 4 dots , the small dot is on the right , but a little darker grey and the one on the right is larger , and a little darker . <eos>",
-            "i have a cluster of 3 dots , the light one is the darkest , the one on the left is the largest and darkest <eos>",
-            "i have a line of 3 dots . the lightest one is the top one , the darkest one is the largest and smallest <eos>",
-            "i have the same thing , is the lighter one below the black one ? <eos>",
-            "i have a cluster of 4 dots , the small dot is on the right , but a little darker grey and the one on the right is larger and lighter . <eos>",
-            "i have that . the light grey one is on the left and a dark gray to the right and below a medium dark gray dot <eos>",
-            "i see that . the light one is the darkest one ? <eos>",
-            "i have that . the light grey one is on the left and a dark gray to the right and below that large grey dot <eos>",
-            "i have that . the light gray one is on the left and the darker one to the right and above ? <eos>",
-            "i have a cluster of 4 dots , the small dot is on the right and the darkest one is on the left . <eos>",
-            "i have a triangle of three dots , the lighter one is to the right and slightly darker than the top one . <eos>",
-            "i have a cluster of 3 dots , the light one is the darkest , one is to the right and above the other one <eos>",
-            "i have a cluster of 3 dots , the light one is the darkest , the one on the right is the largest and darkest <eos>",
-            "i have a triangle of three dots , the lighter one is to the right and below the large one <eos>",
-            "i have a cluster of 4 dots , the one on the right is light grey , the bottom one is slightly darker and darker <eos>",
-            "i have that . the light grey one is on the left and a dark gray to the right and below that large grey one <eos>",
-            "i have a triangle of three dots , the lighter one is to the right and below the larger one . <eos>",
-            "i have a triangle of three dots , the lighter one is to the right and slightly above the top one . <eos>"
+            "i have that . the light gray one is on the left of the darker one ? <eos>",
+            "i have a line of 3 dots , the lighter one is the darkest one , the one on the right is a little darker and a little darker . <eos>",
+            "i have that . the light grey one is a dark grey dot , and a medium black dot to the left of the larger one <eos>",
+            "i have that . the light gray one is on the left of the darker one . <selection>",
+            "i have a line of 3 dots , the lighter one is the darkest one , the one on the right is a little darker and darker . <eos>",
+            "i have a line of 3 dots , the lighter one is the darkest one . the bottom one is the largest and darkest <eos>",
+            "i have a triangle of 3 dots , the light one is a medium gray dot , and to the right and below is a larger dark grey dot . <eos>",
+            "i have a triangle of 3 dots , the light one is a medium gray dot , and to the right and below is a larger dark grey dot <eos>",
+            "i have a pair of dots . the lighter one is on the right and the darker one is below and to the left of the large one <eos>",
+            "i have a triangle of 3 dots , the light one is a little darker than the one on the right . <eos>",
+            "i have that . the light gray one is on the left of the darker one . <eos>",
+            "i have a line of 3 dots , the lighter one is the darkest one , the bottom one is a little darker than the larger one <eos>",
+            "i have a line of 3 dots , the lighter one is the darkest one . the bottom one is a little darker than the larger one <eos>",
+            "i have a line of 3 dots , the lighter one is the darkest one . the bottom one is the largest and the darkest <eos>",
+            "i have a line of 3 dots , the lighter one is the darkest one , the bottom one is a little darker than the other one <eos>",
+            "i have a line of 3 . the light grey one is the darkest one and the largest one is the darkest <eos>",
+            "i have a line of 3 dots , the lighter one is the darkest one . the bottom one is the largest and darkest . <eos>",
+            "i have a triangle of 3 dots , the light one is a little darker than the dark one . <eos>",
+            "i have that . the light gray one is on the left of the dark one <selection>",
+            "i have a line of 3 dots , the lighter one is the darkest one , the one on the right is a little darker and a little higher and to the right of the larger one <eos>",
+            "i have that . the light gray one is on the left of the dark one ? <eos>",
+            "i have a pair of dots . the lighter one is on the right and the darker one is to the left of the larger one . <eos>",
+            "i have a pair of dots . the lighter one is on the right and the darker one is below and to the left of the larger one . <eos>",
+            "i have a triangle of 3 dots , the lighter one is to the right of the top one . <eos>",
+            "i think i have that . i see the light grey dot to the left of the black one . <eos>",
+            "i have that . the light gray one is on the left of the black one ? <eos>",
+            "i have that . the light gray one is on the left of the black one . <selection>",
+            "i have a triangle of 3 dots , the lighter one is to the right and below the dark one . <eos>",
+            "i have that . the light grey one is a dark grey dot , and a medium black dot to the left of the large one <eos>",
+            "i have that . the light grey one is a dark grey dot , and a medium black dot to the left of that one <eos>",
+            "i have that . the light grey one is a dark grey dot , and a medium black dot to the left of that one . <eos>",
+            "i have a pair of dots . the lighter one is on the right and the darker one is to the left of the larger one . <selection>"
         ],
         "plan_mentions": [
             [
                 0,
                 0,
+                1,
+                1,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                1,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                0,
+                0,
                 0,
                 0,
                 0,
@@ -10996,24 +11133,6 @@
                 0,
                 0,
                 0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
                 0,
                 1,
                 0,
@@ -11022,9 +11141,9 @@
             [
                 0,
                 1,
+                0,
+                0,
                 1,
-                0,
-                0,
                 0,
                 0
             ],
@@ -11040,18 +11159,9 @@
             [
                 0,
                 1,
-                0,
                 1,
                 0,
                 0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
                 0,
                 0
             ]
@@ -11062,14 +11172,6 @@
         "prior_beam_lm": null,
         "prior_beam_ref_res": null,
         "prior_beam_sents": [
-            "ok <selection>",
-            "ok <selection>",
-            "ok <selection>",
-            "ok <selection>",
-            "ok <selection>",
-            "ok <selection>",
-            "ok <selection>",
-            "ok <selection>",
             "ok <selection>",
             "ok <selection>",
             "ok <selection>",
@@ -11086,14 +11188,22 @@
             "ok <selection>",
             "ok <selection>",
             "ok <selection>",
+            "yes <selection>",
+            "ok <selection>",
+            "ok <selection>",
+            "okay <selection>",
             "ok <selection>",
             "ok <selection>",
             "ok <selection>",
             "ok <selection>",
             "ok <selection>",
+            "okay <selection>",
             "ok <selection>",
             "ok <selection>",
-            "ok ! <selection>"
+            "ok <selection>",
+            "ok <selection>",
+            "ok <selection>",
+            "ok <selection>"
         ],
         "prior_mentions": null,
         "prior_mentions_language": "ok <selection>",
@@ -11101,10 +11211,18 @@
         "prior_plan": [
             []
         ],
+        "reader_id": 0,
         "response": 1,
+        "response_label": 1,
         "response_language": null,
+        "response_logits": [
+            -6.620469093322754,
+            -0.0018485378241166472,
+            -7.5731425285339355
+        ],
         "response_utt": null,
         "utterance": null,
-        "utterance_language": "I'm down for a gamble"
+        "utterance_language": "I'm down for a gamble",
+        "writer_id": 1
     }
 ]

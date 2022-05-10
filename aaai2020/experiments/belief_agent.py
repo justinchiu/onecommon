@@ -58,6 +58,7 @@ class BeliefAgent(RnnAgent):
         # per-turn accumulators
         self.next_mention_plans = []
         self.responses = []
+        self.response_logits = []
         self.side_infos = []
 
     def read(
@@ -104,12 +105,14 @@ class BeliefAgent(RnnAgent):
         # add None to next_mention_plans, since reading turn => no generation
         self.next_mention_plans.append(None)
         self.responses.append(label)
+        self.response_logits.append(response_logits.tolist())
         self.side_infos.append(side_info)
 
 
     def write(self, force_words=None, *args, **kwargs):
         dots_mentioned_per_ref_to_force = None
         # if write is given forced_words, then throw away plan. otherwise
+        plan = None
         if force_words is None:
             # generate next mention plan
             EdHs = self.belief.compute_EdHs(self.prior)
@@ -129,18 +132,19 @@ class BeliefAgent(RnnAgent):
             *args, **kwargs,
         )
 
-        #if kwargs["force_words"] is not None:
-        plan = None
+        """
         if force_words is not None:
             # set plan to the resolved refs of the forced utt
             plan = (self.ref_preds[-1].any(0)[0].cpu().int().numpy()
                 if self.ref_preds[-1] is not None
                 else None
             )
+        """
 
         # add plan to next_mention_plan history
         self.next_mention_plans.append(plan)
         self.responses.append(None)
+        self.response_logits.append(None)
         self.side_infos.append(None)
 
         return output

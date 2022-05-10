@@ -99,8 +99,11 @@ class StaticDialogLogger:
         with self.filepath.open("w") as f:
             json.dump(self.dialogue, f, indent=4, sort_keys=True)
 
-    def start_turn(self, agent=0):
-        self.turn = {"agent_id": agent}
+    def start_turn(self, writer_id, reader_id):
+        self.turn = {
+            "writer_id": writer_id,
+            "reader_id": reader_id,
+        }
     def end_turn(self):
         self.dialogue.append(self.turn)
 
@@ -134,6 +137,7 @@ class StaticDialogLogger:
         plan_beam_sents = None,
         plan_beam_ref_res = None,
         plan_beam_lm = None,
+        plan_beam_seed = None,
     ):
         self.turn["configs"] = configs
         self.turn["utterance_language"] = utterance_language
@@ -162,6 +166,7 @@ class StaticDialogLogger:
         self.turn["plan_beam_sents"] = plan_beam_sents
         self.turn["plan_beam_ref_res"] = plan_beam_ref_res
         self.turn["plan_beam_lm"] = plan_beam_lm
+        self.turn["plan_beam_seed"] = plan_beam_seed
 
     def add_turn_resp(
         self,
@@ -174,6 +179,8 @@ class StaticDialogLogger:
         belief3,
         marginal_belief3,
         response_utt=None,
+        response_label=None,
+        response_logits=None,
     ):
         self.turn["response_language"] = response_language
         self.turn["response"] = response
@@ -189,6 +196,8 @@ class StaticDialogLogger:
             if response_utt is not None
             else None
         )
+        self.turn["response_label"] = response_label
+        self.turn["response_logits"] = response_logits
 
 
 class StaticHierarchicalDialog(HierarchicalDialog):
@@ -211,6 +220,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
     def run(self, ctxs, logger, max_words=5000):
         scenario_id = ctxs[0][0]
+        print(f"Scenario id: {scenario_id}")
         self.dialog_logger = StaticDialogLogger(scenario_id)
 
         # setup for MBP
@@ -454,6 +464,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 if "ref_resolution_scores" in extra else None)
             plan_beam_lm = (extra["language_model_scores"].tolist()
                 if "language_model_scores" in extra else None)
+            plan_beam_seed = writer.next_mention_plans[-1].tolist()
 
             # POP OFF STATE TO RESUME STATIC DIALOG
             undo_state_writer(writer)
@@ -505,7 +516,10 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print(plan_partner_ref)
 
                 #self.dialog_logger.start_turn(YOU)
-                self.dialog_logger.start_turn(writer.agent_id)
+                self.dialog_logger.start_turn(
+                    writer.agent_id,
+                    reader.agent_id,
+                )
                 self.dialog_logger.add_turn_utt(
                     writer.belief.configs.tolist(),
                     utterance_language = SENTENCES[sentence_ix],
@@ -536,6 +550,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     plan_beam_sents = plan_beam_sents,
                     plan_beam_ref_res = plan_beam_ref_res,
                     plan_beam_lm = plan_beam_lm,
+                    plan_beam_seed = plan_beam_seed,
                 )
 
             # READER
@@ -651,6 +666,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     response_utt = their_utt.astype(int)
                         if their_utt is not None
                         else None,
+                    response_label = reader.responses[-1],
+                    response_logits = reader.response_logits[-1],
                 )
                 self.dialog_logger.end_turn()
             # / MBP
