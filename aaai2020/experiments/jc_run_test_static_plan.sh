@@ -21,7 +21,7 @@ rerank_args2="--language_beam_size 16 --next_mention_reranking_k 8 \
 --next_mention_reranking_max_mentions 4"
 rerank_args3=" --reranking_confidence_type keep_best --next_mention_candidate_generation topk_multi_mention"
 
-rerank_args2="--language_beam_size 16 --next_mention_reranking_k 4 \
+rerank_args2="--language_beam_size 32 --next_mention_reranking_k 8 \
 --next_mention_reranking_max_mentions 4"
 rerank_args3=" --reranking_confidence_type keep_best"
 
@@ -41,9 +41,11 @@ python -u test_planning_static.py \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
   --DBG_PLAN analysis_log/${name}.json \
-  --num_contexts 1000 \
+  --num_contexts 20 \
   ${rerank_args} ${rerank_args2} ${rerank_args3} ${rerank_args4} \
   --log_file=${log_file} $@
 
 echo "LOGFILE ${log_file}"
 exit 0
+
+#switch to num_contexts 1000

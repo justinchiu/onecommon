@@ -106,6 +106,7 @@ class StaticDialogLogger:
 
     def add_turn_utt(
         self,
+        configs,
         utterance_language = None,
         utterance = None,
         prior_mentions = None,
@@ -126,6 +127,7 @@ class StaticDialogLogger:
         plan2_partner_ref = None,
         plan3_partner_ref = None,
     ):
+        self.turn["configs"] = configs
         self.turn["utterance_language"] = utterance_language
         self.turn["utterance"] = utterance
         self.turn["prior_mentions"] = prior_mentions
@@ -478,6 +480,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 #self.dialog_logger.start_turn(YOU)
                 self.dialog_logger.start_turn(writer.agent_id)
                 self.dialog_logger.add_turn_utt(
+                    writer.belief.configs.tolist(),
                     utterance_language = SENTENCES[sentence_ix],
                     utterance = writer.ref_preds[-1].any(0)[0].int().tolist()
                         if writer.ref_preds[-1] is not None
@@ -535,6 +538,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     # if the first turn is a read, give null data for utts
                     self.dialog_logger.start_turn(YOU)
                     self.dialog_logger.add_turn_utt(
+                        writer.belief.configs.tolist(),
                         utterance_language = None,
                         utterance = None,
                         prior_mentions = None,
@@ -600,7 +604,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     print(utt_str)
 
                 self.dialog_logger.add_turn_resp(
-                    response_language = SENTENCES[sentence_ix],
+                    response_language = SENTENCES[sentence_ix+1]
+                        if sentence_ix < len(SENTENCES)-1 else None,
                     response = response,
                     belief = ps1,
                     marginal_belief = marginals1,
