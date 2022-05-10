@@ -43,7 +43,7 @@ prior_ambiguous, prior_unresolvable, prior_specific = 0,0,0
 plan_ambiguous, plan_unresolvable, plan_specific = 0,0,0
 prior_num_turns = 0
 plan_num_turns = 0
-agreed = 0
+prior_zeros, plan_zeros = 0,0
 
 for scenario in scenarios:
     with (analysis_path / scenario).with_suffix(".json").open() as f:
@@ -69,6 +69,7 @@ for scenario in scenarios:
             plan3_partner_ref = (np.array(turn["plan3_partner_ref"]).any(0)[0]
                 if turn["plan3_partner_ref"] is not None else None)
 
+
             prior_dots = set(our_dots[prior_plan]) if prior_plan is not None else None
             plan_dots = set(our_dots[plan3_plan]) if plan3_plan is not None else None
             prior_partner_dots = set(their_dots[prior_partner_ref]) if prior_partner_ref is not None else None
@@ -78,24 +79,27 @@ for scenario in scenarios:
             prior_lang = turn["prior_mentions_language "]
             plan_lang = turn["plan3_mentions_language "]
 
-            if prior_dots is not None:
+            if prior_dots is not None and prior_plan.sum() > 0:
                 a,u,s = classify_sets(prior_dots, prior_partner_dots)
                 prior_ambiguous += a
                 prior_unresolvable += u
                 prior_specific += s
                 prior_num_turns += 1
+            else:
+                prior_zeros += 1
 
-            if plan_dots is not None:
+            if plan_dots is not None and plan3_plan.sum() > 0:
                 a,u,s = classify_sets(plan_dots, plan_partner_dots)
                 plan_ambiguous += a
                 plan_unresolvable += u
                 plan_specific += s
                 plan_num_turns += 1
+            else:
+                prior_zeros += 1
 
 print("Prior")
 print(f"A: {prior_ambiguous}, U: {prior_unresolvable}, S: {prior_specific}")
-print(f"Prior num turns: {prior_num_turns}")
+print(f"Prior num turns: {prior_num_turns}, num zeros: {prior_zeros}")
 print("Plan")
 print(f"A: {plan_ambiguous}, U: {plan_unresolvable}, S: {plan_specific}")
-print(f"Plan num turns: {plan_num_turns}")
-print(f"Num agreed: {agreed}")
+print(f"Plan num turns: {plan_num_turns}, num zeros: {plan_zeros}")
