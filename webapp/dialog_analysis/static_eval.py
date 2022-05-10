@@ -61,7 +61,7 @@ for scenario in scenarios:
             their_dots = dot_ids[0 if agent_id != 0 else 1]
 
             prior_plan = (np.array(turn["prior_plan"]).any(0)[0]
-                if turn["prior_plan"] is not None else None)
+                if (turn["prior_plan"] is not None and len(turn["prior_plan"][0]) > 0) else None)
             plan3_plan = (np.array(turn["plan3_plan"]).any(0)[0]
                 if turn["plan3_plan"] is not None else None)
             prior_partner_ref = (np.array(turn["prior_partner_ref"]).any(0)[0]
@@ -75,9 +75,8 @@ for scenario in scenarios:
             prior_partner_dots = set(their_dots[prior_partner_ref]) if prior_partner_ref is not None else None
             plan_partner_dots = set(their_dots[plan3_partner_ref]) if plan3_partner_ref is not None else None
 
-            # typo in key, trailing space
-            prior_lang = turn["prior_mentions_language "]
-            plan_lang = turn["plan3_mentions_language "]
+            prior_lang = turn["prior_mentions_language"]
+            plan_lang = turn["plan3_mentions_language"]
 
             if prior_dots is not None and prior_plan.sum() > 0:
                 a,u,s = classify_sets(prior_dots, prior_partner_dots)
