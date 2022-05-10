@@ -132,10 +132,10 @@ class StaticDialogLogger:
         self.turn["plan_mentions"] = plan_mentions
         self.turn["plan2_mentions"] = plan2_mentions
         self.turn["plan3_mentions"] = plan3_mentions
-        self.turn["prior_mentions_language "] = prior_mentions_language 
-        self.turn["plan_mentions_language "] = plan_mentions_language
-        self.turn["plan2_mentions_language "] = plan2_mentions_language
-        self.turn["plan3_mentions_language "] = plan3_mentions_language
+        self.turn["prior_mentions_language"] = prior_mentions_language 
+        self.turn["plan_mentions_language"] = plan_mentions_language
+        self.turn["plan2_mentions_language"] = plan2_mentions_language
+        self.turn["plan3_mentions_language"] = plan3_mentions_language
         # ROUNDTRIP
         self.turn["prior_plan"] = prior_plan
         self.turn["plan_plan"] = plan_plan
@@ -314,7 +314,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             ]).int() if nm_multi is not None else None
 
             # get reference predictions from reader
-            reader.read(
+            super(type(reader), reader).read(
                 prior_lang,
                 dots_mentioned=None,
                 dots_mentioned_per_ref=None,
@@ -405,7 +405,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 do_update = False,
             )
             # get reference predictions from reader
-            reader.read(
+            super(type(reader), reader).read(
                 plan_lang,
                 dots_mentioned=None,
                 dots_mentioned_per_ref=None,
@@ -443,20 +443,22 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             writer.args.reranking_confidence = True
 
             # LOGGING
-            if writer.agent_id == YOU:
-                print("writer dots")
+            #if writer.agent_id == YOU:
+            if True:
+                print(f"{writer.name} writer dots")
                 print(writer.dots)
                 print("prior next mentions")
                 print(nms)
                 print("mbp next mentions")
                 print(cs)
+                """
                 print("mbp1 next mentions")
                 print(cs1)
                 print("mbp2 next mentions")
                 print(cs2)
                 print("mbp3 next mentions")
                 print(cs3)
-                #import pdb; pdb.set_trace()
+                """
                 #print("next mention candidates[-1]")
                 #print(nm_cands.candidate_dots)
                 #print(nm_cands.candidate_nm_scores)
@@ -473,7 +475,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print("plan partner ref")
                 print(plan_partner_ref)
 
-                self.dialog_logger.start_turn(YOU)
+                #self.dialog_logger.start_turn(YOU)
+                self.dialog_logger.start_turn(writer.agent_id)
                 self.dialog_logger.add_turn_utt(
                     utterance_language = SENTENCES[sentence_ix],
                     utterance = writer.ref_preds[-1].any(0)[0].int().tolist()
@@ -510,7 +513,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             )
 
             # MBP
-            if reader.agent_id == YOU:
+            #if reader.agent_id == YOU:
+            if True:
                 # UPDATE AGENT 0 BELIEF
                 response = None
                 if sentence_ix > 0 and reader.ref_preds[-2] is not None:
@@ -518,8 +522,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     #print(reader.ref_preds[-1].any(0)[0].int().tolist())
                     #print(reader.ref_preds[-2].any(0)[0].int().tolist())
                     utt = reader.ref_preds[-2].any(0)[0].int().cpu().numpy()
-                    #utt = UTTS[sentence_ix-1]
-                    #response = RESPS[sentence_ix]
                     label = reader.responses[-1]
                     if label != 0:
                         response = 1 if label == 1 else 0
@@ -551,14 +553,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     # update belief with unsolicited partner info
                     # if they mention a new dot, we pretend we asked about it
                     # reader.prior is updated in reader.read()
-                    #reader.prior = reader.belief.posterior(reader.prior, UTTS[sentence_ix], 1)
-                    #reader.prior1 = reader.belief1.posterior(reader.prior1, UTTS[sentence_ix], 1)
-                    #reader.prior2 = reader.belief2.posterior(reader.prior2, UTTS[sentence_ix], 1)
-                    #reader.prior3 = reader.belief3.posterior(reader.prior3, UTTS[sentence_ix], 1)
                     reader.prior1 = reader.belief1.posterior(reader.prior1, side_info, 1)
                     reader.prior2 = reader.belief2.posterior(reader.prior2, side_info, 1)
                     reader.prior3 = reader.belief3.posterior(reader.prior3, side_info, 1)
-
 
                 if isinstance(reader, BeliefAgent):
                     cs, ps = reader.belief.viz_belief(reader.prior, n=5)
@@ -570,28 +567,30 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     print([f"{x:.2f}" for x in marginals])
 
                 cs1, ps1 = reader.belief1.viz_belief(reader.prior1, n=5)
+                marginals1 = reader.belief1.marginals(reader.prior1)
+                cs2, ps2 = reader.belief2.viz_belief(reader.prior2, n=5)
+                marginals2 = reader.belief2.marginals(reader.prior2)
+                cs3, ps3 = reader.belief3.viz_belief(reader.prior3, n=5)
+                marginals3 = reader.belief3.marginals(reader.prior3)
+                """
                 print("posterior1")
                 print(cs1)
                 print(ps1)
                 print("marginals1")
-                marginals1 = reader.belief1.marginals(reader.prior1)
                 print([f"{x:.2f}" for x in marginals1])
 
-                cs2, ps2 = reader.belief2.viz_belief(reader.prior2, n=5)
                 print("posterior2")
                 print(cs2)
                 print(ps2)
                 print("marginals2")
-                marginals2 = reader.belief2.marginals(reader.prior2)
                 print([f"{x:.2f}" for x in marginals2])
 
-                cs3, ps3 = reader.belief3.viz_belief(reader.prior3, n=5)
                 print("posterior3")
                 print(cs3)
                 print(ps3)
                 print("marginals3")
-                marginals3 = reader.belief3.marginals(reader.prior3)
                 print([f"{x:.2f}" for x in marginals3])
+                """
 
                 their_utt = None
                 if reader.partner_ref_preds[-1] is not None:

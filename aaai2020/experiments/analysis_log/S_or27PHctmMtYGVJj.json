@@ -2,6 +2,86 @@
     {
         "agent_id": 0,
         "belief": [
+            0.02131212748762501,
+            0.021072204263056876,
+            0.021072204263056876,
+            0.021072204263056876,
+            0.021072204263056876
+        ],
+        "belief2": [
+            0.008925777583077788,
+            0.008925777583077788,
+            0.008925777583077788,
+            0.008801917099526461,
+            0.008801917099526461
+        ],
+        "belief3": [
+            0.022662102059925096,
+            0.02260358146067416,
+            0.02260358146067416,
+            0.02260358146067416,
+            0.02260358146067416
+        ],
+        "marginal_belief": [
+            0.47525002525507637,
+            0.47525002525507637,
+            0.47525002525507637,
+            0.47525002525507637,
+            0.7872007273461962,
+            0.47525002525507637,
+            0.7872007273461962
+        ],
+        "marginal_belief2": [
+            0.4987796482883783,
+            0.4958278573961656,
+            0.4958278573961656,
+            0.5534138556855871,
+            0.5534138556855871,
+            0.4958278573961656,
+            0.5534138556855871
+        ],
+        "marginal_belief3": [
+            0.47752808988764056,
+            0.47752808988764056,
+            0.47752808988764056,
+            0.47752808988764056,
+            0.8040730337078659,
+            0.47752808988764056,
+            0.8040730337078659
+        ],
+        "plan2_mentions": null,
+        "plan2_mentions_language": null,
+        "plan2_partner_ref": null,
+        "plan2_plan": null,
+        "plan3_mentions": null,
+        "plan3_mentions_language": null,
+        "plan3_partner_ref": null,
+        "plan3_plan": null,
+        "plan_mentions": null,
+        "plan_mentions_language": null,
+        "plan_partner_ref": null,
+        "plan_plan": null,
+        "prior_mentions": null,
+        "prior_mentions_language": null,
+        "prior_partner_ref": null,
+        "prior_plan": null,
+        "response": null,
+        "response_language": "I've got two large light grey dots near the top on opposite sides",
+        "response_utt": [
+            0,
+            0,
+            0,
+            0,
+            1,
+            0,
+            1
+        ],
+        "utterance": null,
+        "utterance_language": null
+    },
+    {
+        "agent_id": 1,
+        "belief": [
             0.08157857187592732,
             0.08157857187592732,
             0.08157857187592732,
@@ -52,15 +132,6 @@
         "plan2_mentions": [
             [
                 1,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                1,
                 1,
                 0,
                 0,
@@ -69,73 +140,104 @@
                 0
             ],
             [
+                1,
+                0,
+                1,
                 0,
                 0,
                 1,
+                0
+            ],
+            [
+                0,
                 1,
                 0,
                 0,
+                0,
+                1,
                 1
             ],
             [
                 0,
+                0,
                 1,
+                0,
+                0,
                 1,
-                0,
-                0,
-                0,
                 1
             ]
         ],
-        "plan2_mentions_language ": null,
+        "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
         "plan3_mentions": [
             [
                 0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
                 1,
                 0,
                 0,
-                0,
                 1,
-                0
+                0,
+                1
             ],
             [
                 0,
                 0,
-                0,
                 1,
                 0,
                 1,
-                0
+                0,
+                1
             ],
             [
                 0,
-                1,
                 0,
                 0,
                 1,
+                1,
                 0,
-                0
+                1
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                1,
+                1,
+                1
             ]
         ],
-        "plan3_mentions_language ": "i have a group of two dots , the one on the right is very small and light and the one on the right is larger and black . <eos>",
+        "plan3_mentions_language": "i have a cluster of 3 dots , one is small and light grey , the other is a little larger and lighter . i have a large grey dot that is the same size . <eos>",
         "plan3_partner_ref": [
             [
                 [
-                    0,
+                    1,
+                    1,
                     0,
                     1,
                     1,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    1,
+                    0,
+                    0,
+                    0,
                     0,
                     0,
                     0
@@ -145,20 +247,9 @@
                 [
                     0,
                     0,
-                    1,
-                    0,
-                    0,
-                    0,
-                    0
-                ]
-            ],
-            [
-                [
-                    0,
                     0,
                     0,
                     1,
-                    0,
                     0,
                     0
                 ]
@@ -168,9 +259,27 @@
             [
                 [
                     0,
+                    1,
                     0,
                     0,
                     1,
+                    0,
+                    1
+                ],
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
                     1,
                     0,
                     0
@@ -179,38 +288,20 @@
                     0,
                     0,
                     0,
-                    1,
-                    0,
-                    0,
-                    0
-                ],
-                [
                     0,
                     0,
                     0,
-                    0,
-                    1,
-                    0,
-                    0
+                    1
                 ]
             ]
         ],
         "plan_mentions": [
             [
-                1,
-                0,
-                1,
                 0,
                 0,
-                0,
-                0
-            ],
-            [
                 0,
                 1,
-                0,
-                0,
-                0,
+                1,
                 0,
                 1
             ],
@@ -219,37 +310,37 @@
                 0,
                 1,
                 0,
+                1,
                 0,
+                1
+            ],
+            [
+                1,
+                0,
+                0,
+                0,
+                1,
                 0,
                 1
             ],
             [
                 0,
-                1,
                 0,
                 0,
                 0,
                 1,
-                0
+                1,
+                1
             ]
         ],
-        "plan_mentions_language ": null,
+        "plan_mentions_language": null,
         "plan_partner_ref": null,
         "plan_plan": null,
         "prior_mentions": [
             [
                 0,
                 0,
-                1,
                 0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
                 0,
                 0,
                 0,
@@ -258,35 +349,33 @@
             [
                 0,
                 0,
-                1,
                 0,
                 0,
-                0,
-                1
-            ],
-            [
-                1,
-                1,
-                0,
-                1,
                 1,
                 0,
                 0
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                0,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
             ]
         ],
-        "prior_mentions_language ": "i have two large dots , one black and one light grey <eos>",
+        "prior_mentions_language": "i have a black dot by itself <eos>",
         "prior_partner_ref": [
-            [
-                [
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0,
-                    0
-                ]
-            ],
             [
                 [
                     0,
@@ -315,19 +404,10 @@
                 [
                     0,
                     0,
-                    1,
                     0,
-                    0,
-                    0,
-                    1
-                ],
-                [
                     0,
                     0,
                     1,
-                    0,
-                    0,
-                    0,
                     0
                 ],
                 [
@@ -336,8 +416,8 @@
                     0,
                     0,
                     0,
-                    0,
-                    1
+                    1,
+                    0
                 ]
             ]
         ],
@@ -356,11 +436,395 @@
             0,
             0,
             0,
+            0,
+            1,
+            0,
+            0
+        ],
+        "utterance_language": "I have a cluster of 4 dots in a C shape. On one end is a large black dot and on the other is a small light dot"
+    },
+    {
+        "agent_id": 0,
+        "belief": [
+            0.24864285995797455,
+            0.24864285995797455,
+            0.031075620357497225,
+            0.031075620357497225,
+            0.02770698942443516
+        ],
+        "belief2": [
+            0.031915673300672305,
+            0.03164060720062703,
+            0.03164060720062703,
+            0.03164060720062703,
+            0.03164060720062703
+        ],
+        "belief3": [
+            0.2168310293876701,
+            0.2168310293876701,
+            0.01944293830766632,
+            0.014089085730193003,
+            0.014089085730193003
+        ],
+        "marginal_belief": [
+            0.8903923832900624,
+            0.8903923832900624,
+            0.8903923832900624,
+            0.8903923832900624,
+            0.8562623196331854,
+            0.4841264647663253,
+            0.8562623196331854
+        ],
+        "marginal_belief2": [
+            0.5518123941022295,
+            0.8980550996566958,
+            0.8980550996566958,
+            0.55360307084442,
+            0.623476854043041,
+            0.5553682901580713,
+            0.55360307084442
+        ],
+        "marginal_belief3": [
+            0.733343008609671,
+            0.733343008609671,
+            0.733343008609671,
+            0.733343008609671,
+            0.8431796127155712,
+            0.48280940309372355,
+            0.8431796127155712
+        ],
+        "plan2_mentions": [
+            [
+                0,
+                1,
+                1,
+                1,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                1,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                1,
+                1,
+                1,
+                0,
+                0,
+                1
+            ],
+            [
+                1,
+                1,
+                0,
+                1,
+                0,
+                0,
+                1
+            ]
+        ],
+        "plan2_mentions_language": null,
+        "plan2_partner_ref": null,
+        "plan2_plan": null,
+        "plan3_mentions": [
+            [
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
+                0,
+                0,
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
+                1,
+                0,
+                1,
+                0,
+                0,
+                0
+            ],
+            [
+                0,
+                1,
+                0,
+                1,
+                1,
+                0,
+                0
+            ]
+        ],
+        "plan3_mentions_language": "i have a cluster of 4 dots , one is the same size and a tiny grey dot , and to the right and above it is a large black dot <eos>",
+        "plan3_partner_ref": [
+            [
+                [
+                    1,
+                    1,
+                    1,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "plan3_plan": [
+            [
+                [
+                    1,
+                    1,
+                    0,
+                    1,
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    1,
+                    0,
+                    0,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "plan_mentions": [
+            [
+                0,
+                1,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                1,
+                0,
+                0,
+                0,
+                0,
+                1,
+                0
+            ],
+            [
+                1,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            [
+                0,
+                0,
+                1,
+                0,
+                1,
+                0,
+                0
+            ]
+        ],
+        "plan_mentions_language": null,
+        "plan_partner_ref": null,
+        "plan_plan": null,
+        "prior_mentions": [
+            [
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
+                1,
+                0,
+                1,
+                1,
+                0,
+                0
+            ],
+            [
+                1,
+                1,
+                0,
+                1,
+                0,
+                0,
+                0
+            ],
+            [
+                1,
+                1,
+                0,
+                1,
+                0,
+                0,
+                0
+            ]
+        ],
+        "prior_mentions_language": "i have that . choose the large one <selection>",
+        "prior_partner_ref": [
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ]
+            ],
+            [
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "prior_plan": [
+            [
+                [
+                    1,
+                    1,
+                    0,
+                    1,
+                    1,
+                    0,
+                    0
+                ],
+                [
+                    0,
+                    0,
+                    0,
+                    0,
+                    1,
+                    0,
+                    0
+                ]
+            ]
+        ],
+        "response": null,
+        "response_language": "okay, i see that. Let's go with the large black dot",
+        "response_utt": [
+            1,
+            1,
+            1,
+            1,
+            0,
+            0,
+            0
+        ],
+        "utterance": [
+            1,
+            1,
+            0,
             1,
             1,
             0,
             0
         ],
-        "utterance_language": "I've got two large light grey dots near the top on opposite sides"
+        "utterance_language": "okay, i see that. Let's go with the large black dot"
     }
 ]

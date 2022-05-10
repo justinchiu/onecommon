@@ -130,6 +130,7 @@ class BeliefAgent(RnnAgent):
         )
 
         #if kwargs["force_words"] is not None:
+        plan = None
         if force_words is not None:
             # set plan to the resolved refs of the forced utt
             plan = (self.ref_preds[-1].any(0)[0].cpu().int().numpy()
