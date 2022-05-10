@@ -567,6 +567,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     utt_str = np.array(reader.dots)[utt.astype(bool)]
                     print("our prev utt")
                     print(utt_str)
+                """
                 else:
                     # if the first turn is a read, give null data for utts
                     self.dialog_logger.start_turn(YOU)
@@ -583,6 +584,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                         plan2_mentions_language = None,
                         plan3_mentions_language = None,
                     )
+                """
 
                 side_info = reader.side_infos[-1]
                 if side_info is not None and side_info.any():
