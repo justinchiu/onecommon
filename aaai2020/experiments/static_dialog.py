@@ -113,6 +113,7 @@ class StaticDialogLogger:
         plan_mentions = None,
         plan2_mentions = None,
         plan3_mentions = None,
+        # ROUNTDRIP
         prior_mentions_language = None,
         plan_mentions_language = None,
         plan2_mentions_language = None,
@@ -126,6 +127,13 @@ class StaticDialogLogger:
         plan_partner_ref = None,
         plan2_partner_ref = None,
         plan3_partner_ref = None,
+        # BEAM
+        prior_beam_sents = None,
+        prior_beam_ref_res = None,
+        prior_beam_lm = None,
+        plan_beam_sents = None,
+        plan_beam_ref_res = None,
+        plan_beam_lm = None,
     ):
         self.turn["configs"] = configs
         self.turn["utterance_language"] = utterance_language
@@ -147,6 +155,13 @@ class StaticDialogLogger:
         self.turn["plan_partner_ref"] = plan_partner_ref
         self.turn["plan2_partner_ref"] = plan2_partner_ref
         self.turn["plan3_partner_ref"] = plan3_partner_ref
+        # BEAM SEARCH OUTPUT
+        self.turn["prior_beam_sents"] = prior_beam_sents
+        self.turn["prior_beam_ref_res"] = prior_beam_ref_res
+        self.turn["prior_beam_lm"] = prior_beam_lm
+        self.turn["plan_beam_sents"] = plan_beam_sents
+        self.turn["plan_beam_ref_res"] = plan_beam_ref_res
+        self.turn["plan_beam_lm"] = plan_beam_lm
 
     def add_turn_resp(
         self,
@@ -336,6 +351,12 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 if reader.partner_ref_preds[-1] is not None
                 else None
             )
+            extra = writer.extras[-1]
+            prior_beam_sents = [" ".join(xs) for xs in extra["words"]]
+            prior_beam_ref_res = (extra["ref_resolution_scores"].tolist()
+                if "ref_resolution_scores" in extra else None)
+            prior_beam_lm = (extra["language_model_scores"].tolist()
+                if "language_model_scores" in extra else None)
 
             # POP STATE, planning gets fresh state (from static dialog)
             undo_state_writer(writer)
@@ -427,6 +448,12 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 if reader.partner_ref_preds[-1] is not None
                 else None
             )
+            extra = writer.extras[-1]
+            plan_beam_sents = [" ".join(xs) for xs in extra["words"]]
+            plan_beam_ref_res = (extra["ref_resolution_scores"].tolist()
+                if "ref_resolution_scores" in extra else None)
+            plan_beam_lm = (extra["language_model_scores"].tolist()
+                if "language_model_scores" in extra else None)
 
             # POP OFF STATE TO RESUME STATIC DIALOG
             undo_state_writer(writer)
@@ -503,6 +530,12 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     plan2_partner_ref = None,
                     plan3_partner_ref = plan_partner_ref.tolist()
                         if plan_partner_ref is not None else None,
+                    prior_beam_sents = prior_beam_sents,
+                    prior_beam_ref_res = prior_beam_ref_res,
+                    prior_beam_lm = prior_beam_lm,
+                    plan_beam_sents = plan_beam_sents,
+                    plan_beam_ref_res = plan_beam_ref_res,
+                    plan_beam_lm = plan_beam_lm,
                 )
 
             # READER
