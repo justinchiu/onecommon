@@ -139,7 +139,7 @@ class StaticDialogLogger:
         plan_beam_lm = None,
         plan_beam_seed = None,
     ):
-        self.turn["configs"] = configs
+        self.turn["all_configs"] = configs
         self.turn["utterance_language"] = utterance_language
         self.turn["utterance"] = utterance
         self.turn["prior_mentions"] = prior_mentions
@@ -173,10 +173,13 @@ class StaticDialogLogger:
         response_language,
         response,
         belief,
+        configs,
         marginal_belief,
         belief2,
+        configs2,
         marginal_belief2,
         belief3,
+        configs3,
         marginal_belief3,
         response_utt=None,
         response_label=None,
@@ -185,10 +188,13 @@ class StaticDialogLogger:
         self.turn["response_language"] = response_language
         self.turn["response"] = response
         self.turn["belief"] = belief.tolist()
+        self.turn["configs"] = configs.tolist()
         self.turn["marginal_belief"] = marginal_belief.tolist()
         self.turn["belief2"] = belief2.tolist()
+        self.turn["configs2"] = configs2.tolist()
         self.turn["marginal_belief2"] = marginal_belief2.tolist()
         self.turn["belief3"] = belief3.tolist()
+        self.turn["configs3"] = configs3.tolist()
         self.turn["marginal_belief3"] = marginal_belief3.tolist()
         # SIMPLIFYING ASSUMP: ONLY A SINGLE UTT IN RESPONSE
         self.turn["response_utt"] = (
@@ -666,10 +672,13 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     response_language = None,
                     response = response,
                     belief = ps1,
+                    configs = cs1,
                     marginal_belief = marginals1,
                     belief2 = ps2,
+                    configs2 = cs2,
                     marginal_belief2 = marginals2,
                     belief3 = ps3,
+                    configs3 = cs3,
                     marginal_belief3 = marginals3,
                     response_utt = their_utt.astype(int)
                         if their_utt is not None
