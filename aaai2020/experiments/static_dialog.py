@@ -227,7 +227,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
     def run(self, ctxs, logger, max_words=5000):
         scenario_id = ctxs[0][0]
         print(f"Scenario id: {scenario_id}")
-        self.dialog_logger = StaticDialogLogger(scenario_id)
+        self.dialog_logger = StaticDialogLogger(scenario_id, dir=self.args.dialog_log_dir)
 
         # setup for MBP
         dots = ctxs[2][0]

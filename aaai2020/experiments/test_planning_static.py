@@ -139,6 +139,7 @@ def make_parser():
     parser.add_argument('--must_contain', nargs="*", 
                         help='must contain scenarios')
 
+    parser.add_argument("--dialog_log_dir", default="analysis_log")
 
     RnnAgent.add_args(parser)
 
@@ -209,7 +210,7 @@ def main():
         # dialog = Dialog([alice, bob], args, markable_detector)
         dialog = StaticHierarchicalDialog([alice, bob], args, markable_detector, dialogues)
         ctx_gen = ContextGenerator(
-            'data/onecommon/static/train_context_9.txt',
+            f'data/onecommon/static/{args.context_file}.txt',
             #must_contain = args.must_contain,
             must_contain = must_contain,
         )
