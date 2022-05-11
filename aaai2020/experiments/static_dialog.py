@@ -571,6 +571,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             #if reader.agent_id == YOU:
             if True:
                 # UPDATE AGENT 0 BELIEF
+                print(f"READER NAME {reader.name}")
                 response = None
                 if sentence_ix > 0 and reader.ref_preds[-2] is not None:
                     # update belief given partner response to our utterances
@@ -586,6 +587,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     utt_str = np.array(reader.dots)[utt.astype(bool)]
                     print("our prev utt")
                     print(utt_str)
+                    print("response")
+                    print(label)
                 """
                 else:
                     # if the first turn is a read, give null data for utts
