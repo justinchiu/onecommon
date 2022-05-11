@@ -19,180 +19,21 @@ from dot import Dot
 # Testing streamlit
 st.title("OneCommon Planning Visualization")
 
-#json_file = "experiments_nov-22/all_dialogues.json"
-json_file = "../../onecommon_human_experiments/dialogues_with_completion_info.json"
-
-board_json_file = "../../onecommon_human_experiments/shared_4_100.json"
-
+json_file = "../../aaai2020/experiments/data/onecommon/final_transcripts.json"
 with open(json_file, "r") as f:
     dialogues = json.load(f)
+dialogues = {
+    d["scenario"]["uuid"]: d for d in dialogues
+}
+with open('../../aaai2020/experiments/data/onecommon/static/scenarios.json', "r") as f:
+    scenario_list = json.load(f)
+boards = {
+    scenario['uuid']: scenario
+    for scenario in scenario_list
+}
 
-with open(board_json_file, "r") as f:
-    boards = json.load(f)
-    # convert boards to map
-    boards = {
-        board["uuid"]: board
-        for board in boards
-    }
-
-model_types = set([x["agent_types"]["1"] for x in dialogues])
-
-def chop_up(xs):
-    stuff = {}
-    for ty in model_types:
-        stuff[ty] = list(filter(
-            lambda x: x["opponent_type"] == ty,
-            xs,
-        ))
-    return stuff
-
-def get_complete(xs):
-    return list(filter(lambda x: x["num_players_selected"] == 2, xs))
-
-def get_selected(xs):
-    # num_players_selected is inaccurate, final selection may be dropped
-    return list(filter(
-        lambda x: x["events"][-2]["action"] == "select" and x["events"][-1]["action"] == "select",
-        xs))
-
-def get_success(xs):
-    return list(filter(lambda x: x["outcome"]["reward"] == 1 and x["num_players_selected"] == 2, xs))
-
-def apply(dxs, fn):
-    d = {}
-    for ty, xs in dxs.items():
-        d[ty] = fn(xs)
-    return d
-
-def get_rates(dxs):
-    rates = apply(
-        dxs,
-        lambda xs: len(get_success(xs)) / len(get_complete(xs)),
-    )
-    completed = apply(
-        dxs,
-        lambda xs: len(get_complete(xs)),
-    )
-    return rates, completed
-
-# heuristics
-def min_len(L, xs):
-    return [x for x in xs if len(x["dialogue"]) > L]
-
-def dialogue_has_words(x, words):
-    has_any = False
-    for _, utt in x["dialogue"]:
-        utt = utt.lower().split()
-        for word in words:
-            has_any |= word in utt
-    return has_any
-
-def has_spatial_word(xs):
-    words = [
-        "left",
-        "right",
-        "above",
-        "near",
-        "close",
-        "alone",
-        "far",
-        "top",
-        "below",
-        "bottom",
-        "dark",
-        "light",
-        "black",
-        "grey",
-        "gray",
-    ]
-    return [x for x in xs if dialogue_has_words(x, words)]
-
-def has_utt_len(x, L):
-    has_long0 = False
-    has_long1 = False
-    for agent, utt in x["dialogue"]:
-        utt = utt.lower().split()
-        if agent == 0:
-            has_long0 |= len(utt) >= L
-        else:
-            has_long1 |= len(utt) >= L
-    return has_long0 and has_long1
-
-def min_utt_len(L, xs):
-    return [x for x in xs if has_utt_len(x, L)]
-
-def apply_mul(dxs, fns):
-    d = {}
-    for ty, xs in dxs.items():
-        acc = xs
-        for fn in fns:
-            acc = fn(acc)
-        d[ty] = acc
-    return d
-
-# get success rates?
-dialogues_by_ty = chop_up(get_complete(dialogues))
-finished_dialogues_by_ty = chop_up(get_selected(dialogues))
-
-def visualize_board(left_dots, right_dots, select0, select1, intersect):
-    shift = 430
-
-    left_dots_html = map(lambda x: x.html(), left_dots)
-    right_dots_html = map(lambda x: x.html(shift), right_dots)
-
-    intersect_dots = map(lambda x: x.intersect_html(), intersect)
-
-    select_left = list(filter(lambda x: int(x.id) == select0, left_dots))[0]
-    select_right = list(filter(lambda x: int(x.id) == select1, right_dots))[0]
-
-
-    nl = "\n"
-    html = f"""
-    <svg width="860" height="430">
-    <circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
-    {nl.join(left_dots_html)}
-    {nl.join(intersect_dots)}
-    {select_left.select_html()}
-    <circle cx="645" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
-    {nl.join(right_dots_html)}
-    {select_right.select_html(shift=shift)}
-    </svg>
-    """
-    components.html(html, height=430, width=860)
-
-def visualize_dialogue(dialogue):
-    st.table(dialogue)
-
-"""
-train_json_file = "../../aaai2020/experiments/data/onecommon/final_transcripts.json"
-with open(train_json_file, "r") as f:
-    train_dialogues = json.load(f)
-id2dialogue = {x["scenario_uuid"]: x for x in train_dialogues}
-def process_dialogue(dialogue_dict):
-    scenario_id = dialogue_dict["scenario_id"]
-    dialogue = dialogue_dict["dialogue"]
-    agent_types = dialogue_dict["agent_types"]
-
-    reward = dialogue_dict["outcome"]["reward"]
-    event0 = dialogue_dict["events"][-2]
-    event1 = dialogue_dict["events"][-1]
-    select0 = int((event0["data"] if event0["agent"] == 0 else event1["data"]).replace("\"", ""))
-    select1 = int((event0["data"] if event1["agent"] == 0 else event1["data"]).replace("\"", ""))
-
-
-    board = boards[scenario_id]
-    st.write(f"Chat scenario id: {scenario_id}")
-    st.write("SUCCESS" if reward else "FAILURE")
-
-    b0 = [Dot(x) for x in board["kbs"][0]]
-    b1 = [Dot(x) for x in board["kbs"][1]]
-    intersect = [x for x in b0 for y in b1 if x.id == y.id]
-
-    visualize_board(b0, b1, select0, select1, intersect)
-
-    st.write(f"Agent 0: {agent_types['0']} || 1: {agent_types['1']}")
-    visualize_dialogue(dialogue)
-"""
+analysis_path = Path("../../aaai2020/experiments/analysis_log")
+scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
 def visualize_board(
     left_dots, right_dots,
@@ -255,7 +96,7 @@ def process_dialogue(scenario_id, dialogue):
 
     st.header("Dialogue so far")
     for t in range(turn):
-        st.write(f"u: {dialogue[t]['utterance_language']} || r: {dialogue[t]['response_language']}")
+        st.write(f"Agent {dialogue[t]['writer_id']}: {dialogue[t]['utterance_language']}")
 
     turn = dialogue[turn]
 
@@ -263,6 +104,7 @@ def process_dialogue(scenario_id, dialogue):
         "prior",
         "plan", "plan2", "plan3",
         "posterior", "posterior2", "posterior3",
+        "priorbeam", "planbeam",
     ))
 
     if display == "prior":
@@ -270,10 +112,10 @@ def process_dialogue(scenario_id, dialogue):
         prior_mentions = turn["prior_mentions"]
         if prior_mentions is not None:
             prior_idx = st.radio("Prior number", np.arange(len(prior_mentions)))
-            if turn["agent_id"] == 0:
+            if turn["writer_id"] == 0:
                 mention0 = [x for i,x in enumerate(b0) if prior_mentions[prior_idx][i] == 1]
                 mention1 = None
-            elif turn["agent_id"] == 1:
+            elif turn["writer_id"] == 1:
                 mention1 = [x for i,x in enumerate(b1) if prior_mentions[prior_idx][i] == 1]
                 mention0 = None
             visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
@@ -289,30 +131,36 @@ def process_dialogue(scenario_id, dialogue):
             plan_mentions = turn["plan3_mentions"]
         if plan_mentions is not None:
             plan_idx = st.radio("Plan number", np.arange(len(plan_mentions)))
-            if turn["agent_id"] == 0:
+            if turn["writer_id"] == 0:
                 mention0 = [x for i,x in enumerate(b0) if plan_mentions[plan_idx][i] == 1]
                 mention1 = None
-            elif turn["agent_id"] == 1:
+            elif turn["writer_id"] == 1:
                 mention1 = [x for i,x in enumerate(b1) if plan_mentions[plan_idx][i] == 1]
                 mention0 = None
             visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
         else:
             st.write("No plan mentions")
     elif display == "posterior" or display == "posterior2" or display == "posterior3":
-        st.header("Input and belief posterior")    
-        st.write(f"Input utterance: {turn['utterance_language']} || response: {turn['response_language']}")
-        if turn["agent_id"] == 0:
+        st.header(f"Input and belief posterior for agent {turn['reader_id']}")    
+        st.write(f"Utterance from agent {turn['writer_id']}: {turn['utterance_language']}")
+        if turn["reader_id"] == 0:
             mention0 = (
-                [x for i,x in enumerate(b0) if turn["utterance"][i] == 1]
-                if turn["utterance"] is not None else None
+                [x for i,x in enumerate(b0) if turn["response_utt"][i] == 1]
+                if turn["response_utt"] is not None else None
             )
-            mention1 = None
-        elif turn["agent_id"] == 1:
             mention1 = (
                 [x for i,x in enumerate(b1) if turn["utterance"][i] == 1]
                 if turn["utterance"] is not None else None
             )
-            mention0 = None
+        elif turn["reader_id"] == 1:
+            mention0 = (
+                [x for i,x in enumerate(b0) if turn["utterance"][i] == 1]
+                if turn["utterance"] is not None else None
+            )
+            mention1 = (
+                [x for i,x in enumerate(b1) if turn["response_utt"][i] == 1]
+                if turn["response_utt"] is not None else None
+            )
         if display == "posterior":
             marginals = turn["marginal_belief"]
         elif display == "posterior2":
@@ -321,30 +169,52 @@ def process_dialogue(scenario_id, dialogue):
             marginals = turn["marginal_belief3"]
         visualize_board(
             b0, b1, mention0, mention1, intersect0, intersect1,
-            left_beliefs=marginals if turn["agent_id"] == 0 else None,
-            right_beliefs=marginals if turn["agent_id"] == 1 else None,
+            left_beliefs=marginals if turn["reader_id"] == 0 else None,
+            right_beliefs=marginals if turn["reader_id"] == 1 else None,
         )
         if display == "posterior":
             belief = turn["belief"]
+            configs = turn["configs"]
         elif display == "posterior2":
             belief = turn["belief2"]
+            configs = turn["configs2"]
         elif display == "posterior3":
             belief = turn["belief3"]
+            configs = turn["configs3"]
+        logits = ", ".join([f"{x:.2f}" for x in turn["response_logits"]])
+        st.write(f"Response: {turn['response_label']}, logits: [{logits}]")
         visualize_beliefs(
-            b0 if turn["agent_id"] == 0 else b1,
-            turn["configs"],
+            b0 if turn["reader_id"] == 0 else b1,
+            configs,
             belief,
         )
-
+    elif display == "priorbeam" or display == "planbeam":
+        st.write(f"### BEAM SEARCH for agent {turn['writer_id']}")
+        mentions = turn["prior_plan" if display == "priorbeam" else "plan_beam_seed"]
+        resolved = turn["prior_beam_ref_res" if display == "priorbeam" else "plan_beam_ref_res"]
+        if display == "priorbeam":
+            mentions = np.array(turn["prior_plan"]).any(0)[0]
+        if turn["writer_id"] == 0:
+            mention0 = [x for i,x in enumerate(b0) if mentions[i] == 1]
+            mention1 = [x for i,x in enumerate(b1) if resolved[i] == 1]
+        elif turn["writer_id"] == 1:
+            mention0 = [x for i,x in enumerate(b0) if resolved[i] == 1]
+            mention1 = [x for i,x in enumerate(b1) if mentions[i] == 1]
+        visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
+        sents = turn["prior_beam_sents" if display == "priorbeam" else "plan_beam_sents"]
+        ref_res = turn["prior_beam_ref_res" if display == "priorbeam" else "plan_beam_ref_res"]
+        lm = turn["prior_beam_lm" if display == "priorbeam" else "plan_beam_lm"]
+        for s,r,l in sorted(zip(sents, ref_res, lm), reverse=True, key=lambda x: x[1]):
+            st.write(s)
+            st.write(f"Ref res {r:.2f} LM {l:.2f}")
 
 
 dir = "../../aaai2020/experiments/analysis_log"
-scenario_id = "S_pGlR0nKz9pQ4ZWsw"
-#scenario_id = "S_n0ocL412kqOAl9QR"
+idx = st.number_input("Scenario number", 0, len(scenarios))
+scenario_id = scenarios[idx]
 
-filepath = (Path(dir) / scenario_id).with_suffix(".json")
+filepath = (analysis_path/ scenario_id).with_suffix(".json")
 
 with filepath.open() as f:
     dialogue = json.load(f)
-
-process_dialogue(scenario_id, dialogue)
+    process_dialogue(scenario_id, dialogue)

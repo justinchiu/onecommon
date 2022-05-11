@@ -55,7 +55,7 @@ for scenario in scenarios:
         dot_ids = np.array([[int(d["id"]) for d in ds] for ds in dots])
 
         for turn in turns:
-            agent_id = turn["agent_id"]
+            agent_id = turn["writer_id"]
 
             our_dots = dot_ids[0 if agent_id == 0 else 1]
             their_dots = dot_ids[0 if agent_id != 0 else 1]
@@ -102,3 +102,5 @@ print(f"Prior num turns: {prior_num_turns}, num zeros: {prior_zeros}")
 print("Plan")
 print(f"A: {plan_ambiguous}, U: {plan_unresolvable}, S: {plan_specific}")
 print(f"Plan num turns: {plan_num_turns}, num zeros: {plan_zeros}")
+
+
