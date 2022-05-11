@@ -32,8 +32,6 @@ boards = {
     for scenario in scenario_list
 }
 
-analysis_path = Path("../../aaai2020/experiments/analysis_log")
-scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
 def visualize_board(
     left_dots, right_dots,
@@ -190,8 +188,9 @@ def process_dialogue(scenario_id, dialogue):
         )
     elif display == "priorbeam" or display == "planbeam":
         st.write(f"### BEAM SEARCH for agent {turn['writer_id']}")
-        mentions = turn["prior_plan" if display == "priorbeam" else "plan_beam_seed"]
-        resolved = turn["prior_beam_ref_res" if display == "priorbeam" else "plan_beam_ref_res"]
+        mentions = turn["plan_beam_seed"]
+        resolved = turn["prior_partner_ref" if display == "priorbeam" else "plan3_partner_ref"]
+        resolved = np.array(resolved).any(0)[0]
         if display == "priorbeam":
             mentions = np.array(turn["prior_plan"]).any(0)[0]
         if turn["writer_id"] == 0:
@@ -201,6 +200,10 @@ def process_dialogue(scenario_id, dialogue):
             mention0 = [x for i,x in enumerate(b0) if resolved[i] == 1]
             mention1 = [x for i,x in enumerate(b1) if mentions[i] == 1]
         visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
+        st.write("### chosen utterance")
+        st.write(turn["prior_mentions_language"
+            if display == "priorbeam" else "plan3_mentions_language"])
+        st.write("### beam output")
         sents = turn["prior_beam_sents" if display == "priorbeam" else "plan_beam_sents"]
         ref_res = turn["prior_beam_ref_res" if display == "priorbeam" else "plan_beam_ref_res"]
         lm = turn["prior_beam_lm" if display == "priorbeam" else "plan_beam_lm"]
@@ -208,8 +211,11 @@ def process_dialogue(scenario_id, dialogue):
             st.write(s)
             st.write(f"Ref res {r:.2f} LM {l:.2f}")
 
+split = "train"
+#split = "valid"
+analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
+scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
-dir = "../../aaai2020/experiments/analysis_log"
 idx = st.number_input("Scenario number", 0, len(scenarios))
 scenario_id = scenarios[idx]
 

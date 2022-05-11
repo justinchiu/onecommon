@@ -36,7 +36,9 @@ boards = {
     for scenario in scenario_list
 }
 
-analysis_path = Path("../../aaai2020/experiments/analysis_log")
+split = "train"
+#split = "valid"
+analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
 prior_ambiguous, prior_unresolvable, prior_specific = 0,0,0
