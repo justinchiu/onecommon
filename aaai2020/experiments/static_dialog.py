@@ -481,6 +481,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 inference="sample",
             )
             writer.args.reranking_confidence = True
+            # check writer.ref_outs and writer.ref_preds
+            #import pdb; pdb.set_trace()
 
             # LOGGING
             #if writer.agent_id == YOU:
@@ -562,6 +564,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 detect_markables=True,
                 is_selection=this_is_selection,
             )
+            # check reader.partner_ref_outs and writer.partner_ref_preds
+            #import pdb; pdb.set_trace
 
             # MBP
             #if reader.agent_id == YOU:
@@ -654,8 +658,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     print(utt_str)
 
                 self.dialog_logger.add_turn_resp(
-                    response_language = SENTENCES[sentence_ix+1]
-                        if sentence_ix < len(SENTENCES)-1 else None,
+                    #response_language = SENTENCES[sentence_ix+1]
+                        #if sentence_ix < len(SENTENCES)-1 else None,
+                    response_language = None,
                     response = response,
                     belief = ps1,
                     marginal_belief = marginals1,

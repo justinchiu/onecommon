@@ -128,18 +128,17 @@ class BeliefAgent(RnnAgent):
 
         output = super().write(
             force_dots_mentioned = dots_mentioned_per_ref_to_force is not None,
-            dots_mentioned_per_ref_to_force=dots_mentioned_per_ref_to_force,
+            dots_mentioned_per_ref_to_force = dots_mentioned_per_ref_to_force,
+            force_words = force_words,
             *args, **kwargs,
         )
 
-        """
         if force_words is not None:
             # set plan to the resolved refs of the forced utt
             plan = (self.ref_preds[-1].any(0)[0].cpu().int().numpy()
                 if self.ref_preds[-1] is not None
                 else None
             )
-        """
 
         # add plan to next_mention_plan history
         self.next_mention_plans.append(plan)

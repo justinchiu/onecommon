@@ -201,6 +201,8 @@ def main():
         train_data_path = "data/onecommon/final_transcripts.json"
         with open(train_data_path, "r") as f:
             dialogues = json.load(f)
+        if args.must_contain is not None:
+            dialogues = [d for d in dialogues if d["scenario"]["uuid"] in args.must_contain]
         # hack must_contain to include dialogues in final_transcripts
         must_contain = [d["scenario"]["uuid"] for d in dialogues]
 
