@@ -32,8 +32,9 @@ rerank_args4="--must_contain S_rguqGgNYfrnW7AFz"
 rerank_args4=""
 
 split=train
-#split=valid
-context_file="${split}_context_9"
+split=valid
+seed=1
+context_file="${split}_context_${seed}"
 logdir="analysis_log/${split}"
 
 python -u test_planning_static.py \

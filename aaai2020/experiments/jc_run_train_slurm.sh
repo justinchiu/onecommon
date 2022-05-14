@@ -15,6 +15,6 @@
 
 source /home/jtc257/.bashrc
 py111env
-source jc_run_train.sh
-indicator-confirm-mean 9
-
+#source jc_run_train.sh
+#indicator-confirm-mean 9
+bash jc_run_test_static_plan.sh
