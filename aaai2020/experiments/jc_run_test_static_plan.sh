@@ -29,13 +29,30 @@ rerank_args3=" --reranking_confidence_type keep_best"
 
 #rerank_args4="--must_contain S_pGlR0nKz9pQ4ZWsw S_n0ocL412kqOAl9QR S_hxYVpiz9A5jI6fyd S_JnKzqWlH9GP4ajch"
 rerank_args4="--must_contain S_rguqGgNYfrnW7AFz"
-rerank_args4=""
+rerank_args4="--must_contain \
+S_SXTkzYMf65Txohx1 \
+S_d1A25BOwQKs9ea96 \
+S_CGIVg5Xg4PX8Cb1u \
+S_vNh9L6L87GQlSQBd \
+S_Hacog9vt6Ezr19YQ \
+S_iOLJUUUVcUGzaIMi \
+S_sqkWqU9oCt7gPCNj \
+S_pqC0O80Ojf5BKLyV \
+S_prpoeEF96KCoJSNQ \
+S_quuRrcGUJVSDQYau \
+S_PYif71iPEFrO4ACc \
+S_NUwkRTnWCDZH0dox \
+S_hjX5jTcQ73bzhon0 \
+S_4HAFEDGI61j0QePK \
+S_VN8fzF9YgHtzXDsX "
 
 split=train
 split=valid
 seed=1
 context_file="${split}_context_${seed}"
-logdir="analysis_log/${split}"
+logdir="analysis_log/${split}_${seed}"
+
+mkdir -p ${logdir}
 
 python -u test_planning_static.py \
   --alice_model_file=${model_dir_a}/1_ep-12.th \
