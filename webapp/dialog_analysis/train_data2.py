@@ -1,6 +1,8 @@
 import streamlit as st
 import streamlit.components.v1 as components
 
+from pathlib import Path
+
 from functools import partial
 
 import random
@@ -101,8 +103,9 @@ def process_dialogue(dialogue_dict):
     intersect1 = [x for x in b1 for y in b0 if x.id == y.id]
 
     reward = dialogue_dict["outcome"]["reward"]
-    event0 = dialogue_dict["events"][-2]
-    event1 = dialogue_dict["events"][-1]
+    print(dialogue_dict["events"])
+    event0 = [x for x in dialogue_dict["events"] if x["agent"] == 0 and x["action"] == "select"][-1]
+    event1 = [x for x in dialogue_dict["events"] if x["agent"] == 0 and x["action"] == "select"][-1]
     select_id0 = int((event0["data"] if event0["agent"] == 0 else event1["data"]).replace("\"", ""))
     select_id1 = int((event0["data"] if event1["agent"] == 0 else event1["data"]).replace("\"", ""))
     # set mentions = [selections]
@@ -127,6 +130,28 @@ id2dialogueidx = {
     for i, x in enumerate(finished_dialogues)
 }
 
+def intersect_size(dialogue_dict):
+    id = dialogue_dict["uuid"]
+    scenario_id = dialogue_dict["scenario_uuid"]
+    dialogue = get_dialogue(dialogue_dict)
+    board = dialogue_dict["scenario"]
+    agent_types = dialogue_dict["agents"]
+
+    b0 = [Dot(x) for x in board["kbs"][0]]
+    b1 = [Dot(x) for x in board["kbs"][1]]
+    intersect0 = [x for x in b0 for y in b1 if x.id == y.id]
+    intersect1 = [x for x in b1 for y in b0 if x.id == y.id]
+    assert len(intersect0) == len(intersect1)
+    return len(intersect0)
+
+isize = st.number_input("Intersect size", 4, 6)
+my_dialogues = {x["scenario_uuid"]: x for x in finished_dialogues if intersect_size(x) == isize}
+
+scenario_path = Path("../../aaai2020/experiments/data/onecommon/static/valid_context_1.txt")
+with scenario_path.open() as f:
+    scenarios = [line.strip() for line in f if line[0] == "S"]
+    scenarios = [x for x in scenarios if x in my_dialogues]
+
 #st.write(f"Dialogue idxs: {dialogue_idxs}")
 #dialogue_id = st.select_slider("Dialogue number", options=list(range(len(dialogue_idxs))))
 
@@ -136,5 +161,5 @@ id2dialogueidx = {
 
 # inspect train / valid partner models
 
-idx = st.select_slider("Train dialogue number", options=list(range(len(finished_dialogues))))
-process_dialogue(finished_dialogues[idx])
+idx = st.number_input("Train dialogue number", 0, len(scenarios))
+process_dialogue(my_dialogues[scenarios[idx]])
