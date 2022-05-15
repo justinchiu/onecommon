@@ -212,7 +212,7 @@ def process_dialogue(scenario_id, dialogue):
             st.write(f"Ref res {r:.2f} LM {l:.2f}")
 
 split = "train"
-#split = "valid"
+split = "valid_1"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 

@@ -103,7 +103,6 @@ def process_dialogue(dialogue_dict):
     intersect1 = [x for x in b1 for y in b0 if x.id == y.id]
 
     reward = dialogue_dict["outcome"]["reward"]
-    print(dialogue_dict["events"])
     event0 = [x for x in dialogue_dict["events"] if x["agent"] == 0 and x["action"] == "select"][-1]
     event1 = [x for x in dialogue_dict["events"] if x["agent"] == 0 and x["action"] == "select"][-1]
     select_id0 = int((event0["data"] if event0["agent"] == 0 else event1["data"]).replace("\"", ""))
