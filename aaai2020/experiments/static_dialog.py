@@ -282,7 +282,12 @@ class StaticHierarchicalDialog(HierarchicalDialog):
         device = self.agents[0].state.ctx_h.device
 
         # Agent 0 always goes first (static)
-        writer, reader = self.agents
+        # oh shit, this is wrong.
+        # check first event in static dialogue!
+        if self.dialogues[scenario_id]["events"][0]["agent"] == 0:
+            writer, reader = self.agents
+        else:
+            reader, writer = self.agents
         # first player depends on game
         if scenario_id == "S_n0ocL412kqOAl9QR":
             # Agent 1 (YOU) goes first
