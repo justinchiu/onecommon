@@ -449,11 +449,12 @@ class OrBelief(OrAndBelief):
         # get all dot combinations of size utt_size
         config_ids = arange[config.astype(bool)]
         combs = np.array(list(itertools.combinations(config_ids, utt_size)))
+        # will check permutations within combinations below (batched)
         for comb in combs:
             comb_sc = size_color[comb]
             comb_xy = xy[comb]
 
-            # this checks if all dots have a match, just to filter?
+            # filters if all dots have a match with unary features
             sc_match = (utt_sc[:,None] == comb_sc[None,:]).all(-1).any(1).all()
 
             if sc_match:
@@ -471,6 +472,67 @@ class OrBelief(OrAndBelief):
                     if xy_match:
                         return True
         return False
+
+    def get_feats(self, utt):
+        utt_size = utt.sum().item()
+        utt_sc = self.size_color[utt.astype(bool)]
+        utt_xy = self.xy[utt.astype(bool)]
+        return utt_size, utt_sc, utt_xy
+
+    def resolve_utt(self, utt_size, utt_sc, utt_xy):
+        # helper function for resolving utterances to our context
+        # based on shape / color and relative xy locations
+        # somewhat repeated code
+         
+        size_color = self.size_color
+        xy = self.xy
+
+        #utt_size = utt.sum().item()
+        #config_size = config.sum().item()
+        config_size = self.num_dots
+        if utt_size == 0 or config_size == 0:
+            return False
+
+        #utt_sc = size_color[utt.astype(bool)]
+        #utt_xy = xy[utt.astype(bool)]
+        if utt_size == 1:
+            return (utt_sc == size_color).all(-1).any()
+
+        arange = np.arange(self.num_dots)
+        perms = np.array(list(itertools.permutations(np.arange(utt_size))))
+        num_perms = perms.shape[0]
+        pairwise_combs = np.array(list(itertools.combinations(np.arange(utt_size), 2)))
+
+        utt_pairwise_xy = utt_xy[pairwise_combs]
+        utt_rel_xy = utt_pairwise_xy[:,0] > utt_pairwise_xy[:,1]
+
+        # get all dot combinations of size utt_size
+        config_ids = arange
+        combs = np.array(list(itertools.combinations(config_ids, utt_size)))
+        matches = []
+        # will check permutations within combinations below (batched)
+        for comb in combs:
+            comb_sc = size_color[comb]
+            comb_xy = xy[comb]
+
+            # filters if all dots have a match with unary features
+            sc_match = (utt_sc[:,None] == comb_sc[None,:]).all(-1).any(1).all()
+
+            if sc_match:
+                # check if there is a permutation that matches
+                sc_perms = comb_sc[perms]
+                xy_perms = comb_xy[perms]
+
+                sc_matches = (utt_sc == sc_perms).reshape(num_perms, -1).all(-1)
+                xy_potential_matches = xy_perms[sc_matches]
+                for xy_config in xy_potential_matches:
+                    config_pairwise_xy = xy_config[pairwise_combs]
+                    config_rel_xy = config_pairwise_xy[:,0] > config_pairwise_xy[:,1]
+
+                    xy_match = (utt_rel_xy == config_rel_xy).all()
+                    if xy_match:
+                        matches.append(comb)
+        return matches
 
     def joint(self, prior, utt):
         # p(r | u,s)
@@ -728,4 +790,6 @@ if __name__ == "__main__":
     utt = np.array([1,0,1,1,0,0,0])
 
     belief = OrBelief(num_dots, ctx)
-    can_resolve = belief.can_resolve_utt(utt)
+    utt_feats = belief.get_feats(utt)
+    matches = belief.resolve_utt(*utt_feats)
+    import pdb; pdb.set_trace()
