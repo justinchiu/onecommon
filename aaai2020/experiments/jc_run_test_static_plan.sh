@@ -51,6 +51,9 @@ S_RWYCZVdTDVyxpjWr \
 S_XIvcA4MT8hC0zN9M \
 S_MMCMJd56CCUER6gV "
 
+#rerank_args4="--must_contain S_pqC0O80Ojf5BKLyV"
+#rerank_args4="--must_contain S_RWYCZVdTDVyxpjWr"
+
 split=train
 split=valid
 seed=1
