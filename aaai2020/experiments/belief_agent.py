@@ -120,7 +120,7 @@ class BeliefAgent(RnnAgent):
             # TODO: MULTIPLE PLANS
             plan = cs[0]
             # convert plan to dots_mentioned
-            dots_mentioned = expand_plan(plan)
+            dots_mentioned = torch.tensor(expand_plan(plan))
             # heuristic: produce next mentions per ref
             #dots_mentioned_per_ref_to_force = [dots_mentioned]
             # dots_mentioned_per_ref_to_force: num_mentions x bsz=1 x num_dots=7

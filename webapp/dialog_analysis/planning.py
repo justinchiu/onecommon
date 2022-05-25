@@ -83,6 +83,7 @@ def visualize_beliefs(dots, configs, belief):
 def process_dialogue(scenario_id, dialogue):
     board = boards[scenario_id]
     st.write(f"Chat scenario id: {scenario_id}")
+    st.write(f"Num turns: {len(dialogue)}")
 
     b0 = [Dot(x) for x in board["kbs"][0]]
     b1 = [Dot(x) for x in board["kbs"][1]]

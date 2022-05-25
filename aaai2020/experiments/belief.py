@@ -6,8 +6,6 @@ import numpy as np
 from scipy.special import logsumexp as lse
 from scipy.special import comb
 
-import torch
-
 #random.seed(1234)
 #np.random.seed(1234)
 
@@ -48,7 +46,7 @@ def expand_plan(plan):
         mentions = np.zeros((num_dots + 1, 1, 7))
         mentions[0,0] = plan
         mentions[np.arange(1,num_dots+1), 0, plan.nonzero()[0]] = 1
-    return torch.tensor(mentions)
+    return mentions
 
 class Dot:
     def __init__(self, item):
