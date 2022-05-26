@@ -49,9 +49,11 @@ prior_num_turns = 0
 plan_num_turns = 0
 prior_zeros, plan_zeros = 0,0
 
-labels_prior = Counter()
-labels_ablate = Counter()
-labels = Counter()
+labels_prior = {x: Counter() for x in range(4,7)}
+labels_ablate = {x: Counter() for x in range(4,7)}
+labels = {x: Counter() for x in range(4,7)}
+
+num_scenarios = Counter()
 
 for scenario in scenarios:
     with (analysis_path / scenario).with_suffix(".json").open() as f:
@@ -61,15 +63,17 @@ for scenario in scenarios:
 
         dots = board["kbs"]
         dot_ids = np.array([[int(d["id"]) for d in ds] for ds in dots])
+        intersection_size = len(set(dot_ids[0]).intersection(set(dot_ids[1])))
+        num_scenarios[intersection_size] += 1
 
         for turn in turns:
             agent_id = turn["writer_id"]
 
             # PLAN FEATURE LABELS
             if "label_prior" in turn:
-                labels_prior[turn["label_prior"]] += 1
-                labels_ablate[turn["label_ablate"]] += 1
-                labels[turn["label"]] += 1
+                labels_prior[intersection_size][turn["label_prior"]] += 1
+                labels_ablate[intersection_size][turn["label_ablate"]] += 1
+                labels[intersection_size][turn["label"]] += 1
             # / PLAN FEATURE LABELS
 
             our_dots = dot_ids[0 if agent_id == 0 else 1]
@@ -118,11 +122,23 @@ print("Plan")
 print(f"A: {plan_ambiguous}, U: {plan_unresolvable}, S: {plan_specific}")
 print(f"Plan num turns: {plan_num_turns}, num zeros: {plan_zeros}")
 
+
+def print_labels(labels):
+    for k in labels.keys():
+        print(f"Intersect size: {k}")
+        print(f"E: {labels[k][0]}, C: {labels[k][1]}, U: {labels[k][2]}, S: {labels[k][3]}")
+    sum_labels = labels[4] + labels[5] + labels[6]
+    print(f"Total")
+    print(f"E: {sum_labels[0]}, C: {sum_labels[1]}, U: {sum_labels[2]}, S: {sum_labels[3]}")
+
 print()
 print("PLAN FEATURE EVALUATION")
 print("Prior")
-print(f"E: {labels_prior[0]}, C: {labels_prior[1]}, U: {labels_prior[2]}, S: {labels_prior[3]}")
+print_labels(labels_prior)
 print("Ablate")
-print(f"E: {labels_ablate[0]}, C: {labels_ablate[1]}, U: {labels_ablate[2]}, S: {labels_ablate[3]}")
+print_labels(labels_ablate)
 print("Label")
-print(f"E: {labels[0]}, C: {labels[1]}, U: {labels[2]}, S: {labels[3]}")
+print_labels(labels)
+
+print("Num scenarios by intersection size")
+print(num_scenarios)
