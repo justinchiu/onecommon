@@ -5,6 +5,8 @@ from pathlib import Path
 
 from functools import partial
 
+from collections import Counter
+
 import random
 import json
 from functools import partial
@@ -47,6 +49,10 @@ prior_num_turns = 0
 plan_num_turns = 0
 prior_zeros, plan_zeros = 0,0
 
+labels_prior = Counter()
+labels_ablate = Counter()
+labels = Counter()
+
 for scenario in scenarios:
     with (analysis_path / scenario).with_suffix(".json").open() as f:
         turns = json.load(f)
@@ -58,6 +64,13 @@ for scenario in scenarios:
 
         for turn in turns:
             agent_id = turn["writer_id"]
+
+            # PLAN FEATURE LABELS
+            if "label_prior" in turn:
+                labels_prior[turn["label_prior"]] += 1
+                labels_ablate[turn["label_ablate"]] += 1
+                labels[turn["label"]] += 1
+            # / PLAN FEATURE LABELS
 
             our_dots = dot_ids[0 if agent_id == 0 else 1]
             their_dots = dot_ids[0 if agent_id != 0 else 1]
@@ -105,4 +118,11 @@ print("Plan")
 print(f"A: {plan_ambiguous}, U: {plan_unresolvable}, S: {plan_specific}")
 print(f"Plan num turns: {plan_num_turns}, num zeros: {plan_zeros}")
 
-
+print()
+print("PLAN FEATURE EVALUATION")
+print("Prior")
+print(f"E: {labels_prior[0]}, C: {labels_prior[1]}, U: {labels_prior[2]}, S: {labels_prior[3]}")
+print("Ablate")
+print(f"E: {labels_ablate[0]}, C: {labels_ablate[1]}, U: {labels_ablate[2]}, S: {labels_ablate[3]}")
+print("Label")
+print(f"E: {labels[0]}, C: {labels[1]}, U: {labels[2]}, S: {labels[3]}")
