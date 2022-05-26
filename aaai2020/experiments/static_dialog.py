@@ -21,7 +21,9 @@ from agent import GenerationOutput
 from belief_agent import BeliefAgent
 from belief import (
     AndOrBelief, OrAndBelief, OrBelief, OrAndOrBelief,
+    ConfigBelief,
     process_ctx, expand_plan,
+    Label, label_config_sets,
 )
 
 """
@@ -138,6 +140,19 @@ class StaticDialogLogger:
         plan_beam_ref_res = None,
         plan_beam_lm = None,
         plan_beam_seed = None,
+        # PLAN FEATURE LABEL,
+        plan_prior = None,
+        writer_configs_prior = None,
+        reader_configs_prior = None,
+        label_prior = None,
+        plan_ablate = None,
+        writer_configs_ablate = None,
+        reader_configs_ablate = None,
+        label_ablate = None,
+        plan = None,
+        writer_configs = None,
+        reader_configs = None,
+        label = None,
     ):
         self.turn["all_configs"] = configs
         self.turn["utterance_language"] = utterance_language
@@ -167,6 +182,21 @@ class StaticDialogLogger:
         self.turn["plan_beam_ref_res"] = plan_beam_ref_res
         self.turn["plan_beam_lm"] = plan_beam_lm
         self.turn["plan_beam_seed"] = plan_beam_seed
+        # PLAN FEATURE LABEL
+        self.turn["plan_prior"] = plan_prior
+        self.turn["writer_configs_prior"] = writer_configs_prior
+        self.turn["reader_configs_prior"] = reader_configs_prior
+        self.turn["label_prior"] = label_prior
+
+        self.turn["plan_ablate"] = plan_ablate
+        self.turn["writer_configs_ablate"] = writer_configs_ablate
+        self.turn["reader_configs_ablate"] = reader_configs_ablate
+        self.turn["label_ablate"] = label_ablate
+
+        self.turn["plan"] = plan
+        self.turn["writer_configs"] = writer_configs
+        self.turn["reader_configs"] = reader_configs
+        self.turn["label"] = label
 
     def add_turn_resp(
         self,
@@ -268,10 +298,11 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             agent.belief1 = OrAndBelief(num_dots)
             agent.prior1 = agent.belief1.prior
 
+            agent.dots = np.array(real_ids, dtype=int)
+
             # ctx: [x, y, size, color]
-            agent.belief2 = OrAndOrBelief(num_dots, ctx)
+            agent.belief2 = ConfigBelief(num_dots, ctx)
             agent.prior2 = agent.belief2.prior
-            agent.dots = ctxs[2][agent_id]
 
             start_time = time.perf_counter()
             agent.belief3 = OrBelief(num_dots, ctx)
@@ -434,7 +465,35 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             end_time = time.perf_counter()
             print(f"Took {end_time - start_time}s to plan with OrBelief")
 
-            #import pdb; pdb.set_trace()
+            # plan feature level labels
+            # get the plan resolution sets for prior model
+            plan_prior = prior_ref[0].any(0).astype(int)
+            feats_prior = writer.belief3.get_feats(plan_prior)
+            writer_matches_prior = writer.belief3.resolve_utt(*feats_prior)
+            reader_matches_prior = reader.belief3.resolve_utt(*feats_prior)
+            writer_configs_prior = writer.dots[writer_matches_prior]
+            reader_configs_prior = reader.dots[reader_matches_prior]
+            label_prior = label_config_sets(writer_configs_prior, reader_configs_prior)
+
+            # get the plan resolution sets for planning model w/o partner context
+            plan_ablate = cs2[0]
+            feats_ablate = writer.belief2.get_feats(plan_ablate)
+            writer_matches_ablate = writer.belief2.resolve_utt(*feats_ablate)
+            reader_matches_ablate = reader.belief2.resolve_utt(*feats_ablate)
+            writer_configs_ablate = writer.dots[writer_matches_ablate]
+            reader_configs_ablate = reader.dots[reader_matches_ablate]
+            label_ablate = label_config_sets(writer_configs_ablate, reader_configs_ablate)
+
+            # get the plan resolution sets for planning model
+            plan = cs3[0]
+            feats = writer.belief3.get_feats(plan)
+            writer_matches = writer.belief3.resolve_utt(*feats)
+            reader_matches = reader.belief3.resolve_utt(*feats)
+            writer_configs = writer.dots[writer_matches]
+            reader_configs = reader.dots[reader_matches]
+            label = label_config_sets(writer_configs, reader_configs)
+            # / plan feature level labels
+
             # PLAN ROUNDTRIP
             plan_lang = writer.write(
                 max_words=words_left,
@@ -557,6 +616,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     plan2_partner_ref = None,
                     plan3_partner_ref = plan_partner_ref.tolist()
                         if plan_partner_ref is not None else None,
+                    # BEAM SEARCH
                     prior_beam_sents = prior_beam_sents,
                     prior_beam_ref_res = prior_beam_ref_res,
                     prior_beam_lm = prior_beam_lm,
@@ -564,6 +624,19 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     plan_beam_ref_res = plan_beam_ref_res,
                     plan_beam_lm = plan_beam_lm,
                     plan_beam_seed = plan_beam_seed,
+                    # PLAN FEATURE EVALUATION
+                    plan_prior = plan_prior.tolist(),
+                    writer_configs_prior = writer_configs_prior.tolist(),
+                    reader_configs_prior = reader_configs_prior.tolist(),
+                    label_prior = label_prior.value,
+                    plan_ablate = plan_ablate.tolist(),
+                    writer_configs_ablate = writer_configs_ablate.tolist(),
+                    reader_configs_ablate = reader_configs_ablate.tolist(),
+                    label_ablate = label_ablate.value,
+                    plan = plan.tolist(),
+                    writer_configs = writer_configs.tolist(),
+                    reader_configs = reader_configs.tolist(),
+                    label = label.value,
                 )
 
             # READER

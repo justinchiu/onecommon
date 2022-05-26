@@ -1,6 +1,8 @@
 
 import math
 
+from enum import Enum
+
 import itertools
 import numpy as np
 from scipy.special import logsumexp as lse
@@ -8,6 +10,42 @@ from scipy.special import comb
 
 #random.seed(1234)
 #np.random.seed(1234)
+
+class Label(Enum):
+    ERROR = 0
+    COARSE = 1
+    UNRESOLVABLE = 2
+    SPECIFIC = 3
+
+
+def label_config_sets(writer_configs, reader_configs):
+    # writer_configs: num_writer_configs x utt_size
+    # reader_configs: num_reader_configs x utt_size
+    num_writer_configs = writer_configs.shape[0]
+    num_reader_configs = reader_configs.shape[0]
+
+    if num_writer_configs > 0 and num_reader_configs == 0:
+        return Label.UNRESOLVABLE
+    elif (
+        num_writer_configs > 0
+        and num_reader_configs > 0
+        and (writer_configs[:,None] == reader_configs[None]).all(-1).any()
+    ):
+        return Label.COARSE
+    elif (
+        num_writer_configs == 0
+        and num_reader_configs == 0
+        and (writer_configs == reader_configs).all()
+    ):
+        return Label.SPECIFIC
+    elif (
+        num_writer_configs > 0
+        and num_reader_configs > 0
+        and not (writer_configs[:,None] == reader_configs[None]).all(-1).any()
+    ):
+        return Label.ERROR
+    else:
+        raise ValueError("Unhandled config label case")
 
 def process_ctx(ctx):
     # ctx: [x, y, size, color]
@@ -491,12 +529,12 @@ class OrBelief(OrAndBelief):
         #config_size = config.sum().item()
         config_size = self.num_dots
         if utt_size == 0 or config_size == 0:
-            return False
+            return []
 
         #utt_sc = size_color[utt.astype(bool)]
         #utt_xy = xy[utt.astype(bool)]
         if utt_size == 1:
-            return (utt_sc == size_color).all(-1).any()
+            return (utt_sc == size_color).all(-1).nonzero()[0][:,None]
 
         arange = np.arange(self.num_dots)
         perms = np.array(list(itertools.permutations(np.arange(utt_size))))
@@ -532,7 +570,7 @@ class OrBelief(OrAndBelief):
                     xy_match = (utt_rel_xy == config_rel_xy).all()
                     if xy_match:
                         matches.append(comb)
-        return matches
+        return np.stack(matches) if matches else np.array([], dtype=int)
 
     def joint(self, prior, utt):
         # p(r | u,s)
@@ -555,6 +593,30 @@ class OrBelief(OrAndBelief):
             distractor_prob = 1 - comb(z,u) * 9. ** (-u)
             p_r0.append((1 - likelihood)*distractor_prob * ps)
             p_r1.append((1- (1-likelihood)*distractor_prob) * ps)
+        return np.array((p_r0, p_r1))
+
+class ConfigBelief(OrBelief):
+    def joint(self, prior, utt):
+        # p(r | u,s)
+        # prior: num_configs * 7
+        # p(r=0|u,s)p(s)
+        # = \sum_z p(s)p(z|s) p(r=0|u,s)p(r=0|u,z)
+        # = p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
+        # = p(s)(1 - p(r=1|u,s)) |z|C|u|9^-|u|
+        p_r1 = []
+        p_r0 = []
+        for s,ps in enumerate(prior):
+            state_config = self.configs[s]
+            z = self.num_dots - state_config.sum()
+            u = int(utt.sum())
+            utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
+            likelihood = self.config_likelihood[utt_idx,s].item()
+            #for i,d in enumerate(utt):
+                #if d == 1:
+                    #likelihood *= self.likelihood[1,d,state_config[i]]
+            #distractor_prob = 1 - comb(z,u) * 9. ** (-u)
+            p_r1.append(likelihood * ps)
+            p_r0.append((1 - likelihood) * ps)
         return np.array((p_r0, p_r1))
 
 class OrAndOrBelief(OrAndBelief):
