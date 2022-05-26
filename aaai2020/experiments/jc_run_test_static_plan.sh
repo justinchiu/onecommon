@@ -53,6 +53,7 @@ S_MMCMJd56CCUER6gV "
 
 #rerank_args4="--must_contain S_pqC0O80Ojf5BKLyV"
 #rerank_args4="--must_contain S_RWYCZVdTDVyxpjWr"
+rerank_args4=""
 
 split=train
 split=valid
@@ -70,7 +71,6 @@ python -u test_planning_static.py \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
   --DBG_PLAN analysis_log/${name}.json \
-  --num_contexts 20 \
   --dialog_log_dir ${logdir} \
   ${rerank_args} ${rerank_args2} ${rerank_args3} ${rerank_args4} \
   --log_file=${log_file} $@
