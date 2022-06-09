@@ -264,19 +264,18 @@ class SymbolicDialog(HierarchicalDialog):
             agent.feed_context(ctx, belief_constructor)
             agent.real_ids = real_ids
             agent.agent_id = agent_id
-
-            agent.belief1 = OrAndBelief(num_dots)
-            agent.prior1 = agent.belief1.prior
-
             agent.dots = np.array(real_ids, dtype=int)
 
+            #agent.belief1 = OrAndBelief(num_dots)
+            #agent.prior1 = agent.belief1.prior
+
             # ctx: [x, y, size, color]
-            agent.belief2 = ConfigBelief(num_dots, ctx)
-            agent.prior2 = agent.belief2.prior
+            #agent.belief2 = ConfigBelief(num_dots, ctx)
+            #agent.prior2 = agent.belief2.prior
 
             #start_time = time.perf_counter()
-            agent.belief3 = OrBelief(num_dots, ctx)
-            agent.prior3 = agent.belief3.prior
+            #agent.belief3 = OrBelief(num_dots, ctx)
+            #agent.prior3 = agent.belief3.prior
             #end_time = time.perf_counter()
             #print(f"Took {end_time - start_time}s to initialize OrBelief")
 
@@ -312,52 +311,12 @@ class SymbolicDialog(HierarchicalDialog):
 
             this_partner_num_markables = torch.LongTensor([0])
 
-            # next mention predictions from planning
-            if isinstance(writer, BeliefAgent):
-                EdHs = writer.belief.compute_EdHs(writer.prior)
-                cs, hs = writer.belief.viz_belief(EdHs, n=writer.args.next_mention_reranking_k)
-            else:
-                cs = None
-
-            EdHs1 = writer.belief1.compute_EdHs(writer.prior1)
-            cs1, hs1 = writer.belief1.viz_belief(EdHs1, n=writer.args.next_mention_reranking_k)
-
-            EdHs2 = writer.belief2.compute_EdHs(writer.prior2)
-            cs2, hs2 = writer.belief2.viz_belief(EdHs2, n=writer.args.next_mention_reranking_k)
-
-            EdHs3 = writer.belief3.compute_EdHs(writer.prior3)
-            cs3, hs3 = writer.belief3.viz_belief(EdHs3, n=writer.args.next_mention_reranking_k)
-
-            # get the plan resolution sets for planning model w/o partner context
-            plan_ablate = cs2[0]
-            feats_ablate = writer.belief2.get_feats(plan_ablate)
-            writer_matches_ablate = writer.belief2.resolve_utt(*feats_ablate)
-            reader_matches_ablate = reader.belief2.resolve_utt(*feats_ablate)
-            writer_configs_ablate = writer.dots[writer_matches_ablate]
-            reader_configs_ablate = reader.dots[reader_matches_ablate]
-            label_ablate = label_config_sets(writer_configs_ablate, reader_configs_ablate)
-
-            # get the plan resolution sets for planning model
-            plan = cs3[0]
-            feats = writer.belief3.get_feats(plan)
-            writer_matches = writer.belief3.resolve_utt(*feats)
-            reader_matches = reader.belief3.resolve_utt(*feats)
-            writer_configs = writer.dots[writer_matches]
-            reader_configs = reader.dots[reader_matches]
-            label = label_config_sets(writer_configs, reader_configs)
-            # / plan feature level labels
-
             confirm, mention_features = writer.write_symbolic()
             #import pdb; pdb.set_trace()
 
             # LOGGING
             #if writer.agent_id == YOU:
             if True:
-                print(f"{writer.name} writer dots")
-                print(writer.dots)
-                print("mbp next mentions")
-                print(cs)
-
                 #self.dialog_logger.start_turn(YOU)
                 self.dialog_logger.start_turn(
                     writer.agent_id,
@@ -365,35 +324,22 @@ class SymbolicDialog(HierarchicalDialog):
                 )
                 self.dialog_logger.add_turn_utt(
                     writer.belief.configs.tolist(),
-                    plan_mentions = cs1.tolist(),
-                    plan2_mentions = cs2.tolist(),
-                    plan3_mentions = cs3.tolist(),
-                    # PLAN FEATURE EVALUATION
-                    plan_ablate = plan_ablate.tolist(),
-                    writer_configs_ablate = writer_configs_ablate.tolist(),
-                    reader_configs_ablate = reader_configs_ablate.tolist(),
-                    label_ablate = label_ablate.value,
-                    plan = plan.tolist(),
-                    writer_configs = writer_configs.tolist(),
-                    reader_configs = reader_configs.tolist(),
-                    label = label.value,
+                    plan_mentions = writer.next_mention_plans[-1].tolist(),
                 )
 
             # READER
             reader.read_symbolic(confirm, mention_features)
-            # check reader.partner_ref_outs and writer.partner_ref_preds
-            #import pdb; pdb.set_trace
 
             # MBP
-            print(f"READER NAME {reader.name}")
+            #print(f"READER NAME {reader.name}")
             if isinstance(reader, BeliefAgent):
                 cs, ps = reader.belief.viz_belief(reader.prior, n=5)
-                print("posterior")
-                print(cs)
-                print(ps)
-                print("marginals")
+                #print("posterior")
+                #print(cs)
+                #print(ps)
+                #print("marginals")
                 marginals = reader.belief.marginals(reader.prior)
-                print([f"{x:.2f}" for x in marginals])
+                #print([f"{x:.2f}" for x in marginals])
 
             self.dialog_logger.add_turn_resp(
                 #response_language = SENTENCES[sentence_ix+1]

@@ -1212,8 +1212,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.5,
@@ -1226,7 +1226,21 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
+        "plan": null,
+        "plan2_mentions": null,
+        "plan2_mentions_language": null,
+        "plan2_partner_ref": null,
+        "plan2_plan": null,
+        "plan3_mentions": null,
+        "plan3_mentions_language": null,
+        "plan3_partner_ref": null,
+        "plan3_plan": null,
+        "plan_ablate": null,
+        "plan_beam_lm": null,
+        "plan_beam_ref_res": null,
+        "plan_beam_seed": null,
+        "plan_beam_sents": null,
+        "plan_mentions": [
             0,
             0,
             0,
@@ -1234,247 +1248,6 @@
             0,
             0,
             1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
-        "plan2_mentions_language": null,
-        "plan2_partner_ref": null,
-        "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
-        "plan3_mentions_language": null,
-        "plan3_partner_ref": null,
-        "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
-        "plan_beam_lm": null,
-        "plan_beam_ref_res": null,
-        "plan_beam_seed": null,
-        "plan_beam_sents": null,
-        "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -1487,8 +1260,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -1497,21 +1270,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -2728,8 +2488,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.4822324187696618,
@@ -2742,7 +2502,21 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
+        "plan": null,
+        "plan2_mentions": null,
+        "plan2_mentions_language": null,
+        "plan2_partner_ref": null,
+        "plan2_plan": null,
+        "plan3_mentions": null,
+        "plan3_mentions_language": null,
+        "plan3_partner_ref": null,
+        "plan3_plan": null,
+        "plan_ablate": null,
+        "plan_beam_lm": null,
+        "plan_beam_ref_res": null,
+        "plan_beam_seed": null,
+        "plan_beam_sents": null,
+        "plan_mentions": [
             0,
             0,
             0,
@@ -2750,247 +2524,6 @@
             0,
             1,
             1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
-        "plan2_mentions_language": null,
-        "plan2_partner_ref": null,
-        "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
-        "plan3_mentions_language": null,
-        "plan3_partner_ref": null,
-        "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
-        "plan_beam_lm": null,
-        "plan_beam_ref_res": null,
-        "plan_beam_seed": null,
-        "plan_beam_sents": null,
-        "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -3003,12 +2536,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -3017,21 +2546,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     },
@@ -4248,8 +3764,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.4942166760727227,
@@ -4262,255 +3778,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -4523,8 +3812,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -4533,21 +3822,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -5764,8 +5040,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.498921954587135,
@@ -5778,255 +5054,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -6039,12 +5088,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -6053,21 +5098,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     },
@@ -7284,8 +6316,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.49094631381264053,
@@ -7298,255 +6330,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            1,
+            0,
+            0,
+            0,
+            1,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -7559,8 +6364,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -7569,21 +6374,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -8800,8 +7592,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.12500271279150343,
@@ -8814,255 +7606,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            1,
+            1,
+            0,
+            0,
+            0,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -9075,12 +7640,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -9089,21 +7650,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     },
@@ -10320,8 +8868,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.48209668815984624,
@@ -10334,255 +8882,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            1,
+            0,
+            0,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -10595,8 +8916,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -10605,21 +8926,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -11836,8 +10144,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.09223570213813909,
@@ -11850,255 +10158,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            0,
+            1,
+            0,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -12111,12 +10192,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -12125,21 +10202,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     },
@@ -13356,8 +11420,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.4962686000330432,
@@ -13370,255 +11434,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            1,
+            1,
+            0,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -13631,8 +11468,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -13641,21 +11478,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -14872,8 +12696,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.09145441002887454,
@@ -14886,255 +12710,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            1,
+            0,
+            1,
+            0,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -15147,12 +12744,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -15161,21 +12754,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     },
@@ -16392,8 +13972,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.05250719305231727,
@@ -16406,255 +13986,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            1,
+            1,
+            0,
+            1,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -16667,8 +14020,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -16677,21 +14030,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -17908,8 +15248,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.276117223293825,
@@ -17922,255 +15262,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            0,
+            1,
+            0,
+            1,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -18183,12 +15296,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -18197,21 +15306,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     },
@@ -19428,8 +16524,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.054853978526212585,
@@ -19442,255 +16538,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            1,
+            0,
+            0,
+            1,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -19703,8 +16572,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -19713,21 +16582,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -20944,8 +17800,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.4869218996869987,
@@ -20958,255 +17814,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            0,
+            1,
+            1,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -21219,12 +17848,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -21233,21 +17858,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     },
@@ -22464,8 +19076,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.04924660264634504,
@@ -22478,255 +19090,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            1,
+            1,
+            0,
+            0,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -22739,8 +19124,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -22749,21 +19134,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -23980,8 +20352,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.04763367183199366,
@@ -23994,255 +20366,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            0,
+            1,
+            0,
+            1,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -24255,12 +20400,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -24269,21 +20410,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     },
@@ -25500,8 +21628,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.049209873833291964,
@@ -25514,255 +21642,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            1,
+            0,
+            1,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -25775,8 +21676,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -25785,21 +21686,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -27016,8 +22904,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.04760820832885776,
@@ -27030,255 +22918,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            1,
+            0,
+            1,
+            0,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -27291,12 +22952,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -27305,21 +22962,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     },
@@ -28536,8 +24180,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 2,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.003114902958950632,
@@ -28550,255 +24194,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            1,
-            0,
-            0,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                1,
-                0,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            1,
+            0,
+            0,
+            1,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -28811,8 +24228,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 1,
         "response": null,
@@ -28821,21 +24238,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                73,
-                74
-            ],
-            [
-                73,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                44
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 0
     },
@@ -30052,8 +25456,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 2,
-        "label_ablate": 0,
+        "label": null,
+        "label_ablate": null,
         "label_prior": null,
         "marginal_belief": [
             0.04979205010376321,
@@ -30066,255 +25470,28 @@
         ],
         "marginal_belief2": null,
         "marginal_belief3": null,
-        "plan": [
-            0,
-            0,
-            0,
-            0,
-            0,
-            1,
-            1
-        ],
-        "plan2_mentions": [
-            [
-                1,
-                0,
-                0,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ]
-        ],
+        "plan": null,
+        "plan2_mentions": null,
         "plan2_mentions_language": null,
         "plan2_partner_ref": null,
         "plan2_plan": null,
-        "plan3_mentions": [
-            [
-                0,
-                0,
-                0,
-                0,
-                0,
-                1,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                1,
-                0,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                0,
-                1,
-                1,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                1,
-                0
-            ]
-        ],
+        "plan3_mentions": null,
         "plan3_mentions_language": null,
         "plan3_partner_ref": null,
         "plan3_plan": null,
-        "plan_ablate": [
-            1,
-            0,
-            0,
-            0,
-            0,
-            0,
-            0
-        ],
+        "plan_ablate": null,
         "plan_beam_lm": null,
         "plan_beam_ref_res": null,
         "plan_beam_seed": null,
         "plan_beam_sents": null,
         "plan_mentions": [
-            [
-                1,
-                0,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                0,
-                1,
-                0,
-                0,
-                0,
-                1
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                0,
-                1,
-                0
-            ],
-            [
-                0,
-                1,
-                1,
-                0,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                1,
-                0,
-                0,
-                1,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                1,
-                1,
-                0,
-                0,
-                0
-            ],
-            [
-                0,
-                0,
-                0,
-                1,
-                0,
-                0,
-                1
-            ]
+            0,
+            0,
+            1,
+            1,
+            0,
+            1,
+            1
         ],
         "plan_mentions_language": null,
         "plan_partner_ref": null,
@@ -30327,12 +25504,8 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [],
-        "reader_configs_ablate": [
-            [
-                58
-            ]
-        ],
+        "reader_configs": null,
+        "reader_configs_ablate": null,
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -30341,21 +25514,8 @@
         "response_logits": null,
         "utterance": null,
         "utterance_language": null,
-        "writer_configs": [
-            [
-                27,
-                77
-            ],
-            [
-                75,
-                77
-            ]
-        ],
-        "writer_configs_ablate": [
-            [
-                22
-            ]
-        ],
+        "writer_configs": null,
+        "writer_configs_ablate": null,
         "writer_configs_prior": null,
         "writer_id": 1
     }
