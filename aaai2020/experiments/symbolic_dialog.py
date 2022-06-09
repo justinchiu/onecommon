@@ -404,8 +404,12 @@ class SymbolicDialog(HierarchicalDialog):
             )
             self.dialog_logger.end_turn()
             # / MBP
+             
+            confirm = writer.next_confirms[-1]
+            plan = writer.next_mention_plans[-1].astype(bool)
+            out_words = ("confirm", str(confirm), "mentions") + tuple(
+                str(x) for x in writer.dots[plan])
 
-            """
             words_left -= len(out_words)
             length += len(out_words)
 
@@ -415,19 +419,10 @@ class SymbolicDialog(HierarchicalDialog):
             self.metrics.record('%s_unique' % writer.name, out_words)
 
             conv.append(out_words)
-            """
             speaker.append(writer.agent_id)
+            logger.dump_sent(writer.name, out_words)
 
-            # if not writer.human:
-            if True:
-                # REPLACE WITH TEXT
-                confirm = writer.next_confirms[-1]
-                plan = writer.next_mention_plans[-1]
-                out_words = f"C: {confirm} M: {plan.tolist()}"
 
-                logger.dump_sent(writer.name, out_words.split())
-                # if writer.decoded_beam_best:
-                #     logger.dump_sent(writer.name + ' beam best', writer.decoded_beam_best[-1])
 
             if logger.scenarios and self.args.log_attention:
                 attention = writer.get_attention()

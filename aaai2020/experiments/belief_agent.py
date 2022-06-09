@@ -10,7 +10,7 @@ from agent import RnnAgent, YOU_TOKEN, THEM_TOKEN, GenerationOutput
 from belief import (
     AndOrBelief, OrAndBelief, OrBelief, OrAndOrBelief,
     ConfigBelief,
-    expand_plan,
+    entropy, expand_plan,
 )
 
 NO_RESPONSE = 0
@@ -210,7 +210,6 @@ class BeliefAgent(RnnAgent):
         self.side_infos.append(None)
 
         self.state = self.state._replace(turn=self.state.turn+1)
-
 
         return confirm, feats
 
