@@ -2728,8 +2728,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.4822324187696618,
@@ -3003,13 +3003,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -5765,8 +5764,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.498921954587135,
@@ -6040,13 +6039,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -8802,8 +8800,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.12500271279150343,
@@ -9077,13 +9075,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -11839,8 +11836,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.09223570213813909,
@@ -12114,13 +12111,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -14876,8 +14872,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.09145441002887454,
@@ -15151,13 +15147,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -17913,8 +17908,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.276117223293825,
@@ -18188,13 +18183,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -20950,8 +20944,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.4869218996869987,
@@ -21225,13 +21219,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -23987,8 +23980,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.04763367183199366,
@@ -24262,13 +24255,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -27024,8 +27016,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.04760820832885776,
@@ -27299,13 +27291,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,
@@ -30061,8 +30052,8 @@
         ],
         "configs2": null,
         "configs3": null,
-        "label": 1,
-        "label_ablate": 2,
+        "label": 2,
+        "label_ablate": 0,
         "label_prior": null,
         "marginal_belief": [
             0.04979205010376321,
@@ -30336,13 +30327,12 @@
         "prior_mentions_language": null,
         "prior_partner_ref": null,
         "prior_plan": null,
-        "reader_configs": [
+        "reader_configs": [],
+        "reader_configs_ablate": [
             [
-                75,
-                77
+                58
             ]
         ],
-        "reader_configs_ablate": [],
         "reader_configs_prior": null,
         "reader_id": 0,
         "response": null,

@@ -98,7 +98,6 @@ class StaticDialogLogger:
         self.dialogue = []
 
     def dump_json(self):
-        import pdb; pdb.set_trace()
         with self.filepath.open("w") as f:
             json.dump(self.dialogue, f, indent=4, sort_keys=True)
 
