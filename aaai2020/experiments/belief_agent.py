@@ -190,6 +190,9 @@ class BeliefAgent(RnnAgent):
 
 
     def write_symbolic(self):
+        # selection happens during writing: output <select>
+        # should we select?
+
         # generate next mention plan
         EdHs = self.belief.compute_EdHs(self.prior)
         cs, hs = self.belief.viz_belief(EdHs, n=4)
