@@ -36,6 +36,7 @@ python -u selfplay.py \
   --bob_model_file=${model_dir_b}/1_ep-12.th \
   --context_file=shared_4 \
   --belief_alice --belief_bob \
+  --belief or \
   --symbolic \
   --absolute_bucketing \
   --cuda \

@@ -21,7 +21,7 @@ class BeliefAgent(RnnAgent):
 
     @staticmethod
     def add_args(parser):
-        super().add_args(parser)
+        RnnAgent.add_args(parser)
         parser.add_argument(
             "--belief",
             choices = [
@@ -43,12 +43,6 @@ class BeliefAgent(RnnAgent):
         self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
         self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
             response_pretrained_path)
-        import pdb; pdb.set_trace()
-        # hack in defaults, loading old model doesnt have these args
-        self.args.belief = "or"
-        self.args.absolute_bucketing = True
-        if self.args.absolute_bucketing:
-            print("ABSOLUTE BUCKETING IS ON. EDIT belief_agent.py:49 TO TURN OFF")
 
     def feed_context(self, context, belief_constructor):
         super().feed_context(context, belief_constructor)

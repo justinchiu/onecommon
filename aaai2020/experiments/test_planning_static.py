@@ -141,7 +141,9 @@ def make_parser():
 
     parser.add_argument("--dialog_log_dir", default="analysis_log")
 
-    RnnAgent.add_args(parser)
+    #RnnAgent.add_args(parser)
+    # beliefagent calls above
+    BeliefAgent.add_args(parser)
 
     return parser
 

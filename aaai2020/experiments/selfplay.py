@@ -149,7 +149,8 @@ def make_parser():
     parser.add_argument("--dialog_log_dir", default="analysis_log")
     parser.add_argument("--symbolic", action="store_true")
 
-    RnnAgent.add_args(parser)
+    #RnnAgent.add_args(parser)
+    BeliefAgent.add_args(parser)
 
     return parser
 
