@@ -43,7 +43,8 @@ class BeliefAgent(RnnAgent):
         self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
         self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
             response_pretrained_path)
-        # hack, oh well
+        import pdb; pdb.set_trace()
+        # hack in defaults, loading old model doesnt have these args
         self.args.belief = "or"
         self.args.absolute_bucketing = True
         if self.args.absolute_bucketing:
