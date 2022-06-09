@@ -98,6 +98,7 @@ class StaticDialogLogger:
         self.dialogue = []
 
     def dump_json(self):
+        import pdb; pdb.set_trace()
         with self.filepath.open("w") as f:
             json.dump(self.dialogue, f, indent=4, sort_keys=True)
 
@@ -200,61 +201,41 @@ class StaticDialogLogger:
 
     def add_turn_resp(
         self,
-        response_language,
-        response,
-        belief,
-        configs,
-        marginal_belief,
-        belief2,
-        configs2,
-        marginal_belief2,
-        belief3,
-        configs3,
-        marginal_belief3,
+        response_language=None,
+        response=None,
+        belief=None,
+        configs=None,
+        marginal_belief=None,
+        belief2 = None,
+        configs2 = None,
+        marginal_belief2 = None,
+        belief3 = None,
+        configs3 = None,
+        marginal_belief3 = None,
         response_utt=None,
         response_label=None,
         response_logits=None,
     ):
         self.turn["response_language"] = response_language
         self.turn["response"] = response
-        self.turn["belief"] = belief.tolist()
-        self.turn["configs"] = configs.tolist()
-        self.turn["marginal_belief"] = marginal_belief.tolist()
-        self.turn["belief2"] = belief2.tolist()
-        self.turn["configs2"] = configs2.tolist()
-        self.turn["marginal_belief2"] = marginal_belief2.tolist()
-        self.turn["belief3"] = belief3.tolist()
-        self.turn["configs3"] = configs3.tolist()
-        self.turn["marginal_belief3"] = marginal_belief3.tolist()
+        self.turn["belief"] = belief
+        self.turn["configs"] = configs
+        self.turn["marginal_belief"] = marginal_belief
+        self.turn["belief2"] = belief2
+        self.turn["configs2"] = configs2
+        self.turn["marginal_belief2"] = marginal_belief2
+        self.turn["belief3"] = belief3
+        self.turn["configs3"] = configs3
+        self.turn["marginal_belief3"] = marginal_belief3
         # SIMPLIFYING ASSUMP: ONLY A SINGLE UTT IN RESPONSE
-        self.turn["response_utt"] = (
-            response_utt.tolist()
-            if response_utt is not None
-            else None
-        )
         self.turn["response_label"] = response_label
         self.turn["response_logits"] = response_logits
 
 
-class StaticHierarchicalDialog(HierarchicalDialog):
-    def __init__(
-        self, agents, args, markable_detector,
-        dialogues,
-        markable_detector_corpus=None,
-    ):
-        super().__init__(
-            agents, args, markable_detector,
-            markable_detector_corpus=markable_detector_corpus,
-        )
-        # map from scenario to training conversation,
-        # not sure if the logger relies on scenarios or something
-        # TODO rewrite to use conversation id, since static
-        self.dialogues = {
-            x["scenario"]["uuid"]: x
-            for x in dialogues
-        }
-
+class SymbolicDialog(HierarchicalDialog):
     def run(self, ctxs, logger, max_words=5000):
+        max_sentences = 20
+
         scenario_id = ctxs[0][0]
         print(f"Scenario id: {scenario_id}")
         self.dialog_logger = StaticDialogLogger(scenario_id, dir=self.args.dialog_log_dir)
@@ -271,16 +252,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
         # lets just assume we go first
         YOU, THEM = 0,1
-
-        # TODO(URGENT): DO WE NEED TO TOKENIZE?
-        SENTENCES = [
-            event["data"]
-            for event in self.dialogues[scenario_id]["events"]
-            if event["action"] == "message"
-        ]
-
-        #max_sentences = self.args.max_sentences
-        max_sentences = len(SENTENCES)
 
         for agent in self.agents:
             assert [] == agent.model.args.ref_beliefs \
@@ -304,21 +275,16 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             agent.belief2 = ConfigBelief(num_dots, ctx)
             agent.prior2 = agent.belief2.prior
 
-            start_time = time.perf_counter()
+            #start_time = time.perf_counter()
             agent.belief3 = OrBelief(num_dots, ctx)
             agent.prior3 = agent.belief3.prior
-            end_time = time.perf_counter()
-            print(f"Took {end_time - start_time}s to initialize OrBelief")
+            #end_time = time.perf_counter()
+            #print(f"Took {end_time - start_time}s to initialize OrBelief")
 
         device = self.agents[0].state.ctx_h.device
 
-        # Agent 0 always goes first (static)
-        # oh shit, this is wrong.
-        # check first event in static dialogue!
-        if self.dialogues[scenario_id]["events"][0]["agent"] == 0:
-            writer, reader = self.agents
-        else:
-            reader, writer = self.agents
+        # Agent 0 always goes first (symmetric, both belief agents)
+        writer, reader = self.agents
 
         is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
         is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
@@ -347,101 +313,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
             this_partner_num_markables = torch.LongTensor([0])
 
-            # WORDS FOR WRITING WITH FORCE_WORDS
-            #out_words = "do you see the black one ? <eos>".split()
-            #out_words = input("input utterance: ").split() + ["<eos>"]
-            tokens = word_tokenize(SENTENCES[sentence_ix].lower().strip())
-            out_words = tokens + ["<eos>"]
-            #print(SENTENCES[sentence_ix])
-
-            # PLAN ROUNDTRIP
-            # prior language
-            prior_lang = super(type(writer), writer).write(
-                max_words=words_left,
-                detect_markables=True,
-                start_token='YOU:',
-                is_selection=this_is_selection,
-                inference=writer.args.language_inference,
-                beam_size=writer.args.language_beam_size,
-                sample_temperature_override=writer.args.language_sample_temperature,
-                min_num_mentions=min_num_mentions,
-                max_num_mentions=max_num_mentions,
-                do_update = False,
-            )
-
-            # gather next mention predictions from writer
-            nm_cands = writer.next_mention_candidates[-1]
-            nm = writer.next_mention_predictions[-1]
-            nm_multi = writer.next_mention_predictions_multi[-1]
-            # int is easer to read
-            nms = torch.stack([
-                x.any(0)[0] for x in nm_multi
-            ]).int() if nm_multi is not None else None
-
-            # get reference predictions from reader
-            super(type(reader), reader).read(
-                prior_lang,
-                dots_mentioned=None,
-                dots_mentioned_per_ref=None,
-                dots_mentioned_num_markables=this_partner_num_markables,
-                detect_markables=True,
-                is_selection=this_is_selection,
-                do_update = False,
-            )
-            # THESE ARE THE DEVIATIONS
-            # roundtrip words -> my refs
-            prior_ref = (writer.dots_mentioned_per_ref_chosen[-1].int().cpu().numpy()
-                if writer.dots_mentioned_per_ref_chosen[-1] is not None
-                else None
-            )
-            # roundtrip words -> their refs
-            prior_partner_ref = (reader.partner_ref_preds[-1].cpu().numpy()
-                if reader.partner_ref_preds[-1] is not None
-                else None
-            )
-            extra = writer.extras[-1]
-            prior_beam_sents = [" ".join(xs) for xs in extra["words"]]
-            prior_beam_ref_res = (extra["ref_resolution_scores"].tolist()
-                if "ref_resolution_scores" in extra else None)
-            prior_beam_lm = (extra["language_model_scores"].tolist()
-                if "language_model_scores" in extra else None)
-
-            # POP STATE, planning gets fresh state (from static dialog)
-            undo_state_writer(writer)
-            undo_state_reader(reader)
-            # / PLAN ROUNDTRIP
-
-            """
-            # DBG: check if repeat is exactly the same
-            # prior language
-            prior_lang2 = super(type(writer), writer).write(
-                max_words=words_left,
-                detect_markables=True,
-                start_token='YOU:',
-                is_selection=this_is_selection,
-                inference=writer.args.language_inference,
-                beam_size=writer.args.language_beam_size,
-                sample_temperature_override=writer.args.language_sample_temperature,
-                min_num_mentions=min_num_mentions,
-                max_num_mentions=max_num_mentions,
-                do_update = False,
-            )
-
-            # gather next mention predictions from writer
-            nm_cands2 = writer.next_mention_candidates[-1]
-            nm2 = writer.next_mention_predictions[-1]
-            nm_multi2 = writer.next_mention_predictions_multi[-1]
-            # int is easer to read
-            nms2 = torch.stack([
-                x.any(0)[0] for x in nm_multi
-            ]).int() if nm_multi is not None else None
-
-            # POP STATE, planning gets fresh state (from static dialog)
-            undo_state_writer(writer)
-            import pdb; pdb.set_trace()
-            # / DBG
-            """
-
             # next mention predictions from planning
             if isinstance(writer, BeliefAgent):
                 EdHs = writer.belief.compute_EdHs(writer.prior)
@@ -455,21 +326,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             EdHs2 = writer.belief2.compute_EdHs(writer.prior2)
             cs2, hs2 = writer.belief2.viz_belief(EdHs2, n=writer.args.next_mention_reranking_k)
 
-            start_time = time.perf_counter()
             EdHs3 = writer.belief3.compute_EdHs(writer.prior3)
             cs3, hs3 = writer.belief3.viz_belief(EdHs3, n=writer.args.next_mention_reranking_k)
-            end_time = time.perf_counter()
-            print(f"Took {end_time - start_time}s to plan with OrBelief")
-
-            # plan feature level labels
-            # get the plan resolution sets for prior model
-            plan_prior = prior_ref[0].any(0).astype(int)
-            feats_prior = writer.belief3.get_feats(plan_prior)
-            writer_matches_prior = writer.belief3.resolve_utt(*feats_prior)
-            reader_matches_prior = reader.belief3.resolve_utt(*feats_prior)
-            writer_configs_prior = writer.dots[writer_matches_prior]
-            reader_configs_prior = reader.dots[reader_matches_prior]
-            label_prior = label_config_sets(writer_configs_prior, reader_configs_prior)
 
             # get the plan resolution sets for planning model w/o partner context
             plan_ablate = cs2[0]
@@ -490,64 +348,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             label = label_config_sets(writer_configs, reader_configs)
             # / plan feature level labels
 
-            # PLAN ROUNDTRIP
-            plan_lang = writer.write(
-                max_words=words_left,
-                detect_markables=True,
-                start_token='YOU:',
-                is_selection=this_is_selection,
-                inference=writer.args.language_inference,
-                beam_size=writer.args.language_beam_size,
-                sample_temperature_override=writer.args.language_sample_temperature,
-                min_num_mentions=min_num_mentions,
-                max_num_mentions=max_num_mentions,
-                do_update = False,
-            )
-            # get reference predictions from reader
-            super(type(reader), reader).read(
-                plan_lang,
-                dots_mentioned=None,
-                dots_mentioned_per_ref=None,
-                dots_mentioned_num_markables=this_partner_num_markables,
-                detect_markables=True,
-                is_selection=this_is_selection,
-                do_update = False,
-            )
-            # THESE ARE THE DEVIATIONS
-            # roundtrip words -> my refs
-            plan_ref = (writer.dots_mentioned_per_ref_chosen[-1].int().cpu().numpy()
-                if writer.dots_mentioned_per_ref_chosen[-1] is not None
-                else None
-            )
-            # roundtrip words -> their refs
-            plan_partner_ref = (reader.partner_ref_preds[-1].cpu().numpy()
-                if reader.partner_ref_preds[-1] is not None
-                else None
-            )
-            extra = writer.extras[-1]
-            plan_beam_sents = [" ".join(xs) for xs in extra["words"]]
-            plan_beam_ref_res = (extra["ref_resolution_scores"].tolist()
-                if "ref_resolution_scores" in extra else None)
-            plan_beam_lm = (extra["language_model_scores"].tolist()
-                if "language_model_scores" in extra else None)
-            plan_beam_seed = writer.next_mention_plans[-1].tolist()
-
-            # POP OFF STATE TO RESUME STATIC DIALOG
-            undo_state_writer(writer)
-            undo_state_reader(reader)
-            # / PLAN ROUNDTRIP
-
-            # WRITER, force words
-            writer.args.reranking_confidence = False
-            writer.write(
-                force_words=[out_words],
-                start_token="YOU:",
-                detect_markables=True,
-                is_selection=this_is_selection,
-                inference="sample",
-            )
-            writer.args.reranking_confidence = True
-            # check writer.ref_outs and writer.ref_preds
+            confirm, mention_features = writer.write_symbolic()
             #import pdb; pdb.set_trace()
 
             # LOGGING
@@ -555,33 +356,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             if True:
                 print(f"{writer.name} writer dots")
                 print(writer.dots)
-                print("prior next mentions")
-                print(nms)
                 print("mbp next mentions")
                 print(cs)
-                """
-                print("mbp1 next mentions")
-                print(cs1)
-                print("mbp2 next mentions")
-                print(cs2)
-                print("mbp3 next mentions")
-                print(cs3)
-                """
-                #print("next mention candidates[-1]")
-                #print(nm_cands.candidate_dots)
-                #print(nm_cands.candidate_nm_scores)
-                print("prior language")
-                print(" ".join(prior_lang))
-                print("prior plan")
-                print(prior_ref)
-                print("prior partner ref")
-                print(prior_partner_ref)
-                print("plan language")
-                print(" ".join(plan_lang))
-                print("plan plan")
-                print(plan_ref)
-                print("plan partner ref")
-                print(plan_partner_ref)
 
                 #self.dialog_logger.start_turn(YOU)
                 self.dialog_logger.start_turn(
@@ -590,41 +366,10 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 )
                 self.dialog_logger.add_turn_utt(
                     writer.belief.configs.tolist(),
-                    utterance_language = SENTENCES[sentence_ix],
-                    utterance = writer.ref_preds[-1].any(0)[0].int().tolist()
-                        if writer.ref_preds[-1] is not None
-                        else None,
-                    prior_mentions = nms.tolist() if nms is not None else None,
                     plan_mentions = cs1.tolist(),
                     plan2_mentions = cs2.tolist(),
                     plan3_mentions = cs3.tolist(),
-                    prior_mentions_language = " ".join(prior_lang),
-                    plan_mentions_language = None,
-                    plan2_mentions_language = None,
-                    plan3_mentions_language = " ".join(plan_lang),
-                    prior_plan = prior_ref.tolist(),
-                    plan_plan = None,
-                    plan2_plan = None,
-                    plan3_plan = plan_ref.tolist(),
-                    prior_partner_ref = prior_partner_ref.tolist()
-                        if prior_partner_ref is not None else None,
-                    plan_partner_ref = None,
-                    plan2_partner_ref = None,
-                    plan3_partner_ref = plan_partner_ref.tolist()
-                        if plan_partner_ref is not None else None,
-                    # BEAM SEARCH
-                    prior_beam_sents = prior_beam_sents,
-                    prior_beam_ref_res = prior_beam_ref_res,
-                    prior_beam_lm = prior_beam_lm,
-                    plan_beam_sents = plan_beam_sents,
-                    plan_beam_ref_res = plan_beam_ref_res,
-                    plan_beam_lm = plan_beam_lm,
-                    plan_beam_seed = plan_beam_seed,
                     # PLAN FEATURE EVALUATION
-                    plan_prior = plan_prior.tolist(),
-                    writer_configs_prior = writer_configs_prior.tolist(),
-                    reader_configs_prior = reader_configs_prior.tolist(),
-                    label_prior = label_prior.value,
                     plan_ablate = plan_ablate.tolist(),
                     writer_configs_ablate = writer_configs_ablate.tolist(),
                     reader_configs_ablate = reader_configs_ablate.tolist(),
@@ -636,133 +381,32 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 )
 
             # READER
-            reader.read(
-                out_words,
-                dots_mentioned=None,
-                dots_mentioned_per_ref=None,
-                dots_mentioned_num_markables=this_partner_num_markables,
-                detect_markables=True,
-                is_selection=this_is_selection,
-            )
+            reader.read_symbolic(confirm, mention_features)
             # check reader.partner_ref_outs and writer.partner_ref_preds
             #import pdb; pdb.set_trace
 
             # MBP
-            #if reader.agent_id == YOU:
-            if True:
-                # UPDATE AGENT 0 BELIEF
-                print(f"READER NAME {reader.name}")
-                response = None
-                if sentence_ix > 0 and reader.ref_preds[-2] is not None:
-                    # update belief given partner response to our utterances
-                    #print(reader.ref_preds[-1].any(0)[0].int().tolist())
-                    #print(reader.ref_preds[-2].any(0)[0].int().tolist())
-                    utt = reader.ref_preds[-2].any(0)[0].int().cpu().numpy()
-                    label = reader.responses[-1]
-                    if label != 0:
-                        response = 1 if label == 1 else 0
-                        reader.prior1 = reader.belief1.posterior(reader.prior1, utt, response)
-                        reader.prior2 = reader.belief2.posterior(reader.prior2, utt, response)
-                        reader.prior3 = reader.belief3.posterior(reader.prior3, utt, response)
-                    utt_str = np.array(reader.dots)[utt.astype(bool)]
-                    print("our prev utt")
-                    print(utt_str)
-                    print("response")
-                    print(label)
-                """
-                else:
-                    # if the first turn is a read, give null data for utts
-                    self.dialog_logger.start_turn(YOU)
-                    self.dialog_logger.add_turn_utt(
-                        writer.belief.configs.tolist(),
-                        utterance_language = None,
-                        utterance = None,
-                        prior_mentions = None,
-                        plan_mentions = None,
-                        plan2_mentions = None,
-                        plan3_mentions = None,
-                        prior_mentions_language = None,
-                        plan_mentions_language = None,
-                        plan2_mentions_language = None,
-                        plan3_mentions_language = None,
-                    )
-                """
+            print(f"READER NAME {reader.name}")
+            if isinstance(reader, BeliefAgent):
+                cs, ps = reader.belief.viz_belief(reader.prior, n=5)
+                print("posterior")
+                print(cs)
+                print(ps)
+                print("marginals")
+                marginals = reader.belief.marginals(reader.prior)
+                print([f"{x:.2f}" for x in marginals])
 
-                side_info = reader.side_infos[-1]
-                if side_info is not None and side_info.any():
-                #if UTTS[sentence_ix] is not None:
-                    # update belief with unsolicited partner info
-                    # if they mention a new dot, we pretend we asked about it
-                    # reader.prior is updated in reader.read()
-                    reader.prior1 = reader.belief1.posterior(reader.prior1, side_info, 1)
-                    reader.prior2 = reader.belief2.posterior(reader.prior2, side_info, 1)
-                    reader.prior3 = reader.belief3.posterior(reader.prior3, side_info, 1)
-
-                if isinstance(reader, BeliefAgent):
-                    cs, ps = reader.belief.viz_belief(reader.prior, n=5)
-                    print("posterior")
-                    print(cs)
-                    print(ps)
-                    print("marginals")
-                    marginals = reader.belief.marginals(reader.prior)
-                    print([f"{x:.2f}" for x in marginals])
-
-                cs1, ps1 = reader.belief1.viz_belief(reader.prior1, n=5)
-                marginals1 = reader.belief1.marginals(reader.prior1)
-                cs2, ps2 = reader.belief2.viz_belief(reader.prior2, n=5)
-                marginals2 = reader.belief2.marginals(reader.prior2)
-                cs3, ps3 = reader.belief3.viz_belief(reader.prior3, n=5)
-                marginals3 = reader.belief3.marginals(reader.prior3)
-                """
-                print("posterior1")
-                print(cs1)
-                print(ps1)
-                print("marginals1")
-                print([f"{x:.2f}" for x in marginals1])
-
-                print("posterior2")
-                print(cs2)
-                print(ps2)
-                print("marginals2")
-                print([f"{x:.2f}" for x in marginals2])
-
-                print("posterior3")
-                print(cs3)
-                print(ps3)
-                print("marginals3")
-                print([f"{x:.2f}" for x in marginals3])
-                """
-
-                their_utt = None
-                if reader.partner_ref_preds[-1] is not None:
-                    their_utt = reader.partner_ref_preds[-1].any(0)[0].cpu().numpy()
-                    utt_str = np.array(reader.dots)[their_utt]
-                    print("their utt")
-                    print(utt_str)
-
-                self.dialog_logger.add_turn_resp(
-                    #response_language = SENTENCES[sentence_ix+1]
-                        #if sentence_ix < len(SENTENCES)-1 else None,
-                    response_language = None,
-                    response = response,
-                    belief = ps1,
-                    configs = cs1,
-                    marginal_belief = marginals1,
-                    belief2 = ps2,
-                    configs2 = cs2,
-                    marginal_belief2 = marginals2,
-                    belief3 = ps3,
-                    configs3 = cs3,
-                    marginal_belief3 = marginals3,
-                    response_utt = their_utt.astype(int)
-                        if their_utt is not None
-                        else None,
-                    response_label = reader.responses[-1],
-                    response_logits = reader.response_logits[-1],
-                )
-                self.dialog_logger.end_turn()
+            self.dialog_logger.add_turn_resp(
+                #response_language = SENTENCES[sentence_ix+1]
+                    #if sentence_ix < len(SENTENCES)-1 else None,
+                belief = ps.tolist(),
+                configs = cs.tolist(),
+                marginal_belief = marginals.tolist(),
+            )
+            self.dialog_logger.end_turn()
             # / MBP
 
+            """
             words_left -= len(out_words)
             length += len(out_words)
 
@@ -772,11 +416,17 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             self.metrics.record('%s_unique' % writer.name, out_words)
 
             conv.append(out_words)
+            """
             speaker.append(writer.agent_id)
 
             # if not writer.human:
             if True:
-                logger.dump_sent(writer.name, out_words)
+                # REPLACE WITH TEXT
+                confirm = writer.next_confirms[-1]
+                plan = writer.next_mention_plans[-1]
+                out_words = f"C: {confirm} M: {plan.tolist()}"
+
+                logger.dump_sent(writer.name, out_words.split())
                 # if writer.decoded_beam_best:
                 #     logger.dump_sent(writer.name + ' beam best', writer.decoded_beam_best[-1])
 

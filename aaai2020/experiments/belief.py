@@ -47,14 +47,23 @@ def label_config_sets(writer_configs, reader_configs):
     else:
         raise ValueError("Unhandled config label case")
 
-def process_ctx(ctx):
+def process_ctx(ctx, absolute=False):
     # ctx: [x, y, size, color]
     eps = 1e-3
     num_buckets = 4
     min_ = ctx.min(0)
     max_ = ctx.max(0)
-    min_size, max_size = min_[2], max_[2]
-    min_color, max_color = min_[3], max_[3]
+
+    if absolute:
+        # ABSOLUTE BUCKET
+        min_size, max_size = -1, 1
+        min_color, max_color = -1, 1
+    else:
+        # RELATIVE BUCKET
+        min_size, max_size = min_[2], max_[2]
+        min_color, max_color = min_[3], max_[3]
+    
+
     size_buckets = np.linspace(min_size, max_size + eps, num_buckets)
     color_buckets = np.linspace(min_color, max_color + eps, num_buckets)
     sizes = ctx[:,2]
@@ -448,10 +457,10 @@ class OrBelief(OrAndBelief):
         for each dot in z
         Size of z: remaining dots outside of s |z| = num_dots - |s|
     """
-    def __init__(self, num_dots, ctx, correct=0.95, overlap_size=None,):
+    def __init__(self, num_dots, ctx, correct=0.95, overlap_size=None, absolute=False):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
         self.ctx = np.array(ctx, dtype=float).reshape(num_dots, 4)
-        self.size_color = process_ctx(self.ctx)
+        self.size_color = process_ctx(self.ctx, absolute)
         self.xy = self.ctx[:,:2]
         # initialize config_likelihood based on configuration resolution
         self.config_likelihood = np.zeros(
@@ -596,6 +605,8 @@ class OrBelief(OrAndBelief):
         return np.array((p_r0, p_r1))
 
 class ConfigBelief(OrBelief):
+    # ABLATED version of OrBelief
+    # Does not consider unshared dots
     def joint(self, prior, utt):
         # p(r | u,s)
         # prior: num_configs * 7
@@ -656,12 +667,13 @@ class OrAndOrBelief(OrAndBelief):
         dots,
         correct=0.9,
         overlap_size=None,
+        absolute=False,
     ):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
 
         # just size and color though
         dots = np.array(dots, dtype=float).reshape(num_dots, 4)
-        self.dots = process_ctx(dots)
+        self.dots = process_ctx(dots, absolute)
 
         # initialize likelihood
         error = 1 - correct

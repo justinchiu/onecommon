@@ -1,4 +1,5 @@
 
+import numpy as np
 import torch
 
 from transformers import (
@@ -8,7 +9,8 @@ from transformers import (
 from agent import RnnAgent, YOU_TOKEN, THEM_TOKEN, GenerationOutput
 from belief import (
     AndOrBelief, OrAndBelief, OrBelief, OrAndOrBelief,
-    process_ctx, expand_plan,
+    ConfigBelief,
+    expand_plan,
 )
 
 NO_RESPONSE = 0
@@ -28,6 +30,11 @@ class BeliefAgent(RnnAgent):
             default = "or",
             help = "Partner response model",
         )
+        parser.add_argument(
+            "--absolute_bucketing",
+            action = "store_true",
+            help = "If on, switch from relative bucketing to absolute bucketing of unary features size/color",
+        )
 
     # same init as RnnAgent, initialize belief in feed_context
     def __init__(self, *args, **kvargs):
@@ -38,12 +45,23 @@ class BeliefAgent(RnnAgent):
             response_pretrained_path)
         # hack, oh well
         self.args.belief = "or"
+        self.args.absolute_bucketing = True
+        if self.args.absolute_bucketing:
+            print("ABSOLUTE BUCKETING IS ON. EDIT belief_agent.py:49 TO TURN OFF")
 
     def feed_context(self, context, belief_constructor):
         super().feed_context(context, belief_constructor)
         self.num_dots = 7
         if self.args.belief == "or":
-            self.belief = OrBelief(self.num_dots, context)
+            self.belief = OrBelief(
+                self.num_dots, context,
+                absolute = self.args.absolute_bucketing,
+            )
+        elif self.args.belief == "egocentric":
+            self.belief = ConfigBelief(
+                self.num_dots, context,
+                absolute = self.args.absolute_bucketing,
+            )
         elif self.args.belief == "and":
             self.belief = AndBelief(self.num_dots, context)
         elif self.args.belief == "andor":
@@ -57,9 +75,11 @@ class BeliefAgent(RnnAgent):
         self.prior = self.belief.prior
         # per-turn accumulators
         self.next_mention_plans = []
+        self.next_confirms = []
         self.responses = []
         self.response_logits = []
         self.side_infos = []
+        # symbolic accumulators
 
     def read(
         self, inpt_words, *args, **kwargs,
@@ -149,3 +169,56 @@ class BeliefAgent(RnnAgent):
         return output
 
 
+    def read_symbolic(self, confirm=None, mention_features=None):
+        # process confirmation
+        if confirm is not None and len(self.next_mention_plans) > 0:
+            plan = self.next_mention_plans[-1] if self.next_mention_plans else None
+            self.prior = self.belief.posterior(self.prior, plan, confirm)
+
+        # process mentions
+        # returns combinations that match
+        mentions = self.belief.resolve_utt(*mention_features)
+        if len(mentions) > 0:
+            # need to create plan and nonzero it
+            mention_plan = np.zeros(self.num_dots, dtype=int)
+            mention_plan[mentions[0]] = 1
+            self.prior = self.belief.posterior(self.prior, mention_plan, 1)
+
+        # add None to next_mention_plans, since reading turn => no generation
+        self.next_mention_plans.append(None)
+        self.next_confirms.append(None)
+        self.responses.append(confirm)
+        self.response_logits.append(None)
+        self.side_infos.append(mention_features)
+
+        self.state = self.state._replace(turn=self.state.turn+1)
+
+
+    def write_symbolic(self):
+        # generate next mention plan
+        EdHs = self.belief.compute_EdHs(self.prior)
+        cs, hs = self.belief.viz_belief(EdHs, n=4)
+        plan = cs[0]
+        feats = self.belief.get_feats(plan)
+
+        confirm = None
+        if len(self.side_infos) > 0 and self.side_infos[-1] is not None:
+            partner_mention = self.side_infos[-1]
+            resolved = self.belief.resolve_utt(*partner_mention)
+            confirm = int(len(resolved) > 0)
+
+        # add plan to next_mention_plan history
+        self.next_mention_plans.append(plan)
+        self.next_confirms.append(confirm)
+        self.responses.append(None)
+        self.response_logits.append(None)
+        self.side_infos.append(None)
+
+        self.state = self.state._replace(turn=self.state.turn+1)
+
+
+        return confirm, feats
+
+
+    #def choose(self):
+        #import pdb; pdb.set_trace()

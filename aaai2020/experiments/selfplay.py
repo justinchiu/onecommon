@@ -18,6 +18,9 @@ from dialog import Dialog, DialogLogger, HierarchicalDialog
 from models.rnn_reference_model import RnnReferenceModel
 import domain
 
+from belief_agent import BeliefAgent
+from symbolic_dialog import SymbolicDialog
+
 import pprint
 
 def dump_json(file, path):
@@ -60,10 +63,12 @@ class SelfPlay(object):
 
         return success / n
 
-def get_agent_type(model, smart=False):
+def get_agent_type(model, smart=False, belief=False):
     if isinstance(model, (RnnReferenceModel)):
         if smart:
             assert False
+        elif belief:
+            return BeliefAgent
         else:
             return RnnAgent
     else:
@@ -99,12 +104,16 @@ def make_parser():
                         help='log referents to file')
     parser.add_argument('--smart_alice', action='store_true', default=False,
                         help='make Alice smart again')
+    parser.add_argument('--smart_bob', action='store_true', default=False,
+                        help='make Bob smart again')
+    parser.add_argument('--belief_alice', action='store_true', default=False,
+                        help='Use shared belief + perspective for Alice')
+    parser.add_argument('--belief_bob', action='store_true', default=False,
+                        help='use shared belief + perspective for Bob')
     parser.add_argument('--rollout_bsz', type=int, default=3,
                         help='rollout batch size')
     parser.add_argument('--rollout_count_threshold', type=int, default=3,
                         help='rollout count threshold')
-    parser.add_argument('--smart_bob', action='store_true', default=False,
-                        help='make Bob smart again')
     parser.add_argument('--selection_model_file', type=str,  default='',
                         help='path to save the final model')
     parser.add_argument('--rollout_model_file', type=str,  default='',
@@ -137,6 +146,8 @@ def make_parser():
     parser.add_argument('--must_contain', nargs="*", 
                         help='must contain scenarios')
 
+    parser.add_argument("--dialog_log_dir", default="analysis_log")
+    parser.add_argument("--symbolic", action="store_true")
 
     RnnAgent.add_args(parser)
 
@@ -179,13 +190,13 @@ def main():
 
         # alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
         alice_model = utils.load_model(args.alice_model_file, prefix_dir=None, map_location='cpu')
-        alice_ty = get_agent_type(alice_model, args.smart_alice)
+        alice_ty = get_agent_type(alice_model, args.smart_alice, args.belief_alice)
         alice_merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(alice_model.args)))
         alice = alice_ty(alice_model, alice_merged_args, name='Alice', train=False, markable_detector=markable_detector)
 
         # bob_model = utils.load_model(args.bob_model_file + '_' + str(seed) + '.th')
         bob_model = utils.load_model(args.bob_model_file, prefix_dir=None, map_location='cpu')
-        bob_ty = get_agent_type(bob_model, args.smart_bob)
+        bob_ty = get_agent_type(bob_model, args.smart_bob, args.belief_bob)
         bob_merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(bob_model.args)))
         bob = bob_ty(bob_model, bob_merged_args, name='Bob', train=False, markable_detector=markable_detector)
 
@@ -195,7 +206,8 @@ def main():
             model.eval()
 
         # dialog = Dialog([alice, bob], args, markable_detector)
-        dialog = HierarchicalDialog([alice, bob], args, markable_detector)
+        dialog_class = SymbolicDialog if args.symbolic else HierarchicalDialog
+        dialog = dialog_class([alice, bob], args, markable_detector)
         ctx_gen = ContextGenerator(
             os.path.join(args.data, args.context_file + '.txt'),
             must_contain = args.must_contain,

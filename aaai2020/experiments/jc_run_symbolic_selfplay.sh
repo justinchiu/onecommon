@@ -2,7 +2,7 @@
 
 model_dir_a=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
 model_dir_b=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
-name=TEST_STATIC_PLAN
+name=TEST_SELFPLAY_SYMBOLIC
 shared_ctx_count=4
 
 shift
@@ -27,53 +27,22 @@ rerank_args2="--language_beam_size 64 --next_mention_reranking_k 8 \
 --next_mention_reranking_max_mentions 4"
 rerank_args3=" --reranking_confidence_type keep_best"
 
-#rerank_args4="--must_contain S_pGlR0nKz9pQ4ZWsw S_n0ocL412kqOAl9QR S_hxYVpiz9A5jI6fyd S_JnKzqWlH9GP4ajch"
-rerank_args4="--must_contain S_rguqGgNYfrnW7AFz"
-rerank_args4="--must_contain \
-S_SXTkzYMf65Txohx1 \
-S_d1A25BOwQKs9ea96 \
-S_CGIVg5Xg4PX8Cb1u \
-S_vNh9L6L87GQlSQBd \
-S_Hacog9vt6Ezr19YQ \
-S_iOLJUUUVcUGzaIMi \
-S_sqkWqU9oCt7gPCNj \
-S_pqC0O80Ojf5BKLyV \
-S_prpoeEF96KCoJSNQ \
-S_quuRrcGUJVSDQYau \
-S_PYif71iPEFrO4ACc \
-S_NUwkRTnWCDZH0dox \
-S_hjX5jTcQ73bzhon0 \
-S_4HAFEDGI61j0QePK \
-S_VN8fzF9YgHtzXDsX \
-S_RTwBsuFR8n8ryo3g \
-S_TiT6JNB0XSpnAjzP \
-S_RWYCZVdTDVyxpjWr \
-S_XIvcA4MT8hC0zN9M \
-S_MMCMJd56CCUER6gV "
-
-#rerank_args4="--must_contain S_pqC0O80Ojf5BKLyV"
-#rerank_args4="--must_contain S_RWYCZVdTDVyxpjWr"
-rerank_args4=""
-
-split=train
-split=valid
-seed=1
-context_file="${split}_context_${seed}"
-#logdir="analysis_log/${split}_${seed}"
-logdir="analysis_log/${split}_${seed}_absolute"
+logdir="analysis_log/TEST_selfplay_1"
 
 mkdir -p ${logdir}
 
-python -u test_planning_static.py \
+python -u selfplay.py \
   --alice_model_file=${model_dir_a}/1_ep-12.th \
   --bob_model_file=${model_dir_b}/1_ep-12.th \
-  --context_file=${context_file} \
+  --context_file=shared_4 \
+  --belief_alice --belief_bob \
+  --symbolic \
+  --absolute_bucketing \
   --cuda \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
-  --DBG_PLAN analysis_log/${name}.json \
+  ${rerank_args} ${rerank_args2} ${rerank_args3} \
   --dialog_log_dir ${logdir} \
-  ${rerank_args} ${rerank_args2} ${rerank_args3} ${rerank_args4} \
   --log_file=${log_file} $@
 
 echo "LOGFILE ${log_file}"
