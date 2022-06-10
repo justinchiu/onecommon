@@ -171,8 +171,8 @@ class Belief:
         return (self.configs * p[:,None]).sum(0)
 
     def marginal_size(self, p, size=3):
-        size_mask = self.configs.sum(-1) == size
-        N = int(size_mask.sum())
+        size_mask = self.configs.sum(-1) >= size
+        #N = int(size_mask.sum())
 
         idxs = np.arange(self.num_configs)
 
@@ -182,7 +182,22 @@ class Belief:
             config_mask = self.configs[:,utt].all(-1)
             config_prob[i] = p.dot(config_mask)
 
-        return self.configs[(size_mask * config_prob).argmax()]
+        config_scores = size_mask * config_prob
+        #config_scores = config_prob
+        config_scores[0] = 0
+        config_idxs = (-config_scores).argsort()
+
+        for idx in config_idxs:
+            config = self.configs[idx]
+            feats = self.get_feats(config)
+            idxs = self.resolve_utt(*feats)
+            if config_scores[idx] == 0:
+                print("TRIED TO SELECT CONFIG WITH 0 PROB")
+            #if len(idxs) > 1:
+                #import pdb; pdb.set_trace()
+            if len(idxs) == 1:
+                return config
+                #return self.configs[(size_mask * config_prob).argmax()]
 
 
 class IndependentBelief(Belief):

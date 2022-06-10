@@ -103,7 +103,8 @@ class BeliefAgent(RnnAgent):
         # chooses the most likely shared configuration and a dot within it
         # maybe should choose a dot and the 2 nearest shared?
 
-        config = self.belief.marginal_size(self.prior, 3)
+        #config = self.belief.marginal_size(self.prior, 3)
+        config = self.belief.marginal_size(self.prior, 4)
 
         marginals = self.belief.marginals(self.prior)
         marginals[~config.astype(bool)] = 0
@@ -239,8 +240,14 @@ class BeliefAgent(RnnAgent):
 
         if select_features is not None:
             # writer has selected
-            select_config = self.belief.resolve_utt(*select_features)[0]
-            self.sel_idx = select_config[select_rel_idx]
+            select_configs = self.belief.resolve_utt(*select_features)#[0]
+            if len(select_configs) > 1:
+                print("MULTIPLE SELECTION CONFIGS")
+            if len(select_configs) > 0:
+                # if able to resolve features
+                # otherwise just guess
+                self.sel_config = select_configs[0]
+                self.sel_idx = select_configs[0][select_rel_idx]
 
 
     def write_symbolic(self):

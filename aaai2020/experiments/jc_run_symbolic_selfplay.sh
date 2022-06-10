@@ -2,8 +2,14 @@
 
 model_dir_a=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
 model_dir_b=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
-name=TEST_SELFPLAY_SYMBOLIC
+
 shared_ctx_count=4
+
+# belief entropy threshold
+threshold=2
+threshold=1.5
+#threshold=1
+name="DBGTEST_SELFPLAY_SYMBOLIC_T${threshold}"
 
 shift
 shift
@@ -27,7 +33,7 @@ rerank_args2="--language_beam_size 64 --next_mention_reranking_k 8 \
 --next_mention_reranking_max_mentions 4"
 rerank_args3=" --reranking_confidence_type keep_best"
 
-logdir="analysis_log/TEST_selfplay_1"
+logdir="analysis_log/${name}_1"
 
 mkdir -p ${logdir}
 
@@ -37,6 +43,7 @@ python -u selfplay.py \
   --context_file=shared_4 \
   --belief_alice --belief_bob \
   --belief or \
+  --belief_entropy_threshold ${threshold} \
   --symbolic \
   --absolute_bucketing \
   --cuda \
