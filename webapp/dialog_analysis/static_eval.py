@@ -40,6 +40,7 @@ boards = {
 
 split = "train"
 split = "valid_1"
+split = "valid_1_absolute"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
@@ -54,6 +55,7 @@ labels_ablate = {x: Counter() for x in range(4,7)}
 labels = {x: Counter() for x in range(4,7)}
 
 num_scenarios = Counter()
+num_turns = 0
 
 for scenario in scenarios:
     with (analysis_path / scenario).with_suffix(".json").open() as f:
@@ -66,7 +68,9 @@ for scenario in scenarios:
         intersection_size = len(set(dot_ids[0]).intersection(set(dot_ids[1])))
         num_scenarios[intersection_size] += 1
 
+
         for turn in turns:
+            num_turns += 1
             agent_id = turn["writer_id"]
 
             # PLAN FEATURE LABELS
@@ -142,3 +146,5 @@ print_labels(labels)
 
 print("Num scenarios by intersection size")
 print(num_scenarios)
+
+print(f"Num turns: {num_turns}")
