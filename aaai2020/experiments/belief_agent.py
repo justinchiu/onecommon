@@ -84,6 +84,10 @@ class BeliefAgent(RnnAgent):
         self.response_logits = []
         self.side_infos = []
         # symbolic accumulators
+        #
+        # selection index
+        self.sel_idx = None
+        self.sel_config = None
 
     # do not overload super().is_selection
     def should_select(self):
@@ -98,15 +102,21 @@ class BeliefAgent(RnnAgent):
     def select_dot(self):
         # chooses the most likely shared configuration and a dot within it
         # maybe should choose a dot and the 2 nearest shared?
+
+        config = self.belief.marginal_size(self.prior, 3)
+
         marginals = self.belief.marginals(self.prior)
-        shared_dots = self.belief.configs[self.prior.argmax()]
-        # subselect from shared_dots
-        config = shared_dots
-        # get features for configuration
-        feats = self.belief.get_feats(config)
-        index = 0
-        import pdb; pdb.set_trace()
-        return feats, index
+        marginals[~config.astype(bool)] = 0
+        index = marginals.argmax()
+        # index is absolute index in self.real_ids
+
+        self.sel_config = config
+        self.sel_idx = index
+
+        # relative index within config
+        rel_idx = marginals[config.astype(bool)].argmax()
+
+        return config, index, rel_idx
 
 
     def read(
@@ -197,7 +207,13 @@ class BeliefAgent(RnnAgent):
         return output
 
 
-    def read_symbolic(self, confirm=None, mention_features=None):
+    def read_symbolic(
+        self,
+        confirm=None,
+        mention_features=None,
+        select_features = None,
+        select_rel_idx = None,
+    ):
         # process confirmation
         if confirm is not None and len(self.next_mention_plans) > 0:
             plan = self.next_mention_plans[-1] if self.next_mention_plans else None
@@ -221,16 +237,23 @@ class BeliefAgent(RnnAgent):
 
         self.state = self.state._replace(turn=self.state.turn+1)
 
+        if select_features is not None:
+            # writer has selected
+            select_config = self.belief.resolve_utt(*select_features)[0]
+            self.sel_idx = select_config[select_rel_idx]
+
 
     def write_symbolic(self):
         # selection happens during writing: output <select>
         should_select = self.should_select()
-        select_dot = None
+        select_feats = None
+        select_rel_idx = None
         if should_select:
             # switch modes to selection communication
             # which dot to select?
-            select_dot = self.select_dot()
+            select_config, select_idx, select_rel_idx = self.select_dot()
             # communicate a dot configuration and index of dot
+            select_feats = self.belief.get_feats(select_config)
 
         # generate next mention plan
         EdHs = self.belief.compute_EdHs(self.prior)
@@ -253,8 +276,10 @@ class BeliefAgent(RnnAgent):
 
         self.state = self.state._replace(turn=self.state.turn+1)
 
-        return confirm, feats, select_dot
+        return confirm, feats, select_feats, select_rel_idx
 
 
-    #def choose(self):
-        #import pdb; pdb.set_trace()
+    def choose(self):
+        if self.sel_idx is None:
+            self.select_dot()
+        return self.real_ids[self.sel_idx]

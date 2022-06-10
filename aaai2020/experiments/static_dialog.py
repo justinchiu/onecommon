@@ -301,11 +301,11 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             agent.dots = np.array(real_ids, dtype=int)
 
             # ctx: [x, y, size, color]
-            agent.belief2 = ConfigBelief(num_dots, ctx, absolute=args.absolute_bucketing)
+            agent.belief2 = ConfigBelief(num_dots, ctx, absolute=self.args.absolute_bucketing)
             agent.prior2 = agent.belief2.prior
 
             start_time = time.perf_counter()
-            agent.belief3 = OrBelief(num_dots, ctx, absolute=args.absolute_bucketing)
+            agent.belief3 = OrBelief(num_dots, ctx, absolute=self.args.absolute_bucketing)
             agent.prior3 = agent.belief3.prior
             end_time = time.perf_counter()
             print(f"Took {end_time - start_time}s to initialize OrBelief")

@@ -170,6 +170,20 @@ class Belief:
     def marginals(self, p):
         return (self.configs * p[:,None]).sum(0)
 
+    def marginal_size(self, p, size=3):
+        size_mask = self.configs.sum(-1) == size
+        N = int(size_mask.sum())
+
+        idxs = np.arange(self.num_configs)
+
+        config_prob = np.zeros(self.num_configs)
+        for i, utt in enumerate(self.configs):
+            utt = utt.astype(bool)
+            config_mask = self.configs[:,utt].all(-1)
+            config_prob[i] = p.dot(config_mask)
+
+        return self.configs[(size_mask * config_prob).argmax()]
+
 
 class IndependentBelief(Belief):
     """

@@ -311,13 +311,13 @@ class SymbolicDialog(HierarchicalDialog):
 
             this_partner_num_markables = torch.LongTensor([0])
 
-            confirm, mention_features, select_dot = writer.write_symbolic()
-            #import pdb; pdb.set_trace()
+            (
+                confirm, mention_features,
+                select_features, select_rel_idx,
+            ) = writer.write_symbolic()
 
             # LOGGING
-            #if writer.agent_id == YOU:
             if True:
-                #self.dialog_logger.start_turn(YOU)
                 self.dialog_logger.start_turn(
                     writer.agent_id,
                     reader.agent_id,
@@ -328,7 +328,9 @@ class SymbolicDialog(HierarchicalDialog):
                 )
 
             # READER
-            reader.read_symbolic(confirm, mention_features)
+            reader.read_symbolic(
+                confirm, mention_features, select_features, select_rel_idx,
+            )
 
             # MBP
             #print(f"READER NAME {reader.name}")
@@ -368,14 +370,14 @@ class SymbolicDialog(HierarchicalDialog):
             speaker.append(writer.agent_id)
             logger.dump_sent(writer.name, out_words)
 
-
-
             if logger.scenarios and self.args.log_attention:
                 attention = writer.get_attention()
                 if attention is not None:
                     logger.dump_attention(writer.name, writer.agent_id, scenario_id, attention)
 
-            if self._is_selection(out_words):
+            #confirm, mention_features, select_features, select_rel_idx = writer.write_symbolic()
+
+            if select_rel_idx is not None:
                 self.metrics.record('%s_make_sel' % writer.name, 1)
                 self.metrics.record('%s_make_sel' % reader.name, 0)
                 break
