@@ -32,7 +32,7 @@ class BeliefAgent(RnnAgent):
         )
         parser.add_argument(
             "--belief_entropy_threshold",
-            type = "float",
+            type = float,
             default = 2.,
             help = "Belief entropy threshold for selection heuristic",
         )
@@ -225,6 +225,7 @@ class BeliefAgent(RnnAgent):
     def write_symbolic(self):
         # selection happens during writing: output <select>
         should_select = self.should_select()
+        select_dot = None
         if should_select:
             # switch modes to selection communication
             # which dot to select?
@@ -252,7 +253,7 @@ class BeliefAgent(RnnAgent):
 
         self.state = self.state._replace(turn=self.state.turn+1)
 
-        return confirm, feats, select
+        return confirm, feats, select_dot
 
 
     def choose(self):
