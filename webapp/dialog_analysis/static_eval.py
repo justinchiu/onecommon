@@ -40,7 +40,7 @@ boards = {
 
 split = "train"
 split = "valid_1"
-split = "valid_1_absolute"
+#split = "valid_1_absolute"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
