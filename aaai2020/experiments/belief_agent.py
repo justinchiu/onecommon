@@ -99,9 +99,9 @@ class BeliefAgent(RnnAgent):
         # chooses the most likely shared configuration and a dot within it
         # maybe should choose a dot and the 2 nearest shared?
         marginals = self.belief.marginals(self.prior)
-        shared_dots = self.configs[self.prior.argmax()]
+        shared_dots = self.belief.configs[self.prior.argmax()]
         # subselect from shared_dots
-        config = None
+        config = shared_dots
         # get features for configuration
         feats = self.belief.get_feats(config)
         index = 0

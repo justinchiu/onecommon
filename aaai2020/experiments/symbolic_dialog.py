@@ -311,7 +311,7 @@ class SymbolicDialog(HierarchicalDialog):
 
             this_partner_num_markables = torch.LongTensor([0])
 
-            confirm, mention_features = writer.write_symbolic()
+            confirm, mention_features, select_dot = writer.write_symbolic()
             #import pdb; pdb.set_trace()
 
             # LOGGING
