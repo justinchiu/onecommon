@@ -31,6 +31,12 @@ class BeliefAgent(RnnAgent):
             help = "Partner response model",
         )
         parser.add_argument(
+            "--belief_entropy_threshold",
+            type = "float",
+            default = 2.,
+            help = "Belief entropy threshold for selection heuristic",
+        )
+        parser.add_argument(
             "--absolute_bucketing",
             action = "store_true",
             help = "If on, switch from relative bucketing to absolute bucketing of unary features size/color",
@@ -43,6 +49,9 @@ class BeliefAgent(RnnAgent):
         self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
         self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
             response_pretrained_path)
+
+        # for selection heuristic based on entropy
+        self.entropy_threshold = self.args.belief_entropy_threshold
 
     def feed_context(self, context, belief_constructor):
         super().feed_context(context, belief_constructor)
@@ -75,6 +84,30 @@ class BeliefAgent(RnnAgent):
         self.response_logits = []
         self.side_infos = []
         # symbolic accumulators
+
+    # do not overload super().is_selection
+    def should_select(self):
+        # should we select?
+        # uniform entropy over 128 is 4.85
+        #print(np.round(self.belief.marginals(self.prior), 2))
+        #print(entropy(self.prior))
+        H = entropy(self.prior)
+        select = H < self.entropy_threshold
+        return select
+
+    def select_dot(self):
+        # chooses the most likely shared configuration and a dot within it
+        # maybe should choose a dot and the 2 nearest shared?
+        marginals = self.belief.marginals(self.prior)
+        shared_dots = self.configs[self.prior.argmax()]
+        # subselect from shared_dots
+        config = None
+        # get features for configuration
+        feats = self.belief.get_feats(config)
+        index = 0
+        import pdb; pdb.set_trace()
+        return feats, index
+
 
     def read(
         self, inpt_words, *args, **kwargs,
@@ -191,7 +224,12 @@ class BeliefAgent(RnnAgent):
 
     def write_symbolic(self):
         # selection happens during writing: output <select>
-        # should we select?
+        should_select = self.should_select()
+        if should_select:
+            # switch modes to selection communication
+            # which dot to select?
+            select_dot = self.select_dot()
+            # communicate a dot configuration and index of dot
 
         # generate next mention plan
         EdHs = self.belief.compute_EdHs(self.prior)
@@ -214,7 +252,7 @@ class BeliefAgent(RnnAgent):
 
         self.state = self.state._replace(turn=self.state.turn+1)
 
-        return confirm, feats
+        return confirm, feats, select
 
 
     def choose(self):
