@@ -256,5 +256,5 @@ class BeliefAgent(RnnAgent):
         return confirm, feats, select_dot
 
 
-    def choose(self):
-        import pdb; pdb.set_trace()
+    #def choose(self):
+        #import pdb; pdb.set_trace()
