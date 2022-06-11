@@ -26,6 +26,7 @@ class BeliefAgent(RnnAgent):
             "--belief",
             choices = [
                 "or", "and", "andor", "orand", "orandor",
+                "egocentric",
             ],
             default = "or",
             help = "Partner response model",
@@ -76,6 +77,7 @@ class BeliefAgent(RnnAgent):
             self.belief = OrAndOrBelief(self.num_dots, context)
         else:
             raise ValueError
+
         self.prior = self.belief.prior
         # per-turn accumulators
         self.next_mention_plans = []

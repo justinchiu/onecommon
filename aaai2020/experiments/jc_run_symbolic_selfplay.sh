@@ -9,7 +9,11 @@ shared_ctx_count=4
 threshold=2
 threshold=1.5
 #threshold=1
-name="DBGTEST_SELFPLAY_SYMBOLIC_T${threshold}"
+
+belief="or"
+#belief="egocentric"
+
+name="DBGTEST_SELFPLAY_SYMBOLIC_T${threshold}_B${belief}"
 
 shift
 shift
@@ -42,7 +46,7 @@ python -u selfplay.py \
   --bob_model_file=${model_dir_b}/1_ep-12.th \
   --context_file=shared_4 \
   --belief_alice --belief_bob \
-  --belief or \
+  --belief ${belief} \
   --belief_entropy_threshold ${threshold} \
   --symbolic \
   --absolute_bucketing \
