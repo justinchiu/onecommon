@@ -63,6 +63,7 @@ utt_feats = belief.get_feats(utt)
 matches = belief.resolve_utt(*utt_feats)
 
 # generate utterance for particular dot in triangle
+# num dots: int, size_color: n x 2, xy positions: n x 2
 n, sc, xy = utt_feats
 
 def is_only(dots, idx):
