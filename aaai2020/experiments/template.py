@@ -17,7 +17,7 @@ spatial_dot_template = Template("{{spatial}} dot is {{dot}}")
 # Do you see three dots, where the {{dot 1}}, {{dot 2}}, and {{dot 3}}?
 
 mention_1 = Template("a {{dot1}}")
-mention_2 = Template("a pair of dots, where the {{dot1}} and {{dot2}}")
+mention_2 = Template("a pair of dots, where the {{dot1}} and the {{dot2}}")
 mention_3 = Template("three dots, where the {{dot1}}, the {{dot2}}, and the {{dot3}}")
 
 # selection
