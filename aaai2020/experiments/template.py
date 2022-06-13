@@ -6,7 +6,8 @@ confirm = "Yes ."
 disconfirm = "No ."
 
 # template for individual dot features
-dot_template = Template("{{spatial}} {{size}}-sized {{color}} dot")
+dot_template = Template("{{size}}-sized and {{color}}")
+spatial_dot_template = Template("{{spatial}} dot is {{dot}}")
 
 # mention 1
 # Do you see a small grey dot?
@@ -16,8 +17,8 @@ dot_template = Template("{{spatial}} {{size}}-sized {{color}} dot")
 # Do you see three dots, where the {{dot 1}}, {{dot 2}}, and {{dot 3}}?
 
 mention_1 = Template("a {{dot1}}")
-mention_2 = Template("a pair of dots, with the {{dot1}} and {{dot2}}")
-mention_3 = Template("three dots, {{dot1}}, {{dot2}}, {{dot3}}")
+mention_2 = Template("a pair of dots, where the {{dot1}} and {{dot2}}")
+mention_3 = Template("three dots, where the {{dot1}}, the {{dot2}}, and the {{dot3}}")
 
 # selection
 select_1 = Template("")
@@ -206,8 +207,8 @@ def spatial_descriptions4(xy):
             raise ValueError
     return descriptions
 
-xy3_descriptions = spatial_descriptions3(xy[:3])
-xy2_descriptions = spatial_descriptions2(xy[:2])
+xy3_spatial_descriptions = spatial_descriptions3(xy[:3])
+xy2_spatial_descriptions = spatial_descriptions2(xy[:2])
 
 def size_color_descriptions(sc):
     size_map = ["small", "medium", "large"]
@@ -216,15 +217,39 @@ def size_color_descriptions(sc):
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
 
-print(xy3_descriptions)
-print(xy2_descriptions)
+print(xy3_spatial_descriptions)
+print(xy2_spatial_descriptions)
 
 print(sc)
-print(size_color_descriptions(sc))
+sc3 = size_color_descriptions(sc[:3])
+
+print(mention_3.render(
+    dot1 = spatial_dot_template.render(
+        spatial = xy3_spatial_descriptions[0],
+        dot = dot_template.render(
+            size = sc3[0][0],
+            color = sc3[0][1],
+        ),
+    ),
+    dot2 = spatial_dot_template.render(
+        spatial = xy3_spatial_descriptions[1],
+        dot = dot_template.render(
+            size = sc3[1][0],
+            color = sc3[1][1],
+        ),
+    ),
+    dot3 = spatial_dot_template.render(
+        spatial = xy3_spatial_descriptions[2],
+        dot = dot_template.render(
+            size = sc3[2][0],
+            color = sc3[2][1],
+        ),
+    ),
+))
+import pdb; pdb.set_trace()
 
 import matplotlib.pyplot as plt
 # sc = {0,1,2}
 plt.scatter(xy[:,0],xy[:,1], s=(sc[:,0] + 1) * 10, c=(sc[:,1] + 1) * 5)
 plt.show()
 
-import pdb; pdb.set_trace()
