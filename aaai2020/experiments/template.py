@@ -213,8 +213,6 @@ def size_color_descriptions(sc):
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
 
-import streamlit as st
-
 print(xy3_descriptions)
 print(xy2_descriptions)
 
