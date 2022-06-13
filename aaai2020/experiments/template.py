@@ -2,6 +2,8 @@ from jinja2 import Template
 
 utterance_template = Template("{{ confirm }} {{ mention }}")
 
+mention_wrapper = Template("Do you see any configurations that consist of {{mentions}} ?")
+
 confirm = "Yes ."
 disconfirm = "No ."
 
@@ -223,29 +225,36 @@ print(xy2_spatial_descriptions)
 print(sc)
 sc3 = size_color_descriptions(sc[:3])
 
-print(mention_3.render(
-    dot1 = spatial_dot_template.render(
-        spatial = xy3_spatial_descriptions[0],
-        dot = dot_template.render(
-            size = sc3[0][0],
-            color = sc3[0][1],
+# function for rendering triangles, ignoring low rank cases
+def render_3(xy, sc):
+    xy_desc = spatial_descriptions3(xy)
+    sc_desc = size_color_descriptions(sc)
+    return mention_3.render(
+        dot1 = spatial_dot_template.render(
+            spatial = xy_desc[0],
+            dot = dot_template.render(
+                size = sc_desc[0][0],
+                color = sc_desc[0][1],
+            ),
         ),
-    ),
-    dot2 = spatial_dot_template.render(
-        spatial = xy3_spatial_descriptions[1],
-        dot = dot_template.render(
-            size = sc3[1][0],
-            color = sc3[1][1],
+        dot2 = spatial_dot_template.render(
+            spatial = xy_desc[1],
+            dot = dot_template.render(
+                size = sc_desc[1][0],
+                color = sc_desc[1][1],
+            ),
         ),
-    ),
-    dot3 = spatial_dot_template.render(
-        spatial = xy3_spatial_descriptions[2],
-        dot = dot_template.render(
-            size = sc3[2][0],
-            color = sc3[2][1],
+        dot3 = spatial_dot_template.render(
+            spatial = xy_desc[2],
+            dot = dot_template.render(
+                size = sc_desc[2][0],
+                color = sc_desc[2][1],
+            ),
         ),
-    ),
-))
+    )
+
+# example call for rendering
+print(render_3(xy[:3], sc[:3]))
 import pdb; pdb.set_trace()
 
 import matplotlib.pyplot as plt
