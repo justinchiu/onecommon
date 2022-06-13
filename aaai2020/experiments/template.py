@@ -5,6 +5,9 @@ utterance_template = Template("{{ confirm }} {{ mention }}")
 confirm = "Yes ."
 disconfirm = "No ."
 
+# template for individual dot features
+dot_template = Template("{{spatial}} {{size}}-sized {{color}} dot")
+
 # mention 1
 # Do you see a small grey dot?
 # mention 2
