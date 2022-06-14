@@ -209,6 +209,70 @@ def spatial_descriptions4(xy):
             raise ValueError
     return descriptions
 
+def get_sign(p1, p2, p3):
+    return (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
+
+def check_triangle(p, p1, p2, p3):
+    d1 = get_sign(p, p1, p2)
+    d2 = get_sign(p, p3, p1)
+    d3 = get_sign(p, p2, p3)
+    has_neg = (d1 < 0) or (d2 < 0) or (d3 < 0)
+    has_pos = (d1 > 0) or (d2 > 0) or (d3 > 0)
+    return (not (has_neg and has_pos))
+
+def spatial_descriptions4(xy):
+    assert xy.shape[0] == 4
+    option = 1
+    for i in range(4):
+        compl = list(set([0, 1, 2, 3]) - set([i]))
+        res = check_triangle(xy[i], xy[compl[0]], xy[compl[1]], xy[compl[2]])
+        if res:
+            option = 2
+            dot4 = i
+            descriptions = spatial_descriptions3(xy[compl, :])
+            descriptions.append("middle")
+            break
+    if option == 1:
+        descriptions = []
+        right, top = xy.max(0)
+        left, bottom = xy.min(0)
+        mx, my = (right + left) / 2, (top + bottom) / 2
+
+        top_dots = xy[:,1] > my
+        bottom_dots = xy[:,1] < my
+
+        right_dots = xy[:,0] > mx
+        left_dots = xy[:,0] < mx
+        for idx in range(xy.shape[0]):
+            is_top = top_dots[idx]
+            is_bottom = bottom_dots[idx]
+            is_left = left_dots[idx]
+            is_right = right_dots[idx]
+
+            if is_only(top_dots, idx):
+                descriptions.append("top")
+            elif is_only(bottom_dots, idx):
+                descriptions.append("bottom")
+            elif is_only(left_dots, idx):
+                descriptions.append("left")
+            elif is_only(right_dots, idx):
+                descriptions.append("right")
+            elif is_top and is_left:
+                descriptions.append("top left")
+            elif is_top and is_right:
+                descriptions.append("top right")
+            elif is_bottom and is_left:
+                descriptions.append("bottom left")
+            elif is_bottom and is_right:
+                descriptions.append("bottom right")
+            else:
+                raise ValueError
+    return descriptions
+
+xy = np.random.uniform(low=-1, high=1, size=(4,2))
+xy4_spatial_descriptions = spatial_descriptions4(xy)
+print(xy4_spatial_descriptions)
+
 xy3_spatial_descriptions = spatial_descriptions3(xy[:3])
 xy2_spatial_descriptions = spatial_descriptions2(xy[:2])
 
