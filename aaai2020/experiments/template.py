@@ -1,5 +1,7 @@
 from jinja2 import Template
 
+RADIUS = .1
+
 utterance_template = Template("{{ confirm }} {{ mention }}")
 
 mention_wrapper = Template("Do you see any configurations that consist of {{mentions}} ?")
@@ -32,6 +34,7 @@ select_1 = Template("")
 
 import numpy as np
 from belief import process_ctx, OrBelief
+
 
 class ConfigFeatures:
     def __init__(self, num_dots, sc, xy):
@@ -76,9 +79,8 @@ def spatial_descriptions2(xy):
     left, bottom = xy.min(0)
     mx, my = (right + left) / 2, (top + bottom) / 2
 
-    radius = .1
-    horizontal_close = abs(right - left) < 2 * radius
-    vertical_close = abs(top - bottom) < 2 * radius
+    horizontal_close = abs(right - left) < 2 * RADIUS
+    vertical_close = abs(top - bottom) < 2 * RADIUS
 
     if horizontal_close and not vertical_close:
         # check if dots are close horizontally
@@ -108,11 +110,11 @@ def spatial_descriptions3(xy):
     left, bottom = xy.min(0)
     mx, my = (right + left) / 2, (top + bottom) / 2
 
-    top_dots = xy[:,1] > my
-    bottom_dots = xy[:,1] < my
+    top_dots = xy[:,1] > my + RADIUS
+    bottom_dots = xy[:,1] < my - RADIUS
 
-    right_dots = xy[:,0] > mx
-    left_dots = xy[:,0] < mx
+    right_dots = xy[:,0] > mx + RADIUS
+    left_dots = xy[:,0] < mx - RADIUS
 
     # possible configurations:
     # * full rank triangle
@@ -151,11 +153,11 @@ def spatial_descriptions4(xy):
     left, bottom = xy.min(0)
     mx, my = (right + left) / 2, (top + bottom) / 2
 
-    top_dots = xy[:,1] > my
-    bottom_dots = xy[:,1] < my
+    top_dots = xy[:,1] > my + RADIUS
+    bottom_dots = xy[:,1] < my - RADIUS
 
-    right_dots = xy[:,0] > mx
-    left_dots = xy[:,0] < mx
+    right_dots = xy[:,0] > mx + RADIUS
+    left_dots = xy[:,0] < mx - RADIUS
 
     # possible configurations:
     # * full rank quadrilateral

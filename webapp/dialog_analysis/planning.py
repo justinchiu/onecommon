@@ -112,12 +112,15 @@ def process_dialogue(scenario_id, dialogue):
 
     turn = dialogue[turn]
 
+    """
     display = st.radio("Display", (
         "prior",
         "plan", "plan2", "plan3",
         "posterior", "posterior2", "posterior3",
         "priorbeam", "planbeam",
     ))
+    """
+    # FOR TEMPLATE EVAL
     display = "planbeam"
 
     if display == "prior":

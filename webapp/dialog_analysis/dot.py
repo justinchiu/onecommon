@@ -22,7 +22,7 @@ class Dot:
     def select_html(self, shift=0):
         x = self.x + shift
         y = self.y
-        r = self.size + 2
+        r = self.size + 4
         f = self.color # ignored
         return f'<circle cx="{x}" cy="{y}" r="{r}" fill="none" stroke="red" stroke-width="3" stroke-dasharray="3,3"  />'
 
