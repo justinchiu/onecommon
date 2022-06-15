@@ -226,6 +226,7 @@ def process_dialogue(scenario_id, dialogue):
         n, sc, xy = belief.get_feats(np.array(mentions))
         words = template.render(n, sc, xy)
         st.write(words)
+        #import pdb; pdb.set_trace()
 
 
         st.write("### chosen utterance")

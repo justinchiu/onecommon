@@ -77,8 +77,8 @@ def spatial_descriptions2(xy):
     mx, my = (right + left) / 2, (top + bottom) / 2
 
     radius = .1
-    horizontal_close = abs(top - bottom) < 2 * radius
-    vertical_close = abs(right - left) < 2 * radius
+    horizontal_close = abs(right - left) < 2 * radius
+    vertical_close = abs(top - bottom) < 2 * radius
 
     if horizontal_close and not vertical_close:
         # check if dots are close horizontally
@@ -94,6 +94,8 @@ def spatial_descriptions2(xy):
         ]
     else:
         # otherwise use full description
+        #rp0 = relative_position(xy[0,0], xy[0,1], mx, my)
+        #rp1 = relative_position(xy[1,0], xy[1,1], mx, my)
         return [
             relative_position(xy[0,0], xy[0,1], mx, my),
             relative_position(xy[1,0], xy[1,1], mx, my),
@@ -250,7 +252,7 @@ def spatial_descriptions4(xy):
 
 def size_color_descriptions(sc):
     size_map = ["small", "medium", "large"]
-    color_map = ["light", "grey", "dark"]
+    color_map = ["dark", "grey", "light"]
     return [
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
