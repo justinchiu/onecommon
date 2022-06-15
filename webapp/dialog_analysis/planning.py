@@ -1,3 +1,5 @@
+import sys
+
 from pathlib import Path
 
 import streamlit as st
@@ -12,6 +14,11 @@ import numpy as np
 from scipy.special import logsumexp as lse
 
 from dot import Dot
+
+sys.path.append("/home/justinchiu/research/onecommon/aaai2020/experiments")
+
+import template
+import belief
 
 #random.seed(1234)
 #np.random.seed(1234)

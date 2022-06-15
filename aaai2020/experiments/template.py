@@ -20,11 +20,15 @@ spatial_dot_template = Template("{{spatial}} dot is {{dot}}")
 
 mention_1 = Template("a {{dot1}}")
 mention_2 = Template("a pair of dots, where the {{dot1}} and the {{dot2}}")
+
 mention_3 = Template("three dots, where the {{dot1}}, the {{dot2}}, and the {{dot3}}")
+
+mention_41 = Template("four dots, where the {{dot1}}, the {{dot2}}, the {{dot3}}, and the {{dot4}}")
+mention_42 = Template("four dots where three of them form a triangle, and the last dot falls in the triangle; the triangle has the {{dot1}}, the {{dot2}}, and the {{dot3}}")
+mention_43 = Template("four dots where they roughly form a line; on one end it is {{dot1}}, and on the other end it is {{dot2}}; between the two dots, there are the {{dot3}} and the {{dot4}}.")
 
 # selection
 select_1 = Template("")
-
 
 import numpy as np
 from belief import process_ctx, OrBelief
@@ -45,32 +49,6 @@ class ConfigFeatures:
             ) for i in range(self.num_dots)
         ]
 
-num_dots = 7
-ctx = np.array([
-    0.635, -0.4,   2/3, -1/6,  # 8
-    0.395, -0.7,   0.0,  3/4,  # 11
-    -0.74,  0.09,  2/3, -2/3,  # 13
-    -0.24, -0.63, -1/3, -1/6,  # 15
-    0.15,  -0.58,  0.0,  0.24, # 40
-    -0.295, 0.685, 0.0, -8/9,  # 50
-    0.035, -0.79, -2/3,  0.56, # 77
-], dtype=float).reshape(-1, 4)
-ids = np.array([8, 11, 13, 15, 40, 50, 77], dtype=int)
-
-# goes in init
-size_color = process_ctx(ctx)
-xy = ctx[:,:2]
-
-utt = np.array([1,0,1,1,0,0,0])
-utt = np.array([1,0,1,1,0,1,0])
-
-belief = OrBelief(num_dots, ctx, absolute=True)
-utt_feats = belief.get_feats(utt)
-matches = belief.resolve_utt(*utt_feats)
-
-# generate utterance for particular dot in triangle
-# num dots: int, size_color: n x 2, xy positions: n x 2
-n, sc, xy = utt_feats
 
 def is_only(dots, idx):
     return dots[idx] and dots.sum() == 1
@@ -269,12 +247,6 @@ def spatial_descriptions4(xy):
                 raise ValueError
     return descriptions
 
-xy = np.random.uniform(low=-1, high=1, size=(4,2))
-xy4_spatial_descriptions = spatial_descriptions4(xy)
-print(xy4_spatial_descriptions)
-
-xy3_spatial_descriptions = spatial_descriptions3(xy[:3])
-xy2_spatial_descriptions = spatial_descriptions2(xy[:2])
 
 def size_color_descriptions(sc):
     size_map = ["small", "medium", "large"]
@@ -282,12 +254,6 @@ def size_color_descriptions(sc):
     return [
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
-
-print(xy3_spatial_descriptions)
-print(xy2_spatial_descriptions)
-
-print(sc)
-sc3 = size_color_descriptions(sc[:3])
 
 # function for rendering triangles, ignoring low rank cases
 def render_3(xy, sc):
@@ -317,12 +283,85 @@ def render_3(xy, sc):
         ),
     )
 
-# example call for rendering
-print(render_3(xy[:3], sc[:3]))
-import pdb; pdb.set_trace()
+def render_4(xy, sc):
+    xy_desc = spatial_descriptions4(xy)
+    sc_desc = size_color_descriptions(sc)
+    return mention_41.render(
+        dot1 = spatial_dot_template.render(
+            spatial = xy_desc[0],
+            dot = dot_template.render(
+                size = sc_desc[0][0],
+                color = sc_desc[0][1],
+            ),
+        ),
+        dot2 = spatial_dot_template.render(
+            spatial = xy_desc[1],
+            dot = dot_template.render(
+                size = sc_desc[1][0],
+                color = sc_desc[1][1],
+            ),
+        ),
+        dot3 = spatial_dot_template.render(
+            spatial = xy_desc[2],
+            dot = dot_template.render(
+                size = sc_desc[2][0],
+                color = sc_desc[2][1],
+            ),
+        ),
+        dot4 = spatial_dot_template.render(
+            spatial = xy_desc[3],
+            dot = dot_template.render(
+                size = sc_desc[3][0],
+                color = sc_desc[3][1],
+            ),
+        ),
+    )
 
-import matplotlib.pyplot as plt
-# sc = {0,1,2}
-plt.scatter(xy[:,0],xy[:,1], s=(sc[:,0] + 1) * 10, c=(sc[:,1] + 1) * 5)
-plt.show()
+if __name__ == "__main__":
+    num_dots = 7
+    ctx = np.array([
+        0.635, -0.4,   2/3, -1/6,  # 8
+        0.395, -0.7,   0.0,  3/4,  # 11
+        -0.74,  0.09,  2/3, -2/3,  # 13
+        -0.24, -0.63, -1/3, -1/6,  # 15
+        0.15,  -0.58,  0.0,  0.24, # 40
+        -0.295, 0.685, 0.0, -8/9,  # 50
+        0.035, -0.79, -2/3,  0.56, # 77
+    ], dtype=float).reshape(-1, 4)
+    ids = np.array([8, 11, 13, 15, 40, 50, 77], dtype=int)
 
+    # goes in init
+    size_color = process_ctx(ctx)
+    xy = ctx[:,:2]
+
+    utt = np.array([1,0,1,1,0,0,0])
+    utt = np.array([1,0,1,1,0,1,0])
+
+    belief = OrBelief(num_dots, ctx, absolute=True)
+    utt_feats = belief.get_feats(utt)
+    matches = belief.resolve_utt(*utt_feats)
+
+    # generate utterance for particular dot in triangle
+    # num dots: int, size_color: n x 2, xy positions: n x 2
+    n, sc, xy = utt_feats
+    #xy = np.random.uniform(low=-1, high=1, size=(4,2))
+    xy4_spatial_descriptions = spatial_descriptions4(xy[:4])
+    xy3_spatial_descriptions = spatial_descriptions3(xy[:3])
+    xy2_spatial_descriptions = spatial_descriptions2(xy[:2])
+
+    # example call for rendering
+    print(render_3(xy[:3], sc[:3]))
+    print(render_4(xy[:4], sc[:4]))
+
+    import matplotlib.pyplot as plt
+    from matplotlib import cm
+    # sc = {0,1,2}
+    plt.scatter(
+        xy[:,0], xy[:,1],
+        s = (sc[:,0] + 1) * 10,
+        c = cm.Greys((sc[:,1] + 1) * 85),
+        #cmap = cm.Greys,
+    )
+    plt.show()
+
+    import pdb; pdb.set_trace()
