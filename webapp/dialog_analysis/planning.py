@@ -17,6 +17,7 @@ from dot import Dot
 
 sys.path.append("/home/justinchiu/research/onecommon/aaai2020/experiments")
 
+from utils import ContextGenerator
 import template
 import belief
 
@@ -39,6 +40,11 @@ boards = {
     for scenario in scenario_list
 }
 
+ctx_file = '../../aaai2020/experiments/data/onecommon/static/valid_context_1.txt'
+ctx_gen = ContextGenerator(ctx_file)
+ctxs = {
+    ctx[0][0]: ctx for ctx in ctx_gen.ctxs
+}
 
 def visualize_board(
     left_dots, right_dots,
@@ -112,6 +118,7 @@ def process_dialogue(scenario_id, dialogue):
         "posterior", "posterior2", "posterior3",
         "priorbeam", "planbeam",
     ))
+    display = "planbeam"
 
     if display == "prior":
         st.header("Prior next mentions")
@@ -208,6 +215,19 @@ def process_dialogue(scenario_id, dialogue):
             mention0 = [x for i,x in enumerate(b0) if resolved[i] == 1]
             mention1 = [x for i,x in enumerate(b1) if mentions[i] == 1]
         visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
+
+
+        st.write("### template utterance")
+        ctx_struct = ctxs[scenario_id]
+        ctx = ctx_struct[1 + turn["writer_id"]]
+        ctx_np = np.array(ctx, dtype=float).reshape(7, 4)
+        from belief import OrBelief
+        belief = OrBelief(7, ctx_np)
+        n, sc, xy = belief.get_feats(np.array(mentions))
+        words = template.render(n, sc, xy)
+        st.write(words)
+
+
         st.write("### chosen utterance")
         st.write(turn["prior_mentions_language"
             if display == "priorbeam" else "plan3_mentions_language"])

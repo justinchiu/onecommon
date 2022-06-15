@@ -255,6 +255,26 @@ def size_color_descriptions(sc):
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
 
+def render_2(xy, sc):
+    xy_desc = spatial_descriptions2(xy)
+    sc_desc = size_color_descriptions(sc)
+    return mention_2.render(
+        dot1 = spatial_dot_template.render(
+            spatial = xy_desc[0],
+            dot = dot_template.render(
+                size = sc_desc[0][0],
+                color = sc_desc[0][1],
+            ),
+        ),
+        dot2 = spatial_dot_template.render(
+            spatial = xy_desc[1],
+            dot = dot_template.render(
+                size = sc_desc[1][0],
+                color = sc_desc[1][1],
+            ),
+        ),
+    )
+
 # function for rendering triangles, ignoring low rank cases
 def render_3(xy, sc):
     xy_desc = spatial_descriptions3(xy)
@@ -317,6 +337,20 @@ def render_4(xy, sc):
         ),
     )
 
+def render(n, sc, xy):
+    if n == 1:
+        return render_1(xy, sc)
+    elif n == 2:
+        return render_2(xy, sc)
+    elif n == 3:
+        return render_3(xy, sc)
+    elif n == 4:
+        return render_4(xy, sc)
+    elif n == 5:
+        return render_5(xy, sc)
+    else:
+        raise ValueError
+ 
 if __name__ == "__main__":
     num_dots = 7
     ctx = np.array([
