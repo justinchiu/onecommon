@@ -104,7 +104,9 @@ def process_dialogue(scenario_id, dialogue):
     intersect1 = [x for x in b1 for y in b0 if x.id == y.id]
 
     #turn = st.radio("Turn number", np.arange(len(dialogue)))
+    
     turn = st.number_input("Turn number", 0, len(dialogue)-1)
+    #turn = 3
 
     st.header("Dialogue so far")
     for t in range(turn):
@@ -227,6 +229,9 @@ def process_dialogue(scenario_id, dialogue):
         from belief import OrBelief
         belief = OrBelief(7, ctx_np)
         n, sc, xy = belief.get_feats(np.array(mentions))
+        #print(ctx_struct[3 + turn["writer_id"]])
+        #print(mentions)
+        #print(xy)
         words = template.render(n, sc, xy)
         st.write(words)
         #import pdb; pdb.set_trace()

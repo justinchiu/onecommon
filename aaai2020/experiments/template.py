@@ -1,6 +1,6 @@
 from jinja2 import Template
 
-RADIUS = .1
+RADIUS = .2
 
 utterance_template = Template("{{ confirm }} {{ mention }}")
 
@@ -62,11 +62,12 @@ def centroid(xy):
     return (right + left) / 2, (top + bottom) / 2
 
 def relative_position(x, y, mx, my):
-    if x < mx and y > my:
+    # vertical stuff is flipped?
+    if x < mx and y < my:
         return "top left"
-    elif x > mx and y > my:
+    elif x > mx and y < my:
         return "top right"
-    elif x < mx and y < my:
+    elif x < mx and y > my:
         return "bottom left"
     elif x > mx and y < my:
         return "bottom right"
@@ -79,14 +80,17 @@ def spatial_descriptions2(xy):
     left, bottom = xy.min(0)
     mx, my = (right + left) / 2, (top + bottom) / 2
 
-    horizontal_close = abs(right - left) < 2 * RADIUS
-    vertical_close = abs(top - bottom) < 2 * RADIUS
+    horizontal_close = abs(right - left) < RADIUS
+    vertical_close = abs(top - bottom) < RADIUS
 
     if horizontal_close and not vertical_close:
         # check if dots are close horizontally
         return [
-            "top" if xy[0,1] > my else "bottom",
-            "top" if xy[1,1] > my else "bottom",
+            # looks like vertical stuff is flipped?
+            #"top" if xy[0,1] > my else "bottom",
+            #"top" if xy[1,1] > my else "bottom",
+            "top" if xy[0,1] < my else "bottom",
+            "top" if xy[1,1] < my else "bottom",
         ]
     elif vertical_close and not horizontal_close:
         # check if dots are close vertically
@@ -110,8 +114,11 @@ def spatial_descriptions3(xy):
     left, bottom = xy.min(0)
     mx, my = (right + left) / 2, (top + bottom) / 2
 
-    top_dots = xy[:,1] > my + RADIUS
-    bottom_dots = xy[:,1] < my - RADIUS
+    # flipped
+    #top_dots = xy[:,1] > my + RADIUS
+    #bottom_dots = xy[:,1] < my - RADIUS
+    bottom_dots = xy[:,1] > my + RADIUS
+    top_dots = xy[:,1] < my - RADIUS
 
     right_dots = xy[:,0] > mx + RADIUS
     left_dots = xy[:,0] < mx - RADIUS
@@ -153,8 +160,11 @@ def spatial_descriptions4(xy):
     left, bottom = xy.min(0)
     mx, my = (right + left) / 2, (top + bottom) / 2
 
-    top_dots = xy[:,1] > my + RADIUS
-    bottom_dots = xy[:,1] < my - RADIUS
+    # flipped
+    #top_dots = xy[:,1] > my + RADIUS
+    #bottom_dots = xy[:,1] < my - RADIUS
+    bottom_dots = xy[:,1] > my + RADIUS
+    top_dots = xy[:,1] < my - RADIUS
 
     right_dots = xy[:,0] > mx + RADIUS
     left_dots = xy[:,0] < mx - RADIUS
@@ -212,7 +222,8 @@ def spatial_descriptions4(xy):
             option = 2
             dot4 = i
             descriptions = spatial_descriptions3(xy[compl, :])
-            descriptions.append("middle")
+            #descriptions.append("middle")
+            descriptions.insert(i, "middle")
             break
     if option == 1:
         descriptions = []
@@ -220,8 +231,11 @@ def spatial_descriptions4(xy):
         left, bottom = xy.min(0)
         mx, my = (right + left) / 2, (top + bottom) / 2
 
-        top_dots = xy[:,1] > my
-        bottom_dots = xy[:,1] < my
+        # flipped
+        #top_dots = xy[:,1] > my + RADIUS
+        #bottom_dots = xy[:,1] < my - RADIUS
+        bottom_dots = xy[:,1] > my + RADIUS
+        top_dots = xy[:,1] < my - RADIUS
 
         right_dots = xy[:,0] > mx
         left_dots = xy[:,0] < mx
