@@ -18,6 +18,10 @@ from dot import Dot
 #random.seed(1234)
 #np.random.seed(1234)
 
+# OPTIONS
+FIRST_TURN_ONLY = True
+ABSOLUTE = True
+
 def classify_sets(xs, ys):
     # with MAP ref resolution, ambiguous = incorrect
     ambiguous = xs != ys
@@ -40,7 +44,8 @@ boards = {
 
 split = "train"
 split = "valid_1"
-#split = "valid_1_absolute"
+if ABSOLUTE:
+    split = "valid_1_absolute"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
@@ -60,6 +65,9 @@ num_turns = 0
 for scenario in scenarios:
     with (analysis_path / scenario).with_suffix(".json").open() as f:
         turns = json.load(f)
+        # FIRST TURN ONLY
+        if FIRST_TURN_ONLY:
+            turns = [turns[0]]
         dialogue = dialogues[scenario]
         board = boards[scenario]
 

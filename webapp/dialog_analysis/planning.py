@@ -106,7 +106,7 @@ def process_dialogue(scenario_id, dialogue):
     #turn = st.radio("Turn number", np.arange(len(dialogue)))
     
     turn = st.number_input("Turn number", 0, len(dialogue)-1)
-    #turn = 3
+    #turn = 2
 
     st.header("Dialogue so far")
     for t in range(turn):
@@ -254,6 +254,7 @@ analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
 idx = st.number_input("Scenario number", 0, len(scenarios))
+#idx = 1
 scenario_id = scenarios[idx]
 
 filepath = (analysis_path/ scenario_id).with_suffix(".json")
