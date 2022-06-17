@@ -13,7 +13,10 @@ threshold=1.5
 belief="or"
 #belief="egocentric"
 
-name="DBGTEST_SELFPLAY_SYMBOLIC_T${threshold}_B${belief}"
+#absolute_bucketing=0
+absolute_bucketing=1
+
+name="DBGTEST_SELFPLAY_SYMBOLIC_T${threshold}_B${belief}_AB${absolute_bucketing}"
 
 shift
 shift
@@ -49,7 +52,7 @@ python -u selfplay.py \
   --belief ${belief} \
   --belief_entropy_threshold ${threshold} \
   --symbolic \
-  --absolute_bucketing \
+  --absolute_bucketing ${absolute_bucketing} \
   --cuda \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \

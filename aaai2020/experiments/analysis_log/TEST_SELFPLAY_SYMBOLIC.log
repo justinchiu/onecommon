@@ -1,0 +1,925 @@
+================================================================================
+dialog 1
+Alice : confirm None mentions 73 77
+Bob   : confirm 0 mentions 75 77
+Alice : confirm 1 mentions 74 75 77
+Bob   : confirm 1 mentions 27 75 77
+Alice : confirm 0 mentions 44 74 75 77
+Bob   : confirm 0 mentions 27 52 77
+Alice : confirm 0 mentions 52 75 77
+Bob   : confirm 1 mentions 52 75 77
+Alice : confirm 1 mentions 52 58 75 77
+scenario_id : S_VBmMBjKvjYeOJZiV
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="299" cy="268" r="9" fill="rgb(195,195,195)"/><circle cx="129" cy="188" r="8" fill="rgb(152,152,152)"/><circle cx="141" cy="239" r="13" fill="rgb(153,153,153)"/><circle cx="276" cy="395" r="9" fill="rgb(59,59,59)"/><circle cx="120" cy="348" r="10" fill="rgb(147,147,147)"/><circle cx="181" cy="145" r="10" fill="rgb(199,199,199)"/><circle cx="181" cy="145" r="14" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="191" cy="35" r="10" fill="rgb(112,112,112)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="156" cy="183" r="12" fill="rgb(178,178,178)"/><circle cx="179" cy="128" r="11" fill="rgb(202,202,202)"/><circle cx="283" cy="253" r="8" fill="rgb(152,152,152)"/><circle cx="295" cy="304" r="13" fill="rgb(153,153,153)"/><circle cx="85" cy="172" r="11" fill="rgb(133,133,133)"/><circle cx="335" cy="210" r="10" fill="rgb(199,199,199)"/><circle cx="335" cy="210" r="14" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="345" cy="100" r="10" fill="rgb(112,112,112)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=9.00 sent_len=6.00 agree=100.00% moving_agree=50.00% advantage=0.00 moving_advantage=0.00 time=7.927s comb_rew=2.00 agree_comb_rew=2.00 alice_rew=1.00 alice_moving_rew=0.50 agree_alice_rew=1.00 alice_make_sel=100.00% alice_unique=5 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=1.00 bob_moving_rew=0.50 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=4 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 2
+Alice : confirm None mentions 11 12
+Bob   : confirm 0 mentions 33 36
+Alice : confirm 0 mentions 57 70
+Bob   : confirm 1 mentions 42 60 70
+Alice : confirm 1 mentions 42 57 60 70
+Bob   : confirm 0 mentions 36 42 60 70
+Alice : confirm 0 mentions 12 57 70
+Bob   : confirm 0 mentions 42 55 70
+Alice : confirm 1 mentions 42 55 60 70
+scenario_id : S_6HfPJPoPQFtkDO4L
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="106" cy="103" r="7" fill="rgb(203,203,203)"/><circle cx="292" cy="58" r="8" fill="rgb(190,190,190)"/><circle cx="158" cy="180" r="7" fill="rgb(150,150,150)"/><circle cx="86" cy="313" r="7" fill="rgb(197,197,197)"/><circle cx="270" cy="214" r="7" fill="rgb(122,122,122)"/><circle cx="253" cy="248" r="10" fill="rgb(169,169,169)"/><circle cx="128" cy="298" r="11" fill="rgb(122,122,122)"/><circle cx="128" cy="298" r="15" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="325" cy="305" r="11" fill="rgb(59,59,59)"/><circle cx="70" cy="304" r="8" fill="rgb(133,133,133)"/><circle cx="231" cy="27" r="7" fill="rgb(150,150,150)"/><circle cx="159" cy="159" r="7" fill="rgb(197,197,197)"/><circle cx="326" cy="95" r="10" fill="rgb(169,169,169)"/><circle cx="61" cy="141" r="12" fill="rgb(107,107,107)"/><circle cx="201" cy="144" r="11" fill="rgb(122,122,122)"/><circle cx="201" cy="144" r="15" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=9.00 sent_len=6.00 agree=100.00% moving_agree=66.67% advantage=0.00 moving_advantage=0.00 time=7.930s comb_rew=2.00 agree_comb_rew=2.00 alice_rew=1.00 alice_moving_rew=0.67 agree_alice_rew=1.00 alice_make_sel=100.00% alice_unique=10 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=1.00 bob_moving_rew=0.67 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=8 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 3
+Alice : confirm None mentions 14 27
+Bob   : confirm 0 mentions 32 46
+Alice : confirm 1 mentions 8 23 46
+Bob   : confirm 1 mentions 8 45 46
+Alice : confirm 0 mentions 8 14 23 46
+Bob   : confirm 0 mentions 32 46 75
+Alice : confirm 0 mentions 8 28 46
+Bob   : confirm 1 mentions 8 18 28 46
+scenario_id : S_YNrH1DvO3g4JW1Vm
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="232" cy="170" r="13" fill="rgb(192,192,192)"/><circle cx="363" cy="136" r="9" fill="rgb(59,59,59)"/><circle cx="342" cy="306" r="8" fill="rgb(59,59,59)"/><circle cx="246" cy="103" r="11" fill="rgb(198,198,198)"/><circle cx="68" cy="271" r="11" fill="rgb(158,158,158)"/><circle cx="63" cy="167" r="9" fill="rgb(188,188,188)"/><circle cx="63" cy="167" r="13" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="258" cy="269" r="7" fill="rgb(100,100,100)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="329" cy="113" r="13" fill="rgb(192,192,192)"/><circle cx="115" cy="322" r="12" fill="rgb(200,200,200)"/><circle cx="164" cy="214" r="11" fill="rgb(158,158,158)"/><circle cx="198" cy="337" r="12" fill="rgb(174,174,174)"/><circle cx="263" cy="383" r="12" fill="rgb(147,147,147)"/><circle cx="160" cy="110" r="9" fill="rgb(188,188,188)"/><circle cx="160" cy="110" r="13" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="354" cy="211" r="7" fill="rgb(100,100,100)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.67 sent_len=6.00 agree=100.00% moving_agree=75.00% advantage=0.00 moving_advantage=0.00 time=7.632s comb_rew=2.00 agree_comb_rew=2.00 alice_rew=1.00 alice_moving_rew=0.75 agree_alice_rew=1.00 alice_make_sel=66.67% alice_unique=14 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=1.00 bob_moving_rew=0.75 agree_bob_rew=1.00 bob_make_sel=33.33% bob_unique=12 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 4
+Alice : confirm None mentions 8 27
+Bob   : confirm 1 mentions 3 8 32
+Alice : confirm 0 mentions 8 9 32
+Bob   : confirm 0 mentions 4 8 32
+Alice : confirm 0 mentions 23 32 34
+Bob   : confirm 0 mentions 8 32 59
+Alice : confirm 1 mentions 27 32 59
+Bob   : confirm 0 mentions 23 32 59 62
+Alice : confirm 0 mentions 8 32 59
+Bob   : confirm 1 mentions 8 23 32 59
+scenario_id : S_NjoyfDjJGefRCOeW
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="174" cy="90" r="9" fill="rgb(125,125,125)"/><circle cx="395" cy="302" r="12" fill="rgb(156,156,156)"/><circle cx="154" cy="129" r="8" fill="rgb(143,143,143)"/><circle cx="322" cy="97" r="12" fill="rgb(63,63,63)"/><circle cx="267" cy="253" r="12" fill="rgb(82,82,82)"/><circle cx="267" cy="253" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="276" cy="58" r="10" fill="rgb(185,185,185)"/><circle cx="21" cy="184" r="10" fill="rgb(100,100,100)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="125" cy="231" r="8" fill="rgb(194,194,194)"/><circle cx="109" cy="366" r="12" fill="rgb(195,195,195)"/><circle cx="273" cy="24" r="9" fill="rgb(125,125,125)"/><circle cx="253" cy="63" r="8" fill="rgb(143,143,143)"/><circle cx="366" cy="187" r="12" fill="rgb(82,82,82)"/><circle cx="366" cy="187" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="119" cy="118" r="10" fill="rgb(100,100,100)"/><circle cx="293" cy="386" r="10" fill="rgb(154,154,154)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=9.00 sent_len=6.03 agree=100.00% moving_agree=80.00% advantage=0.00 moving_advantage=0.00 time=7.923s comb_rew=2.00 agree_comb_rew=2.00 alice_rew=1.00 alice_moving_rew=0.80 agree_alice_rew=1.00 alice_make_sel=50.00% alice_unique=19 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=1.00 bob_moving_rew=0.80 agree_bob_rew=1.00 bob_make_sel=50.00% bob_unique=17 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 5
+Alice : confirm None mentions 37 78
+Bob   : confirm 1 mentions 25 37 71
+Alice : confirm 0 mentions 47 71 78
+Bob   : confirm 0 mentions 37 58 71
+Alice : confirm 0 mentions 37 47
+Bob   : confirm 1 mentions 37 47 71
+Alice : confirm 1 mentions 37 66 71
+Bob   : confirm 0 mentions 31 37 47 71
+Alice : confirm 0 mentions 37 71 74
+Bob   : confirm 1 mentions 37 47 71 74
+scenario_id : S_JNAL6PjUp0vJfjV8
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="216" cy="139" r="13" fill="rgb(117,117,117)"/><circle cx="216" cy="139" r="17" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="60" cy="138" r="8" fill="rgb(65,65,65)"/><circle cx="169" cy="200" r="12" fill="rgb(105,105,105)"/><circle cx="245" cy="172" r="11" fill="rgb(103,103,103)"/><circle cx="79" cy="224" r="7" fill="rgb(84,84,84)"/><circle cx="187" cy="261" r="9" fill="rgb(140,140,140)"/><circle cx="340" cy="340" r="9" fill="rgb(59,59,59)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="182" cy="364" r="8" fill="rgb(99,99,99)"/><circle cx="259" cy="361" r="11" fill="rgb(169,169,169)"/><circle cx="253" cy="55" r="8" fill="rgb(65,65,65)"/><circle cx="253" cy="55" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="362" cy="117" r="12" fill="rgb(105,105,105)"/><circle cx="133" cy="55" r="10" fill="rgb(153,153,153)"/><circle cx="272" cy="141" r="7" fill="rgb(84,84,84)"/><circle cx="380" cy="178" r="9" fill="rgb(140,140,140)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=9.20 sent_len=6.02 agree=80.00% moving_agree=66.67% advantage=0.00 moving_advantage=0.00 time=8.091s comb_rew=1.60 agree_comb_rew=2.00 alice_rew=0.80 alice_moving_rew=0.67 agree_alice_rew=1.00 alice_make_sel=40.00% alice_unique=24 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.80 bob_moving_rew=0.67 agree_bob_rew=1.00 bob_make_sel=60.00% bob_unique=22 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 6
+Alice : confirm None mentions 38 65
+Bob   : confirm 1 mentions 2 38 56
+Alice : confirm 0 mentions 35 42 65
+Bob   : confirm 1 mentions 9 35 38 65
+Alice : confirm 0 mentions 35 36 65
+Bob   : confirm 0 mentions 35 38 50
+Alice : confirm 1 mentions 35 65 74
+Bob   : confirm 0 mentions 35 38 50 65
+scenario_id : S_Mzz7hWXPtN6329JX
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="327" cy="277" r="11" fill="rgb(108,108,108)"/><circle cx="105" cy="341" r="12" fill="rgb(187,187,187)"/><circle cx="279" cy="160" r="9" fill="rgb(75,75,75)"/><circle cx="279" cy="160" r="13" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="63" cy="203" r="8" fill="rgb(85,85,85)"/><circle cx="222" cy="16" r="12" fill="rgb(53,53,53)"/><circle cx="395" cy="148" r="8" fill="rgb(146,146,146)"/><circle cx="247" cy="369" r="12" fill="rgb(145,145,145)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="324" cy="53" r="9" fill="rgb(117,117,117)"/><circle cx="347" cy="323" r="7" fill="rgb(151,151,151)"/><circle cx="253" cy="329" r="11" fill="rgb(108,108,108)"/><circle cx="204" cy="212" r="9" fill="rgb(75,75,75)"/><circle cx="204" cy="212" r="13" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="148" cy="68" r="12" fill="rgb(53,53,53)"/><circle cx="341" cy="251" r="12" fill="rgb(183,183,183)"/><circle cx="320" cy="200" r="8" fill="rgb(146,146,146)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=9.00 sent_len=6.04 agree=83.33% moving_agree=71.43% advantage=0.00 moving_advantage=0.00 time=7.918s comb_rew=1.67 agree_comb_rew=2.00 alice_rew=0.83 alice_moving_rew=0.71 agree_alice_rew=1.00 alice_make_sel=33.33% alice_unique=28 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.83 bob_moving_rew=0.71 agree_bob_rew=1.00 bob_make_sel=66.67% bob_unique=26 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 7
+Alice : confirm None mentions 66 74
+Bob   : confirm 1 mentions 24 47 74
+Alice : confirm 1 mentions 66 69 74
+Bob   : confirm 1 mentions 29 73 74
+Alice : confirm 0 mentions 25 69 73
+Bob   : confirm 0 mentions 47 69 74
+Alice : confirm 0 mentions 48 73 74
+Bob   : confirm 0 mentions 24 35 74
+Alice : confirm 0 mentions 24 66 73
+Bob   : confirm 0 mentions 24 69 73 74
+scenario_id : S_B54kPNT0Gtqtqh6g
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="280" cy="282" r="7" fill="rgb(84,84,84)"/><circle cx="119" cy="255" r="10" fill="rgb(136,136,136)"/><circle cx="36" cy="231" r="8" fill="rgb(73,73,73)"/><circle cx="78" cy="287" r="8" fill="rgb(141,141,141)"/><circle cx="357" cy="138" r="8" fill="rgb(192,192,192)"/><circle cx="324" cy="140" r="8" fill="rgb(150,150,150)"/><circle cx="183" cy="190" r="8" fill="rgb(117,117,117)"/><circle cx="183" cy="190" r="12" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="235" cy="412" r="7" fill="rgb(84,84,84)"/><circle cx="286" cy="141" r="12" fill="rgb(139,139,139)"/><circle cx="349" cy="122" r="10" fill="rgb(70,70,70)"/><circle cx="273" cy="28" r="9" fill="rgb(121,121,121)"/><circle cx="312" cy="268" r="8" fill="rgb(192,192,192)"/><circle cx="279" cy="270" r="8" fill="rgb(150,150,150)"/><circle cx="138" cy="321" r="8" fill="rgb(117,117,117)"/><circle cx="138" cy="321" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=9.14 sent_len=6.03 agree=85.71% moving_agree=75.00% advantage=0.00 moving_advantage=0.00 time=8.044s comb_rew=1.71 agree_comb_rew=2.00 alice_rew=0.86 alice_moving_rew=0.75 agree_alice_rew=1.00 alice_make_sel=28.57% alice_unique=33 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.86 bob_moving_rew=0.75 agree_bob_rew=1.00 bob_make_sel=71.43% bob_unique=31 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 8
+Alice : confirm None mentions 0 27
+Bob   : confirm 0 mentions 27 68
+Alice : confirm 0 mentions 6 39
+Bob   : confirm 1 mentions 6 33 39
+Alice : confirm 0 mentions 6 11 39
+Bob   : confirm 1 mentions 6 11 39 75
+Alice : confirm 0 mentions 6 11 27 39
+Bob   : confirm 1 mentions 6 11 27 39
+scenario_id : S_pgD9Ha0e8sr1t88K
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="190" cy="114" r="9" fill="rgb(77,77,77)"/><circle cx="271" cy="220" r="12" fill="rgb(64,64,64)"/><circle cx="271" cy="220" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="254" cy="190" r="8" fill="rgb(122,122,122)"/><circle cx="394" cy="258" r="9" fill="rgb(193,193,193)"/><circle cx="249" cy="370" r="9" fill="rgb(127,127,127)"/><circle cx="118" cy="116" r="10" fill="rgb(198,198,198)"/><circle cx="320" cy="347" r="13" fill="rgb(84,84,84)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="390" cy="130" r="12" fill="rgb(64,64,64)"/><circle cx="390" cy="130" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="373" cy="100" r="8" fill="rgb(122,122,122)"/><circle cx="368" cy="280" r="9" fill="rgb(127,127,127)"/><circle cx="122" cy="347" r="11" fill="rgb(57,57,57)"/><circle cx="237" cy="25" r="10" fill="rgb(198,198,198)"/><circle cx="382" cy="320" r="13" fill="rgb(196,196,196)"/><circle cx="69" cy="84" r="12" fill="rgb(121,121,121)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=9.00 sent_len=6.03 agree=87.50% moving_agree=77.78% advantage=0.00 moving_advantage=0.00 time=7.921s comb_rew=1.75 agree_comb_rew=2.00 alice_rew=0.88 alice_moving_rew=0.78 agree_alice_rew=1.00 alice_make_sel=25.00% alice_unique=37 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.88 bob_moving_rew=0.78 agree_bob_rew=1.00 bob_make_sel=75.00% bob_unique=35 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 9
+Alice : confirm None mentions 58 73
+Bob   : confirm 1 mentions 31 56 73
+Alice : confirm 0 mentions 47 56 73
+Bob   : confirm 1 mentions 20 47 56 73
+Alice : confirm 0 mentions 25 47 56 73
+Bob   : confirm 1 mentions 47 53 56 73
+scenario_id : S_CWx8EqL3VhreT36W
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="78" cy="256" r="11" fill="rgb(131,131,131)"/><circle cx="377" cy="261" r="10" fill="rgb(195,195,195)"/><circle cx="180" cy="400" r="8" fill="rgb(124,124,124)"/><circle cx="172" cy="34" r="10" fill="rgb(55,55,55)"/><circle cx="280" cy="318" r="12" fill="rgb(113,113,113)"/><circle cx="280" cy="318" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="324" cy="282" r="13" fill="rgb(116,116,116)"/><circle cx="118" cy="184" r="13" fill="rgb(57,57,57)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="151" cy="311" r="10" fill="rgb(192,192,192)"/><circle cx="192" cy="234" r="11" fill="rgb(131,131,131)"/><circle cx="109" cy="306" r="8" fill="rgb(159,159,159)"/><circle cx="294" cy="378" r="8" fill="rgb(124,124,124)"/><circle cx="66" cy="232" r="8" fill="rgb(72,72,72)"/><circle cx="394" cy="296" r="12" fill="rgb(113,113,113)"/><circle cx="394" cy="296" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="232" cy="162" r="13" fill="rgb(57,57,57)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.67 sent_len=6.05 agree=88.89% moving_agree=80.00% advantage=0.00 moving_advantage=0.00 time=7.624s comb_rew=1.78 agree_comb_rew=2.00 alice_rew=0.89 alice_moving_rew=0.80 agree_alice_rew=1.00 alice_make_sel=22.22% alice_unique=40 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.89 bob_moving_rew=0.80 agree_bob_rew=1.00 bob_make_sel=77.78% bob_unique=38 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 10
+Alice : confirm None mentions 51 64
+Bob   : confirm 0 mentions 8 51
+Alice : confirm 0 mentions 10 57
+Bob   : confirm 0 mentions 46 66
+Alice : confirm 0 mentions 12 22
+Bob   : confirm 0 mentions 10 12
+Alice : confirm 1 mentions 10 12 46
+Bob   : confirm 1 mentions 10 12 59
+Alice : confirm 0 mentions 10 12 46 51
+scenario_id : S_2aeJznzAuABOtiKb
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="142" cy="289" r="13" fill="rgb(199,199,199)"/><circle cx="279" cy="217" r="12" fill="rgb(109,109,109)"/><circle cx="279" cy="217" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="344" cy="190" r="12" fill="rgb(101,101,101)"/><circle cx="226" cy="243" r="11" fill="rgb(188,188,188)"/><circle cx="104" cy="151" r="11" fill="rgb(165,165,165)"/><circle cx="378" cy="189" r="11" fill="rgb(69,69,69)"/><circle cx="322" cy="260" r="11" fill="rgb(62,62,62)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="126" cy="200" r="13" fill="rgb(104,104,104)"/><circle cx="228" cy="169" r="13" fill="rgb(199,199,199)"/><circle cx="365" cy="96" r="12" fill="rgb(109,109,109)"/><circle cx="365" cy="96" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="313" cy="123" r="11" fill="rgb(188,188,188)"/><circle cx="190" cy="31" r="11" fill="rgb(165,165,165)"/><circle cx="293" cy="301" r="8" fill="rgb(132,132,132)"/><circle cx="24" cy="182" r="10" fill="rgb(109,109,109)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.70 sent_len=5.99 agree=90.00% moving_agree=81.82% advantage=0.00 moving_advantage=0.00 time=7.652s comb_rew=1.80 agree_comb_rew=2.00 alice_rew=0.90 alice_moving_rew=0.82 agree_alice_rew=1.00 alice_make_sel=30.00% alice_unique=45 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.90 bob_moving_rew=0.82 agree_bob_rew=1.00 bob_make_sel=70.00% bob_unique=42 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 11
+Alice : confirm None mentions 17 43
+Bob   : confirm 0 mentions 6 64
+Alice : confirm 0 mentions 8 55
+Bob   : confirm 0 mentions 19 76
+Alice : confirm 1 mentions 19 22 76
+Bob   : confirm 1 mentions 19 22 42 76
+Alice : confirm 0 mentions 19 43 76
+Bob   : confirm 0 mentions 19 55 76
+Alice : confirm 1 mentions 17 19 22 76
+scenario_id : S_KkdDWtZ8SAauIifK
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="399" cy="141" r="12" fill="rgb(129,129,129)"/><circle cx="298" cy="130" r="13" fill="rgb(193,193,193)"/><circle cx="215" cy="119" r="7" fill="rgb(87,87,87)"/><circle cx="215" cy="119" r="11" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="170" cy="261" r="11" fill="rgb(157,157,157)"/><circle cx="237" cy="399" r="10" fill="rgb(57,57,57)"/><circle cx="55" cy="224" r="13" fill="rgb(181,181,181)"/><circle cx="253" cy="104" r="8" fill="rgb(114,114,114)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="148" cy="375" r="7" fill="rgb(54,54,54)"/><circle cx="328" cy="122" r="7" fill="rgb(87,87,87)"/><circle cx="328" cy="122" r="11" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="283" cy="264" r="11" fill="rgb(157,157,157)"/><circle cx="209" cy="18" r="12" fill="rgb(64,64,64)"/><circle cx="168" cy="228" r="13" fill="rgb(181,181,181)"/><circle cx="103" cy="52" r="10" fill="rgb(83,83,83)"/><circle cx="366" cy="107" r="8" fill="rgb(114,114,114)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.73 sent_len=5.97 agree=90.91% moving_agree=83.33% advantage=0.00 moving_advantage=0.00 time=7.673s comb_rew=1.82 agree_comb_rew=2.00 alice_rew=0.91 alice_moving_rew=0.83 agree_alice_rew=1.00 alice_make_sel=36.36% alice_unique=50 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.91 bob_moving_rew=0.83 agree_bob_rew=1.00 bob_make_sel=63.64% bob_unique=46 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 12
+Alice : confirm None mentions 9 26
+Bob   : confirm 0 mentions 7 32 79
+Alice : confirm 0 mentions 8 9
+Bob   : confirm 0 mentions 9 32
+Alice : confirm 0 mentions 7 79
+Bob   : confirm 1 mentions 7 9 79
+Alice : confirm 1 mentions 7 9 33 79
+Bob   : confirm 0 mentions 5 7 9 79
+Alice : confirm 0 mentions 7 54 79
+Bob   : confirm 1 mentions 7 9 54 79
+scenario_id : S_Hxks1pW4JeBFSrTv
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="325" cy="99" r="7" fill="rgb(67,67,67)"/><circle cx="190" cy="122" r="13" fill="rgb(167,167,167)"/><circle cx="247" cy="292" r="9" fill="rgb(69,69,69)"/><circle cx="177" cy="28" r="11" fill="rgb(133,133,133)"/><circle cx="190" cy="281" r="8" fill="rgb(159,159,159)"/><circle cx="341" cy="151" r="9" fill="rgb(76,76,76)"/><circle cx="235" cy="173" r="12" fill="rgb(106,106,106)"/><circle cx="235" cy="173" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="243" cy="209" r="12" fill="rgb(179,179,179)"/><circle cx="139" cy="70" r="7" fill="rgb(67,67,67)"/><circle cx="61" cy="263" r="9" fill="rgb(69,69,69)"/><circle cx="229" cy="399" r="10" fill="rgb(67,67,67)"/><circle cx="156" cy="121" r="9" fill="rgb(76,76,76)"/><circle cx="272" cy="186" r="10" fill="rgb(81,81,81)"/><circle cx="50" cy="144" r="12" fill="rgb(106,106,106)"/><circle cx="50" cy="144" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.83 sent_len=5.96 agree=91.67% moving_agree=84.62% advantage=0.00 moving_advantage=0.00 time=7.763s comb_rew=1.83 agree_comb_rew=2.00 alice_rew=0.92 alice_moving_rew=0.85 agree_alice_rew=1.00 alice_make_sel=33.33% alice_unique=55 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.92 bob_moving_rew=0.85 agree_bob_rew=1.00 bob_make_sel=66.67% bob_unique=51 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 13
+Alice : confirm None mentions 16 50
+Bob   : confirm 0 mentions 19 50
+Alice : confirm 1 mentions 37 50 75
+Bob   : confirm 0 mentions 7 19 50
+Alice : confirm 1 mentions 7 35 50 75
+Bob   : confirm 1 mentions 7 10 50 75
+Alice : confirm 0 mentions 7 50 63 75
+scenario_id : S_GS9vPqV90RPiroYh
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="282" cy="155" r="11" fill="rgb(96,96,96)"/><circle cx="48" cy="146" r="9" fill="rgb(154,154,154)"/><circle cx="350" cy="221" r="8" fill="rgb(197,197,197)"/><circle cx="236" cy="385" r="11" fill="rgb(113,113,113)"/><circle cx="247" cy="270" r="10" fill="rgb(179,179,179)"/><circle cx="134" cy="120" r="7" fill="rgb(92,92,92)"/><circle cx="315" cy="42" r="13" fill="rgb(134,134,134)"/><circle cx="315" cy="42" r="17" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="136" cy="212" r="11" fill="rgb(96,96,96)"/><circle cx="315" cy="316" r="7" fill="rgb(55,55,55)"/><circle cx="285" cy="80" r="13" fill="rgb(139,139,139)"/><circle cx="203" cy="278" r="8" fill="rgb(197,197,197)"/><circle cx="196" cy="58" r="13" fill="rgb(88,88,88)"/><circle cx="100" cy="327" r="10" fill="rgb(179,179,179)"/><circle cx="100" cy="327" r="14" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="168" cy="100" r="13" fill="rgb(134,134,134)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=8.69 sent_len=5.97 agree=84.62% moving_agree=78.57% advantage=0.00 moving_advantage=0.00 time=7.641s comb_rew=1.69 agree_comb_rew=2.00 alice_rew=0.85 alice_moving_rew=0.79 agree_alice_rew=1.00 alice_make_sel=38.46% alice_unique=59 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.85 bob_moving_rew=0.79 agree_bob_rew=1.00 bob_make_sel=61.54% bob_unique=54 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 14
+Alice : confirm None mentions 40 64
+Bob   : confirm 0 mentions 46 60
+Alice : confirm 1 mentions 40 46 50
+Bob   : confirm 0 mentions 10 46 50
+Alice : confirm 0 mentions 40 50
+Bob   : confirm 1 mentions 26 46 60
+Alice : confirm 0 mentions 0 40 50
+Bob   : confirm 0 mentions 40 46 50
+Alice : confirm 0 mentions 38 40 50
+Bob   : confirm 1 mentions 26 40 50
+Alice : confirm 0 mentions 38 40 50 68
+scenario_id : S_emnqfAptoS0uWDvj
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="171" cy="102" r="12" fill="rgb(83,83,83)"/><circle cx="344" cy="232" r="11" fill="rgb(142,142,142)"/><circle cx="264" cy="331" r="10" fill="rgb(103,103,103)"/><circle cx="294" cy="187" r="11" fill="rgb(75,75,75)"/><circle cx="293" cy="104" r="8" fill="rgb(133,133,133)"/><circle cx="293" cy="104" r="12" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="54" cy="100" r="7" fill="rgb(174,174,174)"/><circle cx="122" cy="121" r="13" fill="rgb(203,203,203)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="332" cy="338" r="13" fill="rgb(66,66,66)"/><circle cx="319" cy="164" r="7" fill="rgb(88,88,88)"/><circle cx="224" cy="218" r="11" fill="rgb(142,142,142)"/><circle cx="144" cy="317" r="10" fill="rgb(103,103,103)"/><circle cx="174" cy="173" r="11" fill="rgb(75,75,75)"/><circle cx="174" cy="90" r="8" fill="rgb(133,133,133)"/><circle cx="174" cy="90" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="391" cy="132" r="9" fill="rgb(134,134,134)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.86 sent_len=5.96 agree=85.71% moving_agree=80.00% advantage=0.00 moving_advantage=0.00 time=7.783s comb_rew=1.71 agree_comb_rew=2.00 alice_rew=0.86 alice_moving_rew=0.80 agree_alice_rew=1.00 alice_make_sel=42.86% alice_unique=65 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.86 bob_moving_rew=0.80 agree_bob_rew=1.00 bob_make_sel=57.14% bob_unique=59 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 15
+Alice : confirm None mentions 0 45
+Bob   : confirm 1 mentions 0 19 64
+Alice : confirm 1 mentions 0 45 48
+Bob   : confirm 1 mentions 0 39 64
+Alice : confirm 0 mentions 0 15 45
+Bob   : confirm 0 mentions 0 26 48 64
+Alice : confirm 0 mentions 0 28 45
+Bob   : confirm 0 mentions 0 45 64
+Alice : confirm 0 mentions 0 19 45 76
+scenario_id : S_TBZXibmKspwnom69
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="337" cy="183" r="10" fill="rgb(163,163,163)"/><circle cx="60" cy="209" r="9" fill="rgb(153,153,153)"/><circle cx="252" cy="165" r="11" fill="rgb(84,84,84)"/><circle cx="85" cy="261" r="10" fill="rgb(186,186,186)"/><circle cx="388" cy="291" r="11" fill="rgb(109,109,109)"/><circle cx="388" cy="291" r="15" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="320" cy="153" r="12" fill="rgb(123,123,123)"/><circle cx="211" cy="411" r="8" fill="rgb(69,69,69)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="166" cy="136" r="10" fill="rgb(163,163,163)"/><circle cx="80" cy="119" r="11" fill="rgb(84,84,84)"/><circle cx="209" cy="377" r="8" fill="rgb(124,124,124)"/><circle cx="303" cy="161" r="12" fill="rgb(173,173,173)"/><circle cx="217" cy="244" r="11" fill="rgb(109,109,109)"/><circle cx="217" cy="244" r="15" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="149" cy="106" r="12" fill="rgb(123,123,123)"/><circle cx="237" cy="355" r="11" fill="rgb(127,127,127)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.87 sent_len=5.97 agree=86.67% moving_agree=81.25% advantage=0.00 moving_advantage=0.00 time=7.793s comb_rew=1.73 agree_comb_rew=2.00 alice_rew=0.87 alice_moving_rew=0.81 agree_alice_rew=1.00 alice_make_sel=46.67% alice_unique=70 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.87 bob_moving_rew=0.81 agree_bob_rew=1.00 bob_make_sel=53.33% bob_unique=63 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 16
+Alice : confirm None mentions 6 7
+Bob   : confirm 0 mentions 18 23 44
+Alice : confirm 0 mentions 18 59
+Bob   : confirm 0 mentions 18 20
+Alice : confirm 1 mentions 18 20 47
+Bob   : confirm 0 mentions 18 28
+Alice : confirm 0 mentions 6 20 51
+Bob   : confirm 1 mentions 6 20 44 51
+Alice : confirm 0 mentions 6 18 20
+Bob   : confirm 1 mentions 6 18 20 51
+scenario_id : S_7nOMrb0DAccwNyxZ
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="222" cy="179" r="9" fill="rgb(183,183,183)"/><circle cx="222" cy="179" r="13" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="211" cy="60" r="7" fill="rgb(81,81,81)"/><circle cx="238" cy="261" r="8" fill="rgb(188,188,188)"/><circle cx="209" cy="347" r="13" fill="rgb(58,58,58)"/><circle cx="149" cy="54" r="8" fill="rgb(115,115,115)"/><circle cx="32" cy="272" r="8" fill="rgb(187,187,187)"/><circle cx="405" cy="192" r="10" fill="rgb(182,182,182)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="267" cy="126" r="9" fill="rgb(183,183,183)"/><circle cx="267" cy="126" r="13" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="283" cy="207" r="8" fill="rgb(188,188,188)"/><circle cx="254" cy="294" r="13" fill="rgb(58,58,58)"/><circle cx="354" cy="358" r="8" fill="rgb(113,113,113)"/><circle cx="142" cy="332" r="7" fill="rgb(141,141,141)"/><circle cx="71" cy="334" r="13" fill="rgb(73,73,73)"/><circle cx="77" cy="219" r="8" fill="rgb(187,187,187)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.94 sent_len=5.96 agree=87.50% moving_agree=82.35% advantage=0.00 moving_advantage=0.00 time=7.852s comb_rew=1.75 agree_comb_rew=2.00 alice_rew=0.88 alice_moving_rew=0.82 agree_alice_rew=1.00 alice_make_sel=43.75% alice_unique=75 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.88 bob_moving_rew=0.82 agree_bob_rew=1.00 bob_make_sel=56.25% bob_unique=68 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 17
+Alice : confirm None mentions 16 43
+Bob   : confirm 1 mentions 5 6 43
+Alice : confirm 0 mentions 16 34 43
+Bob   : confirm 0 mentions 6 43 69
+Alice : confirm 1 mentions 6 20 43
+Bob   : confirm 1 mentions 6 10 43 69
+Alice : confirm 0 mentions 6 8 43
+Bob   : confirm 0 mentions 6 20 26 43
+scenario_id : S_tSRP3LMmT6GAFSTt
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="118" cy="216" r="12" fill="rgb(69,69,69)"/><circle cx="118" cy="216" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="236" cy="142" r="10" fill="rgb(138,138,138)"/><circle cx="340" cy="283" r="13" fill="rgb(78,78,78)"/><circle cx="158" cy="137" r="9" fill="rgb(186,186,186)"/><circle cx="265" cy="167" r="13" fill="rgb(111,111,111)"/><circle cx="39" cy="142" r="9" fill="rgb(96,96,96)"/><circle cx="220" cy="72" r="8" fill="rgb(69,69,69)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="63" cy="110" r="10" fill="rgb(184,184,184)"/><circle cx="285" cy="362" r="12" fill="rgb(69,69,69)"/><circle cx="285" cy="362" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="55" cy="233" r="11" fill="rgb(134,134,134)"/><circle cx="325" cy="283" r="9" fill="rgb(186,186,186)"/><circle cx="163" cy="390" r="8" fill="rgb(121,121,121)"/><circle cx="206" cy="288" r="9" fill="rgb(96,96,96)"/><circle cx="387" cy="218" r="8" fill="rgb(69,69,69)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.88 sent_len=5.97 agree=88.24% moving_agree=83.33% advantage=0.00 moving_advantage=0.00 time=7.803s comb_rew=1.76 agree_comb_rew=2.00 alice_rew=0.88 alice_moving_rew=0.83 agree_alice_rew=1.00 alice_make_sel=41.18% alice_unique=79 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.88 bob_moving_rew=0.83 agree_bob_rew=1.00 bob_make_sel=58.82% bob_unique=72 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 18
+Alice : confirm None mentions 14 75
+Bob   : confirm 1 mentions 14 18 75
+Alice : confirm 0 mentions 21 71 79
+Bob   : confirm 0 mentions 14 57 75
+Alice : confirm 1 mentions 6 14 57 75
+Bob   : confirm 0 mentions 14 52 57 75
+Alice : confirm 0 mentions 14 75 79
+Bob   : confirm 0 mentions 14 71 75
+Alice : confirm 1 mentions 14 57 71 79
+Bob   : confirm 1 mentions 14 34 71 75
+scenario_id : S_TRcYd0EfYV4wB3Ip
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="190" cy="42" r="11" fill="rgb(173,173,173)"/><circle cx="242" cy="400" r="12" fill="rgb(61,61,61)"/><circle cx="93" cy="182" r="12" fill="rgb(102,102,102)"/><circle cx="268" cy="217" r="10" fill="rgb(61,61,61)"/><circle cx="362" cy="321" r="7" fill="rgb(124,124,124)"/><circle cx="283" cy="176" r="8" fill="rgb(89,89,89)"/><circle cx="283" cy="176" r="12" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="278" cy="58" r="8" fill="rgb(97,97,97)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="205" cy="310" r="12" fill="rgb(61,61,61)"/><circle cx="23" cy="256" r="10" fill="rgb(140,140,140)"/><circle cx="276" cy="324" r="12" fill="rgb(170,170,170)"/><circle cx="336" cy="273" r="12" fill="rgb(117,117,117)"/><circle cx="230" cy="127" r="10" fill="rgb(61,61,61)"/><circle cx="325" cy="231" r="7" fill="rgb(124,124,124)"/><circle cx="246" cy="86" r="8" fill="rgb(89,89,89)"/><circle cx="246" cy="86" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.94 sent_len=5.99 agree=88.89% moving_agree=84.21% advantage=0.00 moving_advantage=0.00 time=7.856s comb_rew=1.78 agree_comb_rew=2.00 alice_rew=0.89 alice_moving_rew=0.84 agree_alice_rew=1.00 alice_make_sel=38.89% alice_unique=84 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.89 bob_moving_rew=0.84 agree_bob_rew=1.00 bob_make_sel=61.11% bob_unique=77 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 19
+Alice : confirm None mentions 10 46 62
+Bob   : confirm 0 mentions 10 61
+Alice : confirm 1 mentions 0 48 61
+Bob   : confirm 1 mentions 0 3 10 61
+Alice : confirm 0 mentions 0 10 59
+Bob   : confirm 0 mentions 0 30 61
+Alice : confirm 0 mentions 0 10 48
+Bob   : confirm 1 mentions 0 61 71
+scenario_id : S_UEh3rfuSsdl6u7l0
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="259" cy="44" r="11" fill="rgb(55,55,55)"/><circle cx="369" cy="139" r="12" fill="rgb(100,100,100)"/><circle cx="115" cy="301" r="10" fill="rgb(94,94,94)"/><circle cx="296" cy="103" r="13" fill="rgb(69,69,69)"/><circle cx="208" cy="295" r="10" fill="rgb(103,103,103)"/><circle cx="192" cy="207" r="9" fill="rgb(71,71,71)"/><circle cx="192" cy="207" r="13" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="407" cy="250" r="12" fill="rgb(75,75,75)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="185" cy="188" r="11" fill="rgb(55,55,55)"/><circle cx="67" cy="167" r="10" fill="rgb(148,148,148)"/><circle cx="295" cy="283" r="12" fill="rgb(100,100,100)"/><circle cx="258" cy="83" r="9" fill="rgb(78,78,78)"/><circle cx="222" cy="247" r="13" fill="rgb(69,69,69)"/><circle cx="118" cy="350" r="9" fill="rgb(71,71,71)"/><circle cx="118" cy="350" r="13" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="270" cy="114" r="12" fill="rgb(179,179,179)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.89 sent_len=5.99 agree=89.47% moving_agree=85.00% advantage=0.00 moving_advantage=0.00 time=7.813s comb_rew=1.79 agree_comb_rew=2.00 alice_rew=0.89 alice_moving_rew=0.85 agree_alice_rew=1.00 alice_make_sel=36.84% alice_unique=88 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.89 bob_moving_rew=0.85 agree_bob_rew=1.00 bob_make_sel=63.16% bob_unique=81 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 20
+Alice : confirm None mentions 14 61 69
+Bob   : confirm 1 mentions 14 20 61 69
+Alice : confirm 0 mentions 14 58 61 69
+Bob   : confirm 1 mentions 14 61 69 78
+Alice : confirm 0 mentions 14 56 69
+Bob   : confirm 0 mentions 14 58 61 69
+Alice : confirm 1 mentions 14 59 60 69
+Bob   : confirm 0 mentions 20 58 61
+scenario_id : S_V8Q1qVFC4m0aZZKA
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="180" cy="319" r="10" fill="rgb(139,139,139)"/><circle cx="180" cy="319" r="14" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="317" cy="97" r="11" fill="rgb(184,184,184)"/><circle cx="241" cy="399" r="7" fill="rgb(167,167,167)"/><circle cx="373" cy="290" r="7" fill="rgb(71,71,71)"/><circle cx="99" cy="101" r="12" fill="rgb(175,175,175)"/><circle cx="303" cy="225" r="7" fill="rgb(80,80,80)"/><circle cx="149" cy="154" r="12" fill="rgb(167,167,167)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="235" cy="211" r="10" fill="rgb(139,139,139)"/><circle cx="235" cy="211" r="14" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="204" cy="306" r="10" fill="rgb(144,144,144)"/><circle cx="163" cy="293" r="11" fill="rgb(112,112,112)"/><circle cx="296" cy="290" r="7" fill="rgb(167,167,167)"/><circle cx="358" cy="117" r="7" fill="rgb(80,80,80)"/><circle cx="204" cy="45" r="12" fill="rgb(167,167,167)"/><circle cx="83" cy="202" r="13" fill="rgb(96,96,96)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.85 sent_len=6.02 agree=90.00% moving_agree=85.71% advantage=0.00 moving_advantage=0.00 time=7.773s comb_rew=1.80 agree_comb_rew=2.00 alice_rew=0.90 alice_moving_rew=0.86 agree_alice_rew=1.00 alice_make_sel=35.00% alice_unique=92 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.90 bob_moving_rew=0.86 agree_bob_rew=1.00 bob_make_sel=65.00% bob_unique=85 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 21
+Alice : confirm None mentions 35 78
+Bob   : confirm 0 mentions 4 12
+Alice : confirm 0 mentions 13 78
+Bob   : confirm 0 mentions 8 75
+Alice : confirm 0 mentions 46 56
+Bob   : confirm 0 mentions 8 78
+Alice : confirm 0 mentions 75 78
+Bob   : confirm 1 mentions 75 78
+Alice : confirm 1 mentions 12 75 78
+Bob   : confirm 1 mentions 12 46 75 78
+scenario_id : S_bKcMZCkZVQukaQQQ
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="217" cy="97" r="9" fill="rgb(91,91,91)"/><circle cx="154" cy="282" r="10" fill="rgb(59,59,59)"/><circle cx="188" cy="358" r="12" fill="rgb(181,181,181)"/><circle cx="297" cy="106" r="8" fill="rgb(168,168,168)"/><circle cx="293" cy="376" r="13" fill="rgb(105,105,105)"/><circle cx="376" cy="308" r="11" fill="rgb(75,75,75)"/><circle cx="376" cy="308" r="15" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="319" cy="65" r="9" fill="rgb(81,81,81)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="195" cy="27" r="7" fill="rgb(111,111,111)"/><circle cx="360" cy="175" r="8" fill="rgb(131,131,131)"/><circle cx="72" cy="203" r="9" fill="rgb(91,91,91)"/><circle cx="152" cy="212" r="8" fill="rgb(168,168,168)"/><circle cx="301" cy="240" r="8" fill="rgb(142,142,142)"/><circle cx="231" cy="414" r="11" fill="rgb(75,75,75)"/><circle cx="231" cy="414" r="15" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="174" cy="172" r="9" fill="rgb(81,81,81)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.90 sent_len=5.98 agree=90.48% moving_agree=86.36% advantage=0.00 moving_advantage=0.00 time=7.820s comb_rew=1.81 agree_comb_rew=2.00 alice_rew=0.90 alice_moving_rew=0.86 agree_alice_rew=1.00 alice_make_sel=33.33% alice_unique=97 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.90 bob_moving_rew=0.86 agree_bob_rew=1.00 bob_make_sel=66.67% bob_unique=90 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 22
+Alice : confirm None mentions 54 72
+Bob   : confirm 0 mentions 21 35 47
+Alice : confirm 0 mentions 21 64
+Bob   : confirm 1 mentions 16 35 64
+Alice : confirm 0 mentions 21 54 64
+Bob   : confirm 0 mentions 21 35 64
+Alice : confirm 1 mentions 21 64 76 77
+Bob   : confirm 1 mentions 21 64 76 77
+scenario_id : S_dM3EpvPdY38ndLsA
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="334" cy="218" r="12" fill="rgb(71,71,71)"/><circle cx="280" cy="140" r="11" fill="rgb(92,92,92)"/><circle cx="195" cy="291" r="11" fill="rgb(91,91,91)"/><circle cx="168" cy="253" r="10" fill="rgb(137,137,137)"/><circle cx="168" cy="253" r="14" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="388" cy="123" r="12" fill="rgb(66,66,66)"/><circle cx="282" cy="186" r="10" fill="rgb(57,57,57)"/><circle cx="227" cy="166" r="10" fill="rgb(161,161,161)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="227" cy="86" r="12" fill="rgb(170,170,170)"/><circle cx="331" cy="292" r="11" fill="rgb(92,92,92)"/><circle cx="273" cy="113" r="11" fill="rgb(101,101,101)"/><circle cx="120" cy="65" r="11" fill="rgb(62,62,62)"/><circle cx="218" cy="405" r="10" fill="rgb(137,137,137)"/><circle cx="218" cy="405" r="14" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="332" cy="337" r="10" fill="rgb(57,57,57)"/><circle cx="278" cy="318" r="10" fill="rgb(161,161,161)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.86 sent_len=5.98 agree=90.91% moving_agree=86.96% advantage=0.00 moving_advantage=0.00 time=7.782s comb_rew=1.82 agree_comb_rew=2.00 alice_rew=0.91 alice_moving_rew=0.87 agree_alice_rew=1.00 alice_make_sel=31.82% alice_unique=101 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.91 bob_moving_rew=0.87 agree_bob_rew=1.00 bob_make_sel=68.18% bob_unique=94 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 23
+Alice : confirm None mentions 15 54
+Bob   : confirm 0 mentions 13 63
+Alice : confirm 0 mentions 10 55
+Bob   : confirm 1 mentions 10 55 66
+Alice : confirm 0 mentions 10 55 63
+Bob   : confirm 1 mentions 10 55 64
+Alice : confirm 0 mentions 10 41 55 63
+Bob   : confirm 1 mentions 10 41 55 63
+scenario_id : S_l5THpkN6Wtsn2YdA
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="129" cy="249" r="12" fill="rgb(133,133,133)"/><circle cx="129" cy="249" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="277" cy="60" r="10" fill="rgb(151,151,151)"/><circle cx="370" cy="323" r="8" fill="rgb(111,111,111)"/><circle cx="35" cy="192" r="8" fill="rgb(184,184,184)"/><circle cx="242" cy="159" r="11" fill="rgb(89,89,89)"/><circle cx="158" cy="49" r="11" fill="rgb(189,189,189)"/><circle cx="175" cy="242" r="9" fill="rgb(55,55,55)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="296" cy="357" r="12" fill="rgb(133,133,133)"/><circle cx="296" cy="357" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="46" cy="190" r="8" fill="rgb(136,136,136)"/><circle cx="202" cy="300" r="8" fill="rgb(184,184,184)"/><circle cx="325" cy="157" r="11" fill="rgb(189,189,189)"/><circle cx="343" cy="350" r="9" fill="rgb(55,55,55)"/><circle cx="325" cy="97" r="11" fill="rgb(152,152,152)"/><circle cx="271" cy="87" r="11" fill="rgb(91,91,91)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.83 sent_len=5.98 agree=91.30% moving_agree=87.50% advantage=0.00 moving_advantage=0.00 time=7.747s comb_rew=1.83 agree_comb_rew=2.00 alice_rew=0.91 alice_moving_rew=0.88 agree_alice_rew=1.00 alice_make_sel=30.43% alice_unique=105 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.91 bob_moving_rew=0.88 agree_bob_rew=1.00 bob_make_sel=69.57% bob_unique=98 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 24
+Alice : confirm None mentions 15 54
+Bob   : confirm 0 mentions 29 46
+Alice : confirm 1 mentions 2 29 46
+Bob   : confirm 1 mentions 29 31 46
+Alice : confirm 0 mentions 2 29 46 59
+Bob   : confirm 1 mentions 2 21 29 46
+scenario_id : S_HTEKfOYZsVLggoSg
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="234" cy="295" r="12" fill="rgb(61,61,61)"/><circle cx="370" cy="289" r="12" fill="rgb(184,184,184)"/><circle cx="280" cy="336" r="13" fill="rgb(174,174,174)"/><circle cx="95" cy="212" r="12" fill="rgb(116,116,116)"/><circle cx="95" cy="212" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="322" cy="149" r="8" fill="rgb(107,107,107)"/><circle cx="311" cy="346" r="11" fill="rgb(161,161,161)"/><circle cx="159" cy="103" r="7" fill="rgb(135,135,135)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="307" cy="182" r="12" fill="rgb(61,61,61)"/><circle cx="110" cy="262" r="8" fill="rgb(159,159,159)"/><circle cx="353" cy="223" r="13" fill="rgb(174,174,174)"/><circle cx="60" cy="90" r="11" fill="rgb(132,132,132)"/><circle cx="168" cy="99" r="12" fill="rgb(116,116,116)"/><circle cx="168" cy="99" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="172" cy="401" r="12" fill="rgb(154,154,154)"/><circle cx="384" cy="233" r="11" fill="rgb(161,161,161)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.71 sent_len=5.98 agree=91.67% moving_agree=88.00% advantage=0.00 moving_advantage=0.00 time=7.643s comb_rew=1.83 agree_comb_rew=2.00 alice_rew=0.92 alice_moving_rew=0.88 agree_alice_rew=1.00 alice_make_sel=29.17% alice_unique=107 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.92 bob_moving_rew=0.88 agree_bob_rew=1.00 bob_make_sel=70.83% bob_unique=101 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 25
+Alice : confirm None mentions 20 55
+Bob   : confirm 1 mentions 16 20 39
+Alice : confirm 0 mentions 16 20 34
+Bob   : confirm 1 mentions 20 34 55 76
+Alice : confirm 0 mentions 20 34 49 55
+Bob   : confirm 0 mentions 5 20 34
+Alice : confirm 0 mentions 20 34 57
+Bob   : confirm 0 mentions 16 20 55
+Alice : confirm 1 mentions 16 20 29
+Bob   : confirm 0 mentions 16 20 34 55
+scenario_id : S_ga99eYYpI45cpeV2
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="71" cy="81" r="10" fill="rgb(114,114,114)"/><circle cx="212" cy="251" r="8" fill="rgb(56,56,56)"/><circle cx="212" cy="251" r="12" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="80" cy="359" r="8" fill="rgb(56,56,56)"/><circle cx="281" cy="230" r="12" fill="rgb(169,169,169)"/><circle cx="337" cy="371" r="11" fill="rgb(61,61,61)"/><circle cx="125" cy="107" r="10" fill="rgb(131,131,131)"/><circle cx="72" cy="220" r="9" fill="rgb(157,157,157)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="409" cy="247" r="13" fill="rgb(62,62,62)"/><circle cx="54" cy="226" r="10" fill="rgb(114,114,114)"/><circle cx="195" cy="397" r="8" fill="rgb(56,56,56)"/><circle cx="195" cy="397" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="265" cy="375" r="12" fill="rgb(169,169,169)"/><circle cx="223" cy="106" r="8" fill="rgb(147,147,147)"/><circle cx="108" cy="253" r="10" fill="rgb(131,131,131)"/><circle cx="144" cy="132" r="10" fill="rgb(179,179,179)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.76 sent_len=5.99 agree=92.00% moving_agree=88.46% advantage=0.00 moving_advantage=0.00 time=7.686s comb_rew=1.84 agree_comb_rew=2.00 alice_rew=0.92 alice_moving_rew=0.88 agree_alice_rew=1.00 alice_make_sel=28.00% alice_unique=112 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.92 bob_moving_rew=0.88 agree_bob_rew=1.00 bob_make_sel=72.00% bob_unique=106 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 26
+Alice : confirm None mentions 9 79
+Bob   : confirm 0 mentions 9 43
+Alice : confirm 0 mentions 21 37
+Bob   : confirm 0 mentions 23 43
+Alice : confirm 0 mentions 15 69
+Bob   : confirm 0 mentions 21 69
+Alice : confirm 1 mentions 21 69
+Bob   : confirm 1 mentions 9 21 69
+Alice : confirm 1 mentions 4 9 21 69
+scenario_id : S_Bs9CiwCwGdcNy1Dm
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="280" cy="399" r="12" fill="rgb(173,173,173)"/><circle cx="391" cy="158" r="13" fill="rgb(171,171,171)"/><circle cx="121" cy="329" r="10" fill="rgb(67,67,67)"/><circle cx="368" cy="240" r="11" fill="rgb(180,180,180)"/><circle cx="135" cy="180" r="13" fill="rgb(112,112,112)"/><circle cx="200" cy="244" r="9" fill="rgb(181,181,181)"/><circle cx="200" cy="244" r="13" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="241" cy="404" r="11" fill="rgb(116,116,116)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="161" cy="393" r="12" fill="rgb(173,173,173)"/><circle cx="273" cy="151" r="13" fill="rgb(171,171,171)"/><circle cx="249" cy="233" r="11" fill="rgb(180,180,180)"/><circle cx="273" cy="363" r="11" fill="rgb(125,125,125)"/><circle cx="333" cy="114" r="12" fill="rgb(121,121,121)"/><circle cx="355" cy="320" r="12" fill="rgb(117,117,117)"/><circle cx="82" cy="237" r="9" fill="rgb(181,181,181)"/><circle cx="82" cy="237" r="13" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.77 sent_len=5.96 agree=92.31% moving_agree=88.89% advantage=0.00 moving_advantage=0.00 time=7.693s comb_rew=1.85 agree_comb_rew=2.00 alice_rew=0.92 alice_moving_rew=0.89 agree_alice_rew=1.00 alice_make_sel=30.77% alice_unique=117 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.92 bob_moving_rew=0.89 agree_bob_rew=1.00 bob_make_sel=69.23% bob_unique=110 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 27
+Alice : confirm None mentions 18 73
+Bob   : confirm 1 mentions 69 71 73
+Alice : confirm 0 mentions 11 71 73
+Bob   : confirm 1 mentions 11 15 73
+Alice : confirm 0 mentions 18 45 73
+Bob   : confirm 0 mentions 11 21 73
+Alice : confirm 0 mentions 11 59 71
+Bob   : confirm 0 mentions 18 71 73
+Alice : confirm 1 mentions 18 67 73
+Bob   : confirm 0 mentions 11 18 71 73
+scenario_id : S_FSOzUyviWkEVMIKZ
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="188" cy="225" r="11" fill="rgb(102,102,102)"/><circle cx="29" cy="250" r="13" fill="rgb(170,170,170)"/><circle cx="289" cy="165" r="12" fill="rgb(85,85,85)"/><circle cx="268" cy="60" r="8" fill="rgb(133,133,133)"/><circle cx="327" cy="253" r="12" fill="rgb(167,167,167)"/><circle cx="149" cy="388" r="12" fill="rgb(189,189,189)"/><circle cx="149" cy="388" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="163" cy="186" r="8" fill="rgb(150,150,150)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="296" cy="154" r="11" fill="rgb(102,102,102)"/><circle cx="167" cy="301" r="10" fill="rgb(124,124,124)"/><circle cx="137" cy="178" r="13" fill="rgb(170,170,170)"/><circle cx="39" cy="219" r="9" fill="rgb(74,74,74)"/><circle cx="120" cy="369" r="11" fill="rgb(195,195,195)"/><circle cx="257" cy="316" r="12" fill="rgb(189,189,189)"/><circle cx="270" cy="115" r="8" fill="rgb(150,150,150)"/><circle cx="270" cy="115" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=8.81 sent_len=5.96 agree=88.89% moving_agree=85.71% advantage=0.00 moving_advantage=0.00 time=7.732s comb_rew=1.78 agree_comb_rew=2.00 alice_rew=0.89 alice_moving_rew=0.86 agree_alice_rew=1.00 alice_make_sel=29.63% alice_unique=122 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.89 bob_moving_rew=0.86 agree_bob_rew=1.00 bob_make_sel=70.37% bob_unique=115 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 28
+Alice : confirm None mentions 7 30
+Bob   : confirm 0 mentions 40 74
+Alice : confirm 0 mentions 13 64
+Bob   : confirm 1 mentions 35 51 64
+Alice : confirm 0 mentions 7 13 64
+Bob   : confirm 0 mentions 35 54 64
+Alice : confirm 0 mentions 32 35 64
+Bob   : confirm 0 mentions 35 64
+Alice : confirm 1 mentions 13 30 64
+Bob   : confirm 0 mentions 7 35 64
+Alice : confirm 1 mentions 7 35 64 74
+Bob   : confirm 1 mentions 7 35 64 74
+scenario_id : S_GdJ8oVpZiRFHgq2W
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="256" cy="368" r="8" fill="rgb(92,92,92)"/><circle cx="300" cy="263" r="12" fill="rgb(199,199,199)"/><circle cx="131" cy="190" r="10" fill="rgb(190,190,190)"/><circle cx="274" cy="169" r="7" fill="rgb(108,108,108)"/><circle cx="108" cy="362" r="12" fill="rgb(189,189,189)"/><circle cx="45" cy="254" r="7" fill="rgb(187,187,187)"/><circle cx="45" cy="254" r="11" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="192" cy="280" r="8" fill="rgb(101,101,101)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="348" cy="177" r="8" fill="rgb(92,92,92)"/><circle cx="200" cy="172" r="12" fill="rgb(189,189,189)"/><circle cx="280" cy="227" r="11" fill="rgb(70,70,70)"/><circle cx="77" cy="136" r="11" fill="rgb(130,130,130)"/><circle cx="179" cy="275" r="7" fill="rgb(109,109,109)"/><circle cx="137" cy="64" r="7" fill="rgb(187,187,187)"/><circle cx="137" cy="64" r="11" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="283" cy="89" r="8" fill="rgb(101,101,101)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.93 sent_len=5.96 agree=89.29% moving_agree=86.21% advantage=0.00 moving_advantage=0.00 time=7.833s comb_rew=1.79 agree_comb_rew=2.00 alice_rew=0.89 alice_moving_rew=0.86 agree_alice_rew=1.00 alice_make_sel=28.57% alice_unique=128 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.89 bob_moving_rew=0.86 agree_bob_rew=1.00 bob_make_sel=71.43% bob_unique=121 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 29
+Alice : confirm None mentions 46 72
+Bob   : confirm 0 mentions 8 51
+Alice : confirm 0 mentions 7 21
+Bob   : confirm 0 mentions 64 76
+Alice : confirm 1 mentions 46 64 76
+Bob   : confirm 1 mentions 11 64 72 76
+Alice : confirm 1 mentions 46 64 72 76
+scenario_id : S_IVXJ2Kj9rL64hnom
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="201" cy="353" r="7" fill="rgb(191,191,191)"/><circle cx="199" cy="42" r="13" fill="rgb(191,191,191)"/><circle cx="376" cy="138" r="10" fill="rgb(66,66,66)"/><circle cx="405" cy="199" r="11" fill="rgb(91,91,91)"/><circle cx="120" cy="99" r="8" fill="rgb(195,195,195)"/><circle cx="256" cy="118" r="11" fill="rgb(92,92,92)"/><circle cx="127" cy="59" r="12" fill="rgb(100,100,100)"/><circle cx="127" cy="59" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="238" cy="33" r="7" fill="rgb(69,69,69)"/><circle cx="223" cy="238" r="13" fill="rgb(191,191,191)"/><circle cx="81" cy="156" r="9" fill="rgb(87,87,87)"/><circle cx="325" cy="200" r="13" fill="rgb(73,73,73)"/><circle cx="144" cy="295" r="8" fill="rgb(195,195,195)"/><circle cx="280" cy="314" r="11" fill="rgb(92,92,92)"/><circle cx="151" cy="255" r="12" fill="rgb(100,100,100)"/><circle cx="151" cy="255" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.86 sent_len=5.95 agree=89.66% moving_agree=86.67% advantage=0.00 moving_advantage=0.00 time=7.774s comb_rew=1.79 agree_comb_rew=2.00 alice_rew=0.90 alice_moving_rew=0.87 agree_alice_rew=1.00 alice_make_sel=31.03% alice_unique=132 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.90 bob_moving_rew=0.87 agree_bob_rew=1.00 bob_make_sel=68.97% bob_unique=123 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 30
+Alice : confirm None mentions 15 57
+Bob   : confirm 0 mentions 18 51
+Alice : confirm 1 mentions 15 18 62
+Bob   : confirm 0 mentions 32 45
+Alice : confirm 0 mentions 15 18
+Bob   : confirm 1 mentions 15 18 51
+Alice : confirm 0 mentions 15 18 54
+Bob   : confirm 0 mentions 18 65
+Alice : confirm 0 mentions 15 18 66
+Bob   : confirm 1 mentions 15 18 32 66
+Alice : confirm 1 mentions 15 18 32 66
+scenario_id : S_fEjFMSWmzrsleVzd
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="236" cy="128" r="9" fill="rgb(87,87,87)"/><circle cx="90" cy="136" r="10" fill="rgb(127,127,127)"/><circle cx="90" cy="136" r="14" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="308" cy="55" r="11" fill="rgb(151,151,151)"/><circle cx="223" cy="305" r="8" fill="rgb(91,91,91)"/><circle cx="132" cy="309" r="10" fill="rgb(101,101,101)"/><circle cx="218" cy="258" r="11" fill="rgb(187,187,187)"/><circle cx="231" cy="212" r="13" fill="rgb(186,186,186)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="295" cy="296" r="9" fill="rgb(87,87,87)"/><circle cx="149" cy="305" r="10" fill="rgb(127,127,127)"/><circle cx="149" cy="305" r="14" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="367" cy="223" r="11" fill="rgb(151,151,151)"/><circle cx="142" cy="171" r="11" fill="rgb(177,177,177)"/><circle cx="266" cy="44" r="9" fill="rgb(55,55,55)"/><circle cx="355" cy="110" r="13" fill="rgb(115,115,115)"/><circle cx="290" cy="380" r="13" fill="rgb(186,186,186)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.93 sent_len=5.94 agree=90.00% moving_agree=87.10% advantage=0.00 moving_advantage=0.00 time=7.837s comb_rew=1.80 agree_comb_rew=2.00 alice_rew=0.90 alice_moving_rew=0.87 agree_alice_rew=1.00 alice_make_sel=33.33% alice_unique=138 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.90 bob_moving_rew=0.87 agree_bob_rew=1.00 bob_make_sel=66.67% bob_unique=128 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 31
+Alice : confirm None mentions 14 55
+Bob   : confirm 0 mentions 5 21
+Alice : confirm 0 mentions 32 33
+Bob   : confirm 0 mentions 5 38
+Alice : confirm 0 mentions 32 55
+Bob   : confirm 1 mentions 21 55 70
+Alice : confirm 1 mentions 21 55 63
+Bob   : confirm 1 mentions 21 38 55 70
+scenario_id : S_bE9qy66lx2ZTErip
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="65" cy="148" r="10" fill="rgb(105,105,105)"/><circle cx="329" cy="356" r="8" fill="rgb(88,88,88)"/><circle cx="190" cy="69" r="11" fill="rgb(197,197,197)"/><circle cx="190" cy="69" r="15" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="262" cy="57" r="7" fill="rgb(72,72,72)"/><circle cx="143" cy="232" r="9" fill="rgb(75,75,75)"/><circle cx="241" cy="251" r="9" fill="rgb(198,198,198)"/><circle cx="254" cy="207" r="10" fill="rgb(172,172,172)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="231" cy="354" r="11" fill="rgb(144,144,144)"/><circle cx="228" cy="263" r="8" fill="rgb(88,88,88)"/><circle cx="391" cy="292" r="12" fill="rgb(60,60,60)"/><circle cx="42" cy="138" r="9" fill="rgb(75,75,75)"/><circle cx="42" cy="138" r="13" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="140" cy="157" r="9" fill="rgb(198,198,198)"/><circle cx="153" cy="114" r="10" fill="rgb(172,172,172)"/><circle cx="155" cy="323" r="11" fill="rgb(119,119,119)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=8.90 sent_len=5.93 agree=87.10% moving_agree=84.38% advantage=0.00 moving_advantage=0.00 time=7.811s comb_rew=1.74 agree_comb_rew=2.00 alice_rew=0.87 alice_moving_rew=0.84 agree_alice_rew=1.00 alice_make_sel=32.26% alice_unique=142 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.87 bob_moving_rew=0.84 agree_bob_rew=1.00 bob_make_sel=67.74% bob_unique=132 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 32
+Alice : confirm None mentions 13 58
+Bob   : confirm 0 mentions 4 18
+Alice : confirm 1 mentions 4 67 72
+Bob   : confirm 0 mentions 4 32 72
+Alice : confirm 1 mentions 4 32 45 72
+Bob   : confirm 0 mentions 4 12 18 32
+Alice : confirm 0 mentions 4 58 72
+Bob   : confirm 0 mentions 4 30 32
+Alice : confirm 0 mentions 4 13 72
+Bob   : confirm 1 mentions 4 18 72
+Alice : confirm 0 mentions 4 13 32 72
+scenario_id : S_WRxlVOZ7UJXMWsqB
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="155" cy="109" r="13" fill="rgb(117,117,117)"/><circle cx="155" cy="109" r="17" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="22" cy="194" r="9" fill="rgb(164,164,164)"/><circle cx="246" cy="173" r="11" fill="rgb(121,121,121)"/><circle cx="314" cy="136" r="13" fill="rgb(65,65,65)"/><circle cx="383" cy="184" r="7" fill="rgb(197,197,197)"/><circle cx="294" cy="86" r="11" fill="rgb(61,61,61)"/><circle cx="140" cy="378" r="11" fill="rgb(188,188,188)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="267" cy="122" r="13" fill="rgb(117,117,117)"/><circle cx="267" cy="122" r="17" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="50" cy="157" r="12" fill="rgb(164,164,164)"/><circle cx="135" cy="206" r="9" fill="rgb(164,164,164)"/><circle cx="113" cy="323" r="10" fill="rgb(166,166,166)"/><circle cx="199" cy="51" r="8" fill="rgb(94,94,94)"/><circle cx="359" cy="186" r="11" fill="rgb(121,121,121)"/><circle cx="252" cy="390" r="11" fill="rgb(188,188,188)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.97 sent_len=5.93 agree=87.50% moving_agree=84.85% advantage=0.00 moving_advantage=0.00 time=7.869s comb_rew=1.75 agree_comb_rew=2.00 alice_rew=0.88 alice_moving_rew=0.85 agree_alice_rew=1.00 alice_make_sel=34.38% alice_unique=148 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.88 bob_moving_rew=0.85 agree_bob_rew=1.00 bob_make_sel=65.62% bob_unique=137 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 33
+Alice : confirm None mentions 30 42 62
+Bob   : confirm 1 mentions 0 30 49
+Alice : confirm 0 mentions 11 30 65
+Bob   : confirm 0 mentions 30 49 62
+Alice : confirm 1 mentions 28 30 49
+Bob   : confirm 1 mentions 30 49 62 67
+scenario_id : S_DSNfMRLXHdAgpVi5
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="119" cy="92" r="8" fill="rgb(105,105,105)"/><circle cx="119" cy="92" r="12" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="193" cy="322" r="9" fill="rgb(78,78,78)"/><circle cx="236" cy="400" r="12" fill="rgb(69,69,69)"/><circle cx="263" cy="35" r="12" fill="rgb(200,200,200)"/><circle cx="245" cy="219" r="13" fill="rgb(179,179,179)"/><circle cx="118" cy="329" r="8" fill="rgb(153,153,153)"/><circle cx="129" cy="47" r="8" fill="rgb(135,135,135)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="77" cy="327" r="11" fill="rgb(117,117,117)"/><circle cx="148" cy="153" r="9" fill="rgb(78,78,78)"/><circle cx="191" cy="231" r="12" fill="rgb(69,69,69)"/><circle cx="191" cy="231" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="200" cy="50" r="13" fill="rgb(179,179,179)"/><circle cx="306" cy="289" r="9" fill="rgb(141,141,141)"/><circle cx="73" cy="160" r="8" fill="rgb(153,153,153)"/><circle cx="377" cy="221" r="8" fill="rgb(86,86,86)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=8.88 sent_len=5.94 agree=84.85% moving_agree=82.35% advantage=0.00 moving_advantage=0.00 time=7.789s comb_rew=1.70 agree_comb_rew=2.00 alice_rew=0.85 alice_moving_rew=0.82 agree_alice_rew=1.00 alice_make_sel=33.33% alice_unique=151 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.85 bob_moving_rew=0.82 agree_bob_rew=1.00 bob_make_sel=66.67% bob_unique=140 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 34
+Alice : confirm None mentions 75 76
+Bob   : confirm 0 mentions 15 38 44
+Alice : confirm 0 mentions 0 44
+Bob   : confirm 0 mentions 7 38
+Alice : confirm 1 mentions 7 16 44
+Bob   : confirm 1 mentions 7 16 56
+Alice : confirm 0 mentions 7 16 44 73
+Bob   : confirm 1 mentions 7 16 44 73
+scenario_id : S_lVYYXa9TRpqTcj5L
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="364" cy="274" r="7" fill="rgb(162,162,162)"/><circle cx="232" cy="155" r="12" fill="rgb(117,117,117)"/><circle cx="232" cy="155" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="77" cy="271" r="8" fill="rgb(178,178,178)"/><circle cx="276" cy="224" r="10" fill="rgb(56,56,56)"/><circle cx="135" cy="271" r="11" fill="rgb(84,84,84)"/><circle cx="382" cy="187" r="9" fill="rgb(192,192,192)"/><circle cx="311" cy="228" r="11" fill="rgb(69,69,69)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="342" cy="149" r="12" fill="rgb(117,117,117)"/><circle cx="342" cy="149" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="161" cy="94" r="8" fill="rgb(167,167,167)"/><circle cx="186" cy="265" r="8" fill="rgb(178,178,178)"/><circle cx="197" cy="391" r="8" fill="rgb(202,202,202)"/><circle cx="385" cy="219" r="10" fill="rgb(56,56,56)"/><circle cx="83" cy="152" r="11" fill="rgb(187,187,187)"/><circle cx="244" cy="266" r="11" fill="rgb(84,84,84)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.85 sent_len=5.94 agree=85.29% moving_agree=82.86% advantage=0.00 moving_advantage=0.00 time=7.766s comb_rew=1.71 agree_comb_rew=2.00 alice_rew=0.85 alice_moving_rew=0.83 agree_alice_rew=1.00 alice_make_sel=32.35% alice_unique=155 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.85 bob_moving_rew=0.83 agree_bob_rew=1.00 bob_make_sel=67.65% bob_unique=144 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 35
+Alice : confirm None mentions 37 74
+Bob   : confirm 1 mentions 35 37 68
+Alice : confirm 1 mentions 31 47 74
+Bob   : confirm 0 mentions 37 65 68
+Alice : confirm 0 mentions 21 47 68
+Bob   : confirm 1 mentions 47 66 68
+Alice : confirm 0 mentions 47 68 69
+Bob   : confirm 0 mentions 21 35 68
+Alice : confirm 0 mentions 37 47 74
+scenario_id : S_LU93ko78tljfk66b
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="175" cy="133" r="13" fill="rgb(179,179,179)"/><circle cx="354" cy="244" r="8" fill="rgb(125,125,125)"/><circle cx="218" cy="206" r="7" fill="rgb(68,68,68)"/><circle cx="129" cy="126" r="8" fill="rgb(84,84,84)"/><circle cx="129" cy="126" r="12" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="198" cy="275" r="10" fill="rgb(203,203,203)"/><circle cx="349" cy="282" r="11" fill="rgb(139,139,139)"/><circle cx="314" cy="356" r="11" fill="rgb(184,184,184)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="345" cy="200" r="13" fill="rgb(179,179,179)"/><circle cx="88" cy="256" r="9" fill="rgb(66,66,66)"/><circle cx="389" cy="274" r="7" fill="rgb(68,68,68)"/><circle cx="389" cy="274" r="11" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="300" cy="193" r="8" fill="rgb(84,84,84)"/><circle cx="200" cy="402" r="11" fill="rgb(72,72,72)"/><circle cx="92" cy="82" r="11" fill="rgb(113,113,113)"/><circle cx="368" cy="343" r="10" fill="rgb(203,203,203)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=8.86 sent_len=5.94 agree=82.86% moving_agree=80.56% advantage=0.00 moving_advantage=0.00 time=7.769s comb_rew=1.66 agree_comb_rew=2.00 alice_rew=0.83 alice_moving_rew=0.81 agree_alice_rew=1.00 alice_make_sel=34.29% alice_unique=160 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.83 bob_moving_rew=0.81 agree_bob_rew=1.00 bob_make_sel=65.71% bob_unique=148 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 36
+Alice : confirm None mentions 42 71
+Bob   : confirm 0 mentions 3 64 76
+Alice : confirm 0 mentions 3 30
+Bob   : confirm 1 mentions 30 42 64
+Alice : confirm 0 mentions 30 56 57
+Bob   : confirm 1 mentions 26 30 42 56
+Alice : confirm 0 mentions 30 56 57 68
+Bob   : confirm 0 mentions 30 42 56
+Alice : confirm 1 mentions 3 30 56 57
+Bob   : confirm 0 mentions 3 30 42 56
+scenario_id : S_w9OhTSsfml1evd3z
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="205" cy="191" r="13" fill="rgb(170,170,170)"/><circle cx="269" cy="311" r="12" fill="rgb(113,113,113)"/><circle cx="237" cy="203" r="13" fill="rgb(180,180,180)"/><circle cx="151" cy="326" r="8" fill="rgb(63,63,63)"/><circle cx="151" cy="326" r="12" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="265" cy="134" r="12" fill="rgb(173,173,173)"/><circle cx="34" cy="273" r="12" fill="rgb(146,146,146)"/><circle cx="89" cy="255" r="9" fill="rgb(159,159,159)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="144" cy="58" r="13" fill="rgb(170,170,170)"/><circle cx="272" cy="260" r="12" fill="rgb(68,68,68)"/><circle cx="209" cy="178" r="12" fill="rgb(113,113,113)"/><circle cx="177" cy="70" r="13" fill="rgb(180,180,180)"/><circle cx="90" cy="193" r="8" fill="rgb(63,63,63)"/><circle cx="90" cy="193" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="223" cy="361" r="12" fill="rgb(136,136,136)"/><circle cx="364" cy="173" r="8" fill="rgb(91,91,91)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.89 sent_len=5.94 agree=83.33% moving_agree=81.08% advantage=0.00 moving_advantage=0.00 time=7.797s comb_rew=1.67 agree_comb_rew=2.00 alice_rew=0.83 alice_moving_rew=0.81 agree_alice_rew=1.00 alice_make_sel=33.33% alice_unique=165 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.83 bob_moving_rew=0.81 agree_bob_rew=1.00 bob_make_sel=66.67% bob_unique=153 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 37
+Alice : confirm None mentions 19 70
+Bob   : confirm 0 mentions 25 64
+Alice : confirm 1 mentions 20 25 64
+Bob   : confirm 1 mentions 20 25 64 73
+Alice : confirm 0 mentions 20 25 64 79
+Bob   : confirm 0 mentions 25 34 64
+Alice : confirm 0 mentions 25 64 70
+Bob   : confirm 0 mentions 25 64 74
+Alice : confirm 1 mentions 20 25 64 74
+scenario_id : S_pRI3ozdej7vw4muh
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="77" cy="234" r="11" fill="rgb(86,86,86)"/><circle cx="192" cy="139" r="9" fill="rgb(163,163,163)"/><circle cx="206" cy="193" r="10" fill="rgb(71,71,71)"/><circle cx="141" cy="367" r="12" fill="rgb(100,100,100)"/><circle cx="141" cy="367" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="137" cy="90" r="10" fill="rgb(85,85,85)"/><circle cx="135" cy="321" r="10" fill="rgb(122,122,122)"/><circle cx="190" cy="42" r="12" fill="rgb(160,160,160)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="132" cy="58" r="9" fill="rgb(163,163,163)"/><circle cx="146" cy="112" r="10" fill="rgb(71,71,71)"/><circle cx="389" cy="208" r="9" fill="rgb(100,100,100)"/><circle cx="248" cy="313" r="8" fill="rgb(117,117,117)"/><circle cx="81" cy="286" r="12" fill="rgb(100,100,100)"/><circle cx="81" cy="286" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="368" cy="306" r="12" fill="rgb(139,139,139)"/><circle cx="75" cy="240" r="10" fill="rgb(122,122,122)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.89 sent_len=5.95 agree=83.78% moving_agree=81.58% advantage=0.00 moving_advantage=0.00 time=7.799s comb_rew=1.68 agree_comb_rew=2.00 alice_rew=0.84 alice_moving_rew=0.82 agree_alice_rew=1.00 alice_make_sel=35.14% alice_unique=170 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.84 bob_moving_rew=0.82 agree_bob_rew=1.00 bob_make_sel=64.86% bob_unique=157 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 38
+Alice : confirm None mentions 57 62
+Bob   : confirm 0 mentions 49 62
+Alice : confirm 1 mentions 35 49 62
+Bob   : confirm 0 mentions 49 62 63
+Alice : confirm 0 mentions 49 62
+Bob   : confirm 1 mentions 49 60 62
+Alice : confirm 0 mentions 30 49 62
+Bob   : confirm 0 mentions 49 62 65
+Alice : confirm 0 mentions 9 49 62
+Bob   : confirm 1 mentions 9 49 53 62
+scenario_id : S_8DS5tZosDcBVXCUZ
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="90" cy="139" r="13" fill="rgb(153,153,153)"/><circle cx="232" cy="326" r="12" fill="rgb(64,64,64)"/><circle cx="153" cy="383" r="7" fill="rgb(156,156,156)"/><circle cx="200" cy="110" r="10" fill="rgb(56,56,56)"/><circle cx="200" cy="110" r="14" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="357" cy="127" r="10" fill="rgb(200,200,200)"/><circle cx="69" cy="180" r="11" fill="rgb(166,166,166)"/><circle cx="122" cy="182" r="12" fill="rgb(95,95,95)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="85" cy="321" r="13" fill="rgb(153,153,153)"/><circle cx="195" cy="291" r="10" fill="rgb(56,56,56)"/><circle cx="195" cy="291" r="14" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="352" cy="308" r="10" fill="rgb(200,200,200)"/><circle cx="306" cy="140" r="8" fill="rgb(57,57,57)"/><circle cx="116" cy="364" r="12" fill="rgb(95,95,95)"/><circle cx="262" cy="84" r="12" fill="rgb(102,102,102)"/><circle cx="305" cy="203" r="9" fill="rgb(173,173,173)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.92 sent_len=5.94 agree=84.21% moving_agree=82.05% advantage=0.00 moving_advantage=0.00 time=7.825s comb_rew=1.68 agree_comb_rew=2.00 alice_rew=0.84 alice_moving_rew=0.82 agree_alice_rew=1.00 alice_make_sel=34.21% alice_unique=175 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.84 bob_moving_rew=0.82 agree_bob_rew=1.00 bob_make_sel=65.79% bob_unique=162 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 39
+Alice : confirm None mentions 9 22
+Bob   : confirm 1 mentions 2 20 67
+Alice : confirm 0 mentions 8 9 22
+Bob   : confirm 0 mentions 5 20 22
+Alice : confirm 0 mentions 20 22 62
+Bob   : confirm 0 mentions 2 8 20
+Alice : confirm 1 mentions 13 20 22
+Bob   : confirm 0 mentions 8 20 80
+Alice : confirm 1 mentions 8 20 22 80
+scenario_id : S_YDiqmQkAysAkm7j2
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="344" cy="212" r="10" fill="rgb(106,106,106)"/><circle cx="133" cy="185" r="8" fill="rgb(97,97,97)"/><circle cx="170" cy="81" r="11" fill="rgb(187,187,187)"/><circle cx="389" cy="285" r="8" fill="rgb(82,82,82)"/><circle cx="120" cy="317" r="12" fill="rgb(135,135,135)"/><circle cx="120" cy="317" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="281" cy="38" r="9" fill="rgb(75,75,75)"/><circle cx="369" cy="318" r="12" fill="rgb(89,89,89)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="257" cy="223" r="13" fill="rgb(117,117,117)"/><circle cx="288" cy="235" r="12" fill="rgb(173,173,173)"/><circle cx="262" cy="41" r="10" fill="rgb(106,106,106)"/><circle cx="307" cy="114" r="8" fill="rgb(82,82,82)"/><circle cx="307" cy="114" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="38" cy="146" r="12" fill="rgb(135,135,135)"/><circle cx="283" cy="307" r="8" fill="rgb(71,71,71)"/><circle cx="287" cy="147" r="12" fill="rgb(89,89,89)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=8.92 sent_len=5.95 agree=82.05% moving_agree=80.00% advantage=0.00 moving_advantage=0.00 time=7.826s comb_rew=1.64 agree_comb_rew=2.00 alice_rew=0.82 alice_moving_rew=0.80 agree_alice_rew=1.00 alice_make_sel=35.90% alice_unique=180 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.82 bob_moving_rew=0.80 agree_bob_rew=1.00 bob_make_sel=64.10% bob_unique=166 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 40
+Alice : confirm None mentions 13 49
+Bob   : confirm 1 mentions 12 46 49
+Alice : confirm 0 mentions 12 13 49
+Bob   : confirm 0 mentions 12 15 49
+Alice : confirm 1 mentions 12 23 49
+Bob   : confirm 1 mentions 12 49 53
+Alice : confirm 0 mentions 22 23 49
+Bob   : confirm 0 mentions 12 15 61
+scenario_id : S_YFOQ3fqrwtrBcicM
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="264" cy="121" r="8" fill="rgb(159,159,159)"/><circle cx="264" cy="121" r="12" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="37" cy="193" r="9" fill="rgb(166,166,166)"/><circle cx="358" cy="148" r="10" fill="rgb(96,96,96)"/><circle cx="171" cy="311" r="9" fill="rgb(70,70,70)"/><circle cx="289" cy="267" r="12" fill="rgb(91,91,91)"/><circle cx="371" cy="330" r="10" fill="rgb(183,183,183)"/><circle cx="85" cy="328" r="8" fill="rgb(155,155,155)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="108" cy="160" r="8" fill="rgb(159,159,159)"/><circle cx="108" cy="160" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="202" cy="187" r="10" fill="rgb(96,96,96)"/><circle cx="133" cy="306" r="12" fill="rgb(91,91,91)"/><circle cx="370" cy="199" r="13" fill="rgb(150,150,150)"/><circle cx="215" cy="369" r="10" fill="rgb(183,183,183)"/><circle cx="350" cy="274" r="10" fill="rgb(171,171,171)"/><circle cx="248" cy="328" r="7" fill="rgb(97,97,97)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.90 sent_len=5.94 agree=82.50% moving_agree=80.49% advantage=0.00 moving_advantage=0.00 time=7.806s comb_rew=1.65 agree_comb_rew=2.00 alice_rew=0.82 alice_moving_rew=0.80 agree_alice_rew=1.00 alice_make_sel=35.00% alice_unique=184 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.82 bob_moving_rew=0.80 agree_bob_rew=1.00 bob_make_sel=65.00% bob_unique=170 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 41
+Alice : confirm None mentions 53 74
+Bob   : confirm 0 mentions 17 74
+Alice : confirm 0 mentions 4 33
+Bob   : confirm 0 mentions 26 52
+Alice : confirm 0 mentions 66 79
+Bob   : confirm 0 mentions 33 79
+Alice : confirm 1 mentions 33 79
+Bob   : confirm 1 mentions 33 51 79
+Alice : confirm 0 mentions 26 33 79
+Bob   : confirm 1 mentions 33 74 79
+Alice : confirm 1 mentions 26 33 74 79
+scenario_id : S_YVZ87Q4bXCCkTL51
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="396" cy="244" r="8" fill="rgb(60,60,60)"/><circle cx="228" cy="353" r="11" fill="rgb(178,178,178)"/><circle cx="118" cy="270" r="11" fill="rgb(110,110,110)"/><circle cx="293" cy="193" r="8" fill="rgb(85,85,85)"/><circle cx="346" cy="74" r="12" fill="rgb(187,187,187)"/><circle cx="214" cy="392" r="12" fill="rgb(158,158,158)"/><circle cx="119" cy="238" r="9" fill="rgb(193,193,193)"/><circle cx="119" cy="238" r="13" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="314" cy="321" r="10" fill="rgb(65,65,65)"/><circle cx="301" cy="184" r="11" fill="rgb(178,178,178)"/><circle cx="191" cy="101" r="11" fill="rgb(110,110,110)"/><circle cx="36" cy="136" r="13" fill="rgb(177,177,177)"/><circle cx="87" cy="286" r="12" fill="rgb(152,152,152)"/><circle cx="287" cy="222" r="12" fill="rgb(158,158,158)"/><circle cx="192" cy="69" r="9" fill="rgb(193,193,193)"/><circle cx="192" cy="69" r="13" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.95 sent_len=5.93 agree=82.93% moving_agree=80.95% advantage=0.00 moving_advantage=0.00 time=7.851s comb_rew=1.66 agree_comb_rew=2.00 alice_rew=0.83 alice_moving_rew=0.81 agree_alice_rew=1.00 alice_make_sel=36.59% alice_unique=190 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.83 bob_moving_rew=0.81 agree_bob_rew=1.00 bob_make_sel=63.41% bob_unique=175 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 42
+Alice : confirm None mentions 13 64
+Bob   : confirm 1 mentions 13 61 64
+Alice : confirm 0 mentions 13 34 70
+Bob   : confirm 0 mentions 13 63 64
+Alice : confirm 1 mentions 13 33 34
+Bob   : confirm 1 mentions 13 50 63 64
+Alice : confirm 0 mentions 13 33 34 39
+Bob   : confirm 0 mentions 13 33 64 69
+scenario_id : S_3L2V9NqB62Hp70Ps
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="311" cy="208" r="12" fill="rgb(120,120,120)"/><circle cx="232" cy="187" r="10" fill="rgb(133,133,133)"/><circle cx="102" cy="166" r="8" fill="rgb(202,202,202)"/><circle cx="102" cy="166" r="12" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="239" cy="388" r="9" fill="rgb(113,113,113)"/><circle cx="179" cy="102" r="11" fill="rgb(78,78,78)"/><circle cx="170" cy="41" r="8" fill="rgb(189,189,189)"/><circle cx="246" cy="263" r="10" fill="rgb(158,158,158)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="168" cy="345" r="12" fill="rgb(120,120,120)"/><circle cx="89" cy="324" r="10" fill="rgb(133,133,133)"/><circle cx="204" cy="102" r="8" fill="rgb(168,168,168)"/><circle cx="295" cy="127" r="8" fill="rgb(80,80,80)"/><circle cx="36" cy="239" r="11" fill="rgb(78,78,78)"/><circle cx="27" cy="178" r="8" fill="rgb(189,189,189)"/><circle cx="27" cy="178" r="12" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="182" cy="75" r="13" fill="rgb(178,178,178)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=8.93 sent_len=5.94 agree=80.95% moving_agree=79.07% advantage=0.00 moving_advantage=0.00 time=7.831s comb_rew=1.62 agree_comb_rew=2.00 alice_rew=0.81 alice_moving_rew=0.79 agree_alice_rew=1.00 alice_make_sel=35.71% alice_unique=194 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.81 bob_moving_rew=0.79 agree_bob_rew=1.00 bob_make_sel=64.29% bob_unique=179 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 43
+Alice : confirm None mentions 47 63
+Bob   : confirm 0 mentions 6 16
+Alice : confirm 0 mentions 19 47
+Bob   : confirm 0 mentions 16 68
+Alice : confirm 1 mentions 16 44 68
+Bob   : confirm 1 mentions 44 45 68
+Alice : confirm 0 mentions 16 44 47 68
+Bob   : confirm 1 mentions 44 47 64 68
+scenario_id : S_OF0to9TE3CvSzaGP
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="205" cy="220" r="9" fill="rgb(62,62,62)"/><circle cx="184" cy="349" r="10" fill="rgb(122,122,122)"/><circle cx="216" cy="90" r="10" fill="rgb(160,160,160)"/><circle cx="275" cy="203" r="7" fill="rgb(60,60,60)"/><circle cx="343" cy="321" r="12" fill="rgb(191,191,191)"/><circle cx="337" cy="91" r="13" fill="rgb(88,88,88)"/><circle cx="263" cy="266" r="12" fill="rgb(150,150,150)"/><circle cx="263" cy="266" r="16" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="274" cy="40" r="8" fill="rgb(169,169,169)"/><circle cx="291" cy="295" r="9" fill="rgb(62,62,62)"/><circle cx="302" cy="164" r="10" fill="rgb(160,160,160)"/><circle cx="83" cy="183" r="11" fill="rgb(142,142,142)"/><circle cx="361" cy="277" r="7" fill="rgb(60,60,60)"/><circle cx="81" cy="239" r="8" fill="rgb(56,56,56)"/><circle cx="349" cy="340" r="12" fill="rgb(150,150,150)"/><circle cx="349" cy="340" r="16" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.91 sent_len=5.93 agree=81.40% moving_agree=79.55% advantage=0.00 moving_advantage=0.00 time=7.813s comb_rew=1.63 agree_comb_rew=2.00 alice_rew=0.81 alice_moving_rew=0.80 agree_alice_rew=1.00 alice_make_sel=34.88% alice_unique=198 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.81 bob_moving_rew=0.80 agree_bob_rew=1.00 bob_make_sel=65.12% bob_unique=183 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 44
+Alice : confirm None mentions 7 19
+Bob   : confirm 0 mentions 56 69
+Alice : confirm 1 mentions 56 62 69
+Bob   : confirm 0 mentions 25 56
+Alice : confirm 0 mentions 56 57 69
+Bob   : confirm 1 mentions 19 56 57 69
+Alice : confirm 1 mentions 56 57 68 69
+scenario_id : S_4rijsi17VljnYAEw
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="374" cy="170" r="11" fill="rgb(68,68,68)"/><circle cx="119" cy="239" r="10" fill="rgb(197,197,197)"/><circle cx="71" cy="286" r="10" fill="rgb(142,142,142)"/><circle cx="71" cy="286" r="14" fill="none" stroke="red" stroke-width="4" stroke-dasharray="3,3" /><circle cx="137" cy="315" r="12" fill="rgb(181,181,181)"/><circle cx="130" cy="372" r="7" fill="rgb(95,95,95)"/><circle cx="194" cy="363" r="11" fill="rgb(200,200,200)"/><circle cx="207" cy="282" r="13" fill="rgb(73,73,73)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="209" cy="302" r="10" fill="rgb(197,197,197)"/><circle cx="280" cy="39" r="10" fill="rgb(121,121,121)"/><circle cx="165" cy="41" r="12" fill="rgb(78,78,78)"/><circle cx="64" cy="135" r="9" fill="rgb(167,167,167)"/><circle cx="161" cy="349" r="10" fill="rgb(142,142,142)"/><circle cx="161" cy="349" r="14" fill="none" stroke="blue" stroke-width="4" stroke-dasharray="3,3" /><circle cx="227" cy="378" r="12" fill="rgb(181,181,181)"/><circle cx="298" cy="346" r="13" fill="rgb(73,73,73)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=8.86 sent_len=5.93 agree=81.82% moving_agree=80.00% advantage=0.00 moving_advantage=0.00 time=7.774s comb_rew=1.64 agree_comb_rew=2.00 alice_rew=0.82 alice_moving_rew=0.80 agree_alice_rew=1.00 alice_make_sel=36.36% alice_unique=202 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.82 bob_moving_rew=0.80 agree_bob_rew=1.00 bob_make_sel=63.64% bob_unique=186 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 45
+Alice : confirm None mentions 32 72
+Bob   : confirm 1 mentions 27 50 72
+Alice : confirm 1 mentions 27 72 76
+Bob   : confirm 1 mentions 0 27 72 78
+Alice : confirm 0 mentions 27 32 72

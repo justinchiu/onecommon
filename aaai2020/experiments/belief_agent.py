@@ -39,8 +39,10 @@ class BeliefAgent(RnnAgent):
         )
         parser.add_argument(
             "--absolute_bucketing",
-            action = "store_true",
-            help = "If on, switch from relative bucketing to absolute bucketing of unary features size/color",
+            choices = [0,1],
+            default = 0,
+            type=int,
+            help = "If on=1, switch from relative bucketing to absolute bucketing of unary features size/color",
         )
 
     # same init as RnnAgent, initialize belief in feed_context
@@ -60,12 +62,12 @@ class BeliefAgent(RnnAgent):
         if self.args.belief == "or":
             self.belief = OrBelief(
                 self.num_dots, context,
-                absolute = self.args.absolute_bucketing,
+                absolute = self.args.absolute_bucketing == 1,
             )
         elif self.args.belief == "egocentric":
             self.belief = ConfigBelief(
                 self.num_dots, context,
-                absolute = self.args.absolute_bucketing,
+                absolute = self.args.absolute_bucketing == 1,
             )
         elif self.args.belief == "and":
             self.belief = AndBelief(self.num_dots, context)
