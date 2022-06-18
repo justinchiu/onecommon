@@ -1,9 +1,13 @@
 from jinja2 import Template
 import numpy as np
 
+import matplotlib.patches as patches
+import matplotlib.lines as lines
+
+
 class RegionNode:
     def __init__(
-        self, num_buckets=3, eps=0.01,
+        self, num_buckets=3, eps=1e-7,
         lx=-1, hx=1,
         ly=-1, hy=1,
     ):
@@ -21,11 +25,26 @@ class RegionNode:
         self.hy = hy
 
         self.xs = np.linspace(lx, hx, self.B+1)
-        self.xs[-1] += eps
+        self.xs_pad = np.linspace(lx, hx, self.B+1)
+        self.xs_pad[-1] += eps
         self.ys = np.linspace(ly, hy, self.B+1)
-        self.ys[-1] += eps
+        self.ys_pad = np.linspace(ly, hy, self.B+1)
+        self.ys_pad[-1] += eps
 
         self.num_dots = 0
+
+    def lines(self):
+        # draw lines for inner boundaries
+        for x in self.xs[1:-1]:
+            yield lines.Line2D((x, x), (self.ly, self.hy))
+        for y in self.ys[1:-1]:
+            yield lines.Line2D((self.lx, self.hx), (y, y))
+
+    def items(self):
+        yield self
+        for child in self.children:
+            if isinstance(child, RegionNode):
+                yield from child.items()
 
     def single_region(self, x, xs):
         in_region = (xs[:-1] <= x) & (x < xs[1:])
@@ -36,10 +55,10 @@ class RegionNode:
         return in_region.argmax()
 
     def x_region(self, x):
-        return self.single_region(x, self.xs)
+        return self.single_region(x, self.xs_pad)
 
     def y_region(self, y):
-        return self.single_region(y, self.ys)
+        return self.single_region(y, self.ys_pad)
 
     def xy_region(self, xy):
         x, y = xy
@@ -88,31 +107,62 @@ def main():
 
     lv = -1
     hv = 1
-    B = 2
+    B = 3
 
     key = random.PRNGKey(0)
     fig, axes = plt.subplots(5,5)
     N = len(axes.flat)
     uk, key = random.split(key)
     xys = random.uniform(uk, minval=lv, maxval=hv, shape=(N, 4,2))
-    for i, ax in enumerate(axes.flat):
-        xy = xys[i]
-        ax.scatter(xy[:,0], xy[:,1])
-        ax.set_xticks([])
-        ax.set_yticks([])
-        ax.set_xlim(-1,1)
-        ax.set_ylim(-1,1)
-        ax.set_title(f"{i}")
-    plt.savefig("img/dots.png")
+
+    """
+    n = 6
+    xy = xys[n]
+    root = RegionNode(
+        num_buckets = B,
+        lx = xy[:,0].min(),
+        hx = xy[:,0].max(),
+        ly = xy[:,1].min(),
+        hy = xy[:,1].max(),
+    )
+    root.add(xy[0])
+    root.add(xy[1])
+    root.add(xy[2])
+    root.add(xy[3])
+
+    print(xy)
+    for node in root.items():
+        for line in node.lines():
+            print(line.get_xydata())
+            import pdb; pdb.set_trace()
+    """
 
     for n in range(N):
         xy = xys[n]
-        root = RegionNode(num_buckets=B)
+        root = RegionNode(
+            num_buckets = B,
+            lx = xy[:,0].min(),
+            hx = xy[:,0].max(),
+            ly = xy[:,1].min(),
+            hy = xy[:,1].max(),
+        )
         root.add(xy[0])
         root.add(xy[1])
         root.add(xy[2])
         root.add(xy[3])
-        import pdb; pdb.set_trace()
+
+        ax = axes.flat[n]
+        ax.scatter(xy[:,0], xy[:,1])
+        ax.set_xticks([])
+        ax.set_yticks([])
+        #ax.set_xlim(-1,1)
+        #ax.set_ylim(-1,1)
+        ax.set_title(f"{n}")
+
+        for node in root.items():
+            for line in node.lines():
+                ax.add_line(line)
+    plt.savefig(f"img/{B}-dots.png")
 
 
 
