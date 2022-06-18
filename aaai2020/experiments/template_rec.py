@@ -10,7 +10,7 @@ class RegionNode:
         self,
         num_buckets = 3,
         eps = 1e-7,
-        absolute_region = True,
+        absolute_bucket = True,
         inner_buckets = None,
         lx = -1, hx = 1,
         ly = -1, hy = 1,
@@ -23,7 +23,7 @@ class RegionNode:
         self.eps = 0.1
         self.B = num_buckets
         self.inner_B = num_buckets if inner_buckets is None else inner_buckets
-        self.absolute_region = absolute_region
+        self.absolute_bucket = absolute_bucket
 
         self.lx = lx
         self.hx = hx
@@ -91,18 +91,18 @@ class RegionNode:
             node = RegionNode(
                 num_buckets = self.inner_B,
                 eps = self.eps,
-                absolute_region = self.absolute_region,
+                absolute_bucket = self.absolute_bucket,
                 lx = self.xs[x_region],
                 hx = self.xs[x_region+1],
                 ly = self.ys[y_region],
                 hy = self.ys[y_region+1],
-            ) if self.absolute_region else RegionNode(
+            ) if self.absolute_bucket else RegionNode(
                 # OPTION 2: segment based in positions of nodes
                 # POSSIBLY BREAKS DOWN DEPENDING ON ORDERING OF ADD
                 # RELIES ON ASSM THAT ONLY 2 NODES IN REGION
                 num_buckets = self.inner_B,
                 eps = self.eps,
-                absolute_region = self.absolute_region,
+                absolute_region = self.absolute_bucket,
                 lx = min(xy[0], old_xy[0]),
                 hx = max(xy[0], old_xy[0]),
                 ly = min(xy[1], old_xy[1]),
@@ -132,7 +132,7 @@ def main():
     #B = 3
     inner_B = None
     #inner_B = 2
-    absolute_region = False
+    absolute_bucket = False
 
     key = random.PRNGKey(0)
     fig, axes = plt.subplots(5,5)
@@ -166,7 +166,7 @@ def main():
         xy = xys[n]
         root = RegionNode(
             num_buckets = B,
-            absolute_region = absolute_region,
+            absolute_bucket = absolute_bucket,
             lx = xy[:,0].min(),
             hx = xy[:,0].max(),
             ly = xy[:,1].min(),
@@ -188,7 +188,7 @@ def main():
         for node in root.items():
             for line in node.lines():
                 ax.add_line(line)
-    plt.savefig(f"img/B{B}-IB{inner_buckets}-A{absolute_region}-dots.png")
+    plt.savefig(f"img/B{B}-IB{inner_buckets}-A{absolute_bucket}-dots.png")
 
 
 
