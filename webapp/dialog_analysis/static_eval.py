@@ -19,7 +19,7 @@ from dot import Dot
 #np.random.seed(1234)
 
 # OPTIONS
-FIRST_TURN_ONLY = True
+FIRST_TURN_ONLY = False
 ABSOLUTE = True
 
 def classify_sets(xs, ys):
