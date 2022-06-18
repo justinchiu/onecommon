@@ -7,9 +7,10 @@ import matplotlib.lines as lines
 
 class RegionNode:
     def __init__(
-        self, num_buckets=3, eps=1e-7,
-        lx=-1, hx=1,
-        ly=-1, hy=1,
+        self, num_buckets = 3, eps = 1e-7,
+        lx = -1, hx = 1,
+        ly = -1, hy = 1,
+        absolute_region = True,
     ):
         # 6 7 8
         # 3 4 5
@@ -18,6 +19,7 @@ class RegionNode:
 
         self.eps = 0.1
         self.B = num_buckets
+        self.absolute_region = absolute_region
 
         self.lx = lx
         self.hx = hx
@@ -80,6 +82,8 @@ class RegionNode:
             # convert singleton node into real node
             old_xy = node
             # overwrite singleton
+
+            # OPTION 1: segment based on TREE REGIONS
             node = RegionNode(
                 num_buckets = self.B,
                 eps = self.eps,
@@ -87,7 +91,18 @@ class RegionNode:
                 hx = self.xs[x_region+1],
                 ly = self.ys[y_region],
                 hy = self.ys[y_region+1],
+            ) if self.absolute_region else RegionNode(
+                # OPTION 2: segment based in positions of nodes
+                # POSSIBLY BREAKS DOWN DEPENDING ON ORDERING OF ADD
+                # RELIES ON ASSM THAT ONLY 2 NODES IN REGION
+                num_buckets = self.B,
+                eps = self.eps,
+                lx = min(xy[0], old_xy[0]),
+                hx = max(xy[0], old_xy[0]),
+                ly = min(xy[1], old_xy[1]),
+                hy = max(xy[1], old_xy[1]),
             )
+
             # add singleton back
             node.add(old_xy)
             # add new point
