@@ -4,6 +4,24 @@ import numpy as np
 import matplotlib.patches as patches
 import matplotlib.lines as lines
 
+from template import (
+    mention_1,
+    mention_2,
+    mention_3,
+    mention_41,
+    mention_42,
+    mention_43,
+    dot_template,
+    spatial_dot_template,
+)
+
+class Dot:
+    def __init__(self, id, size, color, xy):
+        self.id = id
+        self.size = size
+        self.color = color
+        self.xy = xy
+
 
 class RegionNode:
     def __init__(
@@ -39,6 +57,20 @@ class RegionNode:
 
         self.num_dots = 0
 
+    def root_template(self):
+        return 
+
+    def template(self):
+        n = self.num_dots
+        if n == 1:
+            import pdb; pdb.set_trace()
+        elif n == 2:
+            import pdb; pdb.set_trace()
+        elif n == 3:
+            import pdb; pdb.set_trace()
+        else:
+            raise ValueError("Too many dots in lower level")
+
     def lines(self):
         # draw lines for inner boundaries
         for x in self.xs[1:-1]:
@@ -72,22 +104,24 @@ class RegionNode:
         y_region = self.y_region(y)
         return x_region, y_region
 
-    def add(self, xy):
+    def add(self, dot):
         self.num_dots += 1
+        xy = dot.xy
         x_region, y_region = self.xy_region(xy)
         #flat_region = self.B * x_region + y_region
         flat_region = self.B * y_region + x_region
 
         node = self.children[flat_region]
         if node is None:
-            # singleton node
-            self.children[flat_region] = xy
+            # create singleton node
+            self.children[flat_region] = dot
         elif not isinstance(node, RegionNode):
-            # convert singleton node into real node
-            old_xy = node
+            # convert singleton node into RegionNode
+            old_dot = node
+            old_xy = old_dot.xy
             # overwrite singleton
 
-            # OPTION 1: segment based on TREE REGIONS
+            # OPTION 1: segment based on absolute TREE REGIONS
             node = RegionNode(
                 num_buckets = self.inner_B,
                 eps = self.eps,
@@ -110,12 +144,13 @@ class RegionNode:
             )
 
             # add singleton back
-            node.add(old_xy)
+            node.add(old_dot)
             # add new point
-            node.add(xy)
+            node.add(dot)
             self.children[flat_region] = node
         else:
-            node.add(xy)
+            # already a RegionNode
+            node.add(dot)
 
 
 def main():
@@ -128,10 +163,13 @@ def main():
 
     lv = -1
     hv = 1
+
     B = 2
-    #B = 3
     inner_B = None
-    #inner_B = 2
+
+    B = 3
+    inner_B = 2
+   
     absolute_bucket = True
     #absolute_bucket = False
 
@@ -167,16 +205,15 @@ def main():
         xy = xys[n]
         root = RegionNode(
             num_buckets = B,
+            inner_buckets = inner_B,
             absolute_bucket = absolute_bucket,
             lx = xy[:,0].min(),
             hx = xy[:,0].max(),
             ly = xy[:,1].min(),
             hy = xy[:,1].max(),
         )
-        root.add(xy[0])
-        root.add(xy[1])
-        root.add(xy[2])
-        root.add(xy[3])
+        for i, xyi in enumerate(xy):
+            root.add(Dot(i, 1, 1, xyi))
 
         ax = axes.flat[n]
         ax.scatter(xy[:,0], xy[:,1])
