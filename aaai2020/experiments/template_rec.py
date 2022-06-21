@@ -41,11 +41,35 @@ class RegionNode:
         inner_buckets = None,
         lx = -1, hx = 1,
         ly = -1, hy = 1,
+        flip_y = True,
     ):
+        self.children = [None for _ in range(num_buckets ** 2)]
+        self.top_word = "bottom" if flip_y else "top"
+        self.bottom_word = "top" if flip_y else "bottom"
+
         # 6 7 8
         # 3 4 5
         # 0 1 2
-        self.children = [None for _ in range(num_buckets ** 2)]
+        self.region_map_3 = [
+            f"{self.bottom_word}-left",   # 0
+            f"{self.bottom_word}-middle", # 1
+            f"{self.bottom_word}-right",  # 2
+            f"middle-left",               # 3
+            f"middle",                    # 4
+            f"middle-right",              # 5
+            f"{self.top_word}-left",      # 6
+            f"{self.top_word}-middle",    # 7
+            f"{self.top_word}-right",     # 8
+        ]
+
+        # 2 3
+        # 0 1
+        self.region_map_2 = [
+            f"{self.bottom_word}-left",   # 0
+            f"{self.bottom_word}-right",  # 1
+            f"{self.top_word}-left",      # 2
+            f"{self.top_word}-right",     # 3
+        ]
 
         self.eps = 0.1
         self.B = num_buckets
@@ -67,7 +91,8 @@ class RegionNode:
         self.num_dots = 0
 
     def root_template(self):
-        return 
+        return Template("")
+
 
     def template(self):
         n = self.num_dots
