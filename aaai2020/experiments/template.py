@@ -61,20 +61,32 @@ def centroid(xy):
     left, bottom = xy.min(0)
     return (right + left) / 2, (top + bottom) / 2
 
-def relative_position(x, y, mx, my):
+def relative_position(x, y, mx, my, flip_y=True):
     # vertical stuff is flipped?
-    if x < mx and y < my:
-        return "top left"
-    elif x > mx and y < my:
-        return "top right"
-    elif x < mx and y > my:
-        return "bottom left"
-    elif x > mx and y < my:
-        return "bottom right"
+    if flip_y:
+        if x < mx and y < my:
+            return "top left"
+        elif x > mx and y < my:
+            return "top right"
+        elif x < mx and y > my:
+            return "bottom left"
+        elif x > mx and y > my:
+            return "bottom right"
+        else:
+            raise ValueError
     else:
-        raise ValueError
+        if x < mx and y < my:
+            return "bottom left"
+        elif x > mx and y < my:
+            return "bottom right"
+        elif x < mx and y > my:
+            return "top left"
+        elif x > mx and y > my:
+            return "top right"
+        else:
+            raise ValueError
 
-def spatial_descriptions2(xy):
+def spatial_descriptions2(xy, flip_y=True):
     assert xy.shape[0] == 2
     right, top = xy.max(0)
     left, bottom = xy.min(0)
@@ -85,13 +97,22 @@ def spatial_descriptions2(xy):
 
     if horizontal_close and not vertical_close:
         # check if dots are close horizontally
-        return [
-            # looks like vertical stuff is flipped?
-            #"top" if xy[0,1] > my else "bottom",
-            #"top" if xy[1,1] > my else "bottom",
-            "top" if xy[0,1] < my else "bottom",
-            "top" if xy[1,1] < my else "bottom",
-        ]
+        if flip_y:
+            return [
+                # looks like vertical stuff is flipped?
+                #"top" if xy[0,1] > my else "bottom",
+                #"top" if xy[1,1] > my else "bottom",
+                "top" if xy[0,1] < my else "bottom",
+                "top" if xy[1,1] < my else "bottom",
+            ]
+        else:
+            # unflipped
+            return [
+                "top" if xy[0,1] > my else "bottom",
+                "top" if xy[1,1] > my else "bottom",
+                #"top" if xy[0,1] < my else "bottom",
+                #"top" if xy[1,1] < my else "bottom",
+            ]
     elif vertical_close and not horizontal_close:
         # check if dots are close vertically
         return [
@@ -103,8 +124,8 @@ def spatial_descriptions2(xy):
         #rp0 = relative_position(xy[0,0], xy[0,1], mx, my)
         #rp1 = relative_position(xy[1,0], xy[1,1], mx, my)
         return [
-            relative_position(xy[0,0], xy[0,1], mx, my),
-            relative_position(xy[1,0], xy[1,1], mx, my),
+            relative_position(xy[0,0], xy[0,1], mx, my, flip_y),
+            relative_position(xy[1,0], xy[1,1], mx, my, flip_y),
         ]
 
 
@@ -273,8 +294,8 @@ def size_color_descriptions(sc):
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
 
-def render_2(xy, sc):
-    xy_desc = spatial_descriptions2(xy)
+def render_2(xy, sc, flip_y=True):
+    xy_desc = spatial_descriptions2(xy, flip_y)
     sc_desc = size_color_descriptions(sc)
     return mention_2.render(
         dot1 = spatial_dot_template.render(

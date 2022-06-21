@@ -13,7 +13,16 @@ from template import (
     mention_43,
     dot_template,
     spatial_dot_template,
+    render_2,
 )
+
+def render_2_dots(dots, flip_y=True):
+    sc = np.array([
+        [dots[0].size, dots[0].color],
+        [dots[1].size, dots[1].color],
+    ])
+    xy = np.vstack((dots[0].xy, dots[1].xy))
+    return render_2(xy, sc, flip_y)
 
 class Dot:
     def __init__(self, id, size, color, xy):
@@ -200,6 +209,12 @@ def main():
             print(line.get_xydata())
             import pdb; pdb.set_trace()
     """
+
+    xy = xys[0]
+    dots = [Dot(0,0,0,xy[0]), Dot(1,2,2,xy[1])]
+    out = render_2_dots(dots, flip_y=False)
+
+    import pdb; pdb.set_trace()
 
     for n in range(N):
         xy = xys[n]
