@@ -44,6 +44,8 @@ class RegionNode:
         flip_y = True,
     ):
         self.children = [None for _ in range(num_buckets ** 2)]
+
+        self.flip_y = flip_y
         self.top_word = "bottom" if flip_y else "top"
         self.bottom_word = "top" if flip_y else "bottom"
 
@@ -89,9 +91,34 @@ class RegionNode:
         self.ys_pad[-1] += eps
 
         self.num_dots = 0
+        self.dots = {r: [] for r in range(self.B**2)}
 
     def root_template(self):
-        return Template("")
+        # flat template, first attempt at generating regions
+        non_empty_regions, children, num_dots = list(zip(*[
+            (
+                region,
+                child,
+                child.num_dots if isinstance(child, RegionNode) else 1,
+            )
+            for region, child in enumerate(self.children)
+            if child is not None
+        ]))
+        region_descriptions = [
+            self.region_map_3[region]
+            for region in non_empty_regions
+        ]
+        flattened_children = [
+            [node for nodes in child.dots.values() for node in nodes]
+                if isinstance(child, RegionNode)
+                else [child]
+            for child in children
+        ]
+
+        import pdb; pdb.set_trace()
+        return Template("Do you see {{ndots}}, ").render(
+            ndots = self.num_dots,
+        )
 
 
     def template(self):
@@ -124,7 +151,7 @@ class RegionNode:
             raise ValueError
         if in_region.sum() > 1:
             raise ValueError
-        return in_region.argmax()
+        return in_region.argmax().item()
 
     def x_region(self, x):
         return self.single_region(x, self.xs_pad)
@@ -145,6 +172,9 @@ class RegionNode:
         #flat_region = self.B * x_region + y_region
         flat_region = self.B * y_region + x_region
 
+        # some book-keeping for easy access to dots
+        self.dots[flat_region].append(dot)
+
         node = self.children[flat_region]
         if node is None:
             # create singleton node
@@ -160,6 +190,7 @@ class RegionNode:
                 num_buckets = self.inner_B,
                 eps = self.eps,
                 absolute_bucket = self.absolute_bucket,
+                flip_y = self.flip_y,
                 lx = self.xs[x_region],
                 hx = self.xs[x_region+1],
                 ly = self.ys[y_region],
@@ -171,6 +202,7 @@ class RegionNode:
                 num_buckets = self.inner_B,
                 eps = self.eps,
                 absolute_bucket = self.absolute_bucket,
+                flip_y = self.flip_y,
                 lx = min(xy[0], old_xy[0]),
                 hx = max(xy[0], old_xy[0]),
                 ly = min(xy[1], old_xy[1]),
@@ -239,14 +271,13 @@ def main():
     dots = [Dot(0,0,0,xy[0]), Dot(1,2,2,xy[1])]
     out = render_2_dots(dots, flip_y=False)
 
-    import pdb; pdb.set_trace()
-
     for n in range(N):
         xy = xys[n]
         root = RegionNode(
             num_buckets = B,
             inner_buckets = inner_B,
             absolute_bucket = absolute_bucket,
+            flip_y = False,
             lx = xy[:,0].min(),
             hx = xy[:,0].max(),
             ly = xy[:,1].min(),
@@ -254,6 +285,8 @@ def main():
         )
         for i, xyi in enumerate(xy):
             root.add(Dot(i, 1, 1, xyi))
+
+        root.root_template()
 
         ax = axes.flat[n]
         ax.scatter(xy[:,0], xy[:,1])
