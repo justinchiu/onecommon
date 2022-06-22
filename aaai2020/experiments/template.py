@@ -36,7 +36,6 @@ mention_43 = Template("four dots where they roughly form a line; on one end it i
 select_1 = Template("")
 
 import numpy as np
-from belief import process_ctx, OrBelief
 
 
 class ConfigFeatures:
@@ -393,6 +392,8 @@ def render(n, sc, xy):
         raise ValueError
  
 if __name__ == "__main__":
+    from belief import process_ctx, OrBelief
+
     num_dots = 7
     ctx = np.array([
         0.635, -0.4,   2/3, -1/6,  # 8

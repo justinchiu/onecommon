@@ -25,7 +25,7 @@ from models.utils import lengths_to_mask
 from torch.distributions import Gumbel
 
 # MBP
-from fairseq.modules.multihead_attention import MultiheadAttention
+#from fairseq.modules.multihead_attention import MultiheadAttention
 # / MBP
 
 BIG_NEG = -1e6
