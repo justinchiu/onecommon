@@ -39,7 +39,7 @@ class RegionNode:
     def __init__(
         self,
         num_buckets = 3,
-        eps = 1e-7,
+        eps = 1e-3,
         absolute_bucket = True,
         inner_buckets = None,
         lx = -1, hx = 1,
@@ -76,7 +76,7 @@ class RegionNode:
             f"{self.top_word}-right",     # 3
         ]
 
-        self.eps = 0.1
+        self.eps = eps
         self.B = num_buckets
         self.inner_B = num_buckets if inner_buckets is None else inner_buckets
         self.absolute_bucket = absolute_bucket

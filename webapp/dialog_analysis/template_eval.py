@@ -93,12 +93,12 @@ def visualize_single_board(dots):
 
     nl = "\n"
     html = f"""
-    <svg width="430" height="430">
+    <svg width="450" height="500" overflow="visible">
     <circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
     {nl.join(dots_html)}
     </svg>
     """
-    components.html(html, height=430, width=430)
+    components.html(html, height=500, width=450)
 
 def visualize_dialogue(dialogue):
     st.table(dialogue)
@@ -181,7 +181,16 @@ def process_dialogue(scenario_id, dialogue):
     st.write(words)
     #import pdb; pdb.set_trace()
 
+    st.write("Dot set (out of order)")
     st.write(m)
+
+    st.write(f"### Agent perspective")
+    visualize_single_board(board_agent)
+    st.write("Template gen")
+    st.write(words)
+
+    st.write("Size and color buckets (row = dot)")
+    st.write(sc)
 
     st.write("### chosen utterance")
     st.write(turn["prior_mentions_language"
