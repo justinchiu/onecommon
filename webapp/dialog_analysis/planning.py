@@ -19,6 +19,7 @@ sys.path.append("/home/justinchiu/research/onecommon/aaai2020/experiments")
 
 from utils import ContextGenerator
 import template
+import template_rec as tr
 import belief
 
 #random.seed(1234)
@@ -232,7 +233,8 @@ def process_dialogue(scenario_id, dialogue):
         #print(ctx_struct[3 + turn["writer_id"]])
         #print(mentions)
         #print(xy)
-        words = template.render(n, sc, xy)
+        #words = template.render(n, sc, xy)
+        words = tr.render(n, sc, xy)
         st.write(words)
         #import pdb; pdb.set_trace()
 

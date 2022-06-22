@@ -23,8 +23,8 @@ spatial_dot_template = Template("{{spatial}} dot is {{dot}}")
 # Do you see three dots, where the {{dot 1}}, {{dot 2}}, and {{dot 3}}?
 
 mention_1 = Template("a {{dot1}}")
-#mention_2 = Template("a pair of dots, where the {{dot1}} and the {{dot2}}")
-mention_2 = Template("the {{dot1}} and the {{dot2}}")
+mention_2 = Template("a pair of dots, where the {{dot1}} and the {{dot2}}")
+mention_2a = Template("the {{dot1}} and the {{dot2}}")
 
 mention_3 = Template("three dots, where the {{dot1}}, the {{dot2}}, and the {{dot3}}")
 
@@ -295,10 +295,11 @@ def size_color_descriptions(sc):
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
 
-def render_2(xy, sc, flip_y=True):
+def render_2(xy, sc, flip_y=True, concise=False):
     xy_desc = spatial_descriptions2(xy, flip_y)
     sc_desc = size_color_descriptions(sc)
-    return mention_2.render(
+    mention = mention_2a if concise else mention_2
+    return mention.render(
         dot1 = spatial_dot_template.render(
             spatial = xy_desc[0],
             dot = dot_template.render(

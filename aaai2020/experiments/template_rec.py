@@ -7,6 +7,7 @@ import matplotlib.lines as lines
 from template import (
     mention_1,
     mention_2,
+    mention_2a,
     mention_3,
     mention_41,
     mention_42,
@@ -24,7 +25,7 @@ def render_2_dots(dots, flip_y=True):
         [dots[1].size, dots[1].color],
     ])
     xy = np.vstack((dots[0].xy, dots[1].xy))
-    return render_2(xy, sc, flip_y)
+    return render_2(xy, sc, flip_y, concise=True)
 
 class Dot:
     def __init__(self, id, size, color, xy):
@@ -238,6 +239,26 @@ class RegionNode:
         else:
             # already a RegionNode
             node.add(dot)
+
+def render(n, sc, xy, flip_y=True):
+    if n == 2:
+        return render_2(xy, sc, flip_y=flip_y)
+
+    root = RegionNode(
+        num_buckets = 3,
+        inner_buckets = 2,
+        absolute_bucket = True,
+        flip_y = flip_y,
+        lx = xy[:,0].min(),
+        hx = xy[:,0].max(),
+        ly = xy[:,1].min(),
+        hy = xy[:,1].max(),
+    )
+    # convert to dots
+    dots = [Dot(i, sc[i,0], sc[i,1], xy[i]) for i in range(n)]
+    for dot in dots:
+        root.add(dot)
+    return root.desc()
 
 
 def main():
