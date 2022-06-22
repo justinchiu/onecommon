@@ -186,7 +186,7 @@ def process_dialogue(scenario_id, dialogue):
 
     st.write(f"### Agent perspective")
     visualize_single_board(board_agent)
-    st.write("Template gen")
+    st.write("### template utterance repeat")
     st.write(words)
 
     st.write("Size and color buckets (row = dot)")
