@@ -13,6 +13,8 @@ from belief import (
     entropy, expand_plan,
 )
 
+from template_rec import render, render_select
+
 NO_RESPONSE = 0
 CONFIRM = 1
 DISCONFIRM = 2
@@ -48,6 +50,7 @@ class BeliefAgent(RnnAgent):
     # same init as RnnAgent, initialize belief in feed_context
     def __init__(self, *args, **kvargs):
         super().__init__(*args, **kvargs)
+        # NEED TO ADJUST THIS
         response_pretrained_path = "../../response_annotation/save_pretrained"
         self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
         self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
@@ -172,7 +175,7 @@ class BeliefAgent(RnnAgent):
         self.side_infos.append(side_info)
 
 
-    def write(self, force_words=None, *args, **kwargs):
+    def write_supervised(self, force_words=None, *args, **kwargs):
         dots_mentioned_per_ref_to_force = None
         # if write is given forced_words, then throw away plan. otherwise
         plan = None
@@ -294,3 +297,81 @@ class BeliefAgent(RnnAgent):
         if self.sel_idx is None:
             self.select_dot()
         return self.real_ids[self.sel_idx]
+
+    def write(self, *args, **kwargs):
+        # SYMBOLIC PORTION
+        # selection happens during writing: output <select>
+        should_select = self.should_select()
+        select_feats = None
+        select_rel_idx = None
+        if should_select:
+            # switch modes to selection communication
+            # which dot to select?
+            select_config, select_idx, select_rel_idx = self.select_dot()
+            # communicate a dot configuration and index of dot
+            select_feats = self.belief.get_feats(select_config)
+
+        # generate next mention plan
+        EdHs = self.belief.compute_EdHs(self.prior)
+        cs, hs = self.belief.viz_belief(EdHs, n=4)
+        plan = cs[0]
+        feats = self.belief.get_feats(plan)
+
+        confirm = None
+        if len(self.side_infos) > 0 and self.side_infos[-1] is not None:
+            partner_mention = self.side_infos[-1]
+            resolved = self.belief.resolve_utt(*partner_mention)
+            confirm = int(len(resolved) > 0)
+
+        # add plan to next_mention_plan history
+        self.next_mention_plans.append(plan)
+        self.next_confirms.append(confirm)
+        self.responses.append(None)
+        self.response_logits.append(None)
+        self.side_infos.append(None)
+
+        #self.state = self.state._replace(turn=self.state.turn+1)
+
+        #return confirm, feats, select_feats, select_rel_idx
+        # WORDS
+        force_words = render(*feats) if not should_select else (
+            render_select(select_feats, select_rel_idx)
+        )
+        force_words_split = [force_words.split() + ["<eos>"]]
+
+        # FEED TO NEURAL
+        # convert plan to dots_mentioned
+        dots_mentioned = torch.tensor(expand_plan(plan))
+        # heuristic: produce next mentions per ref
+        #dots_mentioned_per_ref_to_force = [dots_mentioned]
+        # dots_mentioned_per_ref_to_force: num_mentions x bsz=1 x num_dots=7
+        dots_mentioned_per_ref_to_force = dots_mentioned.transpose(0,1)
+
+        output = super().write(
+            force_dots_mentioned = True,
+            dots_mentioned_per_ref_to_force = dots_mentioned_per_ref_to_force,
+            force_words = force_words_split,
+            *args, **kwargs,
+        )
+
+        # ref_preds?!
+
+        """
+        if force_words is not None:
+            # set plan to the resolved refs of the forced utt
+            plan = (self.ref_preds[-1].any(0)[0].cpu().int().numpy()
+                if self.ref_preds[-1] is not None
+                else None
+            )
+
+        # add plan to next_mention_plan history
+        self.next_mention_plans.append(plan)
+        self.responses.append(None)
+        self.response_logits.append(None)
+        self.side_infos.append(None)
+        """
+
+        #import pdb; pdb.set_trace()
+
+        # write takes artificially batched words. unbatch
+        return force_words_split[0]

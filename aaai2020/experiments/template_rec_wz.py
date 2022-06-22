@@ -16,7 +16,9 @@ from template import (
     spatial_dot_template,
     render_2,
     size_map,
-    color_map
+    color_map,
+    get_sign,
+    check_triangle
 )
 
 def render_2_dots(dots, flip_y=True):
@@ -123,24 +125,71 @@ class RegionNode:
             for child in children
         ]
 
-        # WARNING: will break if there are 3 in a single 2nd level region
-        child_descs = [
-            dot_template.render(
-                size = size_map[children[0].size],
-                color = color_map[children[0].color],
-            ) if len(children) == 1 else render_2_dots(children, flip_y=self.flip_y)
-            for children in flattened_children
-        ]
+        triangle = False
+        dot_list = sum(flattened_children, [])
+        if len(self.xs) == 4:
+            xy = [dot_list[i].xy for i in range(4)]
+            for i in range(4):
+                compl = list(set([0, 1, 2, 3]) - set([i]))
+                res = check_triangle(xy[i], xy[compl[0]], xy[compl[1]], xy[compl[2]])
+                if res:
+                    dot4 = i
+                    dot1, dot2, dot3 = compl[0], compl[1], compl[2]
+                    triangle = True
+                    break
 
-        desc = Template(
-            "Does this fit any configuration of {{ndots}} dots? "
-            "{% for desc in descs %}"
-            "There {{desc[0]}} in the {{desc[1]}}: {{desc[2]}}. "
-            "{% endfor %}"
-        ).render(
-            ndots = self.num_dots,
-            descs = zip(number_descriptions, region_descriptions, child_descs),
-        )
+        if triangle:
+            child_descs = [
+                dot_template.render(
+                    size = size_map[children.size],
+                    color = color_map[children.color],
+                ) 
+                for children in dot_list
+            ]
+            if len(region_descriptions) < 4:
+                new_regions = []
+                for i in range(len(region_descriptions)):
+                    if len(flattened_children[i]) > 1:
+                        new_regions += [region_descriptions[i]] * len(flattened_children[i])
+                    else:
+                        new_regions.append(region_descriptions[i])
+                region_descriptions = new_regions
+
+            desc = Template(
+                "Do you see a triangle with a dot inside? "
+                "The triangle has a {{dot1f}} dot in {{dot1r}}, "
+                "a {{dot2f}} dot in {{dot2r}}, "
+                "and a {{dot3f}} dot in {{dot3r}}. "
+                "The dot inside the triangle is {{dot4f}} in {{dot4r}}."
+            ).render(
+                dot1f = child_descs[dot1],
+                dot1r = region_descriptions[dot1],
+                dot2f = child_descs[dot2],
+                dot2r = region_descriptions[dot2],
+                dot3f = child_descs[dot3],
+                dot3r = region_descriptions[dot3],
+                dot4f = child_descs[dot4],
+                dot4r = region_descriptions[dot4],
+            )
+        else:
+            # WARNING: will break if there are 3 in a single 2nd level region
+            child_descs = [
+                dot_template.render(
+                    size = size_map[children[0].size],
+                    color = color_map[children[0].color],
+                ) if len(children) == 1 else render_2_dots(children, flip_y=self.flip_y)
+                for children in flattened_children
+            ]
+
+            desc = Template(
+                "Does this fit any configuration of {{ndots}} dots? "
+                "{% for desc in descs %}"
+                "There {{desc[0]}} in the {{desc[1]}}: {{desc[2]}}. "
+                "{% endfor %}"
+            ).render(
+                ndots = self.num_dots,
+                descs = zip(number_descriptions, region_descriptions, child_descs),
+            )
         return desc
 
 
@@ -261,10 +310,6 @@ def render(n, sc, xy, flip_y=True):
         root.add(dot)
     return root.desc()
 
-def render_select(select_feats, select_rel_idx):
-    words = render(*select_feats)
-    # FOR NOW
-    return words
 
 def main():
     import numpy as np
@@ -306,7 +351,6 @@ def main():
     root.add(xy[1])
     root.add(xy[2])
     root.add(xy[3])
-
     print(xy)
     for node in root.items():
         for line in node.lines():
@@ -353,4 +397,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

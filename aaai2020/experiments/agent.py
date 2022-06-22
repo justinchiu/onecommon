@@ -293,6 +293,7 @@ class RnnAgent(Agent):
         _, ref_preds, ref_stats = self.reference_predictor.forward(
             ref_inpt, dummy_targets, ref_out, num_markables
         )
+        # TEMPLATE
         self.ref_preds.append(ref_preds)
         return ref_out
 
@@ -934,6 +935,10 @@ class RnnAgent(Agent):
         #assert (torch.cat(self.words).size(0) + 1 == torch.cat(self.lang_hs).size(0))
         # remove 'YOU:'
         # outs = outs.narrow(0, 1, outs.size(0) - 1)
+        
+        # FOR DEBUGGING
+        #meh = self._decode(best_generation_output.outs, self.model.word_dict)
+        #import pdb; pdb.set_trace()
         return self._decode(best_generation_output.outs, self.model.word_dict)
 
     def next_mention(self, lens, dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12, can_confirm=None):

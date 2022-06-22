@@ -12,7 +12,8 @@ from annotation.transform_scenarios_to_txt import create_input
 import utils as utils
 import models
 from agent import RnnAgent
-from agents.pomdp_agent import PomdpAgent
+#from agents.pomdp_agent import PomdpAgent
+from belief_agent import BeliefAgent
 from engines.beliefs import BlankBeliefConstructor
 
 import pprint
@@ -35,6 +36,7 @@ class Dummy:
         #self.svg_grid_size = self.svg_radius * 6
         #https://github.com/dpfried/onecommon/blob/580620b9bc309625e949bb9c1dcd65063c1ba8b3/aaai2019/generate_scenarios.py
 
+"""
 class PomdpSystem(System):
     def __init__(self, name, args, timed, inference_args):
         super(PomdpSystem, self).__init__()
@@ -58,14 +60,19 @@ class PomdpSystem(System):
             session = TimedSessionWrapper(session)
 
         return session
-
+"""
 
 class RnnSystem(System):
-    def __init__(self, name, args, model_path, markable_detector_path, timed=False, inference_args=None):
+    def __init__(
+        self, name, args, model_path, markable_detector_path,
+        timed=False, inference_args=None,
+        belief=False,
+    ):
         super(RnnSystem, self).__init__()
         self.name_ = name
         assert inference_args is not None
         self.inference_args = inference_args
+        self.belief = belief
 
         self.model = utils.load_model(model_path, prefix_dir=None, map_location='cpu')
         self.model.eval()
@@ -84,9 +91,10 @@ class RnnSystem(System):
         return self.name_
 
     def new_session(self, agent, kb):
+        Agent = RnnAgent if not self.belief else BeliefAgent
         # RnnAgent args
         parser = argparse.ArgumentParser()
-        RnnAgent.add_args(parser)
+        Agent.add_args(parser)
         agent_args = parser.parse_args([])
         d = self.inference_args
         d = utils.merge_dicts(d, vars(agent_args))
@@ -98,7 +106,7 @@ class RnnSystem(System):
 
         #pprint.pprint(vars(merged_args))
 
-        model = RnnAgent(self.model, merged_args, markable_detector=self.markable_detector)
+        model = Agent(self.model, merged_args, markable_detector=self.markable_detector)
 
         # feed context, can probably save agent in init.
         ctxt = create_input(kb.items, Dummy())

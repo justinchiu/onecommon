@@ -2422,7 +2422,11 @@ class RnnReferenceModel(nn.Module):
             can_confirm=can_confirm,
         )
 
-        assert torch.allclose(writer_lang_hs, torch.cat(lang_hs, 0), atol=1e-4)
+        # NEW IN PYTORCH 1.11?! [:-1]
+        if force_words is not None:
+            assert torch.allclose(writer_lang_hs, torch.cat(lang_hs, 0), atol=1e-4)
+        else:
+            assert torch.allclose(writer_lang_hs[:-1], torch.cat(lang_hs, 0), atol=1e-4)
 
         extra = {
             'feed_ctx_attn_prob': feed_ctx_attn_prob,

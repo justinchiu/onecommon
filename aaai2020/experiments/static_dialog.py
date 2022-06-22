@@ -491,7 +491,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             # / plan feature level labels
 
             # PLAN ROUNDTRIP
-            plan_lang = writer.write(
+            plan_lang = writer.write_supervised(
                 max_words=words_left,
                 detect_markables=True,
                 start_token='YOU:',

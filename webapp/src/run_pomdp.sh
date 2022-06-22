@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # think aaai2020 is for annotation, maybe?
-export PYTHONPATH="..:.:../../aaai2020:../../src:../../src/models:..:$PYTHONPATH"
+export PYTHONPATH="..:.:../../aaai2020:../../aaai2020/experiments:..:$PYTHONPATH"
 
 scenarios="shared_4"
 
