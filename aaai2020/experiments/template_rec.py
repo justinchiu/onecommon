@@ -123,6 +123,7 @@ class RegionNode:
             for child in children
         ]
 
+        # WARNING: will break if there are 3 in a single 2nd level region
         child_descs = [
             dot_template.render(
                 size = size_map[children[0].size],
