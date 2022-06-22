@@ -14,6 +14,8 @@ from template import (
     dot_template,
     spatial_dot_template,
     render_2,
+    size_map,
+    color_map
 )
 
 def render_2_dots(dots, flip_y=True):
@@ -93,7 +95,7 @@ class RegionNode:
         self.num_dots = 0
         self.dots = {r: [] for r in range(self.B**2)}
 
-    def root_template(self):
+    def desc(self):
         # flat template, first attempt at generating regions
         non_empty_regions, children, num_dots = list(zip(*[
             (
@@ -104,6 +106,11 @@ class RegionNode:
             for region, child in enumerate(self.children)
             if child is not None
         ]))
+
+        number_descriptions = [
+            "is 1 dot" if x == 1 else f"are {x} dots"
+            for x in num_dots
+        ]
         region_descriptions = [
             self.region_map_3[region]
             for region in non_empty_regions
@@ -115,10 +122,24 @@ class RegionNode:
             for child in children
         ]
 
-        import pdb; pdb.set_trace()
-        return Template("Do you see {{ndots}}, ").render(
+        child_descs = [
+            dot_template.render(
+                size = size_map[children[0].size],
+                color = color_map[children[0].color],
+            ) if len(children) == 1 else render_2_dots(children, flip_y=self.flip_y)
+            for children in flattened_children
+        ]
+
+        desc = Template(
+            "Does this fit any configuration of {{ndots}} dots? "
+            "{% for desc in descs %}"
+            "There {{desc[0]}} in the {{desc[1]}}: {{desc[2]}}. "
+            "{% endfor %}"
+        ).render(
             ndots = self.num_dots,
+            descs = zip(number_descriptions, region_descriptions, child_descs),
         )
+        return desc
 
 
     def template(self):
@@ -286,7 +307,8 @@ def main():
         for i, xyi in enumerate(xy):
             root.add(Dot(i, 1, 1, xyi))
 
-        root.root_template()
+        desc = root.desc()
+        print(f"{n}: {desc}")
 
         ax = axes.flat[n]
         ax.scatter(xy[:,0], xy[:,1])

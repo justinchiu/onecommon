@@ -1,6 +1,8 @@
 from jinja2 import Template
 
 RADIUS = .2
+size_map = ["small", "medium", "large"]
+color_map = ["dark", "grey", "light"]
 
 utterance_template = Template("{{ confirm }} {{ mention }}")
 
@@ -21,7 +23,8 @@ spatial_dot_template = Template("{{spatial}} dot is {{dot}}")
 # Do you see three dots, where the {{dot 1}}, {{dot 2}}, and {{dot 3}}?
 
 mention_1 = Template("a {{dot1}}")
-mention_2 = Template("a pair of dots, where the {{dot1}} and the {{dot2}}")
+#mention_2 = Template("a pair of dots, where the {{dot1}} and the {{dot2}}")
+mention_2 = Template("the {{dot1}} and the {{dot2}}")
 
 mention_3 = Template("three dots, where the {{dot1}}, the {{dot2}}, and the {{dot3}}")
 
@@ -288,8 +291,6 @@ def spatial_descriptions4(xy):
 
 
 def size_color_descriptions(sc):
-    size_map = ["small", "medium", "large"]
-    color_map = ["dark", "grey", "light"]
     return [
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
