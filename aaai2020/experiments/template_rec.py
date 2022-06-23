@@ -16,7 +16,9 @@ from template import (
     spatial_dot_template,
     render_2,
     size_map,
-    color_map
+    color_map,
+    get_sign,
+    check_triangle
 )
 
 def render_2_dots(dots, flip_y=True):
@@ -96,6 +98,22 @@ class RegionNode:
         self.num_dots = 0
         self.dots = {r: [] for r in range(self.B**2)}
 
+    def get_id(self, id):
+        # return idx in flattened children of id
+        children = [
+            child
+            for region, child in enumerate(self.children)
+            if child is not None
+        ]
+        flattened_children = [
+            [node for nodes in child.dots.values() for node in nodes]
+                if isinstance(child, RegionNode)
+                else [child]
+            for child in children
+        ]
+        dot_list = sum(flattened_children, [])
+        return [i for i, dot in enumerate(dot_list) if dot.id == id][0]
+
     def desc(self):
         # flat template, first attempt at generating regions
         non_empty_regions, children, num_dots = list(zip(*[
@@ -123,6 +141,125 @@ class RegionNode:
             for child in children
         ]
 
+        triangle = False
+        dot_list = sum(flattened_children, [])
+        if len(self.xs) == 4:
+            xy = [dot_list[i].xy for i in range(4)]
+            for i in range(4):
+                compl = list(set([0, 1, 2, 3]) - set([i]))
+                res = check_triangle(xy[i], xy[compl[0]], xy[compl[1]], xy[compl[2]])
+                if res:
+                    dot4 = i
+                    dot1, dot2, dot3 = compl[0], compl[1], compl[2]
+                    triangle = True
+                    break
+
+        if triangle:
+            child_descs = [
+                dot_template.render(
+                    size = size_map[children.size],
+                    color = color_map[children.color],
+                ) 
+                for children in dot_list
+            ]
+            if len(region_descriptions) < 4:
+                new_regions = []
+                for i in range(len(region_descriptions)):
+                    if len(flattened_children[i]) > 1:
+                        new_regions += [region_descriptions[i]] * len(flattened_children[i])
+                    else:
+                        new_regions.append(region_descriptions[i])
+                region_descriptions = new_regions
+
+            triangle_root = RegionNode(
+                num_buckets = self.B,
+                inner_buckets = self.inner_B,
+                absolute_bucket = self.absolute_bucket,
+                flip_y = self.flip_y,
+                lx = self.lx,
+                hx = self.hx,
+                ly = self.ly,
+                hy = self.hy,
+            )
+            triangle_root.add(dot_list[dot1])
+            triangle_root.add(dot_list[dot2])
+            triangle_root.add(dot_list[dot3])
+            triangle_desc = triangle_root.inner_desc()
+
+            desc = Template(
+                "Do you see a triangle with a dot inside? "
+                "For the triangle: {{triangle_desc}}"
+                "The dot inside the triangle is towards the {{dot4r}}, and is {{dot4f}}."
+            ).render(
+                triangle_desc = triangle_desc,
+                dot4f = child_descs[dot4],
+                dot4r = region_descriptions[dot4],
+            )
+
+            """
+            desc = Template(
+                "Do you see a triangle with a dot inside? "
+                "The triangle has a {{dot1f}} dot in {{dot1r}}, "
+                "a {{dot2f}} dot in {{dot2r}}, "
+                "and a {{dot3f}} dot in {{dot3r}}. "
+                "The dot inside the triangle is {{dot4f}} in {{dot4r}}."
+            ).render(
+                dot1f = child_descs[dot1],
+                dot1r = region_descriptions[dot1],
+                dot2f = child_descs[dot2],
+                dot2r = region_descriptions[dot2],
+                dot3f = child_descs[dot3],
+                dot3r = region_descriptions[dot3],
+                dot4f = child_descs[dot4],
+                dot4r = region_descriptions[dot4],
+            )
+            """
+        else:
+            # WARNING: will break if there are 3 in a single 2nd level region
+            child_descs = [
+                dot_template.render(
+                    size = size_map[children[0].size],
+                    color = color_map[children[0].color],
+                ) if len(children) == 1 else render_2_dots(children, flip_y=self.flip_y)
+                for children in flattened_children
+            ]
+
+            desc = Template(
+                "Does this fit any {{ndots}} dot configuration? "
+                "{% for desc in descs %}"
+                "There {{desc[0]}} in the {{desc[1]}}: {{desc[2]}}. "
+                "{% endfor %}"
+            ).render(
+                ndots = self.num_dots,
+                descs = zip(number_descriptions, region_descriptions, child_descs),
+            )
+        return desc
+
+    def inner_desc(self):
+        non_empty_regions, children, num_dots = list(zip(*[
+            (
+                region,
+                child,
+                child.num_dots if isinstance(child, RegionNode) else 1,
+            )
+            for region, child in enumerate(self.children)
+            if child is not None
+        ]))
+
+        number_descriptions = [
+            "is 1 dot" if x == 1 else f"are {x} dots"
+            for x in num_dots
+        ]
+        region_descriptions = [
+            self.region_map_3[region]
+            for region in non_empty_regions
+        ]
+        flattened_children = [
+            [node for nodes in child.dots.values() for node in nodes]
+                if isinstance(child, RegionNode)
+                else [child]
+            for child in children
+        ]
         # WARNING: will break if there are 3 in a single 2nd level region
         child_descs = [
             dot_template.render(
@@ -133,13 +270,57 @@ class RegionNode:
         ]
 
         desc = Template(
-            "Does this fit any configuration of {{ndots}} dots? "
             "{% for desc in descs %}"
-            "There {{desc[0]}} in the {{desc[1]}}: {{desc[2]}}. "
+            "There {{desc[0]}} in the {{desc[1]}}, {{desc[2]}}. "
             "{% endfor %}"
         ).render(
             ndots = self.num_dots,
             descs = zip(number_descriptions, region_descriptions, child_descs),
+        )
+        return desc
+
+    def select_desc(self):
+        non_empty_regions, children, num_dots = list(zip(*[
+            (
+                region,
+                child,
+                child.num_dots if isinstance(child, RegionNode) else 1,
+            )
+            for region, child in enumerate(self.children)
+            if child is not None
+        ]))
+
+        number_descriptions = [
+            "1 dot" if x == 1 else f"{x} dots"
+            for x in num_dots
+        ]
+        region_descriptions = [
+            self.region_map_3[region]
+            for region in non_empty_regions
+        ]
+        flattened_children = [
+            [node for nodes in child.dots.values() for node in nodes]
+                if isinstance(child, RegionNode)
+                else [child]
+            for child in children
+        ]
+        # WARNING: will break if there are 3 in a single 2nd level region
+        child_descs = [
+            dot_template.render(
+                size = size_map[children[0].size],
+                color = color_map[children[0].color],
+            ) if len(children) == 1 else render_2_dots(children, flip_y=self.flip_y)
+            for children in flattened_children
+        ]
+
+        desc = Template(
+            "{% for desc in descs[:-1] %}"
+            "{{desc[0]}} in the {{desc[1]}}, {{desc[2]}}; "
+            "{% endfor %}"
+            "and {{descs[-1][0]}} in the {{descs[-1][1]}}, {{descs[-1][2]}} ."
+        ).render(
+            ndots = self.num_dots,
+            descs = list(zip(number_descriptions, region_descriptions, child_descs)),
         )
         return desc
 
@@ -241,7 +422,7 @@ class RegionNode:
             # already a RegionNode
             node.add(dot)
 
-def render(n, sc, xy, flip_y=True):
+def render(n, sc, xy, flip_y=True, inner=False):
     if n == 2:
         return render_2(xy, sc, flip_y=flip_y)
 
@@ -259,11 +440,47 @@ def render(n, sc, xy, flip_y=True):
     dots = [Dot(i, sc[i,0], sc[i,1], xy[i]) for i in range(n)]
     for dot in dots:
         root.add(dot)
-    return root.desc()
+    return root.desc() if not inner else root.inner_desc()
 
-def render_select(select_feats, select_rel_idx):
-    words = render(*select_feats)
-    # FOR NOW
+def render_select(select_feats, select_rel_idx, flip_y=True):
+    n, sc, xy = select_feats
+    if n == 2:
+        desc = "first" if select_rel_idx == 0 else "second"
+        return (
+            f"From the two dots, {lender_2(xy, sc, flip_y=flip_y, concise=True)}, "
+            "let's select the {desc}"
+        )
+
+    root = RegionNode(
+        num_buckets = 3,
+        inner_buckets = 2,
+        absolute_bucket = True,
+        flip_y = flip_y,
+        lx = xy[:,0].min(),
+        hx = xy[:,0].max(),
+        ly = xy[:,1].min(),
+        hy = xy[:,1].max(),
+    )
+    # convert to dots
+    dots = [Dot(i, sc[i,0], sc[i,1], xy[i]) for i in range(n)]
+    for dot in dots:
+        root.add(dot)
+    config = root.select_desc()
+
+    sel_idx = root.get_id(select_rel_idx)
+    number_map = [
+        "first", "second", "third", "fourth", "fifth", "sixth",
+    ]
+    words = Template(
+        "Let's select a dot! "
+        "Let's select the {{number}} dot from these {{n}} dots: "
+        "{{config}}"
+    ).render(
+        n = n,
+        number = number_map[sel_idx],
+        config = config,
+    )
+    # FOR NOW	
     return words
 
 def main():
@@ -292,7 +509,7 @@ def main():
     uk, key = random.split(key)
     xys = random.uniform(uk, minval=lv, maxval=hv, shape=(N, 4,2))
 
-    """
+    #"""
     n = 6
     xy = xys[n]
     root = RegionNode(
@@ -302,17 +519,22 @@ def main():
         ly = xy[:,1].min(),
         hy = xy[:,1].max(),
     )
-    root.add(xy[0])
-    root.add(xy[1])
-    root.add(xy[2])
-    root.add(xy[3])
-
+    sc = np.array([[0,0],[1,1],[2,2], [0,2]])
+    root.add(Dot(0, sc[0,0], sc[0,1], xy[0]))
+    root.add(Dot(1, sc[1,0], sc[1,1], xy[1]))
+    root.add(Dot(2, sc[2,0], sc[2,1], xy[2]))
+    root.add(Dot(3, sc[3,0], sc[3,1], xy[3]))
     print(xy)
-    for node in root.items():
-        for line in node.lines():
-            print(line.get_xydata())
-            import pdb; pdb.set_trace()
-    """
+    #for node in root.items():
+        #for line in node.lines():
+            #print(line.get_xydata())
+            #import pdb; pdb.set_trace()
+
+    select_feats = (3, sc, xy[:3])
+    select_rel_idx = 1
+    ok = render_select(select_feats, select_rel_idx, flip_y=True)
+    import pdb; pdb.set_trace()
+    #"""
 
     xy = xys[0]
     dots = [Dot(0,0,0,xy[0]), Dot(1,2,2,xy[1])]
@@ -353,4 +575,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
