@@ -407,8 +407,8 @@ if __name__ == "__main__":
         # server = WSGIServer(('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file)
         server = WSGIServer(
             ('', args.port), app, log=WebLogger.get_logger(), error_log=error_log_file,
-                            #keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
-                            #certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem')
+                            keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
+                            certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem'
                             #keyfile='/home/justinchiu/keys/key.pem',
                             #certfile='/home/justinchiu/keys/cert.pem')
         )
