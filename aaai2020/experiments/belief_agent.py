@@ -296,7 +296,8 @@ class BeliefAgent(RnnAgent):
     def choose(self):
         if self.sel_idx is None:
             self.select_dot()
-        return self.real_ids[self.sel_idx]
+        #return self.real_ids[self.sel_idx]
+        return self.sel_idx
 
     def write(self, *args, **kwargs):
         # SYMBOLIC PORTION
