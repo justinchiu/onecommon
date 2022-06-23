@@ -187,9 +187,9 @@ class RegionNode:
             triangle_desc = triangle_root.inner_desc()
 
             desc = Template(
-                "Do you see a triangle with a dot inside? "
-                "For the triangle: {{triangle_desc}}"
-                "The dot inside the triangle is towards the {{dot4r}}, and is {{dot4f}}."
+                "Do you see a triangle with a dot inside ? "
+                "For the triangle : {{triangle_desc}}"
+                "The dot inside the triangle is towards the {{dot4r}} , and is {{dot4f}} ."
             ).render(
                 triangle_desc = triangle_desc,
                 dot4f = child_descs[dot4],
@@ -225,9 +225,9 @@ class RegionNode:
             ]
 
             desc = Template(
-                "Does this fit any {{ndots}} dot configuration? "
+                "Does this fit any {{ndots}} dot configuration ? "
                 "{% for desc in descs %}"
-                "There {{desc[0]}} in the {{desc[1]}}: {{desc[2]}}. "
+                "There {{desc[0]}} in the {{desc[1]}} : {{desc[2]}} . "
                 "{% endfor %}"
             ).render(
                 ndots = self.num_dots,
@@ -271,7 +271,7 @@ class RegionNode:
 
         desc = Template(
             "{% for desc in descs %}"
-            "There {{desc[0]}} in the {{desc[1]}}, {{desc[2]}}. "
+            "There {{desc[0]}} in the {{desc[1]}} , {{desc[2]}} . "
             "{% endfor %}"
         ).render(
             ndots = self.num_dots,
@@ -315,9 +315,9 @@ class RegionNode:
 
         desc = Template(
             "{% for desc in descs[:-1] %}"
-            "{{desc[0]}} in the {{desc[1]}}, {{desc[2]}}; "
+            "{{desc[0]}} in the {{desc[1]}} , {{desc[2]}} ; "
             "{% endfor %}"
-            "and {{descs[-1][0]}} in the {{descs[-1][1]}}, {{descs[-1][2]}} ."
+            "and {{descs[-1][0]}} in the {{descs[-1][1]}} , {{descs[-1][2]}} ."
         ).render(
             ndots = self.num_dots,
             descs = list(zip(number_descriptions, region_descriptions, child_descs)),
