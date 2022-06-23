@@ -322,7 +322,7 @@ class BeliefAgent(RnnAgent):
             partner_mention = self.side_infos[-1]
             resolved = partner_mention.any()
             confirm = int(resolved)
-            print(f"RESOLVED: {resolved}")
+            #print(f"RESOLVED: {resolved}")
 
         # add plan to next_mention_plan history
         self.next_mention_plans.append(plan)
