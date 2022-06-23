@@ -335,8 +335,8 @@ class BeliefAgent(RnnAgent):
 
         #return confirm, feats, select_feats, select_rel_idx
         # WORDS
-        force_words = render(*feats) if not should_select else (
-            render_select(select_feats, select_rel_idx)
+        force_words = render(*feats, confirm=confirm) if not should_select else (
+            render_select(select_feats, select_rel_idx, confirm=confirm)
         )
         force_words_split = [force_words.split() + ["<eos>"]]
 
