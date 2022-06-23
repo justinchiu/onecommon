@@ -33,7 +33,7 @@
     "num_chats_per_scenario": {
         "belief": 4,
         "pragmatic_confidence": 4,
-        "human": 4
+        "human": 0
     },
     "models": {
         "belief": {

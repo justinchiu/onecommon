@@ -50,11 +50,13 @@ class BeliefAgent(RnnAgent):
     # same init as RnnAgent, initialize belief in feed_context
     def __init__(self, *args, **kvargs):
         super().__init__(*args, **kvargs)
-        # NEED TO ADJUST THIS
-        response_pretrained_path = "models/save_pretrained"
-        self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
-        self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
-            response_pretrained_path)
+        # NEED TO ADJUST THIS, pass in as argument
+        #response_pretrained_path = "models/save_pretrained"
+        #self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
+        #self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
+            #response_pretrained_path)
+        assert self.tokenizer is not None
+        assert self.confirmation_predictor is not None
 
         # for selection heuristic based on entropy
         self.entropy_threshold = self.args.belief_entropy_threshold

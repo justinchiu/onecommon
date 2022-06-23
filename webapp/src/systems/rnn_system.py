@@ -8,6 +8,10 @@ from cocoa.sessions.timed_session import TimedSessionWrapper
 
 from annotation.transform_scenarios_to_txt import create_input
 
+from transformers import (
+    AutoTokenizer, AutoModelForSequenceClassification,
+)
+
 # pythonpath must have onecommon/aaai2020/experiments
 import utils as utils
 import models
@@ -19,6 +23,8 @@ from engines.beliefs import BlankBeliefConstructor
 import pprint
 
 CUDA = False
+
+torch.set_grad_enabled(False)
 
 class Dummy:
     def __init__(self):
@@ -65,7 +71,7 @@ class PomdpSystem(System):
 class RnnSystem(System):
     def __init__(
         self, name, args, model_path, markable_detector_path,
-        timed=False, inference_args=None,
+        timed=True, inference_args=None,
         belief=False,
     ):
         super(RnnSystem, self).__init__()
@@ -78,6 +84,11 @@ class RnnSystem(System):
         self.model.eval()
         self.markable_detector = utils.load_model(markable_detector_path, prefix_dir=None, map_location='cpu')
         self.markable_detector.eval()
+
+        response_pretrained_path = "models/save_pretrained"
+        self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
+        self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
+            response_pretrained_path)
 
         self.timed = timed
 
@@ -106,7 +117,12 @@ class RnnSystem(System):
 
         #pprint.pprint(vars(merged_args))
 
-        model = Agent(self.model, merged_args, markable_detector=self.markable_detector)
+        model = Agent(
+            self.model, merged_args,
+            markable_detector=self.markable_detector,
+            tokenizer = self.tokenizer,
+            confirmation_predictor = self.confirmation_predictor,
+    	)
 
         # feed context, can probably save agent in init.
         ctxt = create_input(kb.items, Dummy())

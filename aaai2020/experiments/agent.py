@@ -115,11 +115,18 @@ class RnnAgent(Agent):
     def __init__(
         self, model: HierarchicalRnnReferenceModel,
         args, name='Alice', train=False, markable_detector=None,
+        tokenizer = None,
+        confirmation_predictor = None,
     ):
         super(RnnAgent, self).__init__()
         self.model: HierarchicalRnnReferenceModel = model
         self.reference_predictor = ReferencePredictor(model.args)
         self.markable_detector: BiLSTM_CRF = markable_detector
+
+        # actually for BeliefAgent
+        self.tokenizer = tokenizer
+        self.confirmation_predictor = confirmation_predictor
+
         self.args = args
         self.name = name
         self.human = False
@@ -1041,8 +1048,8 @@ class RnnAgent(Agent):
             self.logprobs.append(logprob)
 
         choice, _, _ = self._choose()
-        if hasattr(self, "real_ids") and self.real_ids:
-            choice = self.real_ids[choice]
+        #if hasattr(self, "real_ids") and self.real_ids:
+            #choice = self.real_ids[choice]
         return choice
 
     def update(self, agree, reward, choice=None):
