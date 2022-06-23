@@ -422,9 +422,13 @@ class RegionNode:
             # already a RegionNode
             node.add(dot)
 
-def render(n, sc, xy, flip_y=True, inner=False):
+def render(n, sc, xy, confirm=None, flip_y=True, inner=False):
+    confirm_text = "Yes ." if confirm == 1 else "No ." if confirm == 0 else None
     if n == 2:
-        return f"Do you see {render_2(xy, sc, flip_y=flip_y)}"
+        if confirm is None:
+            return f"Do you see {render_2(xy, sc, flip_y=flip_y)}"
+        else:
+            return f"{confirm_text} Do you see {render_2(xy, sc, flip_y=flip_y)}"
 
     root = RegionNode(
         num_buckets = 3,
@@ -440,16 +444,27 @@ def render(n, sc, xy, flip_y=True, inner=False):
     dots = [Dot(i, sc[i,0], sc[i,1], xy[i]) for i in range(n)]
     for dot in dots:
         root.add(dot)
-    return root.desc() if not inner else root.inner_desc()
+    words = root.desc() if not inner else root.inner_desc()
+    if confirm is None:
+        return words
+    else:
+        return f"{confirm_text} {words}"
 
-def render_select(select_feats, select_rel_idx, flip_y=True):
+def render_select(select_feats, select_rel_idx, confirm=None, flip_y=True):
     n, sc, xy = select_feats
+    confirm_text = "Yes ." if confirm == 1 else "No ." if confirm == 0 else None
     if n == 2:
         desc = "first" if select_rel_idx == 0 else "second"
-        return (
-            f"From the two dots, {lender_2(xy, sc, flip_y=flip_y, concise=True)}, "
-            "let's select the {desc}"
-        )
+        if confirm is None:
+            return (
+                f"From the two dots, {lender_2(xy, sc, flip_y=flip_y, concise=True)}, "
+                "let's select the {desc}"
+            )
+        else:
+            return (
+                f"{confirm_text} From the two dots, {lender_2(xy, sc, flip_y=flip_y, concise=True)}, "
+                "let's select the {desc}"
+            )
 
     root = RegionNode(
         num_buckets = 3,
@@ -480,8 +495,10 @@ def render_select(select_feats, select_rel_idx, flip_y=True):
         number = number_map[sel_idx],
         config = config,
     )
-    # FOR NOW	
-    return words
+    if confirm is None:
+        return words
+    else:
+        return f"{confirm_text} {words}"
 
 def main():
     import numpy as np
