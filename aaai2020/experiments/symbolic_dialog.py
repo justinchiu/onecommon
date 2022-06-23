@@ -393,7 +393,7 @@ class SymbolicDialog(HierarchicalDialog):
         choices = []
         for agent in self.agents:
             choice = agent.choose()
-            choices.append(choice)
+            choices.append(agent.real_ids[choice])
         if logger.scenarios:
             logger.dump_choice(scenario_id, choices)
             if "plot_metrics" in self.args and self.args.plot_metrics:
