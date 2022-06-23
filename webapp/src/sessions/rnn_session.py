@@ -93,4 +93,5 @@ class RnnSession(Session):
         choice = self.model.choose()
         # convert choice to id string
         choice = self.kb.items[choice]["id"]
+        import pdb; pdb.set_trace()
         return super(RnnSession, self).select(choice)

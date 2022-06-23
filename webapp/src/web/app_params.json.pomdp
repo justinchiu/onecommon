@@ -31,9 +31,9 @@
     "task_title": "Find One In Common!",
     "icon": "handshake.jpg",
     "num_chats_per_scenario": {
-        "belief": 1,
-        "pragmatic_confidence": 0,
-        "human": 0
+        "belief": 4,
+        "pragmatic_confidence": 4,
+        "human": 4
     },
     "models": {
         "belief": {
