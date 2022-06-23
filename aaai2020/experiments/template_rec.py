@@ -143,7 +143,7 @@ class RegionNode:
 
         triangle = False
         dot_list = sum(flattened_children, [])
-        if len(self.xs) == 4:
+        if len(dot_list) == 4:
             xy = [dot_list[i].xy for i in range(4)]
             for i in range(4):
                 compl = list(set([0, 1, 2, 3]) - set([i]))
