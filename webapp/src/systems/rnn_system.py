@@ -111,6 +111,8 @@ class RnnSystem(System):
         # feed context, can probably save agent in init.
         ctxt = create_input(kb.items, Dummy())
         model.feed_context(ctxt, belief_constructor = BlankBeliefConstructor())
+        model.agent_id = agent
+        model.real_ids = [int(item["id"]) for item in kb.items]
 
         session = RnnSession(agent, kb, model, self.inference_args)
         if self.timed:
