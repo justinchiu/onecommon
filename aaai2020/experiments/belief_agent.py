@@ -51,7 +51,7 @@ class BeliefAgent(RnnAgent):
     def __init__(self, *args, **kvargs):
         super().__init__(*args, **kvargs)
         # NEED TO ADJUST THIS
-        response_pretrained_path = "../../response_annotation/save_pretrained"
+        response_pretrained_path = "models/save_pretrained"
         self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
         self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
             response_pretrained_path)
