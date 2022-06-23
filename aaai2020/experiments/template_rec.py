@@ -424,7 +424,7 @@ class RegionNode:
 
 def render(n, sc, xy, flip_y=True, inner=False):
     if n == 2:
-        return render_2(xy, sc, flip_y=flip_y)
+        return f"Do you see {render_2(xy, sc, flip_y=flip_y)}"
 
     root = RegionNode(
         num_buckets = 3,

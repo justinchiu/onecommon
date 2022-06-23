@@ -320,8 +320,8 @@ class BeliefAgent(RnnAgent):
         confirm = None
         if len(self.side_infos) > 0 and self.side_infos[-1] is not None:
             partner_mention = self.side_infos[-1]
-            resolved = self.belief.resolve_utt(*partner_mention)
-            confirm = int(len(resolved) > 0)
+            resolved = partner_mention.any()
+            confirm = int(resolved)
 
         # add plan to next_mention_plan history
         self.next_mention_plans.append(plan)
