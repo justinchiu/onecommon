@@ -1,0 +1,418 @@
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:03] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.002542
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:03] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001227
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:04] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001072
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:05] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001167
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:05] "GET /dialogue/?index=Hit2_index_data&mturk=1&assignmentId=3RWE2M8QWIRJITVXHID1L5XS382N0P&hitId=304QEQWKZP1YEUXGSV8CBA2H1XLO0K&workerId=A2Q0NG0Q7Q14L7 HTTP/1.1" 302 1443 0.000962
+DEBUG:web:Got updated status waiting for user MT_f6387f70864943d6910bb3698bee43b6
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:05] "GET /dialogue/?index=Hit2_index_data&mturk=1&assignmentId=3RWE2M8QWIRJITVXHID1L5XS382N0P&hitId=304QEQWKZP1YEUXGSV8CBA2H1XLO0K&workerId=A2Q0NG0Q7Q14L7&uid=MT_f6387f70864943d6910bb3698bee43b6&index=Hit2_index_data&mturk=1&assignmentId=3RWE2M8QWIRJITVXHID1L5XS382N0P&hitId=304QEQWKZP1YEUXGSV8CBA2H1XLO0K&workerId=A2Q0NG0Q7Q14L7 HTTP/1.1" 200 2900 0.008678
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:05] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 304 148 0.004219
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:05] "GET /dialogue/static/img/handshake.jpg HTTP/1.1" 304 144 0.000627
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:06] "GET /dialogue/_connect/?uid=MT_f6387f70864943d6910bb3698bee43b6 HTTP/1.1" 200 130 0.004904
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:06] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001096
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:06] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000789
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:07] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005893
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:07] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000844
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:08] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006989
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:08] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001127
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:09] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005832
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:09] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001120
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:09] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001101
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:10] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005733
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:10] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001237
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:11] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.008009
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:11] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001216
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:12] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005576
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:12] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001449
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:12] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000805
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:13] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005628
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:13] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001194
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:14] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006786
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:14] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001250
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:15] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007223
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:15] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001429
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:15] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000812
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:16] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005517
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:16] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001142
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:17] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005858
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:17] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001134
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:18] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006355
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:18] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001481
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:18] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.002189
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:19] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006105
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:19] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001164
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:20] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006118
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:20] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001214
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:21] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006387
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:21] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001484
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:21] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000822
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:22] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006084
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:22] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.002068
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:23] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005999
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:23] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000899
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:24] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005597
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:24] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001456
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:24] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000829
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:25] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006753
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:25] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000813
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:26] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005769
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:26] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.002156
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:27] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005594
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:27] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000777
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:27] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001025
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:28] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.015228
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:28] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000790
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:29] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005521
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:29] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001014
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:30] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006371
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:30] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.002403
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:30] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000785
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:31] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005650
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:31] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000807
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:32] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005883
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:32] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000797
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:33] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005824
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:33] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001050
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:33] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000800
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:34] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007286
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:34] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000761
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:35] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005718
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:35] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000777
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:36] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005658
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:36] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001034
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:36] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000804
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:37] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005526
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:37] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000788
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:38] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006766
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:38] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000767
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:39] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005883
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:39] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000770
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:39] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001006
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:40] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.004879
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:40] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001041
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:41] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005657
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:41] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001209
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:42] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007143
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:42] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001047
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:42] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000760
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:43] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005890
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:43] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000788
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:44] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005442
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:44] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000786
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:45] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005821
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:45] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001050
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:45] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000801
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:46] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005936
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:46] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000774
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:47] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005677
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:47] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000794
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:48] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005264
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:48] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001339
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:48] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000789
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:49] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005560
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:49] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000803
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:50] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006923
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:50] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000854
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:51] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005484
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:51] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001038
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:51] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000775
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:52] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006819
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:52] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000800
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:53] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005311
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:53] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000784
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:54] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007043
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:54] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001237
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:54] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000788
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:55] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005611
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:55] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001055
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:56] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006154
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:56] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000794
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:57] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005532
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:57] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001029
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:57] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.003352
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:58] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005417
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:58] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000765
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:07:59] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005383
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:07:59] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000818
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:00] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005871
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:00] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001318
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:00] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000776
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:01] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005867
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:01] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000787
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:02] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007569
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:02] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001206
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:03] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006156
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:03] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001505
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:03] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000807
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:04] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006198
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:04] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001181
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:05] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005986
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:05] "GET /dialogue/_send_message/?uid=U_a56a7de7c49c4f48a6e17a62456617d1&message=yes&time_taken=0.38300013542175293 HTTP/1.1" 500 161 0.001461
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:05] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000819
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:06] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007661
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:06] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001179
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:06] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000806
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:07] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006054
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:07] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001175
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:08] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005762
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:08] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001183
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:09] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007087
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:09] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001431
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:09] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000803
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:10] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005685
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:10] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001199
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:11] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005895
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:11] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001198
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:12] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005735
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:12] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001462
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:12] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000775
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:13] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005769
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:13] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000803
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:14] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007570
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:14] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001167
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:15] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005538
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:15] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001427
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:15] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000818
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:16] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005496
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:16] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001139
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:17] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.006689
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:17] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001168
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:18] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007399
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:18] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001081
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:18] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000769
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:19] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005419
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:19] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001172
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:20] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005848
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:20] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001197
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:21] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.005827
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:21] "GET /dialogue/_check_chat_valid/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001474
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:21] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.000774
+DEBUG:web:Got updated status chat for user U_a56a7de7c49c4f48a6e17a62456617d1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa had connection timeout exception with connected status 1
+DEBUG:web:User U_43bac01bc8b6485d955194de75b462fa chat status expired, redirecting to waiting
+INFO:web:::ffff:64.18.149.237 - - [2022-06-23 15:08:22] "GET /dialogue/_check_status_change/?uid=MT_f6387f70864943d6910bb3698bee43b6&assumed_status=waiting HTTP/1.1" 500 161 0.007037
+INFO:web:::ffff:104.167.146.182 - - [2022-06-23 15:08:22] "GET /dialogue/_check_inbox/?uid=U_a56a7de7c49c4f48a6e17a62456617d1 HTTP/1.1" 500 161 0.001169
