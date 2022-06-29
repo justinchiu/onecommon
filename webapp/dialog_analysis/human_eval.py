@@ -83,7 +83,7 @@ def min_utt_len(L, xs):
     return [x for x in xs if has_utt_len(x, L)]
 
 #finished_dialogues = get_selected(dialogues)
-finished_dialogues = dialogues
+finished_dialogues = [d for d in dialogues if len(d["dialogue"]) > 2]
 
 def visualize_dialogue(dialogue):
     st.write("Agent id (0: left, 1: right), words")
@@ -99,6 +99,7 @@ def process_dialogue(dialogue_dict):
 
     st.write(f"Chat id: {id}")
     st.write(f"Chat scenario id: {scenario_id}")
+    st.write(agent_types)
 
     b0 = [Dot(x) for x in board["kbs"][0]]
     b1 = [Dot(x) for x in board["kbs"][1]]
@@ -142,3 +143,4 @@ boards = {
 
 idx = st.number_input("Train dialogue number", 0, len(finished_dialogues))
 process_dialogue(finished_dialogues[idx])
+print(len(finished_dialogues))
