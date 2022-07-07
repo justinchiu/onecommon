@@ -6,11 +6,12 @@ model_dir_b=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-st
 shared_ctx_count=4
 
 num_contexts=1000
-num_contexts=200
+#num_contexts=200
 
 # belief entropy threshold
-threshold=2
-threshold=1.5
+threshold=2.5
+#threshold=2
+#threshold=1.5
 #threshold=1
 
 belief="or"
@@ -24,9 +25,9 @@ length_coef=0.11
 
 # running
 length_coef=0.05
-#length_coef=0.075
 
 # finished
+#length_coef=0.075
 #length_coef=0.1
 #length_coef=0.125
 
