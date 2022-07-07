@@ -5,6 +5,9 @@ model_dir_b=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-st
 
 shared_ctx_count=4
 
+num_contexts=1000
+num_contexts=200
+
 # belief entropy threshold
 threshold=2
 threshold=1.5
@@ -20,18 +23,18 @@ length_coef=0
 length_coef=0.11
 
 # running
-length_coef=0.075
-#length_coef=0.1
+length_coef=0.05
+#length_coef=0.075
 
 # finished
-#length_coef=0.05
+#length_coef=0.1
 #length_coef=0.125
 
 # too much below here
 #length_coef=0.22
 #length_coef=0.33
 
-name="DBGTEST_SELFPLAY_SYMBOLIC_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}"
+name="SS_N${num_contexts}_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}"
 #name="DBG_RM"
 
 shift
@@ -61,6 +64,7 @@ logdir="analysis_log/${name}_1"
 mkdir -p ${logdir}
 
 python -u selfplay.py \
+  --num_contexts ${num_contexts} \
   --alice_model_file=${model_dir_a}/1_ep-12.th \
   --bob_model_file=${model_dir_b}/1_ep-12.th \
   --context_file=shared_4 \
