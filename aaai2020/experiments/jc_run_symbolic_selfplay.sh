@@ -18,11 +18,11 @@ absolute_bucketing=1
 
 length_coef=0
 length_coef=0.75
-length_coef=0.1
 length_coef=0.11
 
 # running
-length_coef=0.05
+#length_coef=0.05
+length_coef=0.1
 #length_coef=0.125
 
 # too much below here
