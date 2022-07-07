@@ -42,9 +42,15 @@ class BeliefAgent(RnnAgent):
         parser.add_argument(
             "--absolute_bucketing",
             choices = [0,1],
-            default = 0,
+            default = 1,
             type=int,
             help = "If on=1, switch from relative bucketing to absolute bucketing of unary features size/color",
+        )
+        parser.add_argument(
+            "--length_coef",
+            default = 0,
+            type = float,
+            help = "length coef in utility",
         )
 
     # same init as RnnAgent, initialize belief in feed_context
@@ -60,6 +66,9 @@ class BeliefAgent(RnnAgent):
 
         # for selection heuristic based on entropy
         self.entropy_threshold = self.args.belief_entropy_threshold
+
+        # utility coefficients
+        self.length_coef = self.args.length_coef
 
     def feed_context(self, context, belief_constructor):
         super().feed_context(context, belief_constructor)
@@ -183,8 +192,11 @@ class BeliefAgent(RnnAgent):
         plan = None
         if force_words is None:
             # generate next mention plan
-            EdHs = self.belief.compute_EdHs(self.prior)
-            cs, hs = self.belief.viz_belief(EdHs, n=4)
+            utilities = self.belief.compute_utilities(
+                self.prior,
+                length_coef = self.length_coef,
+            )
+            cs, us = self.belief.viz_belief(utilities, n=4)
             # TODO: MULTIPLE PLANS
             plan = cs[0]
             # convert plan to dots_mentioned
@@ -272,8 +284,11 @@ class BeliefAgent(RnnAgent):
             select_feats = self.belief.get_feats(select_config)
 
         # generate next mention plan
-        EdHs = self.belief.compute_EdHs(self.prior)
-        cs, hs = self.belief.viz_belief(EdHs, n=4)
+        utilities = self.belief.compute_utilities(
+            self.prior,
+            length_coef = self.length_coef,
+        )
+        cs, us = self.belief.viz_belief(utilities, n=4)
         plan = cs[0]
         feats = self.belief.get_feats(plan)
 
@@ -315,8 +330,11 @@ class BeliefAgent(RnnAgent):
             select_feats = self.belief.get_feats(select_config)
 
         # generate next mention plan
-        EdHs = self.belief.compute_EdHs(self.prior)
-        cs, hs = self.belief.viz_belief(EdHs, n=4)
+        utilities = self.belief.compute_utilities(
+            self.prior,
+            length_coef = self.length_coef,
+        )
+        cs, us = self.belief.viz_belief(utilities, n=4)
         plan = cs[0]
         feats = self.belief.get_feats(plan)
 

@@ -16,7 +16,18 @@ belief="or"
 #absolute_bucketing=0
 absolute_bucketing=1
 
-name="DBGTEST_SELFPLAY_SYMBOLIC_T${threshold}_B${belief}_AB${absolute_bucketing}"
+length_coef=0
+length_coef=0.5
+length_coef=0.75
+length_coef=0.1
+length_coef=0.11
+length_coef=0.125
+# too much below here
+#length_coef=0.22
+#length_coef=0.33
+
+name="DBGTEST_SELFPLAY_SYMBOLIC_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}"
+name="DBG_RM"
 
 shift
 shift
@@ -53,6 +64,7 @@ python -u selfplay.py \
   --belief_entropy_threshold ${threshold} \
   --symbolic \
   --absolute_bucketing ${absolute_bucketing} \
+  --length_coef ${length_coef} \
   --cuda \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \

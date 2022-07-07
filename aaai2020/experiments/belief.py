@@ -160,6 +160,22 @@ class Belief:
             EdHs.append(EdH)
         return np.array(EdHs)
 
+    def compute_lengths(self):
+        return self.configs.sum(-1)
+
+    def compute_utilities(
+        self,
+        prior,
+        length_coef = 0,
+        prob_coef = 0,
+    ):
+        EdHs = self.compute_EdHs(prior)
+        utility = EdHs
+        if length_coef > 0:
+            lengths = self.compute_lengths()
+            utility -= length_coef * lengths
+        return utility
+
     def viz_belief(self, p, n=5):
         # decreasing order
         idxs = (-p).argsort()[:n]
