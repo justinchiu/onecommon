@@ -52,6 +52,12 @@ class BeliefAgent(RnnAgent):
             type = float,
             help = "length coef in utility",
         )
+        parser.add_argument(
+            "--select_config_size",
+            default = 3,
+            type = float,
+            help = "config size for communicating selection",
+        )
 
     # same init as RnnAgent, initialize belief in feed_context
     def __init__(self, *args, **kvargs):
@@ -69,6 +75,9 @@ class BeliefAgent(RnnAgent):
 
         # utility coefficients
         self.length_coef = self.args.length_coef
+
+        # select config size
+        self.select_config_size = self.args.select_config_size
 
     def feed_context(self, context, belief_constructor):
         super().feed_context(context, belief_constructor)
@@ -122,7 +131,8 @@ class BeliefAgent(RnnAgent):
         # maybe should choose a dot and the 2 nearest shared?
 
         #config = self.belief.marginal_size(self.prior, 3)
-        config = self.belief.marginal_size(self.prior, 4)
+        #config = self.belief.marginal_size(self.prior, 4)
+        config = self.belief.marginal_size(self.prior, self.select_config_size)
 
         marginals = self.belief.marginals(self.prior)
         marginals[~config.astype(bool)] = 0

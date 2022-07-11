@@ -20,6 +20,10 @@ belief="or"
 #absolute_bucketing=0
 absolute_bucketing=1
 
+select_config_size=2
+select_config_size=3
+#select_config_size=4
+
 length_coef=0
 length_coef=0.11
 
@@ -35,7 +39,7 @@ length_coef=0.05
 #length_coef=0.22
 #length_coef=0.33
 
-name="SS_N${num_contexts}_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}"
+name="SS_N${num_contexts}_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}_S${select_config_size}"
 #name="DBG_RM"
 
 shift
@@ -75,6 +79,7 @@ python -u selfplay.py \
   --symbolic \
   --absolute_bucketing ${absolute_bucketing} \
   --length_coef ${length_coef} \
+  --select_config_size ${select_config_size} \
   --cuda \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
