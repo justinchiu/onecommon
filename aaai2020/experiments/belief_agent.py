@@ -53,6 +53,18 @@ class BeliefAgent(RnnAgent):
             help = "length coef in utility",
         )
         parser.add_argument(
+            "--diameter_coef",
+            default = 0,
+            type = float,
+            help = "plan diameter (max dist b/w 2 points) coef in utility",
+        )
+        parser.add_argument(
+            "--contiguity_coef",
+            default = 0,
+            type = float,
+            help = "plan contiguity coef in utility",
+        )
+        parser.add_argument(
             "--select_config_size",
             default = 3,
             type = float,
@@ -75,6 +87,8 @@ class BeliefAgent(RnnAgent):
 
         # utility coefficients
         self.length_coef = self.args.length_coef
+        self.diameter_coef = self.args.diameter_coef
+        self.contiguity_coef = self.args.contiguity_coef
 
         # select config size
         self.select_config_size = self.args.select_config_size
@@ -205,6 +219,8 @@ class BeliefAgent(RnnAgent):
             utilities = self.belief.compute_utilities(
                 self.prior,
                 length_coef = self.length_coef,
+                diameter_coef = self.diameter_coef,
+                contiguity_coef = self.contiguity_coef,
             )
             cs, us = self.belief.viz_belief(utilities, n=4)
             # TODO: MULTIPLE PLANS
@@ -297,6 +313,8 @@ class BeliefAgent(RnnAgent):
         utilities = self.belief.compute_utilities(
             self.prior,
             length_coef = self.length_coef,
+            diameter_coef = self.diameter_coef,
+            contiguity_coef = self.contiguity_coef,
         )
         cs, us = self.belief.viz_belief(utilities, n=4)
         plan = cs[0]
@@ -343,6 +361,8 @@ class BeliefAgent(RnnAgent):
         utilities = self.belief.compute_utilities(
             self.prior,
             length_coef = self.length_coef,
+            diameter_coef = self.diameter_coef,
+            contiguity_coef = self.contiguity_coef,
         )
         cs, us = self.belief.viz_belief(utilities, n=4)
         plan = cs[0]

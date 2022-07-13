@@ -9,9 +9,9 @@ num_contexts=1000
 #num_contexts=200
 
 # belief entropy threshold
-threshold=3
-threshold=2.75
-#threshold=2.5
+#threshold=3
+#threshold=2.75
+threshold=2.5
 #threshold=2
 #threshold=1.5
 #threshold=1
@@ -22,26 +22,24 @@ belief="or"
 #absolute_bucketing=0
 absolute_bucketing=1
 
-select_config_size=2
+#select_config_size=2
 select_config_size=3
 #select_config_size=4
 
-length_coef=0
-length_coef=0.11
-
-# running
+# best
 length_coef=0.05
-
 # finished
 #length_coef=0.075
 #length_coef=0.1
 #length_coef=0.125
-
 # too much below here
 #length_coef=0.22
 #length_coef=0.33
 
-name="SS_N${num_contexts}_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}_S${select_config_size}"
+diam_coef=0
+contig_coef=0
+
+name="SS_N${num_contexts}_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}_S${select_config_size}_D{diam_coef}_C{contig_coef}"
 #name="DBG_RM"
 
 shift
@@ -81,6 +79,8 @@ python -u selfplay.py \
   --symbolic \
   --absolute_bucketing ${absolute_bucketing} \
   --length_coef ${length_coef} \
+  --diameter_coef ${diam_coef} \
+  --contiguity_coef ${contig_coef} \
   --select_config_size ${select_config_size} \
   --cuda \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \

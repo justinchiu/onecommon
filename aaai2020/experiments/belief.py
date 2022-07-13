@@ -6,7 +6,20 @@ from enum import Enum
 import itertools
 import numpy as np
 from scipy.special import logsumexp as lse
+
+from itertools import combinations, chain
 from scipy.special import comb
+
+from scipy.spatial import ConvexHull, Delaunay
+
+def comb_index(n, k):
+    count = comb(n, k, exact=True)
+    index = np.fromiter(
+        chain.from_iterable(combinations(range(n), k)), 
+        int,
+        count=count*k,
+    )
+    return index.reshape(-1, k)
 
 #random.seed(1234)
 #np.random.seed(1234)
@@ -163,17 +176,79 @@ class Belief:
     def compute_lengths(self):
         return self.configs.sum(-1)
 
+    def compute_diameters(self):
+        diameters = []
+        for utt in self.configs:
+            utt_size = utt.sum().item()
+            if utt_size == 0:
+                diameters.append(10)
+                continue
+            elif utt_size == 1:
+                diameters.append(0)
+                continue
+            xy = self.ctx[utt.astype(bool), :2]
+            pairs = comb_index(utt_size, 2)
+            # num_combs x num_pairs x dots=2 x position
+            pairwise_positions = xy[pairs]
+            pairwise_dists = np.linalg.norm(
+                pairwise_positions[:,:,0] - pairwise_positions[:,:,1],
+                axis=-1,
+            )
+            diameter = pairwise_dists.max(-1)
+            diameters.append(diameter)
+        return np.array(diameters)
+
+    def compute_contiguity(self):
+        contiguous = []
+        xy = self.ctx[:,:2]
+        for utt in self.configs:
+            utt_size = utt.sum().item()
+            # only compute contiguity for > 2?
+            # delaunay fails for line segments
+            if utt_size <= 2:
+                contiguous.append(1)
+                continue
+            uttb = utt.astype(bool)
+            tri = Delaunay(xy[uttb])
+            # check if other dots are in hull
+            outside = True
+            for i in range(7):
+                if utt[i] == 0:
+                    outside &= tri.find_simplex(xy[i]) == -1
+                """
+                if not outside:
+                    import matplotlib.pyplot as plt
+                    fig, ax = plt.subplots()
+                    ax.plot(xy[:,0], xy[:,1], 'o')
+                    for j in range(7):
+                        ax.annotate(str(j), (xy[j,0], xy[j,1]))
+                    ax.triplot(xy[uttb,0], xy[uttb,1], tri.simplices)
+                    print(i)
+                    plt.show()
+                """
+            contiguous.append(1 if outside else 0)
+        return np.array(contiguous)
+
     def compute_utilities(
         self,
         prior,
         length_coef = 0,
-        prob_coef = 0,
+        diameter_coef = 0,
+        contiguity_coef = 0,
     ):
+        # we want to MAXIMIZE utility
         EdHs = self.compute_EdHs(prior)
         utility = EdHs
         if length_coef > 0:
             lengths = self.compute_lengths()
+            # penalize longer plans
             utility -= length_coef * lengths
+        if diameter_coef > 0:
+            # penalize distant plans
+            utility -= diameter_coef * self.diameters
+        if contiguity_coef > 0:
+            # reward contiguous plans
+            utility += contiguity_coef * self.contiguous
         return utility
 
     def viz_belief(self, p, n=5):
@@ -515,6 +590,9 @@ class OrBelief(OrAndBelief):
                 self.config_likelihood[u,s] = (
                     correct if self.can_resolve_utt(utt, config) else 1 - correct
                 )
+        # for computing utility
+        self.diameters = self.compute_diameters()
+        self.contiguity = self.compute_contiguity()
 
     def can_resolve_utt(self, utt, config):
         size_color = self.size_color
@@ -768,6 +846,7 @@ if __name__ == "__main__":
     #num_dots = 4
     #overlap_size = None
 
+    """
     utt = np.array([1 if x in [2,5] else 0 for x in range(num_dots)])
     response = np.array([1 if x in [2,5] else 0 for x in range(num_dots)])
     configs = np.array([
@@ -870,6 +949,7 @@ if __name__ == "__main__":
     idxs0 = state.argsort()[intersect_size:]
     state[idxs1] = 1
     state[idxs0] = 0
+    """
 
     """
     print("true state")
@@ -911,4 +991,33 @@ if __name__ == "__main__":
     belief = OrBelief(num_dots, ctx)
     utt_feats = belief.get_feats(utt)
     matches = belief.resolve_utt(*utt_feats)
+
+    utt = np.array([1,0,0,1,0,1,1])
+    uttb = utt.astype(bool)
+
+    """
+    print("convex hull tests")
+    from scipy.spatial import ConvexHull, Delaunay
+    hull = ConvexHull(xy[uttb])
+    tri = Delaunay(xy[uttb])
+
+    for i in range(7):
+        s = tri.find_simplex(xy[i])
+        print(f"Dot {i} inside: {s}")
+
+    import matplotlib.pyplot as plt
+    fig, ax = plt.subplots()
+    ax.plot(xy[:,0], xy[:,1], 'o')
+    for i in range(7):
+        ax.annotate(str(i), (xy[i,0], xy[i,1]))
+    ax.triplot(xy[uttb,0], xy[uttb,1], tri.simplices)
+
+    plt.show()
+    plt.clf()
+    """
+
+    print("distance tests")
+    diameters = belief.compute_diameters()
+    contiguity = belief.compute_contiguity()
     import pdb; pdb.set_trace()
+
