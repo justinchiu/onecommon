@@ -9,7 +9,9 @@ num_contexts=1000
 #num_contexts=200
 
 # belief entropy threshold
-threshold=2.5
+threshold=3
+threshold=2.75
+#threshold=2.5
 #threshold=2
 #threshold=1.5
 #threshold=1
