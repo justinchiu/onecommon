@@ -592,7 +592,7 @@ class OrBelief(OrAndBelief):
                 )
         # for computing utility
         self.diameters = self.compute_diameters()
-        self.contiguity = self.compute_contiguity()
+        self.contiguous = self.compute_contiguity()
 
     def can_resolve_utt(self, utt, config):
         size_color = self.size_color
