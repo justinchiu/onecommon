@@ -100,11 +100,15 @@ class BeliefAgent(RnnAgent):
             self.belief = OrBelief(
                 self.num_dots, context,
                 absolute = self.args.absolute_bucketing == 1,
+                use_diameter = self.diameter_coef > 0,
+                use_contiguity = self.contiguity_coef > 0,
             )
         elif self.args.belief == "egocentric":
             self.belief = ConfigBelief(
                 self.num_dots, context,
                 absolute = self.args.absolute_bucketing == 1,
+                use_diameter = self.diameter_coef > 0,
+                use_contiguity = self.contiguity_coef > 0,
             )
         elif self.args.belief == "and":
             self.belief = AndBelief(self.num_dots, context)

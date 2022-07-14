@@ -38,15 +38,15 @@ length_coef=0.05
 
 diam_coef=0
 # running
-#diam_coef=0.025
-#diam_coef=0.05
-#diam_coef=0.075
-#diam_coef=0.1
+diam_coef=0.025
+diam_coef=0.05
+diam_coef=0.075
+diam_coef=0.1
 
-#contig_coef=0
-contig_coef=1
+contig_coef=0
+#contig_coef=1
 
-name="SS_N${num_contexts}_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}_S${select_config_size}_D{diam_coef}_C{contig_coef}"
+name="SS_N${num_contexts}_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}_S${select_config_size}_D${diam_coef}_C${contig_coef}"
 #name="DBG_RM"
 
 shift

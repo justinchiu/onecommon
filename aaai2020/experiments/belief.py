@@ -577,7 +577,16 @@ class OrBelief(OrAndBelief):
         for each dot in z
         Size of z: remaining dots outside of s |z| = num_dots - |s|
     """
-    def __init__(self, num_dots, ctx, correct=0.95, overlap_size=None, absolute=False):
+    def __init__(
+        self,
+        num_dots,
+        ctx,
+        correct = 0.95,
+        overlap_size = None,
+        absolute = False,
+        use_diameter = False,
+        use_contiguity = False,
+    ):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
         self.ctx = np.array(ctx, dtype=float).reshape(num_dots, 4)
         self.size_color = process_ctx(self.ctx, absolute)
@@ -591,8 +600,12 @@ class OrBelief(OrAndBelief):
                     correct if self.can_resolve_utt(utt, config) else 1 - correct
                 )
         # for computing utility
-        self.diameters = self.compute_diameters()
-        self.contiguous = self.compute_contiguity()
+        self.use_diameter = use_diameter
+        self.use_contiguity = use_contiguity
+        if use_diameter:
+            self.diameters = self.compute_diameters()
+        if use_contiguity:
+            self.contiguous = self.compute_contiguity()
 
     def can_resolve_utt(self, utt, config):
         size_color = self.size_color
