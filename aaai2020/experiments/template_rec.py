@@ -14,6 +14,7 @@ from template import (
     mention_43,
     dot_template,
     spatial_dot_template,
+    named_dot_template,
     render_2,
     size_map,
     color_map,
@@ -21,20 +22,25 @@ from template import (
     check_triangle
 )
 
+NAMES = ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
+
 def render_2_dots(dots, flip_y=True):
     sc = np.array([
         [dots[0].size, dots[0].color],
         [dots[1].size, dots[1].color],
     ])
     xy = np.vstack((dots[0].xy, dots[1].xy))
-    return render_2(xy, sc, flip_y, concise=True)
+    names = [NAMES[dot.id] for dot in dots]
+    return render_2(xy, sc, names, flip_y=flip_y, concise=True)
 
 class Dot:
     def __init__(self, id, size, color, xy):
+        # dot.id is always between [0,num_dots]
         self.id = id
         self.size = size
         self.color = color
         self.xy = xy
+        self.name = NAMES[id]
 
 
 class RegionNode:
@@ -156,9 +162,10 @@ class RegionNode:
 
         if triangle:
             child_descs = [
-                dot_template.render(
+                named_dot_template.render(
                     size = size_map[children.size],
                     color = color_map[children.color],
+                    name = children.name,
                 ) 
                 for children in dot_list
             ]
@@ -217,9 +224,10 @@ class RegionNode:
         else:
             # WARNING: will break if there are 3 in a single 2nd level region
             child_descs = [
-                dot_template.render(
+                named_dot_template.render(
                     size = size_map[children[0].size],
                     color = color_map[children[0].color],
+                    name = children[0].name,
                 ) if len(children) == 1 else render_2_dots(children, flip_y=self.flip_y)
                 for children in flattened_children
             ]
@@ -262,9 +270,10 @@ class RegionNode:
         ]
         # WARNING: will break if there are 3 in a single 2nd level region
         child_descs = [
-            dot_template.render(
+            named_dot_template.render(
                 size = size_map[children[0].size],
                 color = color_map[children[0].color],
+                name = children[0].name,
             ) if len(children) == 1 else render_2_dots(children, flip_y=self.flip_y)
             for children in flattened_children
         ]
@@ -306,9 +315,10 @@ class RegionNode:
         ]
         # WARNING: will break if there are 3 in a single 2nd level region
         child_descs = [
-            dot_template.render(
+            named_dot_template.render(
                 size = size_map[children[0].size],
                 color = color_map[children[0].color],
+                name = children[0].name,
             ) if len(children) == 1 else render_2_dots(children, flip_y=self.flip_y)
             for children in flattened_children
         ]
@@ -422,13 +432,14 @@ class RegionNode:
             # already a RegionNode
             node.add(dot)
 
-def render(n, sc, xy, confirm=None, flip_y=True, inner=False):
+def render(n, sc, xy, ids, confirm=None, flip_y=True, inner=False):
     confirm_text = "Yes ." if confirm == 1 else "No ." if confirm == 0 else None
+    names = [NAMES[id] for id in ids]
     if n == 2:
         if confirm is None:
-            return f"Do you see {render_2(xy, sc, flip_y=flip_y)}"
+            return f"Do you see {render_2(xy, sc, names, flip_y=flip_y)}"
         else:
-            return f"{confirm_text} Do you see {render_2(xy, sc, flip_y=flip_y)}"
+            return f"{confirm_text} Do you see {render_2(xy, sc, names, flip_y=flip_y)}"
 
     root = RegionNode(
         num_buckets = 3,
@@ -441,7 +452,7 @@ def render(n, sc, xy, confirm=None, flip_y=True, inner=False):
         hy = xy[:,1].max(),
     )
     # convert to dots
-    dots = [Dot(i, sc[i,0], sc[i,1], xy[i]) for i in range(n)]
+    dots = [Dot(ids[i], sc[i,0], sc[i,1], xy[i]) for i in range(n)]
     for dot in dots:
         root.add(dot)
     words = root.desc() if not inner else root.inner_desc()
@@ -450,19 +461,20 @@ def render(n, sc, xy, confirm=None, flip_y=True, inner=False):
     else:
         return f"{confirm_text} {words}"
 
-def render_select(select_feats, select_rel_idx, confirm=None, flip_y=True):
+def render_select(select_feats, select_idx, ids, confirm=None, flip_y=True):
     n, sc, xy = select_feats
     confirm_text = "Yes ." if confirm == 1 else "No ." if confirm == 0 else None
     if n == 2:
         desc = "first" if select_rel_idx == 0 else "second"
+        names = [NAMES[id] for id in ids]
         if confirm is None:
             return (
-                f"From the two dots, {lender_2(xy, sc, flip_y=flip_y, concise=True)}, "
+                f"From the two dots, {render_2(xy, sc, names, flip_y=flip_y, concise=True)}, "
                 "let's select the {desc}"
             )
         else:
             return (
-                f"{confirm_text} From the two dots, {lender_2(xy, sc, flip_y=flip_y, concise=True)}, "
+                f"{confirm_text} From the two dots, {render_2(xy, sc, names, flip_y=flip_y, concise=True)}, "
                 "let's select the {desc}"
             )
 
@@ -477,22 +489,23 @@ def render_select(select_feats, select_rel_idx, confirm=None, flip_y=True):
         hy = xy[:,1].max(),
     )
     # convert to dots
-    dots = [Dot(i, sc[i,0], sc[i,1], xy[i]) for i in range(n)]
+    dots = [Dot(ids[i], sc[i,0], sc[i,1], xy[i]) for i in range(n)]
     for dot in dots:
         root.add(dot)
     config = root.select_desc()
 
-    sel_idx = root.get_id(select_rel_idx)
+    sel_idx = root.get_id(select_idx)
     number_map = [
         "first", "second", "third", "fourth", "fifth", "sixth",
     ]
     words = Template(
         "Let's select a dot! "
-        "Let's select the {{number}} dot from these {{n}} dots: "
+        "Let's select the {{number}} dot ({{name}}) from these {{n}} dots: "
         "{{config}}"
     ).render(
         n = n,
         number = number_map[sel_idx],
+        name = NAMES[select_idx],
         config = config,
     )
     if confirm is None:
@@ -549,8 +562,7 @@ def main():
 
     select_feats = (3, sc, xy[:3])
     select_rel_idx = 1
-    ok = render_select(select_feats, select_rel_idx, flip_y=True)
-    import pdb; pdb.set_trace()
+    ok = render_select(select_feats, select_rel_idx, ids = [0,1,2], flip_y=True)
     #"""
 
     xy = xys[0]
