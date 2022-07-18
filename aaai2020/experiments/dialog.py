@@ -192,6 +192,12 @@ class Dialog(object):
             agent.feed_context(ctx)
             agent.real_ids = real_ids
             agent.agent_id = agent_id
+            if isinstance(agent, BeliefAgent):
+                print(f"Belief agent: {agent_id}")
+            else:
+                print(f"Human: {agent_id}")
+            print(type(agent))
+            print(real_ids)
 
         # Choose who goes first by random
         if np.random.rand() < 0.5:
@@ -240,7 +246,7 @@ class Dialog(object):
 
         choices = []
         for agent in self.agents:
-            choice = agent.choose()
+            choice = agent.real_ids[agent.choose()]
             choices.append(choice)
         if logger.scenarios:
             logger.dump_choice(scenario_id, choices)

@@ -192,6 +192,8 @@ class BeliefAgent(RnnAgent):
         # side info belief update
         side_info = None
         if partner_mentions_per_ref is not None:
+            print("Previous partner mentions")
+            print(partner_mentions_per_ref)
             # WARNING: mention detector is really bad
             # TODO: not ideal. prefer to MARGINALIZE over partner mentions
             # UNCERTAINTY IS IMPORTANT HERE
@@ -403,10 +405,10 @@ class BeliefAgent(RnnAgent):
                 confirm = confirm,
             )
         )
-        print(plan)
-        print(select_config)
-        print(select_idx)
-        print(force_words)
+        #print(plan)
+        #print(select_config)
+        #print(select_idx)
+        #print(force_words)
         if should_select:
             force_words_split = [force_words.split() + ["<selection>"]]
         else:

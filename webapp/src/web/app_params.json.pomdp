@@ -32,7 +32,7 @@
     "icon": "handshake.jpg",
     "num_chats_per_scenario": {
         "belief": 4,
-        "pragmatic_confidence": 4,
+        "pragmatic_confidence": 0,
         "human": 0
     },
     "models": {
@@ -46,7 +46,14 @@
               "max_num_mentions": 10,
               "language_inference": "sample",
               "language_beam_size": 1,
-              "max_words": 100
+              "max_words": 100,
+              "belief": "or",
+	      "threshold": 2.5,
+	      "absolute_bucketing": 1,
+	      "select_config_size": 3,
+	      "length_coef": 0.05,
+	      "diameter_coef": 0.025,
+	      "contiguity_coef": 0
             }
         },
         "pragmatic_confidence": {
