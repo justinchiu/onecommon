@@ -100,7 +100,10 @@ def entropy(px):
 def expand_plan(plan):
     # plan: {0,1}^7
     num_dots = plan.sum().item()
-    if num_dots <= 1:
+    if num_dots == 0:
+        print("EMPTY PLAN")
+        mentions = plan
+    elif num_dots <= 1:
         mentions = plan
     else:
         mentions = np.zeros((num_dots + 1, 1, 7))
