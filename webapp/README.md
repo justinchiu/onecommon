@@ -14,6 +14,10 @@ Use `run_pomdp.sh` instead.
 ```
 export PYTHONPATH=$PYTHONPATH:~/onecommon/webapp/src:~/onecommon/webapp:~/onecommon/aaai2020/experiments:~/onecommon/aaai2020
 ```
+or
+```
+export PYTHONPATH=$PYTHONPATH:~/research/onecommon/webapp/src:~/research/onecommon/webapp:~/research/onecommon/aaai2020/experiments:~/research/onecommon/aaai2020
+```
 
 `full.th` and `markable_detector.th` are assumed to be checkpoints saved in `webapp/src`.
 Change the paths in `webapp/src/web/app_params.json`.

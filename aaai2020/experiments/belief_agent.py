@@ -192,6 +192,9 @@ class BeliefAgent(RnnAgent):
         # side info belief update
         side_info = None
         if partner_mentions_per_ref is not None:
+            print("Previous partner mentions")
+            print(partner_mentions_per_ref)
+            # WARNING: mention detector is really bad
             # TODO: not ideal. prefer to MARGINALIZE over partner mentions
             # UNCERTAINTY IS IMPORTANT HERE
             # loop over partner_mentions_per_ref, or assume collapsed?
@@ -302,7 +305,7 @@ class BeliefAgent(RnnAgent):
 
 
     def write_symbolic(self):
-        # selection happens during writing: output <select>
+        # selection happens during writing: output <selection>
         should_select = self.should_select()
         select_feats = None
         select_rel_idx = None
@@ -350,9 +353,11 @@ class BeliefAgent(RnnAgent):
 
     def write(self, *args, **kwargs):
         # SYMBOLIC PORTION
-        # selection happens during writing: output <select>
+        # selection happens during writing: output <selection>
         should_select = self.should_select()
+        select_config = None
         select_feats = None
+        select_idx = None
         select_rel_idx = None
         if should_select:
             # switch modes to selection communication
@@ -360,6 +365,7 @@ class BeliefAgent(RnnAgent):
             select_config, select_idx, select_rel_idx = self.select_dot()
             # communicate a dot configuration and index of dot
             select_feats = self.belief.get_feats(select_config)
+            select_ids = select_config.nonzero()[0]
 
         # generate next mention plan
         utilities = self.belief.compute_utilities(
@@ -371,6 +377,7 @@ class BeliefAgent(RnnAgent):
         cs, us = self.belief.viz_belief(utilities, n=4)
         plan = cs[0]
         feats = self.belief.get_feats(plan)
+        ids = plan.nonzero()[0]
 
         confirm = None
         if len(self.side_infos) > 0 and self.side_infos[-1] is not None:
@@ -390,10 +397,23 @@ class BeliefAgent(RnnAgent):
 
         #return confirm, feats, select_feats, select_rel_idx
         # WORDS
-        force_words = render(*feats, confirm=confirm) if not should_select else (
-            render_select(select_feats, select_rel_idx, confirm=confirm)
+        force_words = render(*feats, ids, confirm=confirm) if not should_select else (
+            render_select(
+                select_feats,
+                select_idx,
+                select_ids,
+                confirm = confirm,
+            )
         )
-        force_words_split = [force_words.split() + ["<eos>"]]
+        #print(plan)
+        #print(select_config)
+        #print(select_idx)
+        #print(force_words)
+        if should_select:
+            force_words_split = [force_words.split() + ["<selection>"]]
+        else:
+            force_words_split = [force_words.split() + ["<eos>"]]
+        #import pdb; pdb.set_trace()
 
         # FEED TO NEURAL
         # convert plan to dots_mentioned

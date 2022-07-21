@@ -13,7 +13,9 @@ disconfirm = "No ."
 
 # template for individual dot features
 dot_template = Template("{{size}}-sized and {{color}}")
+named_dot_template = Template("{{size}}-sized and {{color}}{%if name is string%} ({{name}}){%endif%}")
 spatial_dot_template = Template("{{spatial}} dot is {{dot}}")
+named_spatial_dot_template = Template("{{spatial}} dot{%if name is string%} ({{name}}){%endif%} is {{dot}}")
 
 # mention 1
 # Do you see a small grey dot?
@@ -294,24 +296,26 @@ def size_color_descriptions(sc):
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
 
-def render_2(xy, sc, flip_y=True, concise=False):
+def render_2(xy, sc, names=None, flip_y=True, concise=False):
     xy_desc = spatial_descriptions2(xy, flip_y)
     sc_desc = size_color_descriptions(sc)
     mention = mention_2a if concise else mention_2
     return mention.render(
-        dot1 = spatial_dot_template.render(
+        dot1 = named_spatial_dot_template.render(
             spatial = xy_desc[0],
             dot = dot_template.render(
                 size = sc_desc[0][0],
                 color = sc_desc[0][1],
             ),
+            name = names[0] if names is not None else None,
         ),
-        dot2 = spatial_dot_template.render(
+        dot2 = named_spatial_dot_template.render(
             spatial = xy_desc[1],
             dot = dot_template.render(
                 size = sc_desc[1][0],
                 color = sc_desc[1][1],
             ),
+            name = names[1] if names is not None else None,
         ),
     )
 
