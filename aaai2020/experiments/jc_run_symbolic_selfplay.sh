@@ -37,11 +37,19 @@ length_coef=0.05
 #length_coef=0.33
 
 diam_coef=0
+# want to run
+#diam_coef=4
 # running
-diam_coef=0.025
-diam_coef=0.05
-diam_coef=0.075
-diam_coef=0.1
+diam_coef=0.2
+#diam_coef=0.5
+# ran, too small
+#diam_coef=0.025
+#diam_coef=0.05
+#diam_coef=0.075
+#diam_coef=0.1
+# too big
+#diam_coef=1
+#diam_coef=2
 
 contig_coef=0
 #contig_coef=1
