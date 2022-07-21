@@ -58,19 +58,21 @@ def visualize_board(
         left_mentions_html = map(lambda x: x.select_html(), left_mentions)
     if right_mentions is not None:
         right_mentions_html = map(lambda x: x.select_html(shift), right_mentions)
-    left_intersect_dots = map(lambda x: x.intersect_html(), left_intersect)
-    right_intersect_dots = map(lambda x: x.intersect_html(shift), right_intersect)
+    if left_intersect is not None:
+        left_intersect_dots = map(lambda x: x.intersect_html(), left_intersect)
+    if right_intersect is not None:
+        right_intersect_dots = map(lambda x: x.intersect_html(shift), right_intersect)
 
     nl = "\n"
     html = f"""
     <svg width="860" height="430">
     <circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
     {nl.join(left_dots_html)}
-    {nl.join(left_intersect_dots)}
+    {nl.join(left_intersect_dots) if left_intersect is not None else ""}
     {nl.join(left_mentions_html) if left_mentions is not None else ""}
     <circle cx="645" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/>
     {nl.join(right_dots_html)}
-    {nl.join(right_intersect_dots)}
+    {nl.join(right_intersect_dots) if right_intersect is not None else ""}
     {nl.join(right_mentions_html) if right_mentions is not None else ""}
     </svg>
     """
