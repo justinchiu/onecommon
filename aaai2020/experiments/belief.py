@@ -12,14 +12,7 @@ from scipy.special import comb
 
 from scipy.spatial import ConvexHull, Delaunay
 
-def comb_index(n, k):
-    count = comb(n, k, exact=True)
-    index = np.fromiter(
-        chain.from_iterable(combinations(range(n), k)), 
-        int,
-        count=count*k,
-    )
-    return index.reshape(-1, k)
+from belief_utils import comb_index, entropy, marginal_entropy
 
 #random.seed(1234)
 #np.random.seed(1234)
@@ -86,15 +79,6 @@ def process_ctx(ctx, absolute=False):
     color_idxs = (color_buckets[:-1,None] <= colors) & (colors < color_buckets[1:,None])
     return np.stack((size_idxs.T.nonzero()[1], color_idxs.T.nonzero()[1]), 1)
 
-def safe_log(x, eps=1e-10):
-    result = np.where(x > eps, x, 0)
-    np.log(result, out=result, where=result > 0)
-    return result
-
-# discrete entropy
-def entropy(px):
-    Hx = px * safe_log(px)
-    return -(Hx).sum(-1)
 
 # convert plan to sequence of mentions
 def expand_plan(plan):
@@ -151,6 +135,7 @@ class Belief:
             for x in range(2 ** num_dots)
         ])
         self.num_configs = 2 ** num_dots
+        self.history = []
 
     def joint(self, prior, utt):
         raise NotImplementedError
@@ -166,7 +151,22 @@ class Belief:
         Hs_r = entropy(self.posterior(prior, utt, response))
         return Hs - Hs_r
 
+    def marginal_info_gain(self, prior, utt, response):
+        marginal_prior = self.marginals(prior)
+        marginal_prior = np.stack((1-marginal_prior, marginal_prior), -1)
+        Hs = entropy(marginal_prior)
+        marginal_post = self.marginals(self.posterior(prior, utt, response))
+        marginal_post = np.stack((1-marginal_post, marginal_post), -1)
+        Hs_r = entropy(marginal_post)
+        return Hs - Hs_r
+
     def expected_info_gain(self, prior, utt):
+        raise NotImplementedError
+
+    def expected_marginal_info_gain(self, prior, utt):
+        raise NotImplementedError
+
+    def expected_marginal_posterior(self, prior, utt):
         raise NotImplementedError
 
     def compute_EdHs(self, prior):
@@ -175,6 +175,20 @@ class Belief:
             EdH = self.expected_info_gain(prior, utt)
             EdHs.append(EdH)
         return np.array(EdHs)
+
+    def compute_marginal_EdHs(self, prior):
+        EdHs = []
+        for utt in self.configs:
+            EdH = self.expected_marginal_info_gain(prior, utt)
+            EdHs.append(EdH)
+        return np.stack(EdHs)
+
+    def compute_marginal_posteriors(self, prior):
+        posteriors = []
+        for utt in self.configs:
+            posterior = self.expected_marginal_posterior(prior, utt)
+            posteriors.append(posterior)
+        return np.stack(posteriors)
 
     def compute_lengths(self):
         return self.configs.sum(-1)
@@ -232,12 +246,46 @@ class Belief:
             contiguous.append(1 if outside else 0)
         return np.array(contiguous)
 
+    def compute_processing_costs(self, new_weight, distance_weight):
+        MAX = self.num_dots * new_weight
+        if len(self.history) == 0:
+            scores = self.configs.sum(-1) * new_weight
+            scores[0] = MAX
+            logits = -scores.astype(float)
+            return logits - lse(logits) 
+
+        scores = []
+        history = np.stack(belief.history)[::-1]
+        past = history.sum(0)
+        for utt in self.configs:
+            dots = utt.nonzero()[0]
+
+            is_new = past[dots] == 0
+            distance = 1 + history[
+                np.arange(history.shape[0])[:,None],
+                utt.astype(bool),
+            ].argmax(0)
+
+            # linear distance
+            score = is_new * new_weight + distance * distance_weight * ~is_new
+
+            # no repeats
+            is_repeat = (history == utt).all(-1).any()
+
+            scores.append(score.sum() if not is_repeat else MAX)
+        logits = -np.array(scores, dtype=float)
+        logits[0] = -MAX
+
+
+        return logits - lse(logits) 
+
     def compute_utilities(
         self,
         prior,
         length_coef = 0,
         diameter_coef = 0,
         contiguity_coef = 0,
+        processing_coef = 0,
     ):
         # we want to MAXIMIZE utility
         EdHs = self.compute_EdHs(prior)
@@ -252,6 +300,8 @@ class Belief:
         if contiguity_coef > 0:
             # reward contiguous plans
             utility += contiguity_coef * self.contiguous
+        if processing_coef > 0:
+            utility += processing_coef * self.compute_processing_costs()
         return utility
 
     def viz_belief(self, p, n=5):
@@ -426,6 +476,28 @@ class AndBelief(Belief):
         EHs_r = (p_response * np.array((Hs_r0, Hs_r1))).sum()
         return Hs - EHs_r
 
+    def expected_marginal_info_gain(self, prior, utt):
+        p_response = self.p_response(prior, utt)
+        Hs = marginal_entropy(self.marginals(prior))
+        Hs_r0 = marginal_entropy(self.marginals(self.posterior(prior, utt, 0)))
+        Hs_r1 = marginal_entropy(self.marginals(self.posterior(prior, utt, 1)))
+        EHs_r = (p_response[:,None] * np.stack((Hs_r0, Hs_r1))).sum(0)
+        return Hs - EHs_r
+
+    def expected_marginal_posterior(self, prior, utt):
+        p_response = self.p_response(prior, utt)
+        s_r0 = self.posterior(prior, utt, 0)
+        s_r1 = self.posterior(prior, utt, 1)
+        return (
+            p_response[:,None] * np.log(np.stack((
+                self.marginals(s_r0), self.marginals(s_r1)
+            )))
+        ).sum(0)
+
+        posterior = (p_response[:,None] * np.stack((s_r0, s_r1))).sum(0)
+        E_log_posterior = (p_response[:,None] * np.log(np.stack((s_r0, s_r1)))).sum(0)
+        return self.marginals(posterior)
+
 class AndOrBelief(AndBelief):
     """
     And-or model for response modeling.
@@ -593,6 +665,7 @@ class OrBelief(OrAndBelief):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
         self.ctx = np.array(ctx, dtype=float).reshape(num_dots, 4)
         self.size_color = process_ctx(self.ctx, absolute)
+        self.sc = self.size_color
         self.xy = self.ctx[:,:2]
         # initialize config_likelihood based on configuration resolution
         self.config_likelihood = np.zeros(
@@ -1035,5 +1108,34 @@ if __name__ == "__main__":
     print("distance tests")
     diameters = belief.compute_diameters()
     contiguity = belief.compute_contiguity()
-    import pdb; pdb.set_trace()
+
+    # marginal entropy tests
+    marginal = belief.marginals(belief.prior)
+    marginals = np.stack((1-marginal, marginal), -1)
+
+    new_weight = 5
+    distance_weight = 1
+
+    prior = belief.prior
+    for i in range(10):
+        EdHs = belief.compute_EdHs(prior)
+        mEdHs = belief.compute_marginal_EdHs(prior).max(-1)
+        # looks like the marginal posterior wants to improve the probability
+        # of one dot by asking about ALL OTHERS
+        mps = belief.compute_marginal_posteriors(prior)
+
+        costs = belief.compute_processing_costs(new_weight, distance_weight)
+        #costs = costs / 25 / 7
+        costs = costs / belief.num_dots / 2
+        #utt = belief.configs[(mEdHs + costs).argmax()]
+        utt = belief.configs[(EdHs + costs).argmax()]
+        print(belief.configs[(mEdHs + costs).argmax()])
+        print(belief.configs[(EdHs + costs).argmax()])
+
+        print(belief.marginals(prior))
+        prior = belief.posterior(prior, utt, 1 if i % 2 == 0 else 0)
+        print(belief.marginals(prior))
+
+        belief.history.append(utt)
+        import pdb; pdb.set_trace()
 
