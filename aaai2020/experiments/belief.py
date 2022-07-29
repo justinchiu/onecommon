@@ -255,7 +255,7 @@ class Belief:
             return logits - lse(logits) 
 
         scores = []
-        history = np.stack(belief.history)[::-1]
+        history = np.stack(self.history)[::-1]
         past = history.sum(0)
         for utt in self.configs:
             dots = utt.nonzero()[0]
@@ -1133,9 +1133,10 @@ if __name__ == "__main__":
         print(belief.configs[(EdHs + costs).argmax()])
 
         print(belief.marginals(prior))
-        prior = belief.posterior(prior, utt, 1 if i % 2 == 0 else 0)
-        print(belief.marginals(prior))
+        new_prior = belief.posterior(prior, utt, 1 if i % 2 == 0 else 0)
+        print(belief.marginals(new_prior))
 
         belief.history.append(utt)
         import pdb; pdb.set_trace()
+        prior = new_prior
 
