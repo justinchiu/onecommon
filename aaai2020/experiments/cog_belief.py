@@ -180,15 +180,17 @@ if __name__ == "__main__":
         costs = costs / belief.num_dots / 2
         #utt = belief.configs[(mEdHs + costs).argmax()]
         #utt = belief.configs[(EdHs + costs).argmax()]
-        utt = belief.configs[EdHs.argmax()]
+        #utt = belief.configs[EdHs.argmax()]
+        utt = belief.configs[mEdHs.argmax()]
         #print(belief.configs[(mEdHs + costs).argmax()])
         #print(belief.configs[(EdHs + costs).argmax()])
-        print(utt)
-        #print(belief.configs[mEdHs.argmax()])
+        print("utt", belief.configs[EdHs.argmax()])
+        print("marg utt", belief.configs[mEdHs.argmax()])
 
         print("prior", belief.marginals(prior))
         #new_prior = belief.posterior(prior, utt, 1 if n % 2 == 0 else 0)
-        new_prior = belief.posterior(prior, utt, 1)
+        #new_prior = belief.posterior(prior, utt, 1)
+        new_prior = belief.posterior(prior, utt, 0)
         print("posterior", belief.marginals(new_prior))
         #import pdb; pdb.set_trace()
 
