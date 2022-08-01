@@ -53,10 +53,14 @@ def label_config_sets(writer_configs, reader_configs):
     else:
         raise ValueError("Unhandled config label case")
 
-def process_ctx(ctx, absolute=False):
+def process_ctx(
+    ctx,
+    absolute=False,
+    num_size_buckets = 3,
+    num_color_buckets = 3,
+):
     # ctx: [x, y, size, color]
     eps = 1e-3
-    num_buckets = 4
     min_ = ctx.min(0)
     max_ = ctx.max(0)
 
@@ -70,8 +74,8 @@ def process_ctx(ctx, absolute=False):
         min_color, max_color = min_[3], max_[3]
     
 
-    size_buckets = np.linspace(min_size, max_size + eps, num_buckets)
-    color_buckets = np.linspace(min_color, max_color + eps, num_buckets)
+    size_buckets = np.linspace(min_size, max_size + eps, num_size_buckets+1)
+    color_buckets = np.linspace(min_color, max_color + eps, num_color_buckets+1)
     sizes = ctx[:,2]
     colors = ctx[:,3]
 
@@ -661,10 +665,17 @@ class OrBelief(OrAndBelief):
         absolute = False,
         use_diameter = False,
         use_contiguity = False,
+        num_size_buckets = 3,
+        num_color_buckets = 3,
     ):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
         self.ctx = np.array(ctx, dtype=float).reshape(num_dots, 4)
-        self.size_color = process_ctx(self.ctx, absolute)
+        self.size_color = process_ctx(
+            self.ctx,
+            absolute = absolute,
+            num_size_buckets = num_size_buckets,
+            num_color_buckets = num_color_buckets,
+        )
         self.sc = self.size_color
         self.xy = self.ctx[:,:2]
         # initialize config_likelihood based on configuration resolution
