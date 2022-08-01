@@ -26,7 +26,7 @@ class CostBelief(OrBelief):
 
     def spatial_deny(self, x, ctx):
         #return .001
-        if x.sum() == 0:
+        if x.sum() <= 1:
             return 0.001
 
         rg = np.arange(self.num_dots)
@@ -45,13 +45,24 @@ class CostBelief(OrBelief):
         scores = dot_pair_ranks.sum(-1)
         score = scores.min()
 
-        denominator = np.arange(self.num_dots - len(dots)+1, self.num_dots+1).sum()
-        #print(dots)
-        #print(score)
-        #print(denominator)
-        #print(score / denominator)
-        #return score / denominator
-        return np.exp(score - denominator)
+        # rank will always have 1 b/c dot is closest to itself, then other stuff
+        # so highest rank should be other stuff = far away + 1
+        # so bottom of range should start at 7 if there is only one dot,
+        # 6 if there are two, etc
+        # top of range = 7, since 7 dots
+        denominator = np.arange(self.num_dots - len(dots)+2, self.num_dots+1).sum() + 1
+        """
+        print("dots", dots)
+        print("dot_pair_ranks", dot_pair_ranks)
+        print("score", score)
+        print("den", denominator)
+        print("s/d", score / denominator)
+        print("exp(s - d)", np.exp(score - denominator))
+        """
+        return (score / denominator).clip(0, 1)
+        # linear scores seems better than log linear
+        #import pdb; pdb.set_trace()
+        #return np.exp(score - denominator).clip(0, 1)
 
     def temporal_deny(self, x, history):
         return .001
@@ -143,7 +154,8 @@ if __name__ == "__main__":
     # reflect across y axis
     ctx[:,1] = -ctx[:,1]
 
-    belief = CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5)
+    #belief = CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5)
+    belief = OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5)
     sc = belief.sc
     xy = belief.xy
     #utt_feats = belief.get_feats(utt)
@@ -180,8 +192,8 @@ if __name__ == "__main__":
         costs = costs / belief.num_dots / 2
         #utt = belief.configs[(mEdHs + costs).argmax()]
         #utt = belief.configs[(EdHs + costs).argmax()]
-        #utt = belief.configs[EdHs.argmax()]
-        utt = belief.configs[mEdHs.argmax()]
+        utt = belief.configs[EdHs.argmax()]
+        #utt = belief.configs[mEdHs.argmax()]
         #print(belief.configs[(mEdHs + costs).argmax()])
         #print(belief.configs[(EdHs + costs).argmax()])
         print("utt", belief.configs[EdHs.argmax()])
@@ -213,12 +225,16 @@ if __name__ == "__main__":
         ax[n].scatter(xy[uttb,0], xy[uttb,1], marker="x", s=100, c="r")
         for i, id in enumerate(ids):
             ax[n].annotate(id, (xy[i,0]+.025, xy[i,1]+.025))
-    plt.show()
+    #plt.show()
+    #plt.savefig("dbg_plots/all_yes.png")
+    #plt.savefig("dbg_plots/all_yes_baseline.png")
+    #plt.savefig("dbg_plots/all_no.png")
+    plt.savefig("dbg_plots/all_no_baseline.png")
 
     utt = np.array([1,0,0,1,0,1,1])
     uttb = utt.astype(bool)
     a = belief.spatial_deny(utt, ctx)
     b = belief.temporal_deny(utt, belief.history)
 
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
 
