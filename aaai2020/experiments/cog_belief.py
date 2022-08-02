@@ -18,11 +18,13 @@ from belief import process_ctx, Belief, OrBelief
 
 
 class CostBelief(OrBelief):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, use_spatial=True, use_temporal=True, **kwargs):
         super().__init__(*args, **kwargs)
         self.spatial_denies = np.array([
             self.spatial_deny(x, self.ctx) for x in self.configs
         ])
+        self.use_spatial = use_spatial
+        self.use_temporal = use_temporal
 
     def spatial_deny(self, x, ctx):
         #return .001
@@ -64,29 +66,25 @@ class CostBelief(OrBelief):
         #import pdb; pdb.set_trace()
         #return np.exp(score - denominator).clip(0, 1)
 
-    def temporal_deny(self, x, history):
-        return .001
-        max_step = 3
-        weight = 1
-        max_dots = 2
+    def temporal_confirm(self, x, history):
+        tau = 3
+        rho = 0.9
 
-        denominator = max_dots * weight * max_step
+        if x.sum() == 0:
+            return 1
+
         if len(self.history) == 0:
-            numerator = x.sum() * weight * max_step
-            return (np.exp(numerator - denominator)).clip(0, 1)
+            return np.power(rho, max(0, x.sum() - tau + 1))
 
         history = np.stack(self.history)[::-1]
         past = history.sum(0)
-        dots = x.nonzero()[0]
-        is_new = past[dots] == 0
-        distance = 1 + history[:,x.astype(bool)].argmax(0)
+        xb = x.astype(bool)
+        is_new = xb & ~past.astype(bool)
+        distance = 1 + (history * xb).argmax(0)
+        too_old = distance >= tau
 
-        numerator = (
-            is_new * weight * max_step
-            + np.minimum(distance, max_step) * weight * ~is_new
-        ).sum()
-
-        return (np.exp(numerator - denominator)).clip(0, 1)
+        penalized = max(0, (too_old | is_new).sum() - tau + 1)
+        return np.power(rho, penalized)
 
     def joint(self, prior, utt):
         # p(r | u,s)
@@ -96,8 +94,8 @@ class CostBelief(OrBelief):
         # = p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
         # = p(s)(1 - p(r=1|u,s)) |z|C|u|9^-|u|
 
-        temporal_denies = np.array([
-            self.temporal_deny(x, self.history) for x in self.configs
+        temporal_confirms = np.array([
+            self.temporal_confirm(x, self.history) for x in self.configs
         ])
         p_r1 = []
         p_r0 = []
@@ -107,10 +105,11 @@ class CostBelief(OrBelief):
             u = int(utt.sum())
             utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
             c_likelihood = self.config_likelihood[utt_idx,s].item()
-            td = temporal_denies[s]
-            sd = self.spatial_denies[s]
-            likelihood = c_likelihood * (1-td) * (1-sd)
-            #import pdb; pdb.set_trace()
+            tc = temporal_confirms[s] if self.use_temporal else 1
+            sd = self.spatial_denies[s] if self.use_spatial else 0
+            likelihood = c_likelihood * tc * (1-sd)
+            #if len(self.history) > 0:
+                #import pdb; pdb.set_trace()
             #for i,d in enumerate(utt):
                 #if d == 1:
                     #likelihood *= self.likelihood[1,d,state_config[i]]
@@ -154,8 +153,8 @@ if __name__ == "__main__":
     # reflect across y axis
     ctx[:,1] = -ctx[:,1]
 
-    #belief = CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5)
-    belief = OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5)
+    belief = CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5)
+    #belief = OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5)
     sc = belief.sc
     xy = belief.xy
     #utt_feats = belief.get_feats(utt)
@@ -177,7 +176,7 @@ if __name__ == "__main__":
 
     N = 5
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(N)
+    fig, ax = plt.subplots(N, figsize=(3, 3*N))
 
     prior = belief.prior
     for n in range(N):
@@ -199,17 +198,6 @@ if __name__ == "__main__":
         print("utt", belief.configs[EdHs.argmax()])
         print("marg utt", belief.configs[mEdHs.argmax()])
 
-        print("prior", belief.marginals(prior))
-        #new_prior = belief.posterior(prior, utt, 1 if n % 2 == 0 else 0)
-        #new_prior = belief.posterior(prior, utt, 1)
-        new_prior = belief.posterior(prior, utt, 0)
-        print("posterior", belief.marginals(new_prior))
-        #import pdb; pdb.set_trace()
-
-        belief.history.append(utt)
-        prior = new_prior
-
-        #import pdb; pdb.set_trace()
         uttb = utt.astype(bool)
         ax[n].scatter(
             xy[:,0], xy[:,1],
@@ -225,11 +213,27 @@ if __name__ == "__main__":
         ax[n].scatter(xy[uttb,0], xy[uttb,1], marker="x", s=100, c="r")
         for i, id in enumerate(ids):
             ax[n].annotate(id, (xy[i,0]+.025, xy[i,1]+.025))
-    #plt.show()
+        plt.show()
+
+        response = int(input())
+        print("prior", belief.marginals(prior))
+        #new_prior = belief.posterior(prior, utt, 1 if n % 2 == 0 else 0)
+        #new_prior = belief.posterior(prior, utt, 1)
+        #new_prior = belief.posterior(prior, utt, 0)
+        new_prior = belief.posterior(prior, utt, response)
+        print("posterior", belief.marginals(new_prior))
+        #import pdb; pdb.set_trace()
+
+        belief.history.append(utt)
+        prior = new_prior
+
+        #import pdb; pdb.set_trace()
+    # automate logging based on isinstance(belief, CostBelief)
+    plt.show()
     #plt.savefig("dbg_plots/all_yes.png")
     #plt.savefig("dbg_plots/all_yes_baseline.png")
     #plt.savefig("dbg_plots/all_no.png")
-    plt.savefig("dbg_plots/all_no_baseline.png")
+    #plt.savefig("dbg_plots/all_no_baseline.png")
 
     utt = np.array([1,0,0,1,0,1,1])
     uttb = utt.astype(bool)
