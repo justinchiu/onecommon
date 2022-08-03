@@ -36,7 +36,7 @@ def rollout(ctx, ids, belief, response_strategy):
     xy = belief.xy
 
     N = 5
-    fig, ax = plt.subplots(N, figsize=(3, 3*N))
+    fig, ax = plt.subplots(1, N, figsize=(4*N, 4))
 
     prior = belief.prior
     for n in range(N):
