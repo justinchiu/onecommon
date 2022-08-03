@@ -47,6 +47,18 @@ class BeliefAgent(RnnAgent):
             help = "If on=1, switch from relative bucketing to absolute bucketing of unary features size/color",
         )
         parser.add_argument(
+            "--num_size_buckets",
+            default = 5,
+            type=int,
+            help = "Number of size buckets for dots (large, small, etc). more is finer grained",
+        )
+        parser.add_argument(
+            "--num_color_buckets",
+            default = 5,
+            type=int,
+            help = "Number of color buckets for dots (dark, light, etc). more is finer grained",
+        )
+        parser.add_argument(
             "--length_coef",
             default = 0,
             type = float,
@@ -100,6 +112,8 @@ class BeliefAgent(RnnAgent):
             self.belief = OrBelief(
                 self.num_dots, context,
                 absolute = self.args.absolute_bucketing == 1,
+                num_size_buckets = self.args.num_size_buckets,
+                num_color_buckets = self.args.num_color_buckets,
                 use_diameter = self.diameter_coef > 0,
                 use_contiguity = self.contiguity_coef > 0,
             )
@@ -107,6 +121,8 @@ class BeliefAgent(RnnAgent):
             self.belief = ConfigBelief(
                 self.num_dots, context,
                 absolute = self.args.absolute_bucketing == 1,
+                num_size_buckets = self.args.num_size_buckets,
+                num_color_buckets = self.args.num_color_buckets,
                 use_diameter = self.diameter_coef > 0,
                 use_contiguity = self.contiguity_coef > 0,
             )
