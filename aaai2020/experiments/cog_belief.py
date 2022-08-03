@@ -154,6 +154,7 @@ if __name__ == "__main__":
     ctx[:,1] = -ctx[:,1]
 
     belief = CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5)
+    #belief = CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False)
     #belief = OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5)
     sc = belief.sc
     xy = belief.xy
@@ -176,7 +177,7 @@ if __name__ == "__main__":
 
     N = 5
     import matplotlib.pyplot as plt
-    fig, ax = plt.subplots(N, figsize=(3, 3*N))
+    #fig, ax = plt.subplots(N, figsize=(3, 3*N))
 
     prior = belief.prior
     for n in range(N):
@@ -199,7 +200,8 @@ if __name__ == "__main__":
         print("marg utt", belief.configs[mEdHs.argmax()])
 
         uttb = utt.astype(bool)
-        ax[n].scatter(
+        fig, ax = plt.subplots()
+        ax.scatter(
             xy[:,0], xy[:,1],
             marker='o',
             s=50*(1+sc[:,0]),
@@ -210,10 +212,11 @@ if __name__ == "__main__":
             edgecolor="black",
             linewidth=1,
         )
-        ax[n].scatter(xy[uttb,0], xy[uttb,1], marker="x", s=100, c="r")
+        ax.scatter(xy[uttb,0], xy[uttb,1], marker="x", s=100, c="r")
         for i, id in enumerate(ids):
-            ax[n].annotate(id, (xy[i,0]+.025, xy[i,1]+.025))
+            ax.annotate(id, (xy[i,0]+.025, xy[i,1]+.025))
         plt.show()
+        plt.clf()
 
         response = int(input())
         print("prior", belief.marginals(prior))
