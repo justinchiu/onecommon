@@ -16,8 +16,10 @@ from template import (
     spatial_dot_template,
     named_dot_template,
     render_2,
-    size_map,
-    color_map,
+    size_map3,
+    color_map3,
+    size_map5,
+    color_map5,
     get_sign,
     check_triangle
 )
@@ -53,12 +55,15 @@ class RegionNode:
         lx = -1, hx = 1,
         ly = -1, hy = 1,
         flip_y = True,
+        sc_buckets = 5, # size and color buckets
     ):
         self.children = [None for _ in range(num_buckets ** 2)]
 
         self.flip_y = flip_y
         self.top_word = "bottom" if flip_y else "top"
         self.bottom_word = "top" if flip_y else "bottom"
+
+        self.sc_buckets = sc_buckets
 
         # 6 7 8
         # 3 4 5
@@ -121,6 +126,9 @@ class RegionNode:
         return [i for i, dot in enumerate(dot_list) if dot.id == id][0]
 
     def desc(self):
+        size_map = size_map3 if self.sc_buckets == 3 else size_map5
+        color_map = color_map3 if self.sc_buckets == 3 else color_map5
+
         # flat template, first attempt at generating regions
         non_empty_regions, children, num_dots = list(zip(*[
             (
@@ -432,14 +440,14 @@ class RegionNode:
             # already a RegionNode
             node.add(dot)
 
-def render(n, sc, xy, ids, confirm=None, flip_y=True, inner=False):
+def render(n, sc, xy, ids, confirm=None, flip_y=True, inner=False, num_buckets=5):
     confirm_text = "Yes ." if confirm == 1 else "No ." if confirm == 0 else None
     names = [NAMES[id] for id in ids]
     if n == 2:
         if confirm is None:
-            return f"Do you see {render_2(xy, sc, names, flip_y=flip_y)}"
+            return f"Do you see {render_2(xy, sc, names, flip_y=flip_y, num_buckets=num_buckets)}"
         else:
-            return f"{confirm_text} Do you see {render_2(xy, sc, names, flip_y=flip_y)}"
+            return f"{confirm_text} Do you see {render_2(xy, sc, names, flip_y=flip_y, num_buckets=num_buckets)}"
 
     root = RegionNode(
         num_buckets = 3,
@@ -469,12 +477,12 @@ def render_select(select_feats, select_idx, ids, confirm=None, flip_y=True):
         names = [NAMES[id] for id in ids]
         if confirm is None:
             return (
-                f"From the two dots, {render_2(xy, sc, names, flip_y=flip_y, concise=True)}, "
+                f"From the two dots, {render_2(xy, sc, names, flip_y=flip_y, num_buckets=num_buckets, concise=True)}, "
                 "let's select the {desc}"
             )
         else:
             return (
-                f"{confirm_text} From the two dots, {render_2(xy, sc, names, flip_y=flip_y, concise=True)}, "
+                f"{confirm_text} From the two dots, {render_2(xy, sc, names, flip_y=flip_y, num_buckets=num_buckets, concise=True)}, "
                 "let's select the {desc}"
             )
 

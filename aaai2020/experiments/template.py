@@ -1,8 +1,11 @@
 from jinja2 import Template
 
 RADIUS = .2
-size_map = ["small", "medium", "large"]
-color_map = ["dark", "grey", "light"]
+size_map3 = ["small", "medium", "large"]
+color_map3 = ["dark", "grey", "light"]
+
+size_map5 = ["very small", "small", "medium", "large", "very large"]
+color_map5 = ["very dark", "dark", "grey", "light", "very light"]
 
 utterance_template = Template("{{ confirm }} {{ mention }}")
 
@@ -291,14 +294,16 @@ def spatial_descriptions4(xy):
     return descriptions
 
 
-def size_color_descriptions(sc):
+def size_color_descriptions(sc, num_buckets=3):
+    size_map = size_map3 if num_buckets == 3 else size_map5
+    color_map = color_map3 if num_buckets == 3 else color_map5
     return [
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
 
-def render_2(xy, sc, names=None, flip_y=True, concise=False):
+def render_2(xy, sc, names=None, flip_y=True, concise=False, num_buckets=3):
     xy_desc = spatial_descriptions2(xy, flip_y)
-    sc_desc = size_color_descriptions(sc)
+    sc_desc = size_color_descriptions(sc, num_buckets)
     mention = mention_2a if concise else mention_2
     return mention.render(
         dot1 = named_spatial_dot_template.render(
@@ -399,6 +404,9 @@ if __name__ == "__main__":
     from belief import process_ctx, OrBelief
 
     num_dots = 7
+    
+    # scenario S_pGlR0nKz9pQ4ZWsw
+    # streamlit run main.py
     ctx = np.array([
         0.635, -0.4,   2/3, -1/6,  # 8
         0.395, -0.7,   0.0,  3/4,  # 11
