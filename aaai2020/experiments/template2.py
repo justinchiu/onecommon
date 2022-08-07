@@ -17,6 +17,14 @@ def main():
 
     from cog_belief import CostBelief
 
+    def st_write_history(history, ids):
+        st.write("Plan history")
+        if len(history) == 0:
+            st.write("None")
+            return
+        for i, plan in enumerate(history):
+            st.write(i, str(list(ids[plan.astype(bool)])))
+
     num_dots = 7
 
     # context init
@@ -50,13 +58,14 @@ def main():
 
     prior = belief.prior
     for n in range(N):
+        st.write(f"plan {n}")
         EdHs = belief.compute_EdHs(prior)
         utt = belief.configs[EdHs.argmax()]
 
         # utterance
         feats = belief.get_feats(utt)
         ids = utt.nonzero()[0]
-        words = render(*feats, ids, confirm=False)
+        words = render(*feats, ids, confirm=None)
         print(words)
 
         # viz
@@ -77,6 +86,10 @@ def main():
         buf = BytesIO()
         fig.savefig(buf, format="png")
         st.image(buf, width=300)
+
+        st.write("OLD TEMPLATE")
+        st_write_history(belief.history, real_ids)
+        st.write("plan:", str(list(real_ids[uttb])))
         st.write(words)
 
         response = None
@@ -97,9 +110,6 @@ def main():
 
         belief.history.append(utt)
         prior = new_prior
-
-    #plt.savefig(f"plan_plots/{belief_type}_{response_strategy}.png")
-    plt.show()
 
 
 if __name__ == "__main__":
