@@ -81,7 +81,7 @@ def rollout(ctx, ids, belief, response_strategy):
         belief.history.append(utt)
         prior = new_prior
 
-    plt.savefig(f"dbg_plots/{belief_type}_{response_strategy}.png")
+    plt.savefig(f"plan_plots/{belief_type}_{response_strategy}.png")
 
 
 def main():
