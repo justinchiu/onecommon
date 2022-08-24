@@ -12,6 +12,7 @@ from belief import (
     ConfigBelief,
     entropy, expand_plan,
 )
+from cog_belief import CostBelief, EgoCostBelief
 
 from template_rec import render, render_select
 
@@ -28,7 +29,8 @@ class BeliefAgent(RnnAgent):
             "--belief",
             choices = [
                 "or", "and", "andor", "orand", "orandor",
-                "egocentric",
+                "or_egocentric",
+                "cost", "cost_egocentric",
             ],
             default = "or",
             help = "Partner response model",
@@ -117,8 +119,26 @@ class BeliefAgent(RnnAgent):
                 use_diameter = self.diameter_coef > 0,
                 use_contiguity = self.contiguity_coef > 0,
             )
-        elif self.args.belief == "egocentric":
+        elif self.args.belief == "or_egocentric":
             self.belief = ConfigBelief(
+                self.num_dots, context,
+                absolute = self.args.absolute_bucketing == 1,
+                num_size_buckets = self.args.num_size_buckets,
+                num_color_buckets = self.args.num_color_buckets,
+                use_diameter = self.diameter_coef > 0,
+                use_contiguity = self.contiguity_coef > 0,
+            )
+        elif self.args.belief == "cost":
+            self.belief = CostBelief(
+                self.num_dots, context,
+                absolute = self.args.absolute_bucketing == 1,
+                num_size_buckets = self.args.num_size_buckets,
+                num_color_buckets = self.args.num_color_buckets,
+                use_diameter = self.diameter_coef > 0,
+                use_contiguity = self.contiguity_coef > 0,
+            )
+        elif self.args.belief == "cost_egocentric":
+            self.belief = EgoCostBelief(
                 self.num_dots, context,
                 absolute = self.args.absolute_bucketing == 1,
                 num_size_buckets = self.args.num_size_buckets,

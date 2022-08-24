@@ -130,6 +130,37 @@ class CostBelief(OrBelief):
             p_r1.append((1 - p_deny) * ps)
         return np.array((p_r0, p_r1))
 
+class EgoCostBelief(CostBelief):
+    # ABLATED version of CostBelief
+    # Does not consider unshared dots
+    def joint(self, prior, utt):
+        # p(r | u,s)
+        # prior: num_configs * 7
+        # p(r=0|u,s)p(s)
+        # = \sum_z p(s)p(z|s) p(r=0|u,s)p(r=0|u,z)
+        # = p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
+        # = p(s)(1 - p(r=1|u,s)) |z|C|u|9^-|u|
+
+        temporal_confirms = np.array([
+            self.temporal_confirm(x, self.history) for x in self.configs
+        ])
+        p_r1 = []
+        p_r0 = []
+        for s,ps in enumerate(prior):
+            state_config = self.configs[s]
+            z = self.num_dots - state_config.sum()
+            u = int(utt.sum())
+            utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
+            c_likelihood = self.config_likelihood[utt_idx,s].item()
+            tc = temporal_confirms[s] if self.use_temporal else 1
+            sd = self.spatial_denies[s] if self.use_spatial else 0
+            likelihood = c_likelihood * tc * (1-sd)
+
+            p_deny = (1 - likelihood)
+
+            p_r0.append(p_deny * ps)
+            p_r1.append((1 - p_deny) * ps)
+        return np.array((p_r0, p_r1))
 
 if __name__ == "__main__":
     np.seterr(all="raise")

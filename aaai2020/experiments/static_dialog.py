@@ -26,6 +26,8 @@ from belief import (
     Label, label_config_sets,
 )
 
+from cog_belief import CostBelief, EgoCostBelief
+
 """
 Dialog: [Turn]
 Turn: [Utterance, Response, [PriorNextMention], [PlanNextMention]]

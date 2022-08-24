@@ -59,8 +59,11 @@ split=train
 split=valid
 seed=1
 context_file="${split}_context_${seed}"
+#belief="or"
+belief="cost"
+#belief="cost_egocentric"
 #logdir="analysis_log/${split}_${seed}"
-logdir="analysis_log/${split}_${seed}_absolute"
+logdir="analysis_log/${split}_${seed}_absolute_${belief}"
 
 mkdir -p ${logdir}
 
