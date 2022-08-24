@@ -70,7 +70,7 @@ mkdir -p ${logdir}
 python -u test_planning_static.py \
   --alice_model_file=${model_dir_a}/1_ep-12.th \
   --bob_model_file=${model_dir_b}/1_ep-12.th \
-  --belief or \
+  --belief ${belief} \
   --absolute_bucketing \
   --context_file=${context_file} \
   --cuda \
