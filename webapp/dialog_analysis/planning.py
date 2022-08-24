@@ -229,12 +229,13 @@ def process_dialogue(scenario_id, dialogue):
         ctx_np = np.array(ctx, dtype=float).reshape(7, 4)
         from belief import OrBelief
         belief = OrBelief(7, ctx_np)
-        n, sc, xy = belief.get_feats(np.array(mentions))
+        feats = belief.get_feats(np.array(mentions))
+        ids = np.array(mentions).nonzero()[0]
         #print(ctx_struct[3 + turn["writer_id"]])
         #print(mentions)
         #print(xy)
         #words = template.render(n, sc, xy)
-        words = tr.render(n, sc, xy)
+        words = tr.render(*feats, ids, confirm=None)
         st.write(words)
         #import pdb; pdb.set_trace()
 
