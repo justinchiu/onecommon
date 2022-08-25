@@ -2,15 +2,15 @@
 
 model_dir_a=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
 model_dir_b=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
-name=TEST_STATIC_PLAN
+
+
+
 shared_ctx_count=4
 
 shift
 shift
 shift
 
-log_file=analysis_log/${name}.log
-out_file=analysis_log/${name}.out
 
 rerank_args="--language_rerank --next_mention_reranking --language_beam_keep_all_finished \
 --reranking_confidence"
@@ -64,6 +64,11 @@ belief="cost"
 #belief="cost_egocentric"
 #logdir="analysis_log/${split}_${seed}"
 logdir="analysis_log/${split}_${seed}_absolute_${belief}"
+
+name=TEST_STATIC_PLAN
+name="STATIC_PLAN_${split}_${seed}_absolute_${belief}"
+log_file="analysis_log/${name}.log"
+out_file="analysis_log/${name}.out"
 
 mkdir -p ${logdir}
 

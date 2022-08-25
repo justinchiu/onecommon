@@ -541,7 +541,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
             # WRITER, force words
             writer.args.reranking_confidence = False
-            writer.write(
+            writer.write_supervised(
                 force_words=[out_words],
                 start_token="YOU:",
                 detect_markables=True,

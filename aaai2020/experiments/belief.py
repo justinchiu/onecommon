@@ -92,7 +92,7 @@ def expand_plan(plan):
         print("EMPTY PLAN")
         mentions = plan
     elif num_dots <= 1:
-        mentions = plan
+        mentions = plan[None, None]
     else:
         mentions = np.zeros((num_dots + 1, 1, 7))
         mentions[0,0] = plan

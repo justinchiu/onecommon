@@ -11,6 +11,10 @@ from torch import optim
 from torch import autograd
 import torch.nn as nn
 
+from transformers import (
+    AutoTokenizer, AutoModelForSequenceClassification,
+)
+
 from agent import *
 from belief_agent import BeliefAgent
 import utils
@@ -181,20 +185,34 @@ def main():
         #     freq_cutoff=args.unk_threshold, verbose=True
         # )
 
+        response_pretrained_path = "models/save_pretrained"
+        tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
+        confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
+            response_pretrained_path)
+
 
         # alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
         alice_model = utils.load_model(args.alice_model_file, prefix_dir=None, map_location='cpu')
         #alice_ty = get_agent_type(alice_model, args.smart_alice)
         alice_ty = BeliefAgent
         alice_merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(alice_model.args)))
-        alice = alice_ty(alice_model, alice_merged_args, name='Alice', train=False, markable_detector=markable_detector)
+        alice = alice_ty(
+            alice_model, alice_merged_args, name='Alice', train=False,
+            markable_detector=markable_detector,
+            tokenizer = tokenizer,
+            confirmation_predictor = confirmation_predictor,
+        )
 
         # bob_model = utils.load_model(args.bob_model_file + '_' + str(seed) + '.th')
         bob_model = utils.load_model(args.bob_model_file, prefix_dir=None, map_location='cpu')
         #bob_ty = get_agent_type(bob_model, args.smart_bob)
         bob_ty = BeliefAgent
         bob_merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(bob_model.args)))
-        bob = bob_ty(bob_model, bob_merged_args, name='Bob', train=False, markable_detector=markable_detector)
+        bob = bob_ty(bob_model, bob_merged_args, name='Bob', train=False,
+            markable_detector=markable_detector,
+            tokenizer = tokenizer,
+            confirmation_predictor = confirmation_predictor,
+        )
 
         for model in [alice_model, bob_model]:
             if args.cuda:

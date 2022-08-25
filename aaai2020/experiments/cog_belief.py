@@ -18,7 +18,7 @@ from belief import process_ctx, Belief, OrBelief
 
 
 class CostBelief(OrBelief):
-    def __init__(self, *args, use_spatial=True, use_temporal=True, **kwargs):
+    def __init__(self, *args, use_spatial=True, use_temporal=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.spatial_denies = np.array([
             self.spatial_deny(x, self.ctx) for x in self.configs
