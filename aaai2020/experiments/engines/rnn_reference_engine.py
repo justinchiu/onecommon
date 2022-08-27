@@ -677,9 +677,6 @@ class RnnReferenceEngine(EngineBase):
 
             metrics = self.iter(epoch, self.opt.param_groups[0]["lr"], traindata, validdata, corpus)
 
-            # valid_lang_loss, valid_select_loss, valid_reference_loss, valid_select_acc = self.iter(
-            # )
-
             combined_valid_loss = self.combine_loss(metrics['valid'])
 
             if self.scheduler is not None:
