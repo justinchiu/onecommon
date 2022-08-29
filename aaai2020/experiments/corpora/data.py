@@ -103,6 +103,7 @@ class Dictionary(object):
                 dictionary.add_word(token)
         return dictionary
 
+    @staticmethod
     def from_file(file_name, freq_cutoff):
         """Constructs a dictionary from the given file."""
         assert os.path.exists(file_name)
