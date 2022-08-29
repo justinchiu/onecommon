@@ -2,7 +2,7 @@ from typing import NamedTuple
 
 from pathlib import Path
 import numpy as np
-
+from jinja2 import Template
 
 from datasets import Dataset, load_dataset
 
@@ -45,7 +45,6 @@ REFERENT LAYOUT: [
 ]
 """
 def _split_referents(words, referent_idxs):
-    #stops = [word_dict.get_idx(w) for w in ['YOU:', 'THEM:']]
     stops = ["YOU:", "THEM:"]
     sents, current = [], []
     all_refs, current_refs = [], []
@@ -81,6 +80,7 @@ def _split_referents(words, referent_idxs):
     return sents, all_refs
 
 class Conversation(NamedTuple):
+    dots: list[float]
     sents: list[list[str]]
     refs: list[list[int]]
     partner_refs: list[list[int]]
@@ -98,18 +98,28 @@ with train_path.open() as f:
         line = line.strip()
 
         tokens = line.split()
+
+        # The linearized context values
+        # Each dot is represented as (x, y, size, color)
+        # There should be 28 values = 4 values * 7 dots.
         input_vals = [float(val) for val in get_tag(tokens, 'input')]
+
         words = get_tag(tokens, 'dialogue')
         word_idxs = word_dict.w2i(words)
+
         referent_idxs = [int(val) for val in get_tag(tokens, 'referents')]
         partner_referent_idxs = [int(val) for val in get_tag(tokens, 'partner_referents')]
         partner_referent_our_view_idxs = [int(val) for val in get_tag(tokens, 'partner_referents_our_view')]
+
+        # i believe this is the final selection? need to verify
         output_idx = int(get_tag(tokens, 'output')[0])
+
         scenario_id = get_tag(tokens, 'scenario_id')[0]
         real_ids = get_tag(tokens, 'real_ids')
         partner_real_ids = get_tag(tokens, 'partner_real_ids')
         agent = int(get_tag(tokens, 'agent')[0])
         chat_id = get_tag(tokens, 'chat_id')[0]
+
         ref_disagreement = list(map(int, get_tag(tokens, 'referent_disagreements')))
         partner_ref_disagreement = list(map(int, get_tag(tokens, 'partner_referent_disagreements')))
 
@@ -124,6 +134,8 @@ with train_path.open() as f:
             refs = all_refs,
             partner_refs = all_partner_refs,
             partner_refs_our_view = all_partner_refs_our_view,
+
+            dots = input_vals,
 
             scenario_id = scenario_id,
             chat_id = chat_id,
@@ -142,6 +154,48 @@ Each example will look like:
 Eg conversation prefixes
 """
 
+def describe_dots(dots):
+    dots = np.array(dots).reshape(-1, 4)
+    rounded_dots = (dots.round(2) * 100).astype(int)
+    num_dots = dots.shape[0]
+    # (x, y, size, color)
+    dot_desc_template = Template(
+        "dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
+    )
+    description = " [SEP] ".join([
+        dot_desc_template.render(
+            id = i+1,
+            x = rounded_dots[i, 0],
+            y = rounded_dots[i, 1],
+            size = rounded_dots[i, 2],
+            color = rounded_dots[i, 3],
+        ) for i in range(num_dots)
+    ])
+    return description
+
+def describe_plan_dense(plan):
+    num_dots = len(plan)
+    dot_desc_template = Template("dot{{id}}: {{include}}")
+    description = ", ".join([
+        dot_desc_template.render(
+            id = i+1,
+            include = plan[i],
+        ) for i in range(num_dots)
+    ])
+    return description
+
+def describe_plan_sparse(plan):
+    num_dots = len(plan)
+    dot_desc_template = Template("dot{{id}}")
+    description = ", ".join([
+        f"dot{i+1}"
+        for i in range(num_dots)
+        if plan[i] == 1
+    ])
+    return description
+
+# lead scenarios
+
 class Example(NamedTuple):
     sents: list[list[str]]
     refs: list[list[int]]
@@ -159,10 +213,19 @@ class Example(NamedTuple):
     plan: list[int]
     mentions: list[int]
 
-examples = {key: [] for key in Conversation._fields + ("text")}
+fields = ("dots", "text", "plan", "mentions", "outtext")
+examples = {
+    key: [] for key in fields
+    #for key in Conversation._fields + fields
+}
+# use sparse descriptions of plans and mentions
+describe_plan = describe_plan_sparse
 for conversation in conversations:
     num_turns = len(conversation.sents)
-    for turn in range(num_turns+1):
+    for turn in range(num_turns):
+        # dont use Conversation as examples, want something that can be
+        # directly fed to BART/RoBERTa
+        """
         new_conversation = conversation._replace(
             sents = conversation.sents[:turn],
             refs = conversation.refs[:turn],
@@ -171,6 +234,36 @@ for conversation in conversations:
         )
         for key in Conversation._fields:
             examples[key].append(getattr(new_conversation, key))
+        """
 
+        is_you = conversation.sents[turn][0] == "YOU:"
+        if is_you:
+            # textify all dot properties
+            examples["dots"].append(describe_dots(conversation.dots))
+            # concatenate all text
+            examples["text"].append(
+                " ".join([x for xs in conversation.sents[:turn] for x in xs])
+            )
+            examples["outtext"].append(" ".join(conversation.sents[turn]))
+            # mention = (start idx, end idx, utterance end idx, *binary ind for 7 dots)
+            raw_mentions = np.array(conversation.refs[turn]).reshape((-1, 10))[:,3:]
+            raw_plan = raw_mentions.any(0).astype(int)
+            examples["plan"].append(describe_plan(raw_plan))
+            examples["mentions"].append(
+                " [SEP] ".join([describe_plan(m) for m in raw_mentions])
+            )
+
+# Check number of examples for each field
+for key1 in fields:
+    for key2 in fields:
+        assert len(examples[key1]) == len(examples[key2])
+    
 print(Conversation._fields)
-import pdb; pdb.set_trace()
+idx = 11
+print("Data example")
+print("text", examples["text"][idx])
+print("plan", examples["plan"][idx])
+print("mentions", examples["mentions"][idx])
+print("outtext", examples["outtext"][idx])
+
+

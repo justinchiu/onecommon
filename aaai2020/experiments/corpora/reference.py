@@ -131,18 +131,29 @@ class ReferenceCorpus(object):
         for line in lines:
         # for line in tqdm.tqdm(lines, ncols=80):
             tokens = line.split()
+            # These are the normalized context representations
+            # each dot takes 4 elements: [x, y, size, color]
+            # input_vals is a flattened list
             input_vals = [float(val) for val in get_tag(tokens, 'input')]
+
             words = get_tag(tokens, 'dialogue')
             word_idxs = self.word_dict.w2i(words)
+
             referent_idxs = [int(val) for val in get_tag(tokens, 'referents')]
             partner_referent_idxs = [int(val) for val in get_tag(tokens, 'partner_referents')]
             partner_referent_our_view_idxs = [int(val) for val in get_tag(tokens, 'partner_referents_our_view')]
+
+            # i believe this is the selection id
             output_idx = int(get_tag(tokens, 'output')[0])
+
+            # global chat properties
+            chat_id = get_tag(tokens, 'chat_id')[0]
             scenario_id = get_tag(tokens, 'scenario_id')[0]
             real_ids = get_tag(tokens, 'real_ids')
             partner_real_ids = get_tag(tokens, 'partner_real_ids')
             agent = int(get_tag(tokens, 'agent')[0])
-            chat_id = get_tag(tokens, 'chat_id')[0]
+
+            # annotator disagreement numbers
             ref_disagreement = list(map(int, get_tag(tokens, 'referent_disagreements')))
             partner_ref_disagreement = list(map(int, get_tag(tokens, 'partner_referent_disagreements')))
             if crosstalk_split is not None:
