@@ -5,6 +5,7 @@ from transformers import BartForConditionalGeneration, BartTokenizer
 from transformers import TrainingArguments, Trainer
 from transformers.models.bart.modeling_bart import shift_tokens_right
 
+import torch
 
 def main(args):
     # data
@@ -22,23 +23,25 @@ def main(args):
     def convert_to_features(example_batch):
         input_encodings = tokenizer.batch_encode_plus(
             example_batch['input'],
-            pad_to_max_length=True,
-            max_length=1024,
+            max_length = 512,
+            padding="max_length",
             truncation=True,
+            return_tensors="np",
         )
         target_encodings = tokenizer.batch_encode_plus(
             example_batch['label'],
-            pad_to_max_length=True,
-            max_length=1024,
+            max_length = 512,
+            padding="max_length",
             truncation=True,
+            return_tensors="np",
         )
         
         labels = target_encodings['input_ids']
         decoder_input_ids = shift_tokens_right(
-            labels,
+            torch.tensor(labels),
             model.config.pad_token_id,
             model.config.eos_token_id,
-        )
+        ).numpy()
         labels[labels[:, :] == model.config.pad_token_id] = -100
         
         encodings = {
@@ -63,8 +66,8 @@ def main(args):
     training_args = TrainingArguments(
         output_dir="./hfresults",
         num_train_epochs=15,
-        per_device_train_batch_size=16,
-        per_device_eval_batch_size=64,
+        per_device_train_batch_size=4,
+        per_device_eval_batch_size=16,
         warmup_steps=500,
         weight_decay=0.01,
         #evaluation_strategy="epoch",
@@ -77,7 +80,7 @@ def main(args):
         train_dataset = tokenized_train,
         eval_dataset = tokenized_valid,
     )
-    train.train()
+    trainer.train()
 
 
 if __name__ == "__main__":
