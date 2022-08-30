@@ -34,6 +34,13 @@ train_path = datadir / 'train_reference_{}.txt'.format(fold_num)
 valid_path = datadir / 'valid_reference_{}.txt'.format(fold_num)
 test_path = datadir / 'test_reference_{}.txt'.format(fold_num)
 
+paths = {
+    "train": train_path,
+    "valid": valid_path,
+    "test": test_path,
+}
+splits = paths.keys()
+
 word_dict = Dictionary.from_file(str(train_path), freq_cutoff = freq_cutoff)
 
 """
@@ -92,57 +99,61 @@ class Conversation(NamedTuple):
     real_ids: list[str]
     partner_real_ids: list[str]
 
-conversations = []
-with train_path.open() as f:
-    for line in f:
-        line = line.strip()
 
-        tokens = line.split()
+def get_conversations(split):
+    conversations = []
+    path = paths[split]
+    with path.open() as f:
+        for line in f:
+            line = line.strip()
 
-        # The linearized context values
-        # Each dot is represented as (x, y, size, color)
-        # There should be 28 values = 4 values * 7 dots.
-        input_vals = [float(val) for val in get_tag(tokens, 'input')]
+            tokens = line.split()
 
-        words = get_tag(tokens, 'dialogue')
-        word_idxs = word_dict.w2i(words)
+            # The linearized context values
+            # Each dot is represented as (x, y, size, color)
+            # There should be 28 values = 4 values * 7 dots.
+            input_vals = [float(val) for val in get_tag(tokens, 'input')]
 
-        referent_idxs = [int(val) for val in get_tag(tokens, 'referents')]
-        partner_referent_idxs = [int(val) for val in get_tag(tokens, 'partner_referents')]
-        partner_referent_our_view_idxs = [int(val) for val in get_tag(tokens, 'partner_referents_our_view')]
+            words = get_tag(tokens, 'dialogue')
+            word_idxs = word_dict.w2i(words)
 
-        # i believe this is the final selection? need to verify
-        output_idx = int(get_tag(tokens, 'output')[0])
+            referent_idxs = [int(val) for val in get_tag(tokens, 'referents')]
+            partner_referent_idxs = [int(val) for val in get_tag(tokens, 'partner_referents')]
+            partner_referent_our_view_idxs = [int(val) for val in get_tag(tokens, 'partner_referents_our_view')]
 
-        scenario_id = get_tag(tokens, 'scenario_id')[0]
-        real_ids = get_tag(tokens, 'real_ids')
-        partner_real_ids = get_tag(tokens, 'partner_real_ids')
-        agent = int(get_tag(tokens, 'agent')[0])
-        chat_id = get_tag(tokens, 'chat_id')[0]
+            # i believe this is the final selection? need to verify
+            output_idx = int(get_tag(tokens, 'output')[0])
 
-        ref_disagreement = list(map(int, get_tag(tokens, 'referent_disagreements')))
-        partner_ref_disagreement = list(map(int, get_tag(tokens, 'partner_referent_disagreements')))
+            scenario_id = get_tag(tokens, 'scenario_id')[0]
+            real_ids = get_tag(tokens, 'real_ids')
+            partner_real_ids = get_tag(tokens, 'partner_real_ids')
+            agent = int(get_tag(tokens, 'agent')[0])
+            chat_id = get_tag(tokens, 'chat_id')[0]
 
-        sents, all_refs = _split_referents(words, referent_idxs)
-        sents_, all_partner_refs = _split_referents(words, partner_referent_idxs)
-        assert sents == sents_
-        sents_, all_partner_refs_our_view = _split_referents(words, partner_referent_our_view_idxs)
-        assert sents == sents_
+            ref_disagreement = list(map(int, get_tag(tokens, 'referent_disagreements')))
+            partner_ref_disagreement = list(map(int, get_tag(tokens, 'partner_referent_disagreements')))
 
-        conversations.append(Conversation(
-            sents = sents,
-            refs = all_refs,
-            partner_refs = all_partner_refs,
-            partner_refs_our_view = all_partner_refs_our_view,
+            sents, all_refs = _split_referents(words, referent_idxs)
+            sents_, all_partner_refs = _split_referents(words, partner_referent_idxs)
+            assert sents == sents_
+            sents_, all_partner_refs_our_view = _split_referents(words, partner_referent_our_view_idxs)
+            assert sents == sents_
 
-            dots = input_vals,
+            conversations.append(Conversation(
+                sents = sents,
+                refs = all_refs,
+                partner_refs = all_partner_refs,
+                partner_refs_our_view = all_partner_refs_our_view,
 
-            scenario_id = scenario_id,
-            chat_id = chat_id,
+                dots = input_vals,
 
-            real_ids = real_ids,
-            partner_real_ids = partner_real_ids,
-        ))
+                scenario_id = scenario_id,
+                chat_id = chat_id,
+
+                real_ids = real_ids,
+                partner_real_ids = partner_real_ids,
+            ))
+        return conversations
 
 """
 Process conversations into examples.
@@ -194,8 +205,7 @@ def describe_plan_sparse(plan):
     ])
     return description
 
-# lead scenarios
-
+# unused for now
 class Example(NamedTuple):
     sents: list[list[str]]
     refs: list[list[int]]
@@ -213,72 +223,79 @@ class Example(NamedTuple):
     plan: list[int]
     mentions: list[int]
 
-fields = ("dots", "text", "plan", "mentions", "outtext")
-examples = {
-    key: [] for key in fields
-    #for key in Conversation._fields + fields
-}
-# use sparse descriptions of plans and mentions
-describe_plan = describe_plan_sparse
-for conversation in conversations:
-    num_turns = len(conversation.sents)
-    for turn in range(num_turns):
-        # dont use Conversation as examples, want something that can be
-        # directly fed to BART/RoBERTa
-        """
-        new_conversation = conversation._replace(
-            sents = conversation.sents[:turn],
-            refs = conversation.refs[:turn],
-            partner_refs = conversation.partner_refs[:turn],
-            partner_refs_our_view = conversation.partner_refs_our_view[:turn],
-        )
-        for key in Conversation._fields:
-            examples[key].append(getattr(new_conversation, key))
-        """
 
-        is_you = conversation.sents[turn][0] == "YOU:"
-        if is_you:
-            # textify all dot properties
-            examples["dots"].append(describe_dots(conversation.dots))
-            # concatenate all text
-            examples["text"].append(
-                " ".join([x for xs in conversation.sents[:turn] for x in xs])
+def get_examples(conversations, describe_plan=describe_plan_sparse):
+    fields = ("dots", "text", "plan", "mentions", "outtext")
+    examples = {
+        key: [] for key in fields
+        #for key in Conversation._fields + fields
+    }
+    for conversation in conversations:
+        num_turns = len(conversation.sents)
+        for turn in range(num_turns):
+            # dont use Conversation as examples, want something that can be
+            # directly fed to BART/RoBERTa
+            """
+            new_conversation = conversation._replace(
+                sents = conversation.sents[:turn],
+                refs = conversation.refs[:turn],
+                partner_refs = conversation.partner_refs[:turn],
+                partner_refs_our_view = conversation.partner_refs_our_view[:turn],
             )
-            examples["outtext"].append(" ".join(conversation.sents[turn]))
-            # mention = (start idx, end idx, utterance end idx, *binary ind for 7 dots)
-            raw_mentions = np.array(conversation.refs[turn]).reshape((-1, 10))[:,3:]
-            raw_plan = raw_mentions.any(0).astype(int)
-            examples["plan"].append(describe_plan(raw_plan))
-            examples["mentions"].append(
-                " [SEP] ".join([describe_plan(m) for m in raw_mentions])
-            )
+            for key in Conversation._fields:
+                examples[key].append(getattr(new_conversation, key))
+            """
 
-# Check number of examples for each field
-for key1 in fields:
-    for key2 in fields:
-        assert len(examples[key1]) == len(examples[key2])
-    
+            is_you = conversation.sents[turn][0] == "YOU:"
+            if is_you:
+                # textify all dot properties
+                examples["dots"].append(describe_dots(conversation.dots))
+                # concatenate all text
+                examples["text"].append(
+                    " ".join([x for xs in conversation.sents[:turn] for x in xs])
+                )
+                examples["outtext"].append(" ".join(conversation.sents[turn]))
+                # mention = (start idx, end idx, utterance end idx, *binary ind for 7 dots)
+                raw_mentions = np.array(conversation.refs[turn]).reshape((-1, 10))[:,3:]
+                raw_plan = raw_mentions.any(0).astype(int)
+                examples["plan"].append(describe_plan(raw_plan))
+                examples["mentions"].append(
+                    " [SEP] ".join([describe_plan(m) for m in raw_mentions])
+                )
+
+    # Check number of examples for each field
+    for key1 in fields:
+        for key2 in fields:
+            assert len(examples[key1]) == len(examples[key2])
+    return examples
+
 print(Conversation._fields)
-idx = 11
-print("Data example")
-print("text", examples["text"][idx])
-print("plan", examples["plan"][idx])
-print("mentions", examples["mentions"][idx])
-print("outtext", examples["outtext"][idx])
 
-num_examples = len(examples["mentions"])
-mention_examples = {}
-mention_examples["input"] = [
-    f"{text} [SEP] {plan}"
-    for text, plan in zip(examples["text"], examples["plan"])
-]
-mention_examples["label"] = examples["mentions"]
-mention_dataset = Dataset.from_dict(mention_examples)
-mention_dataset.save_to_disk("hf_datasets/mentions_given_text_plan.hf")
+for split in splits:
+    conversations = get_conversations(split)
+    examples = get_examples(conversations)
 
-num_examples = len(examples["plan"])
-plan_examples = {}
-plan_examples["input"] = examples["text"]
-plan_examples["label"] = examples["plan"]
-plan_dataset = Dataset.from_dict(plan_examples)
-plan_dataset.save_to_disk("hf_datasets/plan_given_text.hf")
+    idx = 11
+    print(f"Data example in {split}")
+    print("text", examples["text"][idx])
+    print("plan", examples["plan"][idx])
+    print("mentions", examples["mentions"][idx])
+    print("outtext", examples["outtext"][idx])
+
+    num_examples = len(examples["mentions"])
+    mention_examples = {}
+    mention_examples["input"] = [
+        f"{text} [SEP] {plan}"
+        for text, plan in zip(examples["text"], examples["plan"])
+    ]
+    mention_examples["label"] = examples["mentions"]
+    mention_dataset = Dataset.from_dict(mention_examples)
+    mention_dataset.save_to_disk(f"hf_datasets/{split}_mentions_given_text_plan.hf")
+
+    num_examples = len(examples["plan"])
+    plan_examples = {}
+    plan_examples["input"] = examples["text"]
+    plan_examples["label"] = examples["plan"]
+    plan_dataset = Dataset.from_dict(plan_examples)
+    plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text.hf")
+
