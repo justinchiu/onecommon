@@ -64,14 +64,19 @@ def main(args):
     tokenized_test = process_dataset(test)
 
     training_args = TrainingArguments(
-        output_dir="./hfresults",
+        output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}",
         num_train_epochs=15,
-        per_device_train_batch_size=4,
+        per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=16,
         warmup_steps=500,
         weight_decay=0.01,
-        #evaluation_strategy="epoch",
-        logging_dir="./hflog",
+        evaluation_strategy = "steps",
+        logging_dir=f"./hf-log-{args.dataset}-l{args.learning_rate}-b{args.batch_size}",
+
+        # supplied args
+        learning_rate = args.learning_rate,
+        #eval_steps = 5000,
+        eval_steps = 500,
     )
 
     trainer = Trainer(
@@ -86,7 +91,11 @@ def main(args):
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
     parser.add_argument(
-        '--learning_rate', type=float, default=1e-5,
+        '--learning_rate', type=float, default=2e-5,
+        help='learning rate',
+    )
+    parser.add_argument(
+        '--batch_size', type=int, default=4,
         help='learning rate',
     )
     parser.add_argument(
