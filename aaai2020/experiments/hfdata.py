@@ -266,4 +266,19 @@ print("plan", examples["plan"][idx])
 print("mentions", examples["mentions"][idx])
 print("outtext", examples["outtext"][idx])
 
+num_examples = len(examples["mentions"])
+mention_examples = {}
+mention_examples["input"] = [
+    f"{text} [SEP] {plan}"
+    for text, plan in zip(examples["text"], examples["plan"])
+]
+mention_examples["label"] = examples["mentions"]
+mention_dataset = Dataset.from_dict(mention_examples)
+mention_dataset.save_to_disk("hf_datasets/mentions_given_text_plan.hf")
 
+num_examples = len(examples["plan"])
+plan_examples = {}
+plan_examples["input"] = examples["text"]
+plan_examples["label"] = examples["plan"]
+plan_dataset = Dataset.from_dict(plan_examples)
+plan_dataset.save_to_disk("hf_datasets/plan_given_text.hf")
