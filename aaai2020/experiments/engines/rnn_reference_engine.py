@@ -1309,6 +1309,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 "exact_match_num": (confirm_pred == next_partner_confirms).all(-1).sum().item(),
                 "exact_match_denom": N * T,
             }
+        else:
+            next_partner_confirm_loss = None
 
 
         # / NEXT PARTNER CONFIRM

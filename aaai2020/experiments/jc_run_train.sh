@@ -197,6 +197,25 @@ mbp_indicator_confirm_attn_args="--next_partner_reference_prediction \
  --next_partner_confirm_agg attn \
  "
 
+# copy of hierarchical args with next_mention_prediction_type=collapsed
+# for checking closeness to data distribution
+collapsed_hierarchical_args="--mark_dots_mentioned \
+  --word_attention_constrained \
+  --partner_reference_prediction \
+  --next_mention_prediction \
+  --next_mention_prediction_type=collapsed \
+  --tie_reference_attn \
+  --hidden_context \
+  --hidden_context_mention_encoder \
+  --hidden_context_confirmations \
+  --hidden_context_mention_encoder_bidirectional \
+  --hidden_context_mention_encoder_attention \
+  --hidden_context_mention_encoder_type=filtered-separate \
+  --hidden_context_mention_encoder_count_features \
+  --hidden_context_mention_encoder_diffs \
+  --confirmations_resolution_strategy=all \
+  --hidden_context_confirmations_in generation next_mention \
+  "
 
 # baseline model from fried without any next partner reference
 function baseline () {
@@ -397,3 +416,19 @@ do
 done
 }
 
+function collapsed-mention-baseline () {
+for fold in $@
+do
+  this_name=collasped-mention-baseline
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $collapsed_hierarchical_args \
+    $structured_attention_args \
+    $dot_recurrence_args \
+    --wandb \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}

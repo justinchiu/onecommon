@@ -1,6 +1,8 @@
 from argparse import ArgumentParser
 from rich.progress import track
 
+from itertools import zip_longest
+
 from datasets import Dataset, load_dataset
 from transformers import BartForConditionalGeneration, BartTokenizer
 from transformers import TrainingArguments, Trainer
@@ -91,7 +93,7 @@ def train(args):
     )
     trainer.train()
 
-    savedir = "./hf-save-{args.dataset}-l{args.learning_rate}-b{args.batch_size}"
+    savedir = f"./hf-save-{args.dataset}-l{args.learning_rate}-b{args.batch_size}"
     tokenizer.save_pretrained(savedir)
     model.save_pretrained(savedir)
 
@@ -108,7 +110,7 @@ def evaluate(args):
     tokenizer.add_tokens(["[SEP]", "<eos>"])
 
     # model
-    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-2500"
+    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-33000"
     model = BartForConditionalGeneration.from_pretrained(
         output_dir, forced_bos_token_id=0,
     )
@@ -170,16 +172,36 @@ def evaluate(args):
         output_dots = tokenizer.batch_decode(output, skip_special_tokens=True)
 
         labels = batch["labels"]
-        for i, output_dot in enumerate(output_dots):
-            label = labels[i][labels[i] != -100]
-            label_dots = tokenizer.decode(label, skip_special_tokens=True)
+        if args.dataset == "plan_given_text":
+            for i, output_dot in enumerate(output_dots):
+                label = labels[i][labels[i] != -100]
+                label_dots = tokenizer.decode(label, skip_special_tokens=True)
 
-            output_set = set(output_dot.replace(",", "").split())
-            label_set = set(label_dots.replace(",", "").split())
+                output_set = set(output_dot.replace(",", "").split())
+                label_set = set(label_dots.replace(",", "").split())
 
-            if output_set == label_set:
-                exact_match += 1
-            num_examples += 1
+                if output_set == label_set:
+                    exact_match += 1
+                num_examples += 1
+        elif args.dataset == "mentions_given_text_plan":
+            for i, output_dot in enumerate(output_dots):
+                label = labels[i][labels[i] != -100]
+                label_dots = tokenizer.decode(label, skip_special_tokens=True)
+
+                # each turn is a sequence of mentions,
+                # so we want to evaluate each mention as a set
+                for output_mention, label_mention in zip_longest(
+                    output_dot.split(" [SEP] "),
+                    label_dots.split(" [SEP] "),
+                    fillvalue="",
+                ):
+                    output_set = set(output_mention.replace(",", "").split())
+                    label_set = set(label_mention.replace(",", "").split())
+
+                    if output_set == label_set:
+                        exact_match += 1
+                    num_examples += 1
+        print(f"Exact match @ batch {batch_idx}: {exact_match} / {num_examples}")
     print(f"Exact match: {exact_match} / {num_examples}")
 
 
