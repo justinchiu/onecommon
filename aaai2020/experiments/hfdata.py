@@ -277,6 +277,7 @@ for split in splits:
 
     idx = 11
     print(f"Data example in {split}")
+    print("dots", examples["dots"][idx])
     print("text", examples["text"][idx])
     print("plan", examples["plan"][idx])
     print("mentions", examples["mentions"][idx])
@@ -285,8 +286,8 @@ for split in splits:
     num_examples = len(examples["mentions"])
     mention_examples = {}
     mention_examples["input"] = [
-        f"{text} [SEP] {plan}"
-        for text, plan in zip(examples["text"], examples["plan"])
+        f"{dots} [SEP] {text} [SEP] {plan}"
+        for dots, text, plan in zip(examples["dots"], examples["text"], examples["plan"])
     ]
     mention_examples["label"] = examples["mentions"]
     mention_dataset = Dataset.from_dict(mention_examples)
@@ -295,6 +296,10 @@ for split in splits:
     num_examples = len(examples["plan"])
     plan_examples = {}
     plan_examples["input"] = examples["text"]
+    plan_examples["input"] = [
+        f"{dots} [SEP] {text}"
+        for dots, text in zip(examples["dots"], examples["text"])
+    ]
     plan_examples["label"] = examples["plan"]
     plan_dataset = Dataset.from_dict(plan_examples)
     plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text.hf")

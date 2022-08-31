@@ -1,4 +1,5 @@
 from argparse import ArgumentParser
+from rich.progress import track
 
 from datasets import Dataset, load_dataset
 from transformers import BartForConditionalGeneration, BartTokenizer
@@ -107,7 +108,7 @@ def evaluate(args):
     tokenizer.add_tokens(["[SEP]", "<eos>"])
 
     # model
-    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-500"
+    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-2500"
     model = BartForConditionalGeneration.from_pretrained(
         output_dir, forced_bos_token_id=0,
     )
@@ -156,15 +157,30 @@ def evaluate(args):
     tokenized_valid = process_dataset(valid)
     tokenized_test = process_dataset(test)
 
-    for batch in tokenized_valid:
-        import pdb; pdb.set_trace()
+    exact_match = 0
+    num_examples = 0
+    bsz = 16
+    max_examples = len(tokenized_valid)
+    #for batch_idx in track(range(max_examples // bsz)):
+    for batch_idx in range(max_examples // bsz):
+        batch = tokenized_valid[batch_idx * bsz: (batch_idx+1) * bsz]
         # one at a time
-        input = batch["input_ids"][None]
-        output = model.generate(input)
-        label = batch["labels"][None]
-        output_dots = tokenizer.batch_decode(output)
-        label_dots = tokenizer.batch_decode(label)
-        import pdb; pdb.set_trace()
+        model_input = batch["input_ids"]
+        output = model.generate(model_input)
+        output_dots = tokenizer.batch_decode(output, skip_special_tokens=True)
+
+        labels = batch["labels"]
+        for i, output_dot in enumerate(output_dots):
+            label = labels[i][labels[i] != -100]
+            label_dots = tokenizer.decode(label, skip_special_tokens=True)
+
+            output_set = set(output_dot.replace(",", "").split())
+            label_set = set(label_dots.replace(",", "").split())
+
+            if output_set == label_set:
+                exact_match += 1
+            num_examples += 1
+    print(f"Exact match: {exact_match} / {num_examples}")
 
 
 if __name__ == "__main__":
