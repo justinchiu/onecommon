@@ -134,3 +134,7 @@ webapp/src/web/sample/
 expts/
 serialized_models/
 wandb/
+hf-results*
+hf_datasets/
+analysis_log/
+hfresults/

@@ -7,18 +7,21 @@ from transformers.models.bart.modeling_bart import shift_tokens_right
 
 import torch
 
-def main(args):
+def train(args):
     # data
     dataset = args.dataset
     train = Dataset.load_from_disk(f"hf_datasets/train_{dataset}.hf")
     valid = Dataset.load_from_disk(f"hf_datasets/valid_{dataset}.hf")
     test = Dataset.load_from_disk(f"hf_datasets/test_{dataset}.hf")
 
+    tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
+    tokenizer.add_tokens([f"dot{i}" for i in range(8)])
+    tokenizer.add_tokens(["[SEP]", "<eos>"])
     # model
     model = BartForConditionalGeneration.from_pretrained(
         "facebook/bart-large", forced_bos_token_id=0,
     )
-    tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
+    model.resize_token_embeddings(len(tokenizer))
 
     def convert_to_features(example_batch):
         input_encodings = tokenizer.batch_encode_plus(
@@ -65,7 +68,7 @@ def main(args):
 
     training_args = TrainingArguments(
         output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}",
-        num_train_epochs=15,
+        num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=16,
         warmup_steps=500,
@@ -87,22 +90,110 @@ def main(args):
     )
     trainer.train()
 
+    savedir = "./hf-save-{args.dataset}-l{args.learning_rate}-b{args.batch_size}"
+    tokenizer.save_pretrained(savedir)
+    model.save_pretrained(savedir)
+
+def evaluate(args):
+    # data
+    dataset = args.dataset
+    train = Dataset.load_from_disk(f"hf_datasets/train_{dataset}.hf")
+    valid = Dataset.load_from_disk(f"hf_datasets/valid_{dataset}.hf")
+    test = Dataset.load_from_disk(f"hf_datasets/test_{dataset}.hf")
+
+    # forgot to save tokenizer and model, rerun training and fix this
+    tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
+    tokenizer.add_tokens([f"dot{i}" for i in range(8)])
+    tokenizer.add_tokens(["[SEP]", "<eos>"])
+
+    # model
+    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-500"
+    model = BartForConditionalGeneration.from_pretrained(
+        output_dir, forced_bos_token_id=0,
+    )
+    model.resize_token_embeddings(len(tokenizer))
+
+    def convert_to_features(example_batch):
+        input_encodings = tokenizer.batch_encode_plus(
+            example_batch['input'],
+            max_length = 512,
+            padding="max_length",
+            truncation=True,
+            return_tensors="np",
+        )
+        target_encodings = tokenizer.batch_encode_plus(
+            example_batch['label'],
+            max_length = 512,
+            padding="max_length",
+            truncation=True,
+            return_tensors="np",
+        )
+        
+        labels = target_encodings['input_ids']
+        decoder_input_ids = shift_tokens_right(
+            torch.tensor(labels),
+            model.config.pad_token_id,
+            model.config.eos_token_id,
+        ).numpy()
+        labels[labels[:, :] == model.config.pad_token_id] = -100
+        
+        encodings = {
+            'input_ids': input_encodings['input_ids'],
+            'attention_mask': input_encodings['attention_mask'],
+            'decoder_input_ids': decoder_input_ids,
+            'labels': labels,
+        }
+
+        return encodings
+
+    def process_dataset(dataset):
+        dataset = dataset.map(convert_to_features, batched=True)
+        columns = ['input_ids', 'labels', 'decoder_input_ids','attention_mask',] 
+        dataset.set_format(type='torch', columns=columns)
+        return dataset
+
+    tokenized_train = process_dataset(train)
+    tokenized_valid = process_dataset(valid)
+    tokenized_test = process_dataset(test)
+
+    for batch in tokenized_valid:
+        import pdb; pdb.set_trace()
+        # one at a time
+        input = batch["input_ids"][None]
+        output = model.generate(input)
+        label = batch["labels"][None]
+        output_dots = tokenizer.batch_decode(output)
+        label_dots = tokenizer.batch_decode(label)
+        import pdb; pdb.set_trace()
+
 
 if __name__ == "__main__":
     parser = ArgumentParser(description='Process some integers.')
     parser.add_argument(
-        '--learning_rate', type=float, default=2e-5,
+        '--learning_rate', type=float, default=1e-5,
         help='learning rate',
     )
     parser.add_argument(
         '--batch_size', type=int, default=4,
-        help='learning rate',
+        help='batch size',
+    )
+    parser.add_argument(
+        '--epochs', type=int, default=7,
+        help='epochs',
     )
     parser.add_argument(
         '--dataset', choices=["plan_given_text", "mentions_given_text_plan"],
         default = "plan_given_text",
         help="Dataset",
     )
+    parser.add_argument(
+        '--eval', action = "store_true",
+        help="Perform model evaluation on latest checkpoint",
+    )
+
     args = parser.parse_args()
 
-    main(args)
+    if not args.eval:
+        train(args)
+    else:
+        evaluate(args)
