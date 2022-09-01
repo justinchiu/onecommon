@@ -635,7 +635,7 @@ class RnnReferenceEngine(EngineBase):
                     tag + '/grad', value.grad.data.cpu().numpy(), epoch)
         if self.args.wandb:
             wandb.log({f"train_epoch_{k}": v for k,v in train_metrics.items()})
-            wandb.log({f"valid_{k}": v for k,v in train_metrics.items()})
+            wandb.log({f"valid_{k}": v for k,v in valid_metrics.items()})
 
         return metrics
 
