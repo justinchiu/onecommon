@@ -176,7 +176,9 @@ class BiLSTM_CRF(nn.Module):
         score, tag_seq = self(word_indices)
         current_text = ""
         is_self = None
+        end_idx = None
         for i, word in enumerate(word_indices):
+            # loop over starting words, search for B tag
             if word.item() == self.word_dict.word2idx["YOU:"]:
                 my_utterance = True
                 # agent
@@ -185,7 +187,11 @@ class BiLSTM_CRF(nn.Module):
                 my_utterance = False
                 # 1 - agent
                 is_self = False
-            if tag_seq[i].item() == self.tag_to_ix["B"]:
+
+            # it looks like sometimes EOS gets labelled as B
+            definitely_not_entity = word.item() in self.word_dict.w2i(["<eos>", "<selection>"])
+
+            if not definitely_not_entity and tag_seq[i].item() == self.tag_to_ix["B"]:
                 start_idx = i
                 for j in range(i + 1, len(tag_seq)):
                     if tag_seq[j].item() != self.tag_to_ix["I"]:
@@ -206,7 +212,8 @@ class BiLSTM_CRF(nn.Module):
                     #):
                         end_uttr = j
                         break
-
+                #if end_idx is None:
+                    #import pdb; pdb.set_trace()
                 markable_start = len(current_text + " ")
                 markable = {
                     'start': markable_start,

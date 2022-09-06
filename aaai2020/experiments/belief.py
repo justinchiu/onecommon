@@ -85,13 +85,13 @@ def process_ctx(
 
 
 # convert plan to sequence of mentions
-def expand_plan(plan):
+def expand_plan(plan, unroll=True):
     # plan: {0,1}^7
     num_dots = plan.sum().item()
     if num_dots == 0:
         print("EMPTY PLAN")
         mentions = plan
-    elif num_dots <= 1:
+    elif num_dots <= 1 or not unroll:
         mentions = plan[None, None]
     else:
         mentions = np.zeros((num_dots + 1, 1, 7))

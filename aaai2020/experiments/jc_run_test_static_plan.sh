@@ -1,9 +1,32 @@
 #!/bin/bash
 
-model_dir_a=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
-model_dir_b=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
+#prediction_type="collapsed"
+#belief="or"
+#belief="cost"
+#belief="cost_egocentric"
+
+belief=$1
+
+if [[ -z "$1" ]]; then
+    echo "Must provide first argument=belief {or,cost,cost_egocentric}" 1>&2
+    exit 1
+fi
 
 
+prediction_type=${2-multi_reference}
+
+if [ $prediction_type = "multi_reference" ]
+then
+    model_dir_a=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
+    model_dir_b=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1
+    #model_dir_a=expts/rel3_tsel_ref_dial_model_separate/jc-partner/baseline/1
+    #model_dir_b=expts/rel3_tsel_ref_dial_model_separate/jc-partner/baseline/1
+else
+    model_dir_a=expts/rel3_tsel_ref_dial_model_separate/jc-partner/collapsed-mention-baseline/1
+    model_dir_b=expts/rel3_tsel_ref_dial_model_separate/jc-partner/collapsed-mention-baseline/1
+fi
+
+echo "prediction_type=$prediction_type"
 
 shared_ctx_count=4
 
@@ -59,14 +82,13 @@ split=train
 split=valid
 seed=1
 context_file="${split}_context_${seed}"
-belief="or"
-#belief="cost"
-#belief="cost_egocentric"
-#logdir="analysis_log/${split}_${seed}"
-logdir="analysis_log/${split}_${seed}_absolute_${belief}"
 
-name=TEST_STATIC_PLAN
-name="STATIC_PLAN_${split}_${seed}_absolute_${belief}"
+
+#logdir="analysis_log/${split}_${seed}_absolute_${belief}"
+logdir="analysis_log/${split}_${seed}_absolute_${belief}_${prediction_type}"
+
+#name="STATIC_PLAN_${split}_${seed}_absolute_${belief}"
+name="STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}"
 log_file="analysis_log/${name}.log"
 out_file="analysis_log/${name}.out"
 

@@ -419,7 +419,7 @@ done
 function collapsed-mention-baseline () {
 for fold in $@
 do
-  this_name=collasped-mention-baseline
+  this_name=collapsed-mention-baseline
   mkdir -p ${out_dir}/${this_name} 2>/dev/null
   ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
     ${overall_name}/${this_name}/$fold \
