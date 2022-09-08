@@ -118,22 +118,13 @@ class StaticDialogLogger:
         utterance = None,
         prior_mentions = None,
         plan_mentions = None,
-        plan2_mentions = None,
-        plan3_mentions = None,
         # ROUNTDRIP
         prior_mentions_language = None,
         plan_mentions_language = None,
-        plan2_mentions_language = None,
-        plan3_mentions_language = None,
         prior_plan = None,
         plan_plan = None,
-        plan1_plan = None,
-        plan2_plan = None,
-        plan3_plan = None,
         prior_partner_ref = None,
         plan_partner_ref = None,
-        plan2_partner_ref = None,
-        plan3_partner_ref = None,
         # BEAM
         prior_beam_sents = None,
         prior_beam_ref_res = None,
@@ -147,10 +138,6 @@ class StaticDialogLogger:
         writer_configs_prior = None,
         reader_configs_prior = None,
         label_prior = None,
-        plan_ablate = None,
-        writer_configs_ablate = None,
-        reader_configs_ablate = None,
-        label_ablate = None,
         plan = None,
         writer_configs = None,
         reader_configs = None,
@@ -161,21 +148,13 @@ class StaticDialogLogger:
         self.turn["utterance"] = utterance
         self.turn["prior_mentions"] = prior_mentions
         self.turn["plan_mentions"] = plan_mentions
-        self.turn["plan2_mentions"] = plan2_mentions
-        self.turn["plan3_mentions"] = plan3_mentions
         self.turn["prior_mentions_language"] = prior_mentions_language 
         self.turn["plan_mentions_language"] = plan_mentions_language
-        self.turn["plan2_mentions_language"] = plan2_mentions_language
-        self.turn["plan3_mentions_language"] = plan3_mentions_language
         # ROUNDTRIP
         self.turn["prior_plan"] = prior_plan
         self.turn["plan_plan"] = plan_plan
-        self.turn["plan2_plan"] = plan2_plan
-        self.turn["plan3_plan"] = plan3_plan
         self.turn["prior_partner_ref"] = prior_partner_ref
         self.turn["plan_partner_ref"] = plan_partner_ref
-        self.turn["plan2_partner_ref"] = plan2_partner_ref
-        self.turn["plan3_partner_ref"] = plan3_partner_ref
         # BEAM SEARCH OUTPUT
         self.turn["prior_beam_sents"] = prior_beam_sents
         self.turn["prior_beam_ref_res"] = prior_beam_ref_res
@@ -190,11 +169,6 @@ class StaticDialogLogger:
         self.turn["reader_configs_prior"] = reader_configs_prior
         self.turn["label_prior"] = label_prior
 
-        self.turn["plan_ablate"] = plan_ablate
-        self.turn["writer_configs_ablate"] = writer_configs_ablate
-        self.turn["reader_configs_ablate"] = reader_configs_ablate
-        self.turn["label_ablate"] = label_ablate
-
         self.turn["plan"] = plan
         self.turn["writer_configs"] = writer_configs
         self.turn["reader_configs"] = reader_configs
@@ -207,12 +181,6 @@ class StaticDialogLogger:
         belief,
         configs,
         marginal_belief,
-        belief2,
-        configs2,
-        marginal_belief2,
-        belief3,
-        configs3,
-        marginal_belief3,
         response_utt=None,
         response_label=None,
         response_logits=None,
@@ -222,12 +190,6 @@ class StaticDialogLogger:
         self.turn["belief"] = belief.tolist()
         self.turn["configs"] = configs.tolist()
         self.turn["marginal_belief"] = marginal_belief.tolist()
-        self.turn["belief2"] = belief2.tolist()
-        self.turn["configs2"] = configs2.tolist()
-        self.turn["marginal_belief2"] = marginal_belief2.tolist()
-        self.turn["belief3"] = belief3.tolist()
-        self.turn["configs3"] = configs3.tolist()
-        self.turn["marginal_belief3"] = marginal_belief3.tolist()
         # SIMPLIFYING ASSUMP: ONLY A SINGLE UTT IN RESPONSE
         self.turn["response_utt"] = (
             response_utt.tolist()
@@ -297,20 +259,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             agent.real_ids = real_ids
             agent.agent_id = agent_id
 
-            agent.belief1 = OrAndBelief(num_dots)
-            agent.prior1 = agent.belief1.prior
-
             agent.dots = np.array(real_ids, dtype=int)
-
             # ctx: [x, y, size, color]
-            agent.belief2 = ConfigBelief(num_dots, ctx, absolute=self.args.absolute_bucketing)
-            agent.prior2 = agent.belief2.prior
-
-            start_time = time.perf_counter()
-            agent.belief3 = OrBelief(num_dots, ctx, absolute=self.args.absolute_bucketing)
-            agent.prior3 = agent.belief3.prior
-            end_time = time.perf_counter()
-            print(f"Took {end_time - start_time}s to initialize OrBelief")
 
         device = self.agents[0].state.ctx_h.device
 
@@ -451,42 +401,21 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             else:
                 cs = None
 
-            EdHs1 = writer.belief1.compute_EdHs(writer.prior1)
-            cs1, hs1 = writer.belief1.viz_belief(EdHs1, n=writer.args.next_mention_reranking_k)
-
-            EdHs2 = writer.belief2.compute_EdHs(writer.prior2)
-            cs2, hs2 = writer.belief2.viz_belief(EdHs2, n=writer.args.next_mention_reranking_k)
-
-            start_time = time.perf_counter()
-            EdHs3 = writer.belief3.compute_EdHs(writer.prior3)
-            cs3, hs3 = writer.belief3.viz_belief(EdHs3, n=writer.args.next_mention_reranking_k)
-            end_time = time.perf_counter()
-            print(f"Took {end_time - start_time}s to plan with OrBelief")
-
             # plan feature level labels
             # get the plan resolution sets for prior model
             plan_prior = prior_ref[0].any(0).astype(int)
-            feats_prior = writer.belief3.get_feats(plan_prior)
-            writer_matches_prior = writer.belief3.resolve_utt(*feats_prior)
-            reader_matches_prior = reader.belief3.resolve_utt(*feats_prior)
+            feats_prior = writer.belief.get_feats(plan_prior)
+            writer_matches_prior = writer.belief.resolve_utt(*feats_prior)
+            reader_matches_prior = reader.belief.resolve_utt(*feats_prior)
             writer_configs_prior = writer.dots[writer_matches_prior]
             reader_configs_prior = reader.dots[reader_matches_prior]
             label_prior = label_config_sets(writer_configs_prior, reader_configs_prior)
 
-            # get the plan resolution sets for planning model w/o partner context
-            plan_ablate = cs2[0]
-            feats_ablate = writer.belief2.get_feats(plan_ablate)
-            writer_matches_ablate = writer.belief2.resolve_utt(*feats_ablate)
-            reader_matches_ablate = reader.belief2.resolve_utt(*feats_ablate)
-            writer_configs_ablate = writer.dots[writer_matches_ablate]
-            reader_configs_ablate = reader.dots[reader_matches_ablate]
-            label_ablate = label_config_sets(writer_configs_ablate, reader_configs_ablate)
-
             # get the plan resolution sets for planning model
-            plan = cs3[0]
-            feats = writer.belief3.get_feats(plan)
-            writer_matches = writer.belief3.resolve_utt(*feats)
-            reader_matches = reader.belief3.resolve_utt(*feats)
+            plan = cs[0]
+            feats = writer.belief.get_feats(plan)
+            writer_matches = writer.belief.resolve_utt(*feats)
+            reader_matches = reader.belief.resolve_utt(*feats)
             writer_configs = writer.dots[writer_matches]
             reader_configs = reader.dots[reader_matches]
             label = label_config_sets(writer_configs, reader_configs)
@@ -561,17 +490,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 print(nms)
                 print("mbp next mentions")
                 print(cs)
-                """
-                print("mbp1 next mentions")
-                print(cs1)
-                print("mbp2 next mentions")
-                print(cs2)
-                print("mbp3 next mentions")
-                print(cs3)
-                """
-                #print("next mention candidates[-1]")
-                #print(nm_cands.candidate_dots)
-                #print(nm_cands.candidate_nm_scores)
+
                 print("prior language")
                 print(" ".join(prior_lang))
                 print("prior plan")
@@ -597,22 +516,14 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                         if writer.ref_preds[-1] is not None
                         else None,
                     prior_mentions = nms.tolist() if nms is not None else None,
-                    plan_mentions = cs1.tolist(),
-                    plan2_mentions = cs2.tolist(),
-                    plan3_mentions = cs3.tolist(),
+                    plan_mentions = cs.tolist(),
                     prior_mentions_language = " ".join(prior_lang),
-                    plan_mentions_language = None,
-                    plan2_mentions_language = None,
-                    plan3_mentions_language = " ".join(plan_lang),
+                    plan_mentions_language = " ".join(plan_lang),
                     prior_plan = prior_ref.tolist(),
-                    plan_plan = None,
-                    plan2_plan = None,
-                    plan3_plan = plan_ref.tolist(),
+                    plan_plan = plan_ref.tolist(),
                     prior_partner_ref = prior_partner_ref.tolist()
                         if prior_partner_ref is not None else None,
-                    plan_partner_ref = None,
-                    plan2_partner_ref = None,
-                    plan3_partner_ref = plan_partner_ref.tolist()
+                    plan_partner_ref = plan_partner_ref.tolist()
                         if plan_partner_ref is not None else None,
                     # BEAM SEARCH
                     prior_beam_sents = prior_beam_sents,
@@ -627,10 +538,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     writer_configs_prior = writer_configs_prior.tolist(),
                     reader_configs_prior = reader_configs_prior.tolist(),
                     label_prior = label_prior.value,
-                    plan_ablate = plan_ablate.tolist(),
-                    writer_configs_ablate = writer_configs_ablate.tolist(),
-                    reader_configs_ablate = reader_configs_ablate.tolist(),
-                    label_ablate = label_ablate.value,
                     plan = plan.tolist(),
                     writer_configs = writer_configs.tolist(),
                     reader_configs = reader_configs.tolist(),
@@ -661,11 +568,11 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     #print(reader.ref_preds[-2].any(0)[0].int().tolist())
                     utt = reader.ref_preds[-2].any(0)[0].int().cpu().numpy()
                     label = reader.responses[-1]
-                    if label != 0:
-                        response = 1 if label == 1 else 0
-                        reader.prior1 = reader.belief1.posterior(reader.prior1, utt, response)
-                        reader.prior2 = reader.belief2.posterior(reader.prior2, utt, response)
-                        reader.prior3 = reader.belief3.posterior(reader.prior3, utt, response)
+                    #if label != 0:
+                        #response = 1 if label == 1 else 0
+                        #reader.prior1 = reader.belief1.posterior(reader.prior1, utt, response)
+                        #reader.prior2 = reader.belief2.posterior(reader.prior2, utt, response)
+                        #reader.prior3 = reader.belief3.posterior(reader.prior3, utt, response)
                     utt_str = np.array(reader.dots)[utt.astype(bool)]
                     print("our prev utt")
                     print(utt_str)
@@ -690,15 +597,15 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     )
                 """
 
-                side_info = reader.side_infos[-1]
-                if side_info is not None and side_info.any():
+                #side_info = reader.side_infos[-1]
+                #if side_info is not None and side_info.any():
                 #if UTTS[sentence_ix] is not None:
                     # update belief with unsolicited partner info
                     # if they mention a new dot, we pretend we asked about it
                     # reader.prior is updated in reader.read()
-                    reader.prior1 = reader.belief1.posterior(reader.prior1, side_info, 1)
-                    reader.prior2 = reader.belief2.posterior(reader.prior2, side_info, 1)
-                    reader.prior3 = reader.belief3.posterior(reader.prior3, side_info, 1)
+                    #reader.prior1 = reader.belief1.posterior(reader.prior1, side_info, 1)
+                    #reader.prior2 = reader.belief2.posterior(reader.prior2, side_info, 1)
+                    #reader.prior3 = reader.belief3.posterior(reader.prior3, side_info, 1)
 
                 if isinstance(reader, BeliefAgent):
                     cs, ps = reader.belief.viz_belief(reader.prior, n=5)
@@ -708,32 +615,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     print("marginals")
                     marginals = reader.belief.marginals(reader.prior)
                     print([f"{x:.2f}" for x in marginals])
-
-                cs1, ps1 = reader.belief1.viz_belief(reader.prior1, n=5)
-                marginals1 = reader.belief1.marginals(reader.prior1)
-                cs2, ps2 = reader.belief2.viz_belief(reader.prior2, n=5)
-                marginals2 = reader.belief2.marginals(reader.prior2)
-                cs3, ps3 = reader.belief3.viz_belief(reader.prior3, n=5)
-                marginals3 = reader.belief3.marginals(reader.prior3)
-                """
-                print("posterior1")
-                print(cs1)
-                print(ps1)
-                print("marginals1")
-                print([f"{x:.2f}" for x in marginals1])
-
-                print("posterior2")
-                print(cs2)
-                print(ps2)
-                print("marginals2")
-                print([f"{x:.2f}" for x in marginals2])
-
-                print("posterior3")
-                print(cs3)
-                print(ps3)
-                print("marginals3")
-                print([f"{x:.2f}" for x in marginals3])
-                """
+                else:
+                    ps, cs, marginals = None, None, None
 
                 their_utt = None
                 if reader.partner_ref_preds[-1] is not None:
@@ -747,15 +630,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                         #if sentence_ix < len(SENTENCES)-1 else None,
                     response_language = None,
                     response = response,
-                    belief = ps1,
-                    configs = cs1,
-                    marginal_belief = marginals1,
-                    belief2 = ps2,
-                    configs2 = cs2,
-                    marginal_belief2 = marginals2,
-                    belief3 = ps3,
-                    configs3 = cs3,
-                    marginal_belief3 = marginals3,
+                    belief = ps,
+                    configs = cs,
+                    marginal_belief = marginals,
                     response_utt = their_utt.astype(int)
                         if their_utt is not None
                         else None,

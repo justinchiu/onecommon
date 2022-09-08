@@ -665,8 +665,8 @@ class OrBelief(OrAndBelief):
         absolute = False,
         use_diameter = False,
         use_contiguity = False,
-        num_size_buckets = 3,
-        num_color_buckets = 3,
+        num_size_buckets = 5,
+        num_color_buckets = 5,
     ):
         super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
         self.ctx = np.array(ctx, dtype=float).reshape(num_dots, 4)
