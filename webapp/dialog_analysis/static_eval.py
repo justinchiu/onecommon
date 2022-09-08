@@ -46,6 +46,10 @@ split = "train"
 split = "valid_1"
 if ABSOLUTE:
     split = "valid_1_absolute"
+#split = "valid_1_absolute_or_collapsed"
+split = "valid_1_absolute_cost_collapsed"
+#split = "valid_1_absolute_cost"
+#split = "valid_1_absolute_cost_egocentric_collapsed"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
@@ -93,21 +97,20 @@ for scenario in scenarios:
 
             prior_plan = (np.array(turn["prior_plan"]).any(0)[0]
                 if (turn["prior_plan"] is not None and len(turn["prior_plan"][0]) > 0) else None)
-            plan3_plan = (np.array(turn["plan3_plan"]).any(0)[0]
-                if turn["plan3_plan"] is not None else None)
+            plan_plan = (np.array(turn["plan_plan"]).any(0)[0]
+                if turn["plan_plan"] is not None else None)
             prior_partner_ref = (np.array(turn["prior_partner_ref"]).any(0)[0]
                 if turn["prior_partner_ref"] is not None else None)
-            plan3_partner_ref = (np.array(turn["plan3_partner_ref"]).any(0)[0]
-                if turn["plan3_partner_ref"] is not None else None)
-
+            plan_partner_ref = (np.array(turn["plan_partner_ref"]).any(0)[0]
+                if turn["plan_partner_ref"] is not None else None)
 
             prior_dots = set(our_dots[prior_plan]) if prior_plan is not None else None
-            plan_dots = set(our_dots[plan3_plan]) if plan3_plan is not None else None
+            plan_dots = set(our_dots[plan_plan]) if plan_plan is not None else None
             prior_partner_dots = set(their_dots[prior_partner_ref]) if prior_partner_ref is not None else None
-            plan_partner_dots = set(their_dots[plan3_partner_ref]) if plan3_partner_ref is not None else None
+            plan_partner_dots = set(their_dots[plan_partner_ref]) if plan_partner_ref is not None else None
 
             prior_lang = turn["prior_mentions_language"]
-            plan_lang = turn["plan3_mentions_language"]
+            plan_lang = turn["plan_mentions_language"]
 
             if prior_dots is not None and prior_plan.sum() > 0:
                 a,u,s = classify_sets(prior_dots, prior_partner_dots)
@@ -118,7 +121,7 @@ for scenario in scenarios:
             else:
                 prior_zeros += 1
 
-            if plan_dots is not None and plan3_plan.sum() > 0:
+            if plan_dots is not None and plan_plan.sum() > 0:
                 a,u,s = classify_sets(plan_dots, plan_partner_dots)
                 plan_ambiguous += a
                 plan_unresolvable += u
