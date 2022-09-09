@@ -140,14 +140,9 @@ def process_dialogue(scenario_id, dialogue):
             visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
         else:
             st.write("No prior next mentions")
-    elif display == "plan" or display == "plan2" or display == "plan3":
+    elif display == "plan":
         st.header("Plan next mentions")
-        if display == "plan":
-            plan_mentions = turn["plan_mentions"]
-        elif display == "plan2":
-            plan_mentions = turn["plan2_mentions"]
-        elif display == "plan3":
-            plan_mentions = turn["plan3_mentions"]
+        plan_mentions = turn["plan_mentions"]
         if plan_mentions is not None:
             plan_idx = st.radio("Plan number", np.arange(len(plan_mentions)))
             if turn["writer_id"] == 0:
@@ -159,7 +154,7 @@ def process_dialogue(scenario_id, dialogue):
             visualize_board(b0, b1, mention0, mention1, intersect0, intersect1)
         else:
             st.write("No plan mentions")
-    elif display == "posterior" or display == "posterior2" or display == "posterior3":
+    elif display == "posterior":
         st.header(f"Input and belief posterior for agent {turn['reader_id']}")    
         st.write(f"Utterance from agent {turn['writer_id']}: {turn['utterance_language']}")
         if turn["reader_id"] == 0:
@@ -180,26 +175,18 @@ def process_dialogue(scenario_id, dialogue):
                 [x for i,x in enumerate(b1) if turn["response_utt"][i] == 1]
                 if turn["response_utt"] is not None else None
             )
-        if display == "posterior":
-            marginals = turn["marginal_belief"]
-        elif display == "posterior2":
-            marginals = turn["marginal_belief2"]
-        elif display == "posterior3":
-            marginals = turn["marginal_belief3"]
+
+        marginals = turn["marginal_belief"]
+
         visualize_board(
             b0, b1, mention0, mention1, intersect0, intersect1,
             left_beliefs=marginals if turn["reader_id"] == 0 else None,
             right_beliefs=marginals if turn["reader_id"] == 1 else None,
         )
-        if display == "posterior":
-            belief = turn["belief"]
-            configs = turn["configs"]
-        elif display == "posterior2":
-            belief = turn["belief2"]
-            configs = turn["configs2"]
-        elif display == "posterior3":
-            belief = turn["belief3"]
-            configs = turn["configs3"]
+
+        belief = turn["belief"]
+        configs = turn["configs"]
+
         logits = ", ".join([f"{x:.2f}" for x in turn["response_logits"]])
         st.write(f"Response: {turn['response_label']}, logits: [{logits}]")
         visualize_beliefs(
@@ -210,7 +197,7 @@ def process_dialogue(scenario_id, dialogue):
     elif display == "priorbeam" or display == "planbeam":
         st.write(f"### BEAM SEARCH for agent {turn['writer_id']}")
         mentions = turn["plan_beam_seed"]
-        resolved = turn["prior_partner_ref" if display == "priorbeam" else "plan3_partner_ref"]
+        resolved = turn["prior_partner_ref" if display == "priorbeam" else "plan_partner_ref"]
         resolved = np.array(resolved).any(0)[0]
         if display == "priorbeam":
             mentions = np.array(turn["prior_plan"]).any(0)[0]
@@ -242,7 +229,7 @@ def process_dialogue(scenario_id, dialogue):
 
         st.write("### chosen utterance")
         st.write(turn["prior_mentions_language"
-            if display == "priorbeam" else "plan3_mentions_language"])
+            if display == "priorbeam" else "plan_mentions_language"])
         st.write("### beam output")
         sents = turn["prior_beam_sents" if display == "priorbeam" else "plan_beam_sents"]
         ref_res = turn["prior_beam_ref_res" if display == "priorbeam" else "plan_beam_ref_res"]
@@ -253,6 +240,7 @@ def process_dialogue(scenario_id, dialogue):
 
 split = "train"
 split = "valid_1"
+split = "valid_1_absolute_cost_collapsed"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 

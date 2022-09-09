@@ -252,6 +252,9 @@ class RegionNode:
         return desc
 
     def inner_desc(self):
+        size_map = size_map3 if self.sc_buckets == 3 else size_map5
+        color_map = color_map3 if self.sc_buckets == 3 else color_map5
+
         non_empty_regions, children, num_dots = list(zip(*[
             (
                 region,
