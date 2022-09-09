@@ -25,7 +25,7 @@ ABSOLUTE = True
 def classify_sets(xs, ys):
     # with MAP ref resolution, ambiguous = incorrect
     ambiguous = xs != ys
-    unresolvable = len(ys) == 0
+    unresolvable = ys is None or len(ys) == 0
     specific = xs == ys
     return ambiguous, unresolvable, specific
 
@@ -46,8 +46,8 @@ split = "train"
 split = "valid_1"
 if ABSOLUTE:
     split = "valid_1_absolute"
-#split = "valid_1_absolute_or_collapsed"
-split = "valid_1_absolute_cost_collapsed"
+split = "valid_1_absolute_or_collapsed"
+#split = "valid_1_absolute_cost_collapsed"
 #split = "valid_1_absolute_cost"
 #split = "valid_1_absolute_cost_egocentric_collapsed"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
@@ -60,7 +60,7 @@ plan_num_turns = 0
 prior_zeros, plan_zeros = 0,0
 
 labels_prior = {x: Counter() for x in range(4,7)}
-labels_ablate = {x: Counter() for x in range(4,7)}
+#labels_ablate = {x: Counter() for x in range(4,7)}
 labels = {x: Counter() for x in range(4,7)}
 
 num_scenarios = Counter()
@@ -88,7 +88,6 @@ for scenario in scenarios:
             # PLAN FEATURE LABELS
             if "label_prior" in turn:
                 labels_prior[intersection_size][turn["label_prior"]] += 1
-                labels_ablate[intersection_size][turn["label_ablate"]] += 1
                 labels[intersection_size][turn["label"]] += 1
             # / PLAN FEATURE LABELS
 
@@ -150,8 +149,8 @@ print()
 print("PLAN FEATURE EVALUATION")
 print("Prior")
 print_labels(labels_prior)
-print("Ablate")
-print_labels(labels_ablate)
+#print("Ablate")
+#print_labels(labels_ablate)
 print("Label")
 print_labels(labels)
 
