@@ -5,7 +5,7 @@ from pathlib import Path
 
 from functools import partial
 
-from collections import Counter
+from collections import Counter, defaultdict
 
 import random
 import json
@@ -63,6 +63,8 @@ labels_prior = {x: Counter() for x in range(4,7)}
 #labels_ablate = {x: Counter() for x in range(4,7)}
 labels = {x: Counter() for x in range(4,7)}
 
+mistakes = defaultdict(list)
+
 num_scenarios = Counter()
 num_turns = 0
 
@@ -81,7 +83,7 @@ for scenario in scenarios:
         num_scenarios[intersection_size] += 1
 
 
-        for turn in turns:
+        for turn_i, turn in enumerate(turns):
             num_turns += 1
             agent_id = turn["writer_id"]
 
@@ -89,6 +91,8 @@ for scenario in scenarios:
             if "label_prior" in turn:
                 labels_prior[intersection_size][turn["label_prior"]] += 1
                 labels[intersection_size][turn["label"]] += 1
+                if turn["label"] == 0:
+                    mistakes[scenario].append(turn_i)
             # / PLAN FEATURE LABELS
 
             our_dots = dot_ids[0 if agent_id == 0 else 1]
@@ -158,3 +162,6 @@ print("Num scenarios by intersection size")
 print(num_scenarios)
 
 print(f"Num turns: {num_turns}")
+
+print(mistakes)
+import pdb; pdb.set_trace()

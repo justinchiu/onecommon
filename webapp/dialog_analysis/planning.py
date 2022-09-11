@@ -115,16 +115,16 @@ def process_dialogue(scenario_id, dialogue):
 
     turn = dialogue[turn]
 
-    """
+    #"""
     display = st.radio("Display", (
         "prior",
-        "plan", "plan2", "plan3",
-        "posterior", "posterior2", "posterior3",
+        "plan", #"plan2", "plan3",
+        "posterior", #"posterior2", "posterior3",
         "priorbeam", "planbeam",
     ))
-    """
+    #"""
     # FOR TEMPLATE EVAL
-    display = "planbeam"
+    #display = "planbeam"
 
     if display == "prior":
         st.header("Prior next mentions")
@@ -238,15 +238,23 @@ def process_dialogue(scenario_id, dialogue):
             st.write(s)
             st.write(f"Ref res {r:.2f} LM {l:.2f}")
 
+splits = [
+    "valid_1_absolute_or_collapsed",
+    "valid_1_absolute_cost_collapsed",
+    "valid_1_absolute_cost_egocentric_collapsed",
+]
+
 split = "train"
 split = "valid_1"
 split = "valid_1_absolute_cost_collapsed"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
+analysis_paths = [Path("../../aaai2020/experiments/analysis_log") / split for split in splits]
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
-idx = st.number_input("Scenario number", 0, len(scenarios))
+#idx = st.number_input("Scenario number", 0, len(scenarios))
 #idx = 1
-scenario_id = scenarios[idx]
+#scenario_id = scenarios[idx]
+scenario_id = st.text_input("Scenario ID", "S_FDwS6MGbQ8p14RRU")
 
 filepath = (analysis_path/ scenario_id).with_suffix(".json")
 
