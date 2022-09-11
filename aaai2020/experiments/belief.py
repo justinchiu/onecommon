@@ -25,26 +25,37 @@ class Label(Enum):
 
 
 def label_config_sets(writer_configs, reader_configs):
+    """
+    The configs passed in give the dot ids of the plans.
+    The writer_configs give which dots the writer intended to refer to,
+    while the reader_configs give the set of resolved reader dots.
+    """
     # writer_configs: num_writer_configs x utt_size
     # reader_configs: num_reader_configs x utt_size
     num_writer_configs = writer_configs.shape[0]
     num_reader_configs = reader_configs.shape[0]
 
-    if num_writer_configs > 0 and num_reader_configs == 0:
+    if (
+        # reader did not resolve to any dots
+        num_writer_configs > 0 and num_reader_configs == 0
+    ):
         return Label.UNRESOLVABLE
     elif (
+        # all resolved dots were intended
         num_writer_configs > 0
         and num_reader_configs > 0
         and (writer_configs[:,None] == reader_configs[None]).all(-1).any()
     ):
         return Label.COARSE
     elif (
+        # configs are exactly identical
         num_writer_configs == 0
         and num_reader_configs == 0
         and (writer_configs == reader_configs).all()
     ):
         return Label.SPECIFIC
     elif (
+        # not all resolved dots are intended
         num_writer_configs > 0
         and num_reader_configs > 0
         and not (writer_configs[:,None] == reader_configs[None]).all(-1).any()
@@ -56,8 +67,8 @@ def label_config_sets(writer_configs, reader_configs):
 def process_ctx(
     ctx,
     absolute=False,
-    num_size_buckets = 3,
-    num_color_buckets = 3,
+    num_size_buckets = 5,
+    num_color_buckets = 5,
 ):
     # ctx: [x, y, size, color]
     eps = 1e-3

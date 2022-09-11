@@ -46,8 +46,8 @@ split = "train"
 split = "valid_1"
 if ABSOLUTE:
     split = "valid_1_absolute"
-split = "valid_1_absolute_or_collapsed"
-#split = "valid_1_absolute_cost_collapsed"
+#split = "valid_1_absolute_or_collapsed"
+split = "valid_1_absolute_cost_collapsed"
 #split = "valid_1_absolute_cost"
 #split = "valid_1_absolute_cost_egocentric_collapsed"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
