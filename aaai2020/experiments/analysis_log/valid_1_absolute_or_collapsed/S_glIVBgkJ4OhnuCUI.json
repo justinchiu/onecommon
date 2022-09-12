@@ -1209,7 +1209,7 @@
             ]
         ],
         "label": 2,
-        "label_prior": 1,
+        "label_prior": 3,
         "marginal_belief": [
             0.4999517415214933,
             0.6799274192483258,
@@ -3108,7 +3108,7 @@
                 0
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 3,
         "marginal_belief": [
             0.5,

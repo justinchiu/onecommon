@@ -1208,7 +1208,7 @@
                 0
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 2,
         "marginal_belief": [
             0.7630699162863868,
@@ -4989,7 +4989,7 @@
                 1
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 3,
         "marginal_belief": [
             0.8233487977356536,
@@ -8747,7 +8747,7 @@
                 1
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 3,
         "marginal_belief": [
             0.9013054202115346,
@@ -10638,7 +10638,7 @@
                 1
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 3,
         "marginal_belief": [
             0.875006085519399,
@@ -12529,7 +12529,7 @@
                 1
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 3,
         "marginal_belief": [
             0.9142841135033136,
