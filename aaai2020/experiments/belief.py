@@ -41,19 +41,19 @@ def label_config_sets(writer_configs, reader_configs):
     ):
         return Label.UNRESOLVABLE
     elif (
+        # configs are exactly identical
+        (num_writer_configs == 0
+            and num_reader_configs == 0)
+        or (writer_configs == reader_configs).all()
+    ):
+        return Label.SPECIFIC
+    elif (
         # all resolved dots were intended
         num_writer_configs > 0
         and num_reader_configs > 0
         and (writer_configs[:,None] == reader_configs[None]).all(-1).any()
     ):
         return Label.COARSE
-    elif (
-        # configs are exactly identical
-        num_writer_configs == 0
-        and num_reader_configs == 0
-        and (writer_configs == reader_configs).all()
-    ):
-        return Label.SPECIFIC
     elif (
         # not all resolved dots are intended
         num_writer_configs > 0

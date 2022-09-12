@@ -26,7 +26,7 @@ class CostBelief(OrBelief):
         self.use_spatial = use_spatial
         self.use_temporal = use_temporal
 
-    def spatial_deny(self, x, ctx):
+    def spatial_deny_old(self, x, ctx):
         #return .001
         if x.sum() <= 1:
             return 0.001
@@ -37,7 +37,7 @@ class CostBelief(OrBelief):
         xy_pairs = xy[pairs].reshape((self.num_dots, self.num_dots, 2, 2))
         dist_pairs = np.linalg.norm(xy_pairs[:,:,0] - xy_pairs[:,:,1], axis=-1)
         idxs = dist_pairs.argsort()
-        ranks = idxs.argsort()+1
+        ranks = idxs.argsort()
         #ranks = np.empty_like(idxs)
         #ranks[idxs] = np.arange(self.num_dots)
 
@@ -52,7 +52,7 @@ class CostBelief(OrBelief):
         # so bottom of range should start at 7 if there is only one dot,
         # 6 if there are two, etc
         # top of range = 7, since 7 dots
-        denominator = np.arange(self.num_dots - len(dots)+2, self.num_dots+1).sum() + 1
+        denominator = np.arange(self.num_dots - len(dots)+1, self.num_dots).sum()
         """
         print("dots", dots)
         print("dot_pair_ranks", dot_pair_ranks)
@@ -65,6 +65,81 @@ class CostBelief(OrBelief):
         # linear scores seems better than log linear
         #import pdb; pdb.set_trace()
         #return np.exp(score - denominator).clip(0, 1)
+        
+    def spatial_deny(self, x, ctx):
+        #return .001
+        if x.sum() <= 1:
+            return 0.001
+
+        rg = np.arange(self.num_dots)
+        xy = self.xy
+        pairs = np.array(list(itertools.product(rg, rg)))
+        xy_pairs = xy[pairs].reshape((self.num_dots, self.num_dots, 2, 2))
+        dist_pairs = np.linalg.norm(xy_pairs[:,:,0] - xy_pairs[:,:,1], axis=-1)
+        idxs = dist_pairs.argsort()
+        ranks = idxs.argsort()
+        #ranks = np.empty_like(idxs)
+        #ranks[idxs] = np.arange(self.num_dots)
+
+        dots = x.nonzero()[0]
+
+        dot_pair_ranks = ranks[dots[:,None], dots]
+        scores = dot_pair_ranks.sum(-1)
+        score = scores.min()
+
+        # rank will always have 1 b/c dot is closest to itself, then other stuff
+        # so highest rank should be other stuff = far away + 1
+        # so bottom of range should start at 7 if there is only one dot,
+        # 6 if there are two, etc
+        # top of range = 7, since 7 dots
+        denominator = np.arange(self.num_dots - len(dots)+1, self.num_dots).sum()
+        """
+        print("dots", dots)
+        print("dot_pair_ranks", dot_pair_ranks)
+        print("score", score)
+        print("den", denominator)
+        print("s/d", score / denominator)
+        print("exp(s - d)", np.exp(score - denominator))
+        """
+
+        old_score = (score / denominator).clip(0, 1)
+        # linear scores seems better than log linear
+        #import pdb; pdb.set_trace()
+        #return np.exp(score - denominator).clip(0, 1)
+
+        def score_rec(dots, remaining_dots, score):
+            if len(remaining_dots) == 0:
+                return score
+            """
+            dists = dist_pairs[
+                np.array(dots)[:,None],
+                np.delete(rg, dots),
+            ]
+            idxs = dists.argsort()
+            ranks = idxs.argsort()
+            """
+
+            dot_dists = dist_pairs[
+                np.array(dots)[:,None],
+                remaining_dots,
+            ]
+            closest_dots = remaining_dots[dot_dists.argmin(-1)]
+            best_ranks = ranks[np.array(dots), closest_dots]
+            best_rank = best_ranks.min() - len(dots)
+            best_dot = closest_dots[best_ranks.argmin()]
+            idx = np.where(remaining_dots == best_dot)[0].item()
+            return score_rec(dots + [idx], np.delete(remaining_dots, idx), score + best_rank)
+
+        scores = []
+        for i, dot in enumerate(dots):
+            remaining_dots = np.delete(dots, i)
+            score = score_rec([dot], remaining_dots, 0)
+            scores.append(score)
+
+        #import pdb; pdb.set_trace()
+        return min(scores) / denominator
+
+
 
     def temporal_confirm(self, x, history):
         tau = 3

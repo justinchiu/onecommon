@@ -163,5 +163,6 @@ print(num_scenarios)
 
 print(f"Num turns: {num_turns}")
 
-print(mistakes)
-import pdb; pdb.set_trace()
+print("MISTAKES")
+for scenario, turns in mistakes.items():
+    print(scenario, turns)
