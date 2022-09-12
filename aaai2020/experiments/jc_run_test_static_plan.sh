@@ -76,6 +76,7 @@ S_MMCMJd56CCUER6gV "
 
 #rerank_args4="--must_contain S_pqC0O80Ojf5BKLyV"
 #rerank_args4="--must_contain S_RWYCZVdTDVyxpjWr"
+#rerank_args4="--must_contain S_a5VVGxsBgrYKSijz"
 rerank_args4=""
 
 split=train
@@ -86,9 +87,10 @@ context_file="${split}_context_${seed}"
 
 #logdir="analysis_log/${split}_${seed}_absolute_${belief}"
 logdir="analysis_log/${split}_${seed}_absolute_${belief}_${prediction_type}"
+#logdir="analysis_log/DELETE_${split}_${seed}_absolute_${belief}_${prediction_type}"
 
-#name="STATIC_PLAN_${split}_${seed}_absolute_${belief}"
-name="STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}"
+name="STATIC_PLAN_${split}_${seed}_absolute_${belief}"
+#name="DELETE_STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}"
 log_file="analysis_log/${name}.log"
 out_file="analysis_log/${name}.out"
 
