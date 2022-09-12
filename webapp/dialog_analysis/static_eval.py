@@ -48,7 +48,6 @@ if ABSOLUTE:
     split = "valid_1_absolute"
 #split = "valid_1_absolute_or_collapsed"
 split = "valid_1_absolute_cost_collapsed"
-#split = "valid_1_absolute_cost"
 #split = "valid_1_absolute_cost_egocentric_collapsed"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
