@@ -25,10 +25,10 @@ def rollout(ctx, ids, belief, response_strategy):
     print(f"Running {type(belief)} with {response_strategy}")
 
     belief_type = None
-    if isinstance(belief, CostBelief):
-        belief_type = f"CostBelief-spat{belief.use_spatial}-temp{belief.use_temporal}"
     if isinstance(belief, EgoCostBelief):
         belief_type = f"EgoCostBelief-spat{belief.use_spatial}-temp{belief.use_temporal}"
+    elif isinstance(belief, CostBelief):
+        belief_type = f"CostBelief-spat{belief.use_spatial}-temp{belief.use_temporal}"
     elif isinstance(belief, OrBelief):
         belief_type = f"OrBelief"
     else:
@@ -106,7 +106,7 @@ def main():
     ctx[:,1] = -ctx[:,1]
 
     beliefs = [
-        CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
+        #CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
         CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False),
         EgoCostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False),
         OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
