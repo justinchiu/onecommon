@@ -4992,7 +4992,7 @@
             ]
         ],
         "label": 2,
-        "label_prior": 1,
+        "label_prior": 3,
         "marginal_belief": [
             0.9850450461319467,
             0.4987038364047802,

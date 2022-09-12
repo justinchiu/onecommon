@@ -44,7 +44,10 @@ def label_config_sets(writer_configs, reader_configs):
         # configs are exactly identical
         (num_writer_configs == 0
             and num_reader_configs == 0)
-        or (writer_configs == reader_configs).all()
+        or (
+            writer_configs.shape == reader_configs.shape
+            and (writer_configs == reader_configs).all()
+        )
     ):
         return Label.SPECIFIC
     elif (
