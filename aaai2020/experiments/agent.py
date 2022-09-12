@@ -26,15 +26,6 @@ from models.rnn_reference_model import State, NextMentionLatents
 from engines.rnn_reference_engine import make_can_confirm_single
 from models.ctx_encoder import pairwise_differences
 
-# POLICY BLOCK
-#import pomdp_py
-#from pomdp_py.utils import TreeDebugger
-#from mab.beta_bernoulli.domain.action import Ask, Select
-#from mab.beta_bernoulli.domain.observation import ProductObservation
-#from mab.beta_bernoulli.dialogue import take_turn, plan
-#from mab.beta_bernoulli.problem import RankingAndSelectionProblem, belief_update
-# / POLICY BLOCK
-
 GenerationOutput = namedtuple("GenerationOutput", [
     "dots_mentioned_per_ref",
     "num_markables",
@@ -99,12 +90,6 @@ class RnnAgent(Agent):
         parser.add_argument('--reranking_confidence_type',
                             choices=['first_above_threshold', 'keep_best'],
                             default='first_above_threshold')
-        # POLICY ARGS
-        #parser.add_argument(
-            #'--policy',
-            #choices=['rnn', 'beta_bernoulli'],
-            #default='rnn',
-        #)
         # MBP
         parser.add_argument('--DBG_GEN', action='store_true')
         parser.add_argument('--DBG_PLAN', default="", type=str,
@@ -156,36 +141,6 @@ class RnnAgent(Agent):
         else:
             self.model.eval()
         # print("language_rerank: {}".format(self.args.language_rerank))
-        #
-        #
-        # POLICY BLOCK
-        #self.policy = args.policy
-        #if self.name == "Alice":
-        #if True:
-        #if False:
-            #self.policy = "beta_bernoulli" # JUST FOR DEBUGGING
-
-            # random fake ground truth vector here
-            #dots = np.zeros(7, dtype=np.bool)
-            #dots[:4] = True
-            # problem is mostly a datastructure for holding the agent
-            #self.problem = RankingAndSelectionProblem(
-                #dot_vector = dots,
-                #max_turns = 20,
-                #belief_rep = "particles",
-                #num_bins=2,
-                #num_particles = 0,
-                #enumerate_belief = True,
-            #)
-            #self.planner = planner = pomdp_py.POMCP(
-                #max_depth = 20, # need to change
-                #discount_factor = 1,
-                #num_sims = 10000,
-                #exploration_const = 100,
-                #rollout_policy = problems[0].agent.policy_model, # need to change per agent?
-                #num_rollouts=1,
-            #)
-        # / POLICY BLOCK
 
     def _encode(self, inpt, dictionary):
         encoded = torch.Tensor(dictionary.w2i(inpt)).long().unsqueeze(1)
@@ -233,13 +188,6 @@ class RnnAgent(Agent):
         self.is_selection_outs = [self.model.is_selection_prediction(self.state)]
         self.sel_outs = []
         self.extras = []
-
-        # POLICY BLOCK
-        #if self.policy == "beta_bernoulli":
-            # reset tree and history
-            #self.actions = []
-            #self.problem.agent.reset_tree_and_history()
-        # / POLICY BLOCK
 
     def feed_partner_context(self, partner_context):
         pass
@@ -406,73 +354,6 @@ class RnnAgent(Agent):
 
         if self.model.args.partner_reference_prediction and partner_ref_inpt is not None and partner_num_markables is not None:
             self.predict_partner_referents(partner_ref_inpt, partner_num_markables)
-
-            # POLICY BLOCK
-            #if self.policy == "beta_bernoulli":
-                #agent = self.problem.agent
-                # JC: are dot mentions found in here?
-                #print(self.partner_ref_preds)
-                #last_partner_reference = self.partner_ref_preds[-1].cpu().numpy()[:,0]
-                # is the second dimension batch?
-                #print(f"{self.name} reading")
-                #print(last_partner_reference)
-                #if not last_partner_reference.any() and self.actions and isinstance(self.actions[-1], Ask):
-                    #response = ProductObservation({id: 0 for id in range(7)})
-                    #d0 = TreeDebugger(agent.tree)
-                    #print(d0)
-                    #print(self.actions[-1])
-                    #belief_update(
-                        #agent, self.actions[-1], response,
-                        #self.problem.env.state.object_states[agent.id],
-                        #self.problem.env.state.object_states[agent.countdown_id],
-                        #self.planner,
-                    #)
-                    #dd = TreeDebugger(agent.tree)
-                    #print(dd)
-                    #import pdb; pdb.set_trace()
-                #else:
-                    # PARTICULAR TO BETA-BERNOULLI
-                    #merged_ref = []
-                    #for idx in range(last_partner_reference.shape[0]):
-                        #ref = last_partner_reference[idx]
-                        # specificity requirement
-                        #if ref.any() and ref.sum() <= 3:
-                            #merged_ref.append(ref)
-                    #if merged_ref:
-                        #if not hasattr(agent, "tree") or agent.tree is None:
-                            # need to plan to initialize tree
-                            #plan(self.planner, self.problem, steps_left = 20 - self.timesteps)
-                        #merged_ref = np.vstack(merged_ref).any(0)
-                        #d0 = TreeDebugger(agent.tree)
-                        #print(d0)
-                        #for idx in merged_ref.nonzero()[0]:
-                            # if they mentioned anything you have, do a belief update
-                            # as if you asked about it
-                            #array = np.zeros(7, dtype=np.int)
-                            #array[idx.item()] = 1
-                            #array[idx] = 1
-                            #action = Ask(array)
-                            #response = ProductObservation({id: array[id] for id in range(7)})
-                            # check if unexpanded
-                            #if agent.tree[action][response] is None:
-                                #for _ in range(10):
-                                    #self.planner.force_expansion(action, response)
-                            #next_node = agent.tree[action][response]
-                            # check if need particle rejuvenation
-                            #num_particles = len(next_node.belief.particles)
-                            #if num_particles == 0:
-                                #for _ in range(10):
-                                    #self.planner.force_expansion(action, response)
-                            #belief_update(
-                                #agent, action, response,
-                                #self.problem.env.state.object_states[agent.id],
-                                #self.problem.env.state.object_states[agent.countdown_id],
-                                #self.planner,
-                            #)
-                            #dd = TreeDebugger(agent.tree)
-                            #print(dd)
-                            #import pdb; pdb.set_trace()
-            # / POLICY BLOCK
         else:
             self.partner_ref_outs.append(None)
             self.partner_ref_preds.append(None)
@@ -664,28 +545,6 @@ class RnnAgent(Agent):
                     t.transpose(0, 1) if t is not None else None
                     for t in nm_candidates
                 ] if nm_candidates is not None else [None]
-
-                #if self.policy == "beta_bernoulli":
-                    # POLICY BLOCK
-                    # JC: INSERT POLICY OUTPUT HERE, add another branch and force mentions
-                    # that way we dont have to run prediction again...
-
-                    #action = plan(self.planner, self.problem, steps_left = 20 - self.timesteps)
-                    #print(action)
-                    # TODO: SWITCH ON ACTION = SELECT
-                    # OVERWRITE
-                    #if isinstance(action, Ask):
-                        #self.actions.append(action)
-                        #dots_mentioned_per_ref_candidates = [
-                            #torch.tensor(action.val, dtype=torch.int64).reshape((1, 1, 7))
-                        #]
-                    #elif isinstance(action, Select):
-                        # TODO: FORCE SELECTION
-                        #self.actions.append(action)
-                        #z = torch.zeros(7, dtype=torch.int64).reshape((1, 1, 7))
-                        #z[0,0,action.val] = 1
-                        #dots_mentioned_per_ref_candidates = [z]
-                    # / POLICY BLOCK
 
         best_generation_output = None
         best_generation_score = None
