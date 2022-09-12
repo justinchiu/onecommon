@@ -66,6 +66,19 @@ def test_cog_belief():
     EdHs = belief.compute_EdHs(prior)
     cs, hs = belief.viz_belief(EdHs, 8)
     print(cs)
+
+    utt = np.array([1,1,0,0,0,0,0])
+    print(belief.spatial_deny(utt, context))
+    utt = np.array([1,0,1,0,0,0,0])
+    print(belief.spatial_deny(utt, context))
+    utt = np.array([1,0,0,1,0,0,0])
+    print(belief.spatial_deny(utt, context))
+    utt = np.array([1,0,0,0,1,0,0])
+    print(belief.spatial_deny(utt, context))
+
+    print("4dot")
+    utt = np.array([0,1,1,0,0,1,1])
+    print(belief.spatial_deny(utt, context))
     import pdb; pdb.set_trace()
 
 

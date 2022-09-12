@@ -110,25 +110,29 @@ class CostBelief(OrBelief):
         def score_rec(dots, remaining_dots, score):
             if len(remaining_dots) == 0:
                 return score
-            """
-            dists = dist_pairs[
+            remainder = np.delete(rg, dots)
+            trunc_dists = dist_pairs[
                 np.array(dots)[:,None],
-                np.delete(rg, dots),
+                remainder,
             ]
-            idxs = dists.argsort()
-            ranks = idxs.argsort()
-            """
+            trunc_idxs = trunc_dists.argsort()
+            trunc_ranks = trunc_idxs.argsort()
 
             dot_dists = dist_pairs[
                 np.array(dots)[:,None],
                 remaining_dots,
             ]
             closest_dots = remaining_dots[dot_dists.argmin(-1)]
-            best_ranks = ranks[np.array(dots), closest_dots]
-            best_rank = best_ranks.min() - len(dots)
+            #best_ranks = ranks[np.array(dots), closest_dots]
+            col, row = np.where(remainder[:,None] == closest_dots)
+            best_ranks = trunc_ranks[row, col]
+            best_rank = best_ranks.min()
+
+            #if len(dots) + len(remaining_dots) > 3 and best_rank < len(dots):
+                #import pdb; pdb.set_trace()
             best_dot = closest_dots[best_ranks.argmin()]
             idx = np.where(remaining_dots == best_dot)[0].item()
-            return score_rec(dots + [idx], np.delete(remaining_dots, idx), score + best_rank)
+            return score_rec(dots + [best_dot], np.delete(remaining_dots, idx), score + best_rank)
 
         scores = []
         for i, dot in enumerate(dots):
@@ -137,7 +141,7 @@ class CostBelief(OrBelief):
             scores.append(score)
 
         #import pdb; pdb.set_trace()
-        return min(scores) / denominator
+        return (min(scores) / denominator).clip(0, 1)
 
 
 
@@ -291,11 +295,11 @@ if __name__ == "__main__":
         mEdHs = belief.compute_marginal_EdHs(prior).max(-1)
         # looks like the marginal posterior wants to improve the probability
         # of one dot by asking about ALL OTHERS
-        mps = belief.compute_marginal_posteriors(prior)
+        #mps = belief.compute_marginal_posteriors(prior)
 
-        costs = belief.compute_processing_costs(new_weight, distance_weight)
+        #costs = belief.compute_processing_costs(new_weight, distance_weight)
         #costs = costs / 25 / 7
-        costs = costs / belief.num_dots / 2
+        #costs = costs / belief.num_dots / 2
         #utt = belief.configs[(mEdHs + costs).argmax()]
         #utt = belief.configs[(EdHs + costs).argmax()]
         utt = belief.configs[EdHs.argmax()]
@@ -338,7 +342,7 @@ if __name__ == "__main__":
 
         #import pdb; pdb.set_trace()
     # automate logging based on isinstance(belief, CostBelief)
-    plt.show()
+    #plt.show()
     #plt.savefig("dbg_plots/all_yes.png")
     #plt.savefig("dbg_plots/all_yes_baseline.png")
     #plt.savefig("dbg_plots/all_no.png")
