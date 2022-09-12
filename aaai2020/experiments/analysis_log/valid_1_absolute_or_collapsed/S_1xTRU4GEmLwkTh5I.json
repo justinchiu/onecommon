@@ -1208,8 +1208,8 @@
                 0
             ]
         ],
-        "label": 1,
-        "label_prior": 1,
+        "label": 3,
+        "label_prior": 3,
         "marginal_belief": [
             0.47752808988764056,
             0.47752808988764056,
@@ -3105,7 +3105,7 @@
                 0
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 3,
         "marginal_belief": [
             0.4806949806949809,
@@ -4997,7 +4997,7 @@
             ]
         ],
         "label": 2,
-        "label_prior": 1,
+        "label_prior": 3,
         "marginal_belief": [
             0.4673811270993131,
             0.4673811270993131,
@@ -6888,7 +6888,7 @@
                 1
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 3,
         "marginal_belief": [
             0.492905405405405,
@@ -10669,7 +10669,7 @@
                 1
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 3,
         "marginal_belief": [
             0.492905405405405,
@@ -12559,7 +12559,7 @@
             ]
         ],
         "label": 2,
-        "label_prior": 1,
+        "label_prior": 3,
         "marginal_belief": [
             0.5943801198444231,
             0.3926852210267329,
@@ -14451,7 +14451,7 @@
                 1
             ]
         ],
-        "label": 1,
+        "label": 3,
         "label_prior": 3,
         "marginal_belief": [
             0.4713410894560749,
