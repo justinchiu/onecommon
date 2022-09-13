@@ -79,7 +79,6 @@ def test_cog_belief():
     print("4dot")
     utt = np.array([0,1,1,0,0,1,1])
     print(belief.spatial_deny(utt, context))
-    import pdb; pdb.set_trace()
 
 
 if __name__ == "__main__":
