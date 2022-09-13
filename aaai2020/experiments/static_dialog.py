@@ -142,6 +142,9 @@ class StaticDialogLogger:
         writer_configs = None,
         reader_configs = None,
         label = None,
+        # PLAN SCORING,
+        plan_score = None,
+        prior_score = None,
     ):
         self.turn["all_configs"] = configs
         self.turn["utterance_language"] = utterance_language
@@ -173,6 +176,9 @@ class StaticDialogLogger:
         self.turn["writer_configs"] = writer_configs
         self.turn["reader_configs"] = reader_configs
         self.turn["label"] = label
+        # PLAN SCORING
+        self.turn["plan_score"] = plan_score
+        self.turn["prior_score"] = prior_score
 
     def add_turn_resp(
         self,
