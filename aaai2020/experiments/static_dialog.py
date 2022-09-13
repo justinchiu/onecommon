@@ -429,8 +429,8 @@ class StaticHierarchicalDialog(HierarchicalDialog):
 
             # log prob of plans under plan model
             scores = writer._next_mention_scores[1]
-            plan_score = scores[tuple([0,0] + plan.tolist())]
-            prior_score = scores[tuple([0,0] + plan_prior.tolist())]
+            plan_score = scores[tuple([0,0] + plan.tolist())].item()
+            prior_score = scores[tuple([0,0] + plan_prior.tolist())].item()
 
             # PLAN ROUNDTRIP
             plan_lang = writer.write_supervised(
