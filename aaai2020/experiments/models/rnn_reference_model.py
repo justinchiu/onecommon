@@ -41,6 +41,9 @@ _State = namedtuple('_State', [
 NextMentionRollouts = namedtuple('NextMentionRollouts', [
     'current_sel_probs', 'num_markables_per_candidate', 'candidate_indices',
     'candidate_dots', 'candidate_nm_scores', 'rollout_sel_probs',
+    # MBP
+    "mention_scores",
+    # / MBP
 ])
 
 NextMentionLatents = namedtuple('NextMentionLatents', [
@@ -2766,7 +2769,8 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             raise NotImplementedError(f"next_mention_candidates_generation=={generation_method}")
         if (next_mention_latents.dots_mentioned_num_markables == 0).all():
             return NextMentionRollouts(
-                current_sel_probs, next_mention_latents.dots_mentioned_num_markables, None, None, None, None
+                current_sel_probs, next_mention_latents.dots_mentioned_num_markables, None, None, None, None,
+                None,
             )
 
         def filter_latents(next_mention_latents, max_mentions):
@@ -2802,12 +2806,30 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
             rollout_sel_probs = torch.stack(rollout_sel_probs, 1)
 
             num_markables_per_candidate = next_mention_latents.dots_mentioned_num_markables.unsqueeze(1).expand(-1, num_candidates)
-            return num_markables_per_candidate, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs
+            return (
+                num_markables_per_candidate, candidate_indices,
+                candidate_dots, candidate_nm_scores, rollout_sel_probs,
+                # MBP
+                next_mention_out,
+                # / MBP
+            )
 
         if not multi_mention:
-            num_markables_per_candidate, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs = process_latents(next_mention_latents)
+            (
+                num_markables_per_candidate, candidate_indices,
+                candidate_dots, candidate_nm_scores, rollout_sel_probs,
+                # MBP
+                mention_scores,
+                # / MBP
+            ) = process_latents(next_mention_latents)
         else:
-            all_num_markables_per_candidate, all_candidate_indices, all_candidate_dots, all_candidate_nm_scores, all_rollout_sel_probs = zip(
+            (
+                all_num_markables_per_candidate, all_candidate_indices,
+                all_candidate_dots, all_candidate_nm_scores, all_rollout_sel_probs,
+                # MBP
+                all_mention_scores,
+                # / MBP
+            ) = zip(
                 *[
                     process_latents(filter_latents(next_mention_latents, max_mentions))
                     for max_mentions in range(1, next_mention_latents.dots_mentioned_num_markables.max() + 1)
@@ -2824,9 +2846,18 @@ class HierarchicalRnnReferenceModel(RnnReferenceModel):
                 )
             candidate_nm_scores = torch.cat(all_candidate_nm_scores, dim=1)
             rollout_sel_probs = torch.cat(all_rollout_sel_probs, dim=1)
+            # MBP
+            # not sure this will work, maybe need einops?
+            mention_scores = torch.cat(all_mention_scores, dim=1)
+            # / MBP
 
         return NextMentionRollouts(
-            current_sel_probs, num_markables_per_candidate, candidate_indices, candidate_dots, candidate_nm_scores, rollout_sel_probs
+            current_sel_probs, num_markables_per_candidate,
+            candidate_indices, candidate_dots, candidate_nm_scores,
+            rollout_sel_probs,
+            # MBP
+            mention_scores,
+            # / MBP
         )
 
     def forward(

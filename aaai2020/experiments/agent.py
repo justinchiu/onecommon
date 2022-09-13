@@ -214,6 +214,10 @@ class RnnAgent(Agent):
                 # TODO: collapse param naming is misleading; collapse adds in additional expanded_* terms
                 collapse=self.model.args.next_mention_prediction_type=='multi_reference',
             )
+            # MBP
+            # for debugging purposes
+            next_mention_scores = candidates.mention_scores
+            # / MBP
         else:
             next_mention_scores, stop_loss, nm_num_markables = self.model.next_mention_prediction_from_latents(
                 state, next_mention_latents
@@ -233,6 +237,10 @@ class RnnAgent(Agent):
         predictions_multi_sorted_truncated = [
             pred[:nm.item()] for pred, nm in zip(predictions_multi_sorted, nm_num_markables_multi_sorted)
         ] if predictions_multi_sorted is not None else None
+        # MBP
+        # overwrite self._next_mention_scores with most recent distribution for debugging purposes
+        self._next_mention_scores = next_mention_scores
+        # / MBP
         return predictions_truncated, candidates, predictions_multi_sorted_truncated, indices_sorted
 
     def predict_referents(self, ref_inpt, num_markables):

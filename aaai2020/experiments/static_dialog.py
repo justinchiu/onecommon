@@ -421,6 +421,11 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             label = label_config_sets(writer_configs, reader_configs)
             # / plan feature level labels
 
+            # log prob of plans under plan model
+            scores = writer._next_mention_scores[1]
+            plan_score = scores[tuple([0,0] + plan.tolist())]
+            prior_score = scores[tuple([0,0] + plan_prior.tolist())]
+
             # PLAN ROUNDTRIP
             plan_lang = writer.write_supervised(
                 max_words=words_left,
@@ -519,6 +524,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     plan_mentions = cs.tolist(),
                     prior_mentions_language = " ".join(prior_lang),
                     plan_mentions_language = " ".join(plan_lang),
+                    # these are the interpreted versions from mention detection
                     prior_plan = prior_ref.tolist(),
                     plan_plan = plan_ref.tolist(),
                     prior_partner_ref = prior_partner_ref.tolist()
@@ -542,6 +548,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     writer_configs = writer_configs.tolist(),
                     reader_configs = reader_configs.tolist(),
                     label = label.value,
+                    # PLAN SCORING
+                    plan_score = plan_score,
+                    prior_score = prior_score,
                 )
 
             # READER

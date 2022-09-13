@@ -47,8 +47,8 @@ split = "valid_1"
 if ABSOLUTE:
     split = "valid_1_absolute"
 #split = "valid_1_absolute_or_collapsed"
-#split = "valid_1_absolute_cost_collapsed"
-split = "valid_1_absolute_cost_egocentric_collapsed"
+split = "valid_1_absolute_cost_collapsed"
+#split = "valid_1_absolute_cost_egocentric_collapsed"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
@@ -104,10 +104,10 @@ for scenario in scenarios:
             our_dots = dot_ids[0 if agent_id == 0 else 1]
             their_dots = dot_ids[0 if agent_id != 0 else 1]
 
-            prior_plan = (np.array(turn["prior_plan"]).any(0)[0]
-                if (turn["prior_plan"] is not None and len(turn["prior_plan"][0]) > 0) else None)
-            plan_plan = (np.array(turn["plan_plan"]).any(0)[0]
-                if turn["plan_plan"] is not None else None)
+            prior_plan = (np.array(turn["plan_prior"]).astype(bool)
+                if turn["plan_prior"] is not None else None)
+            plan_plan = (np.array(turn["plan"]).astype(bool)
+                if turn["plan"] is not None else None)
             prior_partner_ref = (np.array(turn["prior_partner_ref"]).any(0)[0]
                 if turn["prior_partner_ref"] is not None else None)
             plan_partner_ref = (np.array(turn["plan_partner_ref"]).any(0)[0]
