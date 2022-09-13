@@ -28,6 +28,9 @@ fi
 
 echo "prediction_type=$prediction_type"
 
+bucket_size=${3-5}
+echo "bucket_size=$bucket_size"
+
 shared_ctx_count=4
 
 shift
@@ -87,10 +90,10 @@ context_file="${split}_context_${seed}"
 
 
 #logdir="analysis_log/${split}_${seed}_absolute_${belief}"
-logdir="analysis_log/${split}_${seed}_absolute_${belief}_${prediction_type}"
+logdir="analysis_log/${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
 #logdir="analysis_log/DELETE_${split}_${seed}_absolute_${belief}_${prediction_type}"
 
-name="STATIC_PLAN_${split}_${seed}_absolute_${belief}"
+name="STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
 #name="DELETE_STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}"
 log_file="analysis_log/${name}.log"
 out_file="analysis_log/${name}.out"
@@ -102,6 +105,8 @@ python -u test_planning_static.py \
   --bob_model_file=${model_dir_b}/1_ep-12.th \
   --belief ${belief} \
   --absolute_bucketing 1 \
+  --num_size_buckets ${bucket_size} \
+  --num_color_buckets ${bucket_size} \
   --context_file=${context_file} \
   --cuda \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
