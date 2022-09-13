@@ -465,8 +465,6 @@ class BeliefAgent(RnnAgent):
         # dots_mentioned_per_ref_to_force: num_mentions x bsz=1 x num_dots=7
         dots_mentioned_per_ref_to_force = dots_mentioned.transpose(0,1)
 
-        import pdb; pdb.set_trace()
-
         output = super().write(
             force_dots_mentioned = True,
             dots_mentioned_per_ref_to_force = dots_mentioned_per_ref_to_force,

@@ -47,8 +47,8 @@ split = "valid_1"
 if ABSOLUTE:
     split = "valid_1_absolute"
 #split = "valid_1_absolute_or_collapsed"
-split = "valid_1_absolute_cost_collapsed"
-#split = "valid_1_absolute_cost_egocentric_collapsed"
+#split = "valid_1_absolute_cost_collapsed"
+split = "valid_1_absolute_cost_egocentric_collapsed"
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
@@ -58,6 +58,10 @@ prior_num_turns = 0
 plan_num_turns = 0
 prior_zeros, plan_zeros = 0,0
 
+# exact match for round trip
+plan_rt_em = 0
+prior_rt_em = 0
+
 labels_prior = {x: Counter() for x in range(4,7)}
 #labels_ablate = {x: Counter() for x in range(4,7)}
 labels = {x: Counter() for x in range(4,7)}
@@ -66,6 +70,7 @@ mistakes = defaultdict(list)
 
 num_scenarios = Counter()
 num_turns = 0
+
 
 for scenario in scenarios:
     with (analysis_path / scenario).with_suffix(".json").open() as f:
@@ -93,6 +98,8 @@ for scenario in scenarios:
                 if turn["label"] == 0:
                     mistakes[scenario].append(turn_i)
             # / PLAN FEATURE LABELS
+
+            # deprecated evaluation
 
             our_dots = dot_ids[0 if agent_id == 0 else 1]
             their_dots = dot_ids[0 if agent_id != 0 else 1]
@@ -132,6 +139,24 @@ for scenario in scenarios:
             else:
                 prior_zeros += 1
 
+            # round trip language evaluation
+            plan_our_dots = our_dots[plan_plan]
+            prior_our_dots = our_dots[prior_plan]
+            plan_their_dots = (
+                their_dots[np.array(turn["plan_partner_ref"][0][0]).astype(bool)]
+                if turn["plan_partner_ref"] is not None else np.array([])
+            )
+            prior_their_dots = their_dots[np.array(turn["prior_partner_ref"][0][0]).astype(bool)]
+
+            plan_rt_em += (
+                plan_our_dots.shape == plan_their_dots.shape
+                and (plan_our_dots == plan_their_dots).all()
+            )
+            prior_rt_em += (
+                prior_our_dots.shape == prior_their_dots.shape
+                and (prior_our_dots == prior_their_dots).all()
+            )
+
 print("Prior")
 print(f"A: {prior_ambiguous}, U: {prior_unresolvable}, S: {prior_specific}")
 print(f"Prior num turns: {prior_num_turns}, num zeros: {prior_zeros}")
@@ -165,3 +190,7 @@ print(f"Num turns: {num_turns}")
 print("MISTAKES")
 for scenario, turns in mistakes.items():
     print(scenario, turns)
+
+print("ROUND-TRIP EM")
+print(f"Prior: {prior_rt_em}")
+print(f"Plan: {plan_rt_em}")
