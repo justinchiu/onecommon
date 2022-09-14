@@ -1545,6 +1545,7 @@
             1,
             1
         ],
+        "plan_score": -7.529843807220459,
         "prior_beam_lm": [
             -4.489416122436523,
             -10.790639877319336,
@@ -1844,6 +1845,7 @@
                 ]
             ]
         ],
+        "prior_score": -0.7610588669776917,
         "reader_configs": [],
         "reader_configs_prior": [],
         "reader_id": 1,
@@ -3450,6 +3452,7 @@
             0,
             0
         ],
+        "plan_score": -4.802499771118164,
         "prior_beam_lm": [
             -3.4135849475860596,
             -3.270230293273926,
@@ -3749,6 +3752,7 @@
                 ]
             ]
         ],
+        "prior_score": -3.454483985900879,
         "reader_configs": [],
         "reader_configs_prior": [],
         "reader_id": 0,
@@ -5340,6 +5344,7 @@
             0,
             0
         ],
+        "plan_score": -5.659292221069336,
         "prior_beam_lm": [
             -2.5637292861938477,
             -2.8391716480255127,
@@ -5639,6 +5644,7 @@
                 ]
             ]
         ],
+        "prior_score": -2.6157712936401367,
         "reader_configs": [],
         "reader_configs_prior": [],
         "reader_id": 1,
@@ -7228,6 +7234,7 @@
             0,
             0
         ],
+        "plan_score": -11.519327163696289,
         "prior_beam_lm": [
             -4.381246566772461,
             -4.381246566772461,
@@ -7527,6 +7534,7 @@
                 ]
             ]
         ],
+        "prior_score": -4.11651611328125,
         "reader_configs": [],
         "reader_configs_prior": [],
         "reader_id": 0,
@@ -9120,6 +9128,7 @@
             0,
             0
         ],
+        "plan_score": -9.827319145202637,
         "prior_beam_lm": [
             -6.47126579284668,
             -4.926044940948486,
@@ -9419,6 +9428,7 @@
                 ]
             ]
         ],
+        "prior_score": -0.1846790611743927,
         "reader_configs": [],
         "reader_configs_prior": [],
         "reader_id": 1,

@@ -46,14 +46,14 @@ split = "train"
 split = "valid_1"
 if ABSOLUTE:
     split = "valid_1_absolute"
-split = "valid_1_absolute_or_collapsed"
+#split = "valid_1_absolute_or_collapsed"
 #split = "valid_1_absolute_cost_collapsed"
 #split = "valid_1_absolute_cost_egocentric_collapsed"
 
-# mis-named recent splits
-#split = "DELETE_valid_1_absolute_or_collapsed"
-split = "DELETE_valid_1_absolute_cost_collapsed"
-#split = "DELETE_valid_1_absolute_cost_egocentric_collapsed"
+# recent splits with bucket size
+split = "valid_1_absolute_or_collapsed_b5"
+#split = "valid_1_absolute_cost_collapsed_b5"
+#split = "valid_1_absolute_cost_egocentric_collapsed_b5"
 
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
