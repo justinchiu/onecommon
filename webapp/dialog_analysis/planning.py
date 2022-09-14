@@ -246,7 +246,9 @@ splits = [
 
 split = "train"
 split = "valid_1"
-split = "valid_1_absolute_cost_collapsed"
+#split = splits[0]
+split = splits[1]
+#split = splits[2]
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 analysis_paths = [Path("../../aaai2020/experiments/analysis_log") / split for split in splits]
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]

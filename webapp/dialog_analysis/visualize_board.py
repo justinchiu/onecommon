@@ -135,7 +135,8 @@ id2dialogueidx = {
     for i, x in enumerate(finished_dialogues)
 }
 #with open('../../aaai2020/experiments/data/onecommon/shared_4.json', "r") as f:
-with open('../../onecommon_human_experiments/shared_4_100.json', "r") as f:
+#with open('../../onecommon_human_experiments/shared_4_100.json', "r") as f:
+with open('../../aaai2020/experiments/data/onecommon/static/scenarios.json', "r") as f:
     scenario_list = json.load(f)
 boards = {
     scenario['uuid']: scenario
@@ -143,7 +144,10 @@ boards = {
 }
 
 #board = boards["S_VBmMBjKvjYeOJZiV"]
-board = boards["S_pGlR0nKz9pQ4ZWsw"]
+#board = boards["S_pGlR0nKz9pQ4ZWsw"]
+
+scenario_id = st.text_input("Scenario id", "S_jlQrDFDT8leLRppp")
+board = boards[scenario_id]
 
 b0 = [Dot(x) for x in board["kbs"][0]]
 b1 = [Dot(x) for x in board["kbs"][1]]
