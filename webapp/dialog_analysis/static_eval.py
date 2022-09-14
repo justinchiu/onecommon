@@ -46,9 +46,15 @@ split = "train"
 split = "valid_1"
 if ABSOLUTE:
     split = "valid_1_absolute"
-#split = "valid_1_absolute_or_collapsed"
-split = "valid_1_absolute_cost_collapsed"
+split = "valid_1_absolute_or_collapsed"
+#split = "valid_1_absolute_cost_collapsed"
 #split = "valid_1_absolute_cost_egocentric_collapsed"
+
+# mis-named recent splits
+#split = "DELETE_valid_1_absolute_or_collapsed"
+split = "DELETE_valid_1_absolute_cost_collapsed"
+#split = "DELETE_valid_1_absolute_cost_egocentric_collapsed"
+
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
 
@@ -61,6 +67,9 @@ prior_zeros, plan_zeros = 0,0
 # exact match for round trip
 plan_rt_em = 0
 prior_rt_em = 0
+
+plan_score = 0
+prior_score = 0
 
 labels_prior = {x: Counter() for x in range(4,7)}
 #labels_ablate = {x: Counter() for x in range(4,7)}
@@ -157,6 +166,9 @@ for scenario in scenarios:
                 and (prior_our_dots == prior_their_dots).all()
             )
 
+            plan_score += turn["plan_score"]
+            prior_score += turn["prior_score"]
+
 print("Prior")
 print(f"A: {prior_ambiguous}, U: {prior_unresolvable}, S: {prior_specific}")
 print(f"Prior num turns: {prior_num_turns}, num zeros: {prior_zeros}")
@@ -194,3 +206,7 @@ for scenario, turns in mistakes.items():
 print("ROUND-TRIP EM")
 print(f"Prior: {prior_rt_em}")
 print(f"Plan: {plan_rt_em}")
+
+print("PLAN SCORES")
+print(f"Prior: {prior_score} ({prior_score / num_turns})")
+print(f"Plan: {plan_score} ({plan_score / num_turns})")

@@ -91,10 +91,10 @@ context_file="${split}_context_${seed}"
 
 #logdir="analysis_log/${split}_${seed}_absolute_${belief}"
 logdir="analysis_log/${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
-logdir="analysis_log/DELETE_${split}_${seed}_absolute_${belief}_${prediction_type}"
+#logdir="analysis_log/DELETE_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
 
 name="STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
-name="DELETE_STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}"
+#name="DELETE_STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
 log_file="analysis_log/${name}.log"
 out_file="analysis_log/${name}.out"
 
