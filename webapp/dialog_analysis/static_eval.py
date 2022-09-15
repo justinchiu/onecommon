@@ -15,6 +15,11 @@ from scipy.special import logsumexp as lse
 
 from dot import Dot
 
+import sys
+sys.path.insert(0, "../../aaai2020/experiments")
+from belief import label_config_sets
+from cog_belief import CostBelief
+
 #random.seed(1234)
 #np.random.seed(1234)
 
@@ -42,6 +47,17 @@ boards = {
     for scenario in scenario_list
 }
 
+with open('../../aaai2020/experiments/data/onecommon/static/valid_context_1.txt', "r") as f:
+    ctxs = []
+    ctx_data = []
+    for line in f:
+        ctx = line.strip().split()
+        ctx_data.append(ctx)
+        if len(ctx_data) == 5:
+            ctxs.append(ctx_data) 
+            ctx_data = []
+contexts = {x[0][0]: x[1:] for x in ctxs}
+
 split = "train"
 split = "valid_1"
 if ABSOLUTE:
@@ -51,8 +67,8 @@ if ABSOLUTE:
 #split = "valid_1_absolute_cost_egocentric_collapsed"
 
 # recent splits with bucket size
-split = "valid_1_absolute_or_collapsed_b5"
-#split = "valid_1_absolute_cost_collapsed_b5"
+#split = "valid_1_absolute_or_collapsed_b5"
+split = "valid_1_absolute_cost_collapsed_b5"
 #split = "valid_1_absolute_cost_egocentric_collapsed_b5"
 
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
@@ -67,6 +83,8 @@ prior_zeros, plan_zeros = 0,0
 # exact match for round trip
 plan_rt_em = 0
 prior_rt_em = 0
+plan_corrects = 0
+prior_corrects = 0
 
 plan_score = 0
 prior_score = 0
@@ -95,6 +113,23 @@ for scenario in scenarios:
         intersection_size = len(set(dot_ids[0]).intersection(set(dot_ids[1])))
         num_scenarios[intersection_size] += 1
 
+        context = contexts[scenario]
+        belief0 = CostBelief(
+            7, context[0],
+            absolute = True,
+            num_size_buckets = 5,
+            num_color_buckets = 5,
+            use_diameter = False,
+            use_contiguity = False,
+        )                                                   
+        belief1 = CostBelief(
+            7, context[1],
+            absolute = True,
+            num_size_buckets = 5,
+            num_color_buckets = 5,
+            use_diameter = False,
+            use_contiguity = False,
+        )                                                   
 
         for turn_i, turn in enumerate(turns):
             num_turns += 1
@@ -156,6 +191,40 @@ for scenario in scenarios:
                 if turn["plan_partner_ref"] is not None else np.array([])
             )
             prior_their_dots = their_dots[np.array(turn["prior_partner_ref"][0][0]).astype(bool)]
+
+            agent_belief = belief0 if agent_id == 0 else belief1
+            partner_belief = belief0 if agent_id == 1 else belief1
+
+            feats_prior = agent_belief.get_feats(prior_plan)                          
+            writer_matches_prior = agent_belief.resolve_utt(*feats_prior)             
+            reader_matches_prior = partner_belief.resolve_utt(*feats_prior)             
+            writer_configs_prior = our_dots[writer_matches_prior]                   
+            reader_configs_prior = their_dots[reader_matches_prior]                   
+            label_prior = label_config_sets(writer_configs_prior, reader_configs_prior)
+                                                                                       
+            # get the plan resolution sets for planning model                          
+            feats = agent_belief.get_feats(plan_plan)
+            writer_matches = agent_belief.resolve_utt(*feats)                         
+            reader_matches = partner_belief.resolve_utt(*feats)                         
+            writer_configs = our_dots[writer_matches]                               
+            reader_configs = their_dots[reader_matches]                               
+            label = label_config_sets(writer_configs, reader_configs)                  
+
+            prior_correct = (
+                not (reader_configs_prior.size == 0 and prior_their_dots.size > 0)
+                and not (reader_configs_prior.size > 0 and prior_their_dots.size == 0)
+                and (reader_configs_prior == prior_their_dots).all(-1).any()
+            )
+            plan_correct = (
+                not (reader_configs.size == 0 and plan_their_dots.size > 0)
+                and not (reader_configs.size > 0 and plan_their_dots.size == 0)
+                and reader_configs.shape[-1] == plan_their_dots.shape[0]
+                and (reader_configs == plan_their_dots).all(-1).any()
+            )
+
+            plan_corrects += plan_correct
+            prior_corrects += prior_correct
+            # TODO: MOVE THIS TO STATIC_DIALOG.PY
 
             plan_rt_em += (
                 plan_our_dots.shape == plan_their_dots.shape
