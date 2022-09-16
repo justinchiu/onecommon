@@ -15,7 +15,8 @@ from scipy.special import logsumexp as lse
 
 from dot import Dot
 
-sys.path.append("/home/justinchiu/research/onecommon/aaai2020/experiments")
+import os
+sys.path.append(str((Path.cwd() / "../../aaai2020/experiments").resolve()))
 
 from utils import ContextGenerator
 import template
