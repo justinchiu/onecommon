@@ -15,6 +15,11 @@ domain = get_domain("one_common")
 data = 'data/onecommon'
 fold_num = 1
 freq_cutoff = 20
+use_properties = True
+use_pairwise_features = True
+use_unordered_pairwise = True
+use_extrema_features = False
+
 
 corpus = ReferenceSentenceCorpus(
     domain, data,
@@ -165,13 +170,18 @@ Each example will look like:
 Eg conversation prefixes
 """
 
-def describe_dots(dots):
+def describe_dots(
+    dots,
+    use_pairwise_features = True,
+    use_extrema_features = True,
+):
     dots = np.array(dots).reshape(-1, 4)
     rounded_dots = (dots.round(2) * 100).astype(int)
     num_dots = dots.shape[0]
     # (x, y, size, color)
     dot_desc_template = Template(
-        "dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
+        #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
+        "dot{{id}} x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}"
     )
     description = " [SEP] ".join([
         dot_desc_template.render(
@@ -182,6 +192,52 @@ def describe_dots(dots):
             color = rounded_dots[i, 3],
         ) for i in range(num_dots)
     ])
+
+    dot_strings = [f"dot{i}" for i in range(1, 8)]
+    if use_pairwise_features:
+        # construct pairwise descriptions for each dot and 3 closest
+        xy = dots[:,:2]
+        dists = ((xy[:,None] - xy) ** 2).sum(-1)
+        dists[range(7), range(7)] = dists.max() + 1
+        closest_idxs = dists.argsort()[:,:2]
+
+        #print(dists)
+        #print(closest_idxs)
+        #import pdb; pdb.set_trace()
+
+        # ordered pairs
+        dot_pairs = [(i, j) for i in range(7) for j in closest_idxs[i]]
+        if use_unordered_pairwise:
+            # unordered pairs
+            dot_pairs = set([tuple(sorted(x)) for x in dot_pairs])
+
+        pairwise_strs = []
+        for i,j in dot_pairs:
+            dot1 = dot_strings[i]
+            dot2 = dot_strings[j]
+            x1, y1, s1, c1 = dots[i]
+            x2, y2, s2, c2 = dots[j]
+
+            vert_comp = "above" if y1 > y2 else "below"
+            hor_comp = "right" if x1 > x2 else "left"
+            size_comp = "bigger" if s1 > s2 else "smaller"
+            col_comp = "darker" if c1 > c2 else "lighter"
+
+            vert_str = f"{dot1} is {vert_comp} {dot2}"
+            hor_str = f"{dot1} is {hor_comp} of {dot2}"
+            size_str = f"{dot1} is {size_comp} than {dot2}"
+            col_str = f"{dot1} is {col_comp} than {dot2}"
+
+            pairwise_strs.append(vert_str)
+            pairwise_strs.append(hor_str)
+            pairwise_strs.append(size_str)
+            pairwise_strs.append(col_str)
+
+        pairwise_str = ", ".join(pairwise_strs)
+        description = f"{description} [SEP] {pairwise_str}"
+
+    if use_extrema_features:
+        pass
     return description
 
 def describe_plan_dense(plan):
@@ -283,24 +339,33 @@ for split in splits:
     print("mentions", examples["mentions"][idx])
     print("outtext", examples["outtext"][idx])
 
+    """
     num_examples = len(examples["mentions"])
     mention_examples = {}
     mention_examples["input"] = [
-        f"{dots} [SEP] {text} [SEP] {plan}"
+        f"{dots} [MSEP] {text} [MSEP] {plan}"
         for dots, text, plan in zip(examples["dots"], examples["text"], examples["plan"])
     ]
     mention_examples["label"] = examples["mentions"]
     mention_dataset = Dataset.from_dict(mention_examples)
     mention_dataset.save_to_disk(f"hf_datasets/{split}_mentions_given_text_plan.hf")
+    """
 
     num_examples = len(examples["plan"])
     plan_examples = {}
     plan_examples["input"] = examples["text"]
     plan_examples["input"] = [
-        f"{dots} [SEP] {text}"
+        f"{dots} [MSEP] {text}"
         for dots, text in zip(examples["dots"], examples["text"])
     ]
+
+    max_length = max([len(x.split()) for x in plan_examples["input"]])
+    print(f"Max length of example input: {max_length}")
+
     plan_examples["label"] = examples["plan"]
     plan_dataset = Dataset.from_dict(plan_examples)
-    plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text.hf")
+
+    m = {True: "y", False: "n"}
+    feature_string = f"p{m[use_properties]}_2p{m[use_pairwise_features]}_2pu{m[use_unordered_pairwise]}_e{m[use_extrema_features]}"
+    plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text_{feature_string}.hf")
 

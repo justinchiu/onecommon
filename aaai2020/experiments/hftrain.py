@@ -19,7 +19,8 @@ def train(args):
 
     tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
     tokenizer.add_tokens([f"dot{i}" for i in range(8)])
-    tokenizer.add_tokens(["[SEP]", "<eos>"])
+    tokenizer.add_tokens(["[SEP]", "[MSEP]", "<eos>"])
+    tokenizer.add_tokens(["size:", "color:", "x:", "y:"])
     # model
     model = BartForConditionalGeneration.from_pretrained(
         "facebook/bart-large", forced_bos_token_id=0,
@@ -212,6 +213,10 @@ if __name__ == "__main__":
         help='learning rate',
     )
     parser.add_argument(
+        '--max_length', type=int, default=512,
+        help='input example max length',
+    )
+    parser.add_argument(
         '--batch_size', type=int, default=4,
         help='batch size',
     )
@@ -220,8 +225,13 @@ if __name__ == "__main__":
         help='epochs',
     )
     parser.add_argument(
-        '--dataset', choices=["plan_given_text", "mentions_given_text_plan"],
-        default = "plan_given_text",
+        '--dataset',
+        choices = [
+            #"plan_given_text",
+            #"mentions_given_text_plan",
+            "plan_given_text_py_2py_2puy_en",
+        ],
+        default = "plan_given_text_py_2py_2puy_en",
         help="Dataset",
     )
     parser.add_argument(
