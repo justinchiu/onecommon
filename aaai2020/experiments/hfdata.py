@@ -4,6 +4,8 @@ from pathlib import Path
 import numpy as np
 from jinja2 import Template
 
+from belief import process_ctx
+
 from datasets import Dataset, load_dataset
 
 from domain import get_domain
@@ -11,15 +13,27 @@ from domain import get_domain
 from corpora.data import Dictionary, get_tag
 from corpora.reference_sentence import ReferenceSentenceCorpus
 
+import template
+
 domain = get_domain("one_common")
 data = 'data/onecommon'
 fold_num = 1
 freq_cutoff = 20
+
+# OPTIONS
 use_properties = True
 use_pairwise_features = True
+#use_pairwise_features = False
 use_unordered_pairwise = True
+#use_unordered_pairwise = False
 use_extrema_features = False
+use_short_describe = True
+use_plan_specific_description = False
 
+dot_desc_template = Template(
+    #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
+    "dot{{id}} x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}"
+)
 
 corpus = ReferenceSentenceCorpus(
     domain, data,
@@ -160,6 +174,42 @@ def get_conversations(split):
             ))
         return conversations
 
+def describe_dot_old(i, dot_strings, dots, size_color):
+    rounded_dots = (dots.round(2) * 100).astype(int)
+    num_dots = dots.shape[0]
+    # (x, y, size, color)
+    return dot_desc_template.render(
+        id = i+1,
+        x = rounded_dots[i, 0],
+        y = rounded_dots[i, 1],
+        size = rounded_dots[i, 2],
+        color = rounded_dots[i, 3],
+    )
+
+def describe_dot(i, dot_strings, dots, size_color):
+    size_map = template.size_map5
+    color_map = template.color_map5
+    size, color = size_color[i]
+    return f"{dot_strings[i]} {size_map[size]} and {color_map[color]}"
+
+def describe_dot_pair(i, j, dot_strings, dots):
+    dot1 = dot_strings[i]
+    dot2 = dot_strings[j]
+    x1, y1, s1, c1 = dots[i]
+    x2, y2, s2, c2 = dots[j]
+
+    vert_comp = "above" if y1 > y2 else "below"
+    hor_comp = "right" if x1 > x2 else "left"
+    size_comp = "bigger" if s1 > s2 else "smaller"
+    col_comp = "darker" if c1 > c2 else "lighter"
+
+    vert_str = f"{dot1} is {vert_comp} {dot2}"
+    hor_str = f"{dot1} is {hor_comp} of {dot2}"
+    size_str = f"{dot1} is {size_comp} than {dot2}"
+    col_str = f"{dot1} is {col_comp} than {dot2}"
+
+    return vert_str, hor_str, size_str, col_str
+
 """
 Process conversations into examples.
 Each conversation will be turned into num_turns examples (or num_turns / 2).
@@ -170,20 +220,16 @@ Each example will look like:
 Eg conversation prefixes
 """
 
-def describe_dots(
-    dots,
-    use_pairwise_features = True,
-    use_extrema_features = True,
-):
+def describe_dots(dots):
     dots = np.array(dots).reshape(-1, 4)
     rounded_dots = (dots.round(2) * 100).astype(int)
+
     num_dots = dots.shape[0]
+    dot_strings = [f"dot{i}" for i in range(1, num_dots+1)]
+
+    """
     # (x, y, size, color)
-    dot_desc_template = Template(
-        #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
-        "dot{{id}} x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}"
-    )
-    description = " [SEP] ".join([
+    description_old = " [SEP] ".join([
         dot_desc_template.render(
             id = i+1,
             x = rounded_dots[i, 0],
@@ -192,18 +238,20 @@ def describe_dots(
             color = rounded_dots[i, 3],
         ) for i in range(num_dots)
     ])
+    """
 
-    dot_strings = [f"dot{i}" for i in range(1, 8)]
+    ctx = process_ctx(dots)
+    describe_dot_fn = describe_dot if use_short_describe else describe_dot_old
+
+    descs = [describe_dot_fn(i, dot_strings, dots, ctx) for i in range(num_dots)]
+    description = " [SEP] ".join(descs)
+
     if use_pairwise_features:
         # construct pairwise descriptions for each dot and 3 closest
         xy = dots[:,:2]
         dists = ((xy[:,None] - xy) ** 2).sum(-1)
         dists[range(7), range(7)] = dists.max() + 1
         closest_idxs = dists.argsort()[:,:2]
-
-        #print(dists)
-        #print(closest_idxs)
-        #import pdb; pdb.set_trace()
 
         # ordered pairs
         dot_pairs = [(i, j) for i in range(7) for j in closest_idxs[i]]
@@ -213,21 +261,7 @@ def describe_dots(
 
         pairwise_strs = []
         for i,j in dot_pairs:
-            dot1 = dot_strings[i]
-            dot2 = dot_strings[j]
-            x1, y1, s1, c1 = dots[i]
-            x2, y2, s2, c2 = dots[j]
-
-            vert_comp = "above" if y1 > y2 else "below"
-            hor_comp = "right" if x1 > x2 else "left"
-            size_comp = "bigger" if s1 > s2 else "smaller"
-            col_comp = "darker" if c1 > c2 else "lighter"
-
-            vert_str = f"{dot1} is {vert_comp} {dot2}"
-            hor_str = f"{dot1} is {hor_comp} of {dot2}"
-            size_str = f"{dot1} is {size_comp} than {dot2}"
-            col_str = f"{dot1} is {col_comp} than {dot2}"
-
+            vert_str, hor_str, size_str, col_str = describe_dot_pair(i, j, dot_strings, dots)
             pairwise_strs.append(vert_str)
             pairwise_strs.append(hor_str)
             pairwise_strs.append(size_str)
@@ -238,6 +272,42 @@ def describe_dots(
 
     if use_extrema_features:
         pass
+    return description
+
+
+def describe_plan_specific_dots(dots, plan):
+    boolplan = plan.astype(bool)
+    dots = np.array(dots).reshape(-1, 4)
+    rounded_dots = (dots.round(2) * 100).astype(int)
+
+    num_dots = dots.shape[0]
+    dot_strings = [f"dot{i}" for i in range(1, num_dots+1)]
+
+    ctx = process_ctx(dots)
+    descs = [
+        describe_dot(i, dot_strings, dots, ctx)
+        for i in range(num_dots)
+        if boolplan[i]
+    ]
+    description = " [SEP] ".join(descs)
+
+    # construct pairwise features for dot pairs in plan
+    dot_pairs = [
+        (i, j) for i in range(7) for j in range(7)
+        if i != j and boolplan[i] and boolplan[j]
+    ]
+
+    pairwise_strs = []
+    for i,j in dot_pairs:
+        vert_str, hor_str, size_str, col_str = describe_dot_pair(i, j, dot_strings, dots)
+        pairwise_strs.append(vert_str)
+        pairwise_strs.append(hor_str)
+        pairwise_strs.append(size_str)
+        pairwise_strs.append(col_str)
+
+    pairwise_str = ", ".join(pairwise_strs)
+    description = f"{description} [SEP] {pairwise_str}"
+
     return description
 
 def describe_plan_dense(plan):
@@ -281,7 +351,7 @@ class Example(NamedTuple):
 
 
 def get_examples(conversations, describe_plan=describe_plan_sparse):
-    fields = ("dots", "text", "plan", "mentions", "outtext")
+    fields = ("dots", "plan_specific_dots", "text", "plan", "mentions", "outtext")
     examples = {
         key: [] for key in fields
         #for key in Conversation._fields + fields
@@ -305,12 +375,7 @@ def get_examples(conversations, describe_plan=describe_plan_sparse):
             is_you = conversation.sents[turn][0] == "YOU:"
             if is_you:
                 # textify all dot properties
-                examples["dots"].append(describe_dots(conversation.dots))
-                # concatenate all text
-                examples["text"].append(
-                    " ".join([x for xs in conversation.sents[:turn] for x in xs])
-                )
-                examples["outtext"].append(" ".join(conversation.sents[turn]))
+
                 # mention = (start idx, end idx, utterance end idx, *binary ind for 7 dots)
                 raw_mentions = np.array(conversation.refs[turn]).reshape((-1, 10))[:,3:]
                 raw_plan = raw_mentions.any(0).astype(int)
@@ -318,6 +383,20 @@ def get_examples(conversations, describe_plan=describe_plan_sparse):
                 examples["mentions"].append(
                     " [SEP] ".join([describe_plan(m) for m in raw_mentions])
                 )
+
+                # linearized dot representation
+                examples["dots"].append(describe_dots(conversation.dots))
+
+                # plan-specific dot representations
+                examples["plan_specific_dots"].append(
+                    describe_plan_specific_dots(conversation.dots, raw_plan),
+                )
+
+                # concatenate all text
+                examples["text"].append(
+                    " ".join([x for xs in conversation.sents[:turn] for x in xs])
+                )
+                examples["outtext"].append(" ".join(conversation.sents[turn]))
 
     # Check number of examples for each field
     for key1 in fields:
@@ -339,7 +418,8 @@ for split in splits:
     print("mentions", examples["mentions"][idx])
     print("outtext", examples["outtext"][idx])
 
-    """
+
+    # mention gen
     num_examples = len(examples["mentions"])
     mention_examples = {}
     mention_examples["input"] = [
@@ -349,8 +429,9 @@ for split in splits:
     mention_examples["label"] = examples["mentions"]
     mention_dataset = Dataset.from_dict(mention_examples)
     mention_dataset.save_to_disk(f"hf_datasets/{split}_mentions_given_text_plan.hf")
-    """
 
+
+    # plan gen
     num_examples = len(examples["plan"])
     plan_examples = {}
     plan_examples["input"] = examples["text"]
@@ -366,6 +447,36 @@ for split in splits:
     plan_dataset = Dataset.from_dict(plan_examples)
 
     m = {True: "y", False: "n"}
-    feature_string = f"p{m[use_properties]}_2p{m[use_pairwise_features]}_2pu{m[use_unordered_pairwise]}_e{m[use_extrema_features]}"
+    feature_string = f"p{m[use_properties]}_2p{m[use_pairwise_features]}_2pu{m[use_unordered_pairwise]}_e{m[use_extrema_features]}_sd{m[use_short_describe]}"
     plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text_{feature_string}.hf")
+
+
+    # text gen
+    num_examples = len(examples["outtext"])
+    text_examples = {}
+    text_examples["input"] = [
+        f"{dots} [MSEP] {text} [MSEP] {plan}"
+        for dots, text, plan in zip(examples["dots"], examples["text"], examples["plan"])
+    ]
+
+    text_examples["label"] = examples["outtext"]
+    text_dataset = Dataset.from_dict(text_examples)
+
+    feature_string = f"p{m[use_properties]}_2p{m[use_pairwise_features]}_2pu{m[use_unordered_pairwise]}_e{m[use_extrema_features]}_sd{m[use_short_describe]}"
+    text_dataset.save_to_disk(f"hf_datasets/{split}_text_given_plan_{feature_string}.hf")
+
+
+    # text generation with plan-specific context
+    num_examples = len(examples["outtext"])
+    text2_examples = {}
+    text2_examples["input"] = [
+        f"{dots} [MSEP] {text} [MSEP] {plan}"
+        for dots, text, plan in zip(examples["plan_specific_dots"], examples["text"], examples["plan"])
+    ]
+
+    text2_examples["label"] = examples["outtext"]
+    text2_dataset = Dataset.from_dict(text2_examples)
+
+    feature_string = f"planspecific"
+    text2_dataset.save_to_disk(f"hf_datasets/{split}_text_given_plan_{feature_string}.hf")
 

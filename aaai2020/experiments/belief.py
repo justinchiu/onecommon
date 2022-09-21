@@ -69,7 +69,7 @@ def label_config_sets(writer_configs, reader_configs):
 
 def process_ctx(
     ctx,
-    absolute=False,
+    absolute=True,
     num_size_buckets = 5,
     num_color_buckets = 5,
 ):
