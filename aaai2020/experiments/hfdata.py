@@ -27,7 +27,7 @@ use_pairwise_features = True
 use_unordered_pairwise = True
 #use_unordered_pairwise = False
 use_extrema_features = False
-use_short_describe = True
+use_short_describe = False
 use_plan_specific_description = False
 
 dot_desc_template = Template(
@@ -190,7 +190,7 @@ def describe_dot(i, dot_strings, dots, size_color):
     size_map = template.size_map5
     color_map = template.color_map5
     size, color = size_color[i]
-    return f"{dot_strings[i]} {size_map[size]} and {color_map[color]}"
+    return f"{dot_strings[i]} size {size_map[size]} and color {color_map[color]}"
 
 def describe_dot_pair(i, j, dot_strings, dots):
     dot1 = dot_strings[i]
@@ -222,6 +222,7 @@ Eg conversation prefixes
 
 def describe_dots(dots):
     dots = np.array(dots).reshape(-1, 4)
+    dots[:,1] *= -1
     rounded_dots = (dots.round(2) * 100).astype(int)
 
     num_dots = dots.shape[0]
@@ -413,6 +414,7 @@ for split in splits:
     idx = 11
     print(f"Data example in {split}")
     print("dots", examples["dots"][idx])
+    print("plan_specific_dots", examples["plan_specific_dots"][idx])
     print("text", examples["text"][idx])
     print("plan", examples["plan"][idx])
     print("mentions", examples["mentions"][idx])
@@ -447,7 +449,12 @@ for split in splits:
     plan_dataset = Dataset.from_dict(plan_examples)
 
     m = {True: "y", False: "n"}
-    feature_string = f"p{m[use_properties]}_2p{m[use_pairwise_features]}_2pu{m[use_unordered_pairwise]}_e{m[use_extrema_features]}_sd{m[use_short_describe]}"
+    feature_string = (
+        f"p{m[use_properties]}_2p{m[use_pairwise_features]}"
+        "_2pu{m[use_unordered_pairwise]}"
+        "_e{m[use_extrema_features]}"
+        "_sd{m[use_short_describe]}"
+    )
     plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text_{feature_string}.hf")
 
 

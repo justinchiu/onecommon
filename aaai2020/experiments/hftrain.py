@@ -171,9 +171,11 @@ def evaluate(args):
         batch = tokenized_valid[batch_idx * bsz: (batch_idx+1) * bsz]
         # one at a time
         model_input = batch["input_ids"]
-        output = model.generate(model_input, num_beams=16 if IS_TEXT else None)
-        output_normal = model.generate(model_input)
-        # TODO: HOW TO GET ALL FINAL BEAM CANDIDATES?
+        output = model.generate(
+            model_input,
+            num_beams = 16 if IS_TEXT else None,
+            num_return_sequences = 16 if IS_TEXT else None,
+        )
         import pdb; pdb.set_trace()
         output_dots = tokenizer.batch_decode(output, skip_special_tokens=True)
 
@@ -243,6 +245,7 @@ if __name__ == "__main__":
             #"plan_given_text",
             #"mentions_given_text_plan",
             "plan_given_text_py_2py_2puy_en_sdn",
+            "text_given_plan_py_2py_2puy_en_sdn",
             "text_given_plan_py_2py_2puy_en_sdy",
             "text_given_plan_planspecific",
         ],
