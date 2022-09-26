@@ -32,11 +32,11 @@ use_pairwise_features = True
 use_unordered_pairwise = True
 #use_unordered_pairwise = False
 use_extrema_features = False
+use_unks = False
 
 # vary these only
 use_short_describe = True
 use_plan_specific_description = True
-use_unks = True
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"

@@ -250,9 +250,14 @@ if __name__ == "__main__":
             "text_given_plan_py_2py_2puy_en_sdn",
             "text_given_plan_py_2py_2puy_en_sdy",
             "text_given_plan_planspecific",
+
             "text_given_plan_py_2py_2puy_en_sdn_psn_uy",
             "text_given_plan_py_2py_2puy_en_sdy_psn_uy",
             "text_given_plan_py_2py_2puy_en_sdy_psy_uy",
+
+            "text_given_plan_py_2py_2puy_en_sdn_psn_un",
+            "text_given_plan_py_2py_2puy_en_sdy_psn_un",
+            "text_given_plan_py_2py_2puy_en_sdy_psy_un",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",

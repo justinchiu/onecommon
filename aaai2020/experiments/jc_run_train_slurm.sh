@@ -22,7 +22,6 @@ py111env
 #indicator-confirm-mean 9
 #bash jc_run_test_static_plan.sh
 
-#python hftrain.py --dataset text_given_plan_py_2py_2puy_en_sdn_psn_uy --learning_rate 1e-5
-#python hftrain.py --dataset text_given_plan_py_2py_2puy_en_sdy_psn_uy --learning_rate 1e-5
-python hftrain.py --dataset text_given_plan_py_2py_2puy_en_sdy_psy_uy --learning_rate 1e-5
-
+#python hftrain.py --dataset text_given_plan_py_2py_2puy_en_sdn_psn_un --learning_rate 1e-5
+python hftrain.py --dataset text_given_plan_py_2py_2puy_en_sdy_psn_un --learning_rate 1e-5
+#python hftrain.py --dataset text_given_plan_py_2py_2puy_en_sdy_psy_un --learning_rate 1e-5
