@@ -15,10 +15,15 @@ from corpora.reference_sentence import ReferenceSentenceCorpus
 
 import template
 
+import hfutils
+
+tokenizer = hfutils.get_bart_tokenizer()
+unk_token = tokenizer.unk_token
+
 domain = get_domain("one_common")
 data = 'data/onecommon'
 fold_num = 1
-freq_cutoff = 20
+freq_cutoff = 10
 
 # OPTIONS
 use_properties = True
@@ -27,8 +32,11 @@ use_pairwise_features = True
 use_unordered_pairwise = True
 #use_unordered_pairwise = False
 use_extrema_features = False
-use_short_describe = False
-use_plan_specific_description = False
+
+# vary these only
+use_short_describe = True
+use_plan_specific_description = True
+use_unks = True
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -159,7 +167,7 @@ def get_conversations(split):
             assert sents == sents_
 
             conversations.append(Conversation(
-                sents = sents,
+                sents = sents if not use_unks else unk_sents(sents, word_dict),
                 refs = all_refs,
                 partner_refs = all_partner_refs,
                 partner_refs_our_view = all_partner_refs_our_view,
@@ -306,7 +314,7 @@ def describe_plan_specific_dots(dots, plan):
         pairwise_strs.append(size_str)
         pairwise_strs.append(col_str)
 
-    pairwise_str = ", ".join(pairwise_strs)
+    pairwise_str = " , ".join(pairwise_strs)
     description = f"{description} [SEP] {pairwise_str}"
 
     return description
@@ -325,7 +333,7 @@ def describe_plan_dense(plan):
 def describe_plan_sparse(plan):
     num_dots = len(plan)
     dot_desc_template = Template("dot{{id}}")
-    description = ", ".join([
+    description = " , ".join([
         f"dot{i+1}"
         for i in range(num_dots)
         if plan[i] == 1
@@ -350,6 +358,14 @@ class Example(NamedTuple):
     plan: list[int]
     mentions: list[int]
 
+def unk_sents(sents, word_dict):
+    unked_sents = [
+        [word if word in word_dict.word2idx else unk_token for word in sent]
+        for sent in sents
+    ]
+    #if any([word not in word_dict.word2idx for sent in sents for word in sent]):
+        #import pdb; pdb.set_trace()
+    return unked_sents
 
 def get_examples(conversations, describe_plan=describe_plan_sparse):
     fields = ("dots", "plan_specific_dots", "text", "plan", "mentions", "outtext")
@@ -420,70 +436,58 @@ for split in splits:
     print("mentions", examples["mentions"][idx])
     print("outtext", examples["outtext"][idx])
 
+    m = {True: "y", False: "n"}
+    feature_string = (
+        f"p{m[use_properties]}_2p{m[use_pairwise_features]}"
+        f"_2pu{m[use_unordered_pairwise]}"
+        f"_e{m[use_extrema_features]}"
+        f"_sd{m[use_short_describe]}"
+        f"_ps{m[use_plan_specific_description]}"
+        f"_u{m[use_unks]}"
+    )
+    dot_descs = (
+        examples["plan_specific_dots"]
+        if use_plan_specific_description
+        else examples["dots"]
+    )
 
     # mention gen
     num_examples = len(examples["mentions"])
     mention_examples = {}
     mention_examples["input"] = [
         f"{dots} [MSEP] {text} [MSEP] {plan}"
-        for dots, text, plan in zip(examples["dots"], examples["text"], examples["plan"])
+        for dots, text, plan in zip(dot_descs, examples["text"], examples["plan"])
     ]
     mention_examples["label"] = examples["mentions"]
     mention_dataset = Dataset.from_dict(mention_examples)
-    mention_dataset.save_to_disk(f"hf_datasets/{split}_mentions_given_text_plan.hf")
-
+    mention_dataset.save_to_disk(f"hf_datasets/{split}_mentions_given_text_plan_{feature_string}.hf")
 
     # plan gen
     num_examples = len(examples["plan"])
     plan_examples = {}
-    plan_examples["input"] = examples["text"]
+    #plan_examples["input"] = examples["text"]
     plan_examples["input"] = [
         f"{dots} [MSEP] {text}"
         for dots, text in zip(examples["dots"], examples["text"])
     ]
+    # not allowed to use plan-specific dot descriptions
 
-    max_length = max([len(x.split()) for x in plan_examples["input"]])
+    max_length = max([len(tokenizer.tokenize(x)) for x in plan_examples["input"]])
     print(f"Max length of example input: {max_length}")
 
     plan_examples["label"] = examples["plan"]
     plan_dataset = Dataset.from_dict(plan_examples)
-
-    m = {True: "y", False: "n"}
-    feature_string = (
-        f"p{m[use_properties]}_2p{m[use_pairwise_features]}"
-        "_2pu{m[use_unordered_pairwise]}"
-        "_e{m[use_extrema_features]}"
-        "_sd{m[use_short_describe]}"
-    )
     plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text_{feature_string}.hf")
-
 
     # text gen
     num_examples = len(examples["outtext"])
     text_examples = {}
     text_examples["input"] = [
         f"{dots} [MSEP] {text} [MSEP] {plan}"
-        for dots, text, plan in zip(examples["dots"], examples["text"], examples["plan"])
+        for dots, text, plan in zip(dot_descs, examples["text"], examples["plan"])
     ]
 
     text_examples["label"] = examples["outtext"]
     text_dataset = Dataset.from_dict(text_examples)
-
-    feature_string = f"p{m[use_properties]}_2p{m[use_pairwise_features]}_2pu{m[use_unordered_pairwise]}_e{m[use_extrema_features]}_sd{m[use_short_describe]}"
     text_dataset.save_to_disk(f"hf_datasets/{split}_text_given_plan_{feature_string}.hf")
-
-
-    # text generation with plan-specific context
-    num_examples = len(examples["outtext"])
-    text2_examples = {}
-    text2_examples["input"] = [
-        f"{dots} [MSEP] {text} [MSEP] {plan}"
-        for dots, text, plan in zip(examples["plan_specific_dots"], examples["text"], examples["plan"])
-    ]
-
-    text2_examples["label"] = examples["outtext"]
-    text2_dataset = Dataset.from_dict(text2_examples)
-
-    feature_string = f"planspecific"
-    text2_dataset.save_to_disk(f"hf_datasets/{split}_text_given_plan_{feature_string}.hf")
 

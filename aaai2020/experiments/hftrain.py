@@ -1,5 +1,6 @@
 from argparse import ArgumentParser
 from rich.progress import track
+import json
 
 from itertools import zip_longest
 
@@ -7,6 +8,8 @@ from datasets import Dataset, load_dataset
 from transformers import BartForConditionalGeneration, BartTokenizer
 from transformers import TrainingArguments, Trainer
 from transformers.models.bart.modeling_bart import shift_tokens_right
+
+import hfutils
 
 import torch
 
@@ -17,10 +20,7 @@ def train(args):
     valid = Dataset.load_from_disk(f"hf_datasets/valid_{dataset}.hf")
     test = Dataset.load_from_disk(f"hf_datasets/test_{dataset}.hf")
 
-    tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
-    tokenizer.add_tokens([f"dot{i}" for i in range(8)])
-    tokenizer.add_tokens(["[SEP]", "[MSEP]", "<eos>"])
-    tokenizer.add_tokens(["size:", "color:", "x:", "y:"])
+    tokenizer = hfutils.get_bart_tokenizer()
     # model
     model = BartForConditionalGeneration.from_pretrained(
         "facebook/bart-large", forced_bos_token_id=0,
@@ -30,14 +30,14 @@ def train(args):
     def convert_to_features(example_batch):
         input_encodings = tokenizer.batch_encode_plus(
             example_batch['input'],
-            max_length = 512,
+            max_length = 768,
             padding="max_length",
             truncation=True,
             return_tensors="np",
         )
         target_encodings = tokenizer.batch_encode_plus(
             example_batch['label'],
-            max_length = 512,
+            max_length = 256,
             padding="max_length",
             truncation=True,
             return_tensors="np",
@@ -175,9 +175,10 @@ def evaluate(args):
             model_input,
             num_beams = 16 if IS_TEXT else None,
             num_return_sequences = 16 if IS_TEXT else None,
+            output_scores = True,
+            return_dict_in_generate = True,
         )
-        import pdb; pdb.set_trace()
-        output_dots = tokenizer.batch_decode(output, skip_special_tokens=True)
+        output_dots = tokenizer.batch_decode(output.sequences, skip_special_tokens=True)
 
         labels = batch["labels"]
         if args.dataset == "plan_given_text":
@@ -216,6 +217,7 @@ def evaluate(args):
             # text generation
             inputs = tokenizer.batch_decode(model_input, skip_special_tokens=True)
             outputs = output_dots
+            scores = output.sequences_scores # or output.scores?
             import pdb; pdb.set_trace()
 
     print(f"Exact match: {exact_match} / {num_examples}")
@@ -244,10 +246,13 @@ if __name__ == "__main__":
         choices = [
             #"plan_given_text",
             #"mentions_given_text_plan",
-            "plan_given_text_py_2py_2puy_en_sdn",
+            "plan_given_text_py_2py_2puy_en",
             "text_given_plan_py_2py_2puy_en_sdn",
             "text_given_plan_py_2py_2puy_en_sdy",
             "text_given_plan_planspecific",
+            "text_given_plan_py_2py_2puy_en_sdn_psn_uy",
+            "text_given_plan_py_2py_2puy_en_sdy_psn_uy",
+            "text_given_plan_py_2py_2puy_en_sdy_psy_uy",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",
