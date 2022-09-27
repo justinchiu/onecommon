@@ -37,7 +37,7 @@ def train(args):
         )
         target_encodings = tokenizer.batch_encode_plus(
             example_batch['label'],
-            max_length = 256,
+            max_length = 128,
             padding="max_length",
             truncation=True,
             return_tensors="np",

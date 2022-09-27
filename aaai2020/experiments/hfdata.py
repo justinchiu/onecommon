@@ -35,8 +35,8 @@ use_extrema_features = False
 use_unks = False
 
 # vary these only
-use_short_describe = True
-use_plan_specific_description = True
+use_short_describe = False
+use_plan_specific_description = False
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -305,6 +305,9 @@ def describe_plan_specific_dots(dots, plan):
         (i, j) for i in range(7) for j in range(7)
         if i != j and boolplan[i] and boolplan[j]
     ]
+    if use_unordered_pairwise:
+        # unordered pairs
+        dot_pairs = set([tuple(sorted(x)) for x in dot_pairs])
 
     pairwise_strs = []
     for i,j in dot_pairs:
@@ -471,11 +474,14 @@ for split in splits:
         for dots, text in zip(examples["dots"], examples["text"])
     ]
     # not allowed to use plan-specific dot descriptions
-
-    max_length = max([len(tokenizer.tokenize(x)) for x in plan_examples["input"]])
-    print(f"Max length of example input: {max_length}")
+    input_lens = [len(tokenizer.tokenize(x)) for x in plan_examples["input"]]
+    max_length_input = max(input_lens)
+    print(f"Max length of plan input: {max_length_input}")
+    print(plan_examples["input"][np.argmax(input_lens)])
 
     plan_examples["label"] = examples["plan"]
+    max_length_output = max([len(tokenizer.tokenize(x)) for x in plan_examples["label"]])
+    print(f"Max length of plan output: {max_length_output}")
     plan_dataset = Dataset.from_dict(plan_examples)
     plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text_{feature_string}.hf")
 
@@ -486,8 +492,14 @@ for split in splits:
         f"{dots} [MSEP] {text} [MSEP] {plan}"
         for dots, text, plan in zip(dot_descs, examples["text"], examples["plan"])
     ]
+    input_lens = [len(tokenizer.tokenize(x)) for x in text_examples["input"]]
+    max_length_input = max(input_lens)
+    print(f"Max length of text input: {max_length_input}")
+    print(text_examples["input"][np.argmax(input_lens)])
 
     text_examples["label"] = examples["outtext"]
+    max_length_output = max([len(tokenizer.tokenize(x)) for x in text_examples["label"]])
+    print(f"Max length of text output: {max_length_output}")
     text_dataset = Dataset.from_dict(text_examples)
     text_dataset.save_to_disk(f"hf_datasets/{split}_text_given_plan_{feature_string}.hf")
 
