@@ -233,7 +233,7 @@ class EgoCostBelief(CostBelief):
         # = p(s)(1 - p(r=1|u,s)) |z|C|u|9^-|u|
 
         u = int(utt.sum())
-        utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
+        utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots).item()
         temporal_confirms = np.array([
             self.temporal_confirm(x, self.history) for x in self.configs
         ])
