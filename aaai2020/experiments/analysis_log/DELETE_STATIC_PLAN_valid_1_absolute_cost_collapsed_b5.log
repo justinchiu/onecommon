@@ -11,7 +11,12 @@ Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle
 --------------------------------------------------------------------------------
 Disagreement?!
 --------------------------------------------------------------------------------
-dialog_len=5.00 sent_len=7.60 agree=0.00% moving_agree=0.00% advantage=0.00 moving_advantage=0.00 time=37.344s comb_rew=0.00 agree_comb_rew=0.00 alice_rew=0.00 alice_moving_rew=0.00 agree_alice_rew=0.00 alice_make_sel=0.00% alice_unique=3 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.00 bob_moving_rew=0.00 agree_bob_rew=0.00 bob_make_sel=0.00% bob_unique=2 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+dialog_len=5.00 sent_len=7.60 agree=0.00% moving_agree=0.00% advantage=0.00 moving_advantage=0.00 time=33.112s comb_rew=0.00 agree_comb_rew=0.00 alice_rew=0.00 alice_moving_rew=0.00 agree_alice_rew=0.00 alice_make_sel=0.00% alice_unique=3 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.00 bob_moving_rew=0.00 agree_bob_rew=0.00 bob_make_sel=0.00% bob_unique=2 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
 --------------------------------------------------------------------------------
 ================================================================================
 
+================================================================================
+dialog 2
+Bob   : do you have a small black dot , darkest one out of all of them ? <eos>
+Alice : i have 2 small black dots . one of the black dots is south of a few light grey dots . <eos>
+Bob   : i do n't have that , i have 1 small black dot , below and to the of it is a medium size medium grey dot , below and to the bottom of it is a light grey , medium size dot <eos>

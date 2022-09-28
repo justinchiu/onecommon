@@ -498,7 +498,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             )
             writer.args.reranking_confidence = True
             # check writer.ref_outs and writer.ref_preds
-            #import pdb; pdb.set_trace()
 
             # LOGGING
             #if writer.agent_id == YOU:
