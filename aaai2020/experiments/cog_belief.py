@@ -141,7 +141,10 @@ class CostBelief(OrBelief):
             scores.append(score)
 
         #import pdb; pdb.set_trace()
-        return (min(scores) / denominator).clip(0, 1)
+        #return (min(scores) / denominator).clip(0, 1)
+        #return (min(scores) * 5 / denominator).clip(0, 1)
+        return 1.0 if min(scores) > 0 else 0.0
+        # ^ HARD CONTIGUITY PENALTY
 
 
 
