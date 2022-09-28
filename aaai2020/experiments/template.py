@@ -294,16 +294,21 @@ def spatial_descriptions4(xy):
     return descriptions
 
 
-def size_color_descriptions(sc, num_buckets=3):
-    size_map = size_map3 if num_buckets == 3 else size_map5
-    color_map = color_map3 if num_buckets == 3 else color_map5
+def size_color_descriptions(sc, size_map=size_map5, color_map=color_map5):
+    #size_map = size_map3 if num_buckets == 3 else size_map5
+    #color_map = color_map3 if num_buckets == 3 else color_map5
     return [
         (size_map[x[0]], color_map[x[1]]) for x in sc
     ]
 
-def render_2(xy, sc, names=None, flip_y=True, concise=False, num_buckets=3):
+def render_2(
+    xy, sc,
+    names=None, flip_y=True, concise=False,
+    size_map=size_map5,
+    color_map=color_map5,
+):
     xy_desc = spatial_descriptions2(xy, flip_y)
-    sc_desc = size_color_descriptions(sc, num_buckets)
+    sc_desc = size_color_descriptions(sc, size_map, color_map)
     mention = mention_2a if concise else mention_2
     return mention.render(
         dot1 = named_spatial_dot_template.render(

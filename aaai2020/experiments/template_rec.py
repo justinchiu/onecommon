@@ -26,14 +26,18 @@ from template import (
 
 NAMES = ["A", "B", "C", "D", "E", "F", "G", "H", "I"]
 
-def render_2_dots(dots, flip_y=True):
+def render_2_dots(dots, flip_y=True, size_map=size_map5, color_map=size_map5):
     sc = np.array([
         [dots[0].size, dots[0].color],
         [dots[1].size, dots[1].color],
     ])
     xy = np.vstack((dots[0].xy, dots[1].xy))
     names = [NAMES[dot.id] for dot in dots]
-    return render_2(xy, sc, names, flip_y=flip_y, concise=True)
+    return render_2(
+        xy, sc, names, flip_y=flip_y, concise=True,
+        size_map = size_map,
+        color_map = color_map,
+    )
 
 class Dot:
     def __init__(self, id, size, color, xy):
@@ -236,7 +240,12 @@ class RegionNode:
                     size = size_map[children[0].size],
                     color = color_map[children[0].color],
                     name = children[0].name,
-                ) if len(children) == 1 else render_2_dots(children, flip_y=self.flip_y)
+                ) if len(children) == 1 else render_2_dots(
+                    children,
+                    flip_y=self.flip_y,
+                    size_map = size_map,
+                    color_map = color_map,
+                )
                 for children in flattened_children
             ]
 
@@ -446,11 +455,13 @@ class RegionNode:
 def render(n, sc, xy, ids, confirm=None, flip_y=True, inner=False, num_buckets=5):
     confirm_text = "Yes ." if confirm == 1 else "No ." if confirm == 0 else None
     names = [NAMES[id] for id in ids]
+    size_map = size_map5 if num_buckets == 5 else size_map3
+    color_map = color_map5 if num_buckets == 5 else color_map3
     if n == 2:
         if confirm is None:
-            return f"Do you see {render_2(xy, sc, names, flip_y=flip_y, num_buckets=num_buckets)}"
+            return f"Do you see {render_2(xy, sc, names, flip_y=flip_y, size_map=size_map, color_map=color_map)}"
         else:
-            return f"{confirm_text} Do you see {render_2(xy, sc, names, flip_y=flip_y, num_buckets=num_buckets)}"
+            return f"{confirm_text} Do you see {render_2(xy, sc, names, flip_y=flip_y, size_map=size_map,color_map=color_map)}"
 
     root = RegionNode(
         num_buckets = 3,
