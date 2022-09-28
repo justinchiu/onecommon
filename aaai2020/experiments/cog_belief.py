@@ -143,7 +143,8 @@ class CostBelief(OrBelief):
         #import pdb; pdb.set_trace()
         #return (min(scores) / denominator).clip(0, 1)
         #return (min(scores) * 5 / denominator).clip(0, 1)
-        return 0.99 if min(scores) > 0 else 0.01
+        #return 0.99 if min(scores) > 0 else 0.01
+        return 1.0 if min(scores) > 0 else 0.0
         # ^ HARD CONTIGUITY PENALTY
 
 
@@ -199,9 +200,10 @@ class CostBelief(OrBelief):
 
             #p_deny = (1 - likelihood)*distractor_prob
             p_deny = (1 - likelihood)*distractor_prob
-            print(p_deny)
-            if self.spatial_denies[s] < .1:
-                import pdb; pdb.set_trace()
+            #if utt.sum() > 1 and state_config.sum() > 4:
+                #print(p_deny)
+                #if self.spatial_denies[s] < .1 and c_likelihood > 0.9:
+                    #import pdb; pdb.set_trace()
 
             #print(p_deny)
             if p_deny > 1:
