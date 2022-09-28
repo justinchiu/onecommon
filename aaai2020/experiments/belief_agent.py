@@ -12,7 +12,7 @@ from belief import (
     ConfigBelief,
     entropy, expand_plan,
 )
-from cog_belief import CostBelief, EgoCostBelief
+from cog_belief import CostBelief, EgoCostBelief, CostBelief2
 
 from template_rec import render, render_select
 
@@ -132,7 +132,7 @@ class BeliefAgent(RnnAgent):
                 use_contiguity = self.contiguity_coef > 0,
             )
         elif self.args.belief == "cost":
-            self.belief = CostBelief(
+            self.belief = CostBelief2(
                 self.num_dots, context,
                 absolute = self.args.absolute_bucketing == 1,
                 num_size_buckets = self.args.num_size_buckets,
