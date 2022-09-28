@@ -71,7 +71,6 @@ class CostBelief2(OrBelief):
         for u, utt in enumerate(self.configs):
             self.spatial_resolvable[u] = self.is_contiguous(utt)
             for s, config in enumerate(self.configs):
-                self.resolvable[u,s] = self.can_resolve_utt(utt, config)
                 self.config_likelihood[u,s] = (
                     correct
                     if self.resolvable[u,s] and self.spatial_resolvable[u]
