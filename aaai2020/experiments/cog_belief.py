@@ -16,6 +16,116 @@ from belief_utils import comb_index, entropy, marginal_entropy
 
 from belief import process_ctx, Belief, OrBelief
 
+class CostBelief2(OrBelief):
+    """
+    Or model for response modeling.
+    Partner will (noisily) confirm an utterance if they see all dots mentioned
+    OR have matching dots in unobserved context.
+    The OR happens at the config level.
+    * response r: 1
+    * utterance u: num_dots
+    * state s: num_dots
+    * unobserved partner dots z: num_dots - |s|
+
+    Normal model for dots and state
+        p(r=1|u,s) = initialization
+        p(r=0|u,s) = 1-p(r=1|u,s)
+    Noisy-OR
+        p(r=0|u,s,z) = 1-p(r=0|u,s)p(r=0|u,z)
+    Dot distractors
+        p(r=0|u,z) = 1 - |z|C|u| 9^-|u|
+
+    Accurately estimates failure of small and large configurations.
+
+    Note on p(r=0|u,z) = 1-|z|C|u|9^-|u|:
+        color = light, medium, dark
+        size = small, medium, dark
+        Assume descriptions are all independent, so only 9 possibilities
+        for each dot in z
+        Size of z: remaining dots outside of s |z| = num_dots - |s|
+    """
+    def __init__(
+        self,
+        num_dots,
+        ctx,
+        correct = 0.95,
+        overlap_size = None,
+        absolute = True,
+        use_diameter = False,
+        use_contiguity = False,
+        num_size_buckets = 5,
+        num_color_buckets = 5,
+    ):
+        super().__init__(
+            num_dots,
+            ctx,
+            overlap_size = overlap_size,
+            absolute = absolute,
+            correct = correct,
+            use_diameter = use_diameter,
+            use_contiguity = use_contiguity,
+            num_size_buckets = num_size_buckets,
+            num_color_buckets = num_color_buckets,
+        )
+        self.spatial_resolvable = np.zeros((self.num_configs,), dtype=bool)
+        for u, utt in enumerate(self.configs):
+            self.spatial_resolvable[u] = self.spatial_deny(utt)
+            for s, config in enumerate(self.configs):
+                self.resolvable[u,s] = self.can_resolve_utt(utt, config)
+                self.config_likelihood[u,s] = (
+                    correct
+                    if self.resolvable[u,s] and self.spatial_resolvable[u]
+                    else 1 - correct
+                )
+
+    def spatial_deny(self, x):
+        #return .001
+        if x.sum() <= 1:
+            return 0.001
+
+        rg = np.arange(self.num_dots)
+        xy = self.xy
+        pairs = np.array(list(itertools.product(rg, rg)))
+        xy_pairs = xy[pairs].reshape((self.num_dots, self.num_dots, 2, 2))
+        dist_pairs = np.linalg.norm(xy_pairs[:,:,0] - xy_pairs[:,:,1], axis=-1)
+        idxs = dist_pairs.argsort()
+        ranks = idxs.argsort()
+
+        dots = x.nonzero()[0]
+
+        def score_rec(dots, remaining_dots, score):
+            if len(remaining_dots) == 0:
+                return score
+            remainder = np.delete(rg, dots)
+            trunc_dists = dist_pairs[
+                np.array(dots)[:,None],
+                remainder,
+            ]
+            trunc_idxs = trunc_dists.argsort()
+            trunc_ranks = trunc_idxs.argsort()
+
+            dot_dists = dist_pairs[
+                np.array(dots)[:,None],
+                remaining_dots,
+            ]
+            closest_dots = remaining_dots[dot_dists.argmin(-1)]
+            #best_ranks = ranks[np.array(dots), closest_dots]
+            col, row = np.where(remainder[:,None] == closest_dots)
+            best_ranks = trunc_ranks[row, col]
+            best_rank = best_ranks.min()
+
+            best_dot = closest_dots[best_ranks.argmin()]
+            idx = np.where(remaining_dots == best_dot)[0].item()
+            return score_rec(dots + [best_dot], np.delete(remaining_dots, idx), score + best_rank)
+
+        scores = []
+        for i, dot in enumerate(dots):
+            remaining_dots = np.delete(dots, i)
+            score = score_rec([dot], remaining_dots, 0)
+            scores.append(score)
+
+        return min(scores) > 0
+
 
 class CostBelief(OrBelief):
     def __init__(self, *args, use_spatial=True, use_temporal=False, **kwargs):

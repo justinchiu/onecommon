@@ -17,7 +17,7 @@ from scipy.spatial import ConvexHull, Delaunay
 from belief_utils import comb_index, entropy, marginal_entropy
 
 from belief import process_ctx, Belief, OrBelief
-from cog_belief import CostBelief, EgoCostBelief
+from cog_belief import CostBelief, EgoCostBelief, CostBelief2
 
 np.seterr(all="raise")
 
@@ -29,6 +29,8 @@ def rollout(ctx, ids, belief, response_strategy):
         belief_type = f"EgoCostBelief-spat{belief.use_spatial}-temp{belief.use_temporal}"
     elif isinstance(belief, CostBelief):
         belief_type = f"CostBelief-spat{belief.use_spatial}-temp{belief.use_temporal}"
+    elif isinstance(belief, CostBelief2):
+        belief_type = f"CostBelief2"
     elif isinstance(belief, OrBelief):
         belief_type = f"OrBelief"
     else:
@@ -107,9 +109,10 @@ def main():
 
     beliefs = [
         #CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
-        CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False),
-        EgoCostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False),
-        OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
+        CostBelief2(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
+        #CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False),
+        #EgoCostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False),
+        #OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
     ]
     strategies = [
         "all_yes",

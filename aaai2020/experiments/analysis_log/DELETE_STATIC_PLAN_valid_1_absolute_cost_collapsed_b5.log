@@ -3,3 +3,15 @@ dialog 1
 Alice : i 've got a fairly big dark circle near the center <eos>
 Bob   : i have one dot larger than the rest . <eos>
 Alice : is it a normal gray color ? <eos>
+Bob   : yes it is . <eos>
+Alice : click it <eos>
+scenario_id : S_RUtTM6LOTtufBj20
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="240" cy="368" r="9" fill="rgb(134,134,134)"/><circle cx="213" cy="159" r="11" fill="rgb(68,68,68)"/><circle cx="90" cy="114" r="8" fill="rgb(114,114,114)"/><circle cx="76" cy="350" r="8" fill="rgb(135,135,135)"/><circle cx="160" cy="100" r="8" fill="rgb(77,77,77)"/><circle cx="214" cy="221" r="8" fill="rgb(93,93,93)"/><circle cx="57" cy="276" r="12" fill="rgb(144,144,144)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="331" cy="77" r="8" fill="rgb(94,94,94)"/><circle cx="261" cy="246" r="11" fill="rgb(68,68,68)"/><circle cx="138" cy="201" r="8" fill="rgb(114,114,114)"/><circle cx="144" cy="100" r="8" fill="rgb(122,122,122)"/><circle cx="208" cy="186" r="8" fill="rgb(77,77,77)"/><circle cx="261" cy="308" r="8" fill="rgb(93,93,93)"/><circle cx="105" cy="362" r="12" fill="rgb(144,144,144)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=5.00 sent_len=7.60 agree=0.00% moving_agree=0.00% advantage=0.00 moving_advantage=0.00 time=37.344s comb_rew=0.00 agree_comb_rew=0.00 alice_rew=0.00 alice_moving_rew=0.00 agree_alice_rew=0.00 alice_make_sel=0.00% alice_unique=3 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.00 bob_moving_rew=0.00 agree_bob_rew=0.00 bob_make_sel=0.00% bob_unique=2 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+

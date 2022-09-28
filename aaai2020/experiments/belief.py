@@ -695,10 +695,13 @@ class OrBelief(OrAndBelief):
         # initialize config_likelihood based on configuration resolution
         self.config_likelihood = np.zeros(
             (self.num_configs, self.num_configs), dtype=float)
+        self.resolvable= np.zeros(
+            (self.num_configs, self.num_configs), dtype=bool)
         for u, utt in enumerate(self.configs):
             for s, config in enumerate(self.configs):
+                self.resolvable[u,s] = self.can_resolve_utt(utt, config)
                 self.config_likelihood[u,s] = (
-                    correct if self.can_resolve_utt(utt, config) else 1 - correct
+                    correct if self.resolvable[u,s] else 1 - correct
                 )
         # for computing utility
         self.use_diameter = use_diameter
