@@ -215,8 +215,8 @@ def process_dialogue(scenario_id, dialogue):
         ctx_struct = ctxs[scenario_id]
         ctx = ctx_struct[1 + turn["writer_id"]]
         ctx_np = np.array(ctx, dtype=float).reshape(7, 4)
-        from belief import OrBelief
-        belief = OrBelief(7, ctx_np)
+        from cog_belief import CostBelief
+        belief = CostBelief(7, ctx_np)
         feats = belief.get_feats(np.array(mentions))
         ids = np.array(mentions).nonzero()[0]
         #print(ctx_struct[3 + turn["writer_id"]])
@@ -235,14 +235,21 @@ def process_dialogue(scenario_id, dialogue):
         sents = turn["prior_beam_sents" if display == "priorbeam" else "plan_beam_sents"]
         ref_res = turn["prior_beam_ref_res" if display == "priorbeam" else "plan_beam_ref_res"]
         lm = turn["prior_beam_lm" if display == "priorbeam" else "plan_beam_lm"]
-        for s,r,l in sorted(zip(sents, ref_res, lm), reverse=True, key=lambda x: x[1]):
+        for s,r,l in sorted(zip(sents, ref_res, lm), reverse=True, key=lambda x: x[1])[:16]:
             st.write(s)
             st.write(f"Ref res {r:.2f} LM {l:.2f}")
 
+        st.write("### bart output")
+        sents = turn["plan_beam_sents_bart"]
+        lm = turn["plan_beam_lm_bart"]
+        for s,l in sorted(zip(sents, lm), reverse=True, key=lambda x: x[1]):
+            st.write(f"{s} (LM {l:.2f})")
+
 splits = [
-    "valid_1_absolute_or_collapsed",
-    "valid_1_absolute_cost_collapsed",
-    "valid_1_absolute_cost_egocentric_collapsed",
+    "valid_1_absolute_or_collapsed_b5",
+    "valid_1_absolute_cost_collapsed_b5",
+    "valid_1_absolute_cost_egocentric_collapsed_b5",
+    "DELETE_valid_1_absolute_cost_collapsed_b5",
 ]
 
 split = "train"
@@ -250,6 +257,7 @@ split = "valid_1"
 #split = splits[0]
 split = splits[1]
 #split = splits[2]
+split = splits[3]
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 analysis_paths = [Path("../../aaai2020/experiments/analysis_log") / split for split in splits]
 scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
