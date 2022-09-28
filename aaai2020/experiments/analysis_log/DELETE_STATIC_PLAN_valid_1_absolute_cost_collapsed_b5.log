@@ -477,3 +477,19 @@ dialog_len=4.45 sent_len=14.99 agree=17.24% moving_agree=16.67% advantage=0.00 m
 
 ================================================================================
 dialog 30
+Bob   : hello , i see two dark dots that are side by side on the upper left hand side <eos>
+Alice : do you see a line of three dots sloping slightly upwards and to the right , the right most one is light and big <eos>
+Bob   : no . do you see a small light grey dot on the left hand side , halfway up from the bottom <eos>
+Alice : click smallest lightest <eos>
+scenario_id : S_5ddRCMLwfpuBSrCM
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="298" cy="384" r="12" fill="rgb(161,161,161)"/><circle cx="308" cy="62" r="7" fill="rgb(188,188,188)"/><circle cx="82" cy="217" r="9" fill="rgb(137,137,137)"/><circle cx="23" cy="252" r="11" fill="rgb(111,111,111)"/><circle cx="217" cy="300" r="11" fill="rgb(104,104,104)"/><circle cx="309" cy="160" r="12" fill="rgb(80,80,80)"/><circle cx="151" cy="194" r="13" fill="rgb(191,191,191)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="131" cy="157" r="8" fill="rgb(73,73,73)"/><circle cx="354" cy="237" r="7" fill="rgb(188,188,188)"/><circle cx="127" cy="392" r="9" fill="rgb(137,137,137)"/><circle cx="60" cy="253" r="10" fill="rgb(80,80,80)"/><circle cx="169" cy="154" r="8" fill="rgb(95,95,95)"/><circle cx="355" cy="335" r="12" fill="rgb(80,80,80)"/><circle cx="197" cy="369" r="13" fill="rgb(191,191,191)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=4.43 sent_len=15.07 agree=16.67% moving_agree=16.13% advantage=0.00 moving_advantage=0.00 time=32.831s comb_rew=0.33 agree_comb_rew=1.67 alice_rew=0.17 alice_moving_rew=0.16 agree_alice_rew=0.83 alice_make_sel=0.00% alice_unique=64 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.17 bob_moving_rew=0.16 agree_bob_rew=0.83 bob_make_sel=0.00% bob_unique=64 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 31
