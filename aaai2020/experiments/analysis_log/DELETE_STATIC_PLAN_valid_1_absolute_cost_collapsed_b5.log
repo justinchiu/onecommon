@@ -412,3 +412,50 @@ dialog_len=4.40 sent_len=14.75 agree=24.00% moving_agree=23.08% advantage=0.00 m
 dialog 26
 Bob   : do you have a tiny black dot on top of two light gray same size dots ? <eos>
 Alice : i got three in a line with the smallest being a black dot in the middle <eos>
+Bob   : ok .. i see that . choose the tiny black dot in middle <eos>
+Alice : ok <eos>
+scenario_id : S_nsdexgwII2jlsi1h
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="131" cy="119" r="10" fill="rgb(201,201,201)"/><circle cx="237" cy="330" r="8" fill="rgb(63,63,63)"/><circle cx="183" cy="296" r="11" fill="rgb(114,114,114)"/><circle cx="103" cy="81" r="13" fill="rgb(147,147,147)"/><circle cx="291" cy="393" r="9" fill="rgb(108,108,108)"/><circle cx="56" cy="147" r="8" fill="rgb(60,60,60)"/><circle cx="61" cy="183" r="10" fill="rgb(195,195,195)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="165" cy="57" r="10" fill="rgb(201,201,201)"/><circle cx="270" cy="268" r="8" fill="rgb(63,63,63)"/><circle cx="239" cy="357" r="10" fill="rgb(70,70,70)"/><circle cx="216" cy="234" r="11" fill="rgb(114,114,114)"/><circle cx="324" cy="331" r="9" fill="rgb(108,108,108)"/><circle cx="89" cy="85" r="8" fill="rgb(60,60,60)"/><circle cx="94" cy="121" r="10" fill="rgb(195,195,195)"/></svg>
+--------------------------------------------------------------------------------
+Agreement!
+--------------------------------------------------------------------------------
+dialog_len=4.38 sent_len=14.68 agree=26.92% moving_agree=25.93% advantage=0.00 moving_advantage=0.00 time=29.533s comb_rew=0.54 agree_comb_rew=1.75 alice_rew=0.27 alice_moving_rew=0.26 agree_alice_rew=0.88 alice_make_sel=0.00% alice_unique=55 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.27 bob_moving_rew=0.26 agree_bob_rew=0.88 bob_make_sel=0.00% bob_unique=55 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 27
+Alice : i have three dots that form a triangle . the two dots on the left are black , and the dot on the right is dark grey <eos>
+Bob   : is the one on the right larger than the darker ones <eos>
+Alice : yes . should we click that one ? <eos>
+Bob   : yes . let 's do that one <eos>
+scenario_id : S_IRmS6Q7ghPZxoqfs
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="95" cy="87" r="11" fill="rgb(66,66,66)"/><circle cx="316" cy="58" r="12" fill="rgb(196,196,196)"/><circle cx="139" cy="218" r="12" fill="rgb(141,141,141)"/><circle cx="32" cy="196" r="9" fill="rgb(82,82,82)"/><circle cx="349" cy="101" r="11" fill="rgb(56,56,56)"/><circle cx="121" cy="344" r="9" fill="rgb(173,173,173)"/><circle cx="319" cy="158" r="11" fill="rgb(158,158,158)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="305" cy="84" r="11" fill="rgb(66,66,66)"/><circle cx="349" cy="215" r="12" fill="rgb(141,141,141)"/><circle cx="242" cy="194" r="9" fill="rgb(82,82,82)"/><circle cx="260" cy="364" r="8" fill="rgb(149,149,149)"/><circle cx="330" cy="341" r="9" fill="rgb(173,173,173)"/><circle cx="183" cy="175" r="8" fill="rgb(191,191,191)"/><circle cx="161" cy="285" r="8" fill="rgb(101,101,101)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=4.37 sent_len=14.66 agree=25.93% moving_agree=25.00% advantage=0.00 moving_advantage=0.00 time=29.444s comb_rew=0.52 agree_comb_rew=1.75 alice_rew=0.26 alice_moving_rew=0.25 agree_alice_rew=0.88 alice_make_sel=0.00% alice_unique=57 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.26 bob_moving_rew=0.25 agree_bob_rew=0.88 bob_make_sel=0.00% bob_unique=57 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 28
+Bob   : do you see a big gray for near the center and there is two other dots next to it on the upper side one smaller on the left and another one darker black in the right <eos>
+Alice : dont know what you mean . do you see two light grey dots very similar in size diagonal to one another ? <eos>
+Bob   : no ! do you see a light gray dot on the left edge or and black one near the right edge <eos>
+Alice : yes if the black one is med size click it ! <eos>
+Bob   : ok <eos>
+scenario_id : S_V2d9iV6bMQJCgMOK
+Alice : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_0"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="309" cy="385" r="11" fill="rgb(98,98,98)"/><circle cx="161" cy="337" r="7" fill="rgb(110,110,110)"/><circle cx="220" cy="223" r="8" fill="rgb(171,171,171)"/><circle cx="223" cy="88" r="7" fill="rgb(85,85,85)"/><circle cx="184" cy="117" r="8" fill="rgb(62,62,62)"/><circle cx="200" cy="308" r="9" fill="rgb(182,182,182)"/><circle cx="400" cy="180" r="9" fill="rgb(84,84,84)"/></svg>
+Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle cx="215" cy="215" r="205" fill="none" stroke="black" stroke-width="2" stroke-dasharray="3,3"/><circle cx="138" cy="379" r="8" fill="rgb(171,171,171)"/><circle cx="141" cy="244" r="7" fill="rgb(85,85,85)"/><circle cx="249" cy="89" r="12" fill="rgb(77,77,77)"/><circle cx="149" cy="126" r="10" fill="rgb(148,148,148)"/><circle cx="102" cy="273" r="8" fill="rgb(62,62,62)"/><circle cx="317" cy="336" r="9" fill="rgb(84,84,84)"/><circle cx="197" cy="172" r="13" fill="rgb(141,141,141)"/></svg>
+--------------------------------------------------------------------------------
+Disagreement?!
+--------------------------------------------------------------------------------
+dialog_len=4.39 sent_len=14.85 agree=25.00% moving_agree=24.14% advantage=0.00 moving_advantage=0.00 time=29.641s comb_rew=0.50 agree_comb_rew=1.75 alice_rew=0.25 alice_moving_rew=0.24 agree_alice_rew=0.88 alice_make_sel=0.00% alice_unique=59 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.25 bob_moving_rew=0.24 agree_bob_rew=0.88 bob_make_sel=0.00% bob_unique=59 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+--------------------------------------------------------------------------------
+================================================================================
+
+================================================================================
+dialog 29
