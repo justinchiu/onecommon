@@ -16,7 +16,7 @@ from belief_utils import comb_index, entropy, marginal_entropy
 
 from belief import process_ctx, Belief, OrBelief
 
-class CostBelief2(OrBelief):
+class CostBelief(OrBelief):
     """
     Or model for response modeling.
     Partner will (noisily) confirm an utterance if they see all dots mentioned
@@ -125,7 +125,7 @@ class CostBelief2(OrBelief):
         return min(scores) == 0
 
 
-class CostBelief(OrBelief):
+class CostBeliefDeprecated(OrBelief):
     def __init__(self, *args, use_spatial=True, use_temporal=False, **kwargs):
         super().__init__(*args, **kwargs)
         self.spatial_denies = np.array([
@@ -332,6 +332,7 @@ class CostBelief(OrBelief):
 class EgoCostBelief(CostBelief):
     # ABLATED version of CostBelief
     # Does not consider unshared dots
+    # same method as belief.py:ConfigBelief
     def joint(self, prior, utt):
         # p(r | u,s)
         # prior: num_configs * 7
@@ -339,28 +340,22 @@ class EgoCostBelief(CostBelief):
         # = \sum_z p(s)p(z|s) p(r=0|u,s)p(r=0|u,z)
         # = p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
         # = p(s)(1 - p(r=1|u,s)) |z|C|u|9^-|u|
-
-        u = int(utt.sum())
-        utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots).item()
-        temporal_confirms = np.array([
-            self.temporal_confirm(x, self.history) for x in self.configs
-        ])
-        tc = temporal_confirms[utt_idx] if self.use_temporal else 1
-        sd = self.spatial_denies[utt_idx] if self.use_spatial else 0
-
         p_r1 = []
         p_r0 = []
         for s,ps in enumerate(prior):
             state_config = self.configs[s]
             z = self.num_dots - state_config.sum()
-            c_likelihood = self.config_likelihood[utt_idx,s].item()
-            likelihood = c_likelihood * tc * (1-sd)
-
-            p_deny = (1 - likelihood)
-
-            p_r0.append(p_deny * ps)
-            p_r1.append((1 - p_deny) * ps)
+            u = int(utt.sum())
+            utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
+            likelihood = self.config_likelihood[utt_idx,s].item()
+            #for i,d in enumerate(utt):
+                #if d == 1:
+                    #likelihood *= self.likelihood[1,d,state_config[i]]
+            #distractor_prob = 1 - comb(z,u) * 9. ** (-u)
+            p_r1.append(likelihood * ps)
+            p_r0.append((1 - likelihood) * ps)
         return np.array((p_r0, p_r1))
+
 
 if __name__ == "__main__":
     np.seterr(all="raise")
