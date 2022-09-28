@@ -434,6 +434,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
             reader_configs = reader.dots[reader_matches]
             label = label_config_sets(writer_configs, reader_configs)
             # / plan feature level labels
+            import pdb; pdb.set_trace()
 
             # log prob of plans under plan model
             scores = writer._next_mention_scores[1]

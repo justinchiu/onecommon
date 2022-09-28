@@ -819,7 +819,7 @@ class OrBelief(OrAndBelief):
         return np.stack(matches) if matches else np.array([], dtype=int)
 
     def joint(self, prior, utt):
-        # p(r | u,s)
+        # p(r,s | u)
         # prior: num_configs * 7
         # p(r=0|u,s)p(s)
         # = \sum_z p(s)p(z|s) p(r=0|u,s)p(r=0|u,z)
