@@ -108,8 +108,8 @@ def main():
     beliefs = [
         #CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
         CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False),
-        #EgoCostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False),
-        #OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
+        EgoCostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, use_temporal=False),
+        OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
     ]
     strategies = [
         "all_yes",

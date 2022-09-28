@@ -142,9 +142,9 @@ class CostBelief(OrBelief):
 
         #import pdb; pdb.set_trace()
         #return (min(scores) / denominator).clip(0, 1)
-        return (min(scores) * 3 / denominator).clip(0, 1)
+        #return (min(scores) * 3 / denominator).clip(0, 1)
         #return 0.99 if min(scores) > 0 else 0.01
-        #return 1.0 if min(scores) > 0 else 0.0
+        return 1.0 if min(scores) > 0 else 0.0
         # ^ HARD CONTIGUITY PENALTY
 
 
@@ -177,19 +177,20 @@ class CostBelief(OrBelief):
         # = p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
         # = p(s)(1 - p(r=1|u,s)) |z|C|u|9^-|u|
 
+        u = int(utt.sum())
+        utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots).item()
         temporal_confirms = np.array([
             self.temporal_confirm(x, self.history) for x in self.configs
         ])
+        tc = temporal_confirms[utt_idx] if self.use_temporal else 1
+        sd = self.spatial_denies[utt_idx] if self.use_spatial else 0
+
         p_r1 = []
         p_r0 = []
         for s,ps in enumerate(prior):
             state_config = self.configs[s]
             z = self.num_dots - state_config.sum()
-            u = int(utt.sum())
-            utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
             c_likelihood = self.config_likelihood[utt_idx,s].item()
-            tc = temporal_confirms[s] if self.use_temporal else 1
-            sd = self.spatial_denies[s] if self.use_spatial else 0
             likelihood = c_likelihood * tc * (1-sd)
             #if len(self.history) > 0:
                 #import pdb; pdb.set_trace()
@@ -215,6 +216,9 @@ class CostBelief(OrBelief):
 
             p_r0.append(p_deny * ps)
             p_r1.append((1 - p_deny) * ps)
+            #if (utt == np.array([0, 1, 0, 0, 1, 0, 0])).all() and (state_config == np.array([0,1,0,1,1,0,0])).all():
+            #if (utt == np.array([0, 1, 0, 1, 0, 0, 0])).all() and (state_config == np.array([0,1,0,1,1,0,0])).all():
+                #import pdb; pdb.set_trace()
         return np.array((p_r0, p_r1))
 
 class EgoCostBelief(CostBelief):
@@ -228,19 +232,20 @@ class EgoCostBelief(CostBelief):
         # = p(s)p(r=0|u,s)\sum_z p(z|s)p(r=0|u,z)
         # = p(s)(1 - p(r=1|u,s)) |z|C|u|9^-|u|
 
+        u = int(utt.sum())
+        utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
         temporal_confirms = np.array([
             self.temporal_confirm(x, self.history) for x in self.configs
         ])
+        tc = temporal_confirms[utt_idx] if self.use_temporal else 1
+        sd = self.spatial_denies[utt_idx] if self.use_spatial else 0
+
         p_r1 = []
         p_r0 = []
         for s,ps in enumerate(prior):
             state_config = self.configs[s]
             z = self.num_dots - state_config.sum()
-            u = int(utt.sum())
-            utt_idx = np.right_shift(np.packbits(utt), 8-self.num_dots)
             c_likelihood = self.config_likelihood[utt_idx,s].item()
-            tc = temporal_confirms[s] if self.use_temporal else 1
-            sd = self.spatial_denies[s] if self.use_spatial else 0
             likelihood = c_likelihood * tc * (1-sd)
 
             p_deny = (1 - likelihood)
