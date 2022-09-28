@@ -676,7 +676,7 @@ class OrBelief(OrAndBelief):
         ctx,
         correct = 0.95,
         overlap_size = None,
-        absolute = False,
+        absolute = True,
         use_diameter = False,
         use_contiguity = False,
         num_size_buckets = 5,
