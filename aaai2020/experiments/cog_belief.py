@@ -78,9 +78,8 @@ class CostBelief2(OrBelief):
                 )
 
     def is_contiguous(self, x):
-        #return .001
         if x.sum() <= 1:
-            return 0.001
+            return True
 
         rg = np.arange(self.num_dots)
         xy = self.xy

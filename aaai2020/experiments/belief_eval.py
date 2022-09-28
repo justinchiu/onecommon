@@ -120,6 +120,7 @@ def main():
         "alternate",
     ]
     for belief in beliefs:
+        belief.ids = ids
         for strategy in strategies:
             rollout(ctx, ids, belief, strategy)
 
