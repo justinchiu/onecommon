@@ -69,7 +69,7 @@ class CostBelief2(OrBelief):
         )
         self.spatial_resolvable = np.zeros((self.num_configs,), dtype=bool)
         for u, utt in enumerate(self.configs):
-            self.spatial_resolvable[u] = self.spatial_deny(utt)
+            self.spatial_resolvable[u] = self.is_contiguous(utt)
             for s, config in enumerate(self.configs):
                 self.resolvable[u,s] = self.can_resolve_utt(utt, config)
                 self.config_likelihood[u,s] = (
@@ -78,7 +78,7 @@ class CostBelief2(OrBelief):
                     else 1 - correct
                 )
 
-    def spatial_deny(self, x):
+    def is_contiguous(self, x):
         #return .001
         if x.sum() <= 1:
             return 0.001
@@ -124,7 +124,7 @@ class CostBelief2(OrBelief):
             score = score_rec([dot], remaining_dots, 0)
             scores.append(score)
 
-        return min(scores) > 0
+        return min(scores) == 0
 
 
 class CostBelief(OrBelief):
