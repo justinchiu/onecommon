@@ -11,9 +11,6 @@ from torch import optim
 from torch import autograd
 import torch.nn as nn
 
-from transformers import (
-    AutoTokenizer, AutoModelForSequenceClassification,
-)
 
 from agent import *
 from belief_agent import BeliefAgent
@@ -25,6 +22,12 @@ import domain
 from static_dialog import StaticHierarchicalDialog, StaticDialogLogger
 
 import pprint
+
+from transformers import (
+    AutoTokenizer, AutoModelForSequenceClassification,
+    BartForConditionalGeneration,
+)
+import hfutils
 
 def dump_json(file, path):
     try:
@@ -185,11 +188,19 @@ def main():
         #     freq_cutoff=args.unk_threshold, verbose=True
         # )
 
+        # confirmation predictor
         response_pretrained_path = "models/save_pretrained"
-        tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
+        confirmation_tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
         confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
             response_pretrained_path)
 
+        # language generator
+        generation_tokenizer = hfutils.get_bart_tokenizer()
+        # need to SCP this
+        bart_dir = "./hf-results-text_given_plan_py_2py_2puy_en_sdy_psy_un-l1e-05-b4/checkpoint-33000"
+        language_generator = BartForConditionalGeneration.from_pretrained(
+            bart_dir, forced_bos_token_id=0,
+        )
 
         # alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
         alice_model = utils.load_model(args.alice_model_file, prefix_dir=None, map_location='cpu')
@@ -199,8 +210,10 @@ def main():
         alice = alice_ty(
             alice_model, alice_merged_args, name='Alice', train=False,
             markable_detector=markable_detector,
-            tokenizer = tokenizer,
+            confirmation_tokenizer = confirmation_tokenizer,
             confirmation_predictor = confirmation_predictor,
+            generation_tokenizer = generation_tokenizer,
+            language_generator = language_generator,
         )
 
         # bob_model = utils.load_model(args.bob_model_file + '_' + str(seed) + '.th')
@@ -210,8 +223,10 @@ def main():
         bob_merged_args = argparse.Namespace(**utils.merge_dicts(vars(args), vars(bob_model.args)))
         bob = bob_ty(bob_model, bob_merged_args, name='Bob', train=False,
             markable_detector=markable_detector,
-            tokenizer = tokenizer,
+            confirmation_tokenizer = confirmation_tokenizer,
             confirmation_predictor = confirmation_predictor,
+            generation_tokenizer = generation_tokenizer,
+            language_generator = language_generator,
         )
 
         for model in [alice_model, bob_model]:

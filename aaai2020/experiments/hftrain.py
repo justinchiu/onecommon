@@ -106,9 +106,7 @@ def evaluate(args):
     test = Dataset.load_from_disk(f"hf_datasets/test_{dataset}.hf")
 
     # forgot to save tokenizer and model, rerun training and fix this
-    tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
-    tokenizer.add_tokens([f"dot{i}" for i in range(8)])
-    tokenizer.add_tokens(["[SEP]", "<eos>"])
+    tokenizer = hfutils.get_bart_tokenizer()
 
     # model
     output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-33000"

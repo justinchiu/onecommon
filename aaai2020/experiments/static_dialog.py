@@ -52,6 +52,7 @@ def undo_state_writer(writer):
     writer.partner_ref_preds.pop() # agent.py:889
     writer.words.pop() # agent.py:891
     writer.sents.pop() # agent.py:892
+    writer.text_history.pop() # end of agent.py:write()
     # extras
     writer.extras.pop() # agent.py:893
     if len(writer.joint_scores) > 0:
@@ -77,6 +78,7 @@ def undo_state_writer(writer):
 def undo_state_reader(reader):
     # line numbers might be off
     reader.sents.pop() # agent.py:365
+    reader.text_history.pop() # around the same...
     reader.reader_lang_hs.pop() # agent.py:381
     reader.writer_lang_hs.pop() # agent.py:382
 
@@ -133,6 +135,9 @@ class StaticDialogLogger:
         plan_beam_ref_res = None,
         plan_beam_lm = None,
         plan_beam_seed = None,
+        # BART GENERATION,
+        plan_beam_sents_bart = None,
+        plan_beam_lm_bart = None,
         # PLAN FEATURE LABEL,
         plan_prior = None,
         writer_configs_prior = None,
@@ -166,6 +171,9 @@ class StaticDialogLogger:
         self.turn["plan_beam_ref_res"] = plan_beam_ref_res
         self.turn["plan_beam_lm"] = plan_beam_lm
         self.turn["plan_beam_seed"] = plan_beam_seed
+        # BART BEAM SEARCH
+        self.turn["plan_beam_sents_bart"] = plan_beam_sents_bart
+        self.turn["plan_beam_lm_bart"] = plan_beam_lm_bart
         # PLAN FEATURE LABEL
         self.turn["plan_prior"] = plan_prior
         self.turn["writer_configs_prior"] = writer_configs_prior
@@ -545,6 +553,9 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     plan_beam_ref_res = plan_beam_ref_res,
                     plan_beam_lm = plan_beam_lm,
                     plan_beam_seed = plan_beam_seed,
+                    # BART
+                    plan_beam_sents_bart = writer.bart_sentence_candidates,
+                    plan_beam_lm_bart = writer.bart_lm_scores.tolist(),
                     # PLAN FEATURE EVALUATION
                     plan_prior = plan_prior.tolist(),
                     writer_configs_prior = writer_configs_prior.tolist(),
@@ -569,7 +580,6 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                 is_selection=this_is_selection,
             )
             # check reader.partner_ref_outs and writer.partner_ref_preds
-            #import pdb; pdb.set_trace
 
             # MBP
             #if reader.agent_id == YOU:

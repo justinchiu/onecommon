@@ -16,6 +16,9 @@ from cog_belief import CostBelief, EgoCostBelief
 
 from template_rec import render, render_select
 
+# RUNS WHOLE FILE. FACTOR OUT CODE
+from hfdata import describe_plan_specific_dots, describe_plan_sparse
+
 NO_RESPONSE = 0
 CONFIRM = 1
 DISCONFIRM = 2
@@ -93,7 +96,7 @@ class BeliefAgent(RnnAgent):
         #self.tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
         #self.confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
             #response_pretrained_path)
-        assert self.tokenizer is not None
+        assert self.confirmation_tokenizer is not None
         assert self.confirmation_predictor is not None
 
         # for selection heuristic based on entropy
@@ -170,6 +173,11 @@ class BeliefAgent(RnnAgent):
         self.sel_idx = None
         self.sel_config = None
 
+        # initialize dot description for BART
+        #import pdb; pdb.set_trace()
+        # maybe not necessary
+
+
     # do not overload super().is_selection
     def should_select(self):
         # should we select?
@@ -211,7 +219,8 @@ class BeliefAgent(RnnAgent):
         # run confirmation prediction
         # inpt_words: [String] are partner's last utterance
         text = " ".join(inpt_words)
-        tokenized_text = self.tokenizer(text)
+        # raw text strings for BART are tracked in agent.py:read
+        tokenized_text = self.confirmation_tokenizer(text)
         response_struct = self.confirmation_predictor(
             torch.tensor(tokenized_text["input_ids"])[None],
         )
@@ -278,6 +287,24 @@ class BeliefAgent(RnnAgent):
             # dots_mentioned_per_ref_to_force: num_mentions x bsz=1 x num_dots=7
             dots_mentioned_per_ref_to_force = dots_mentioned.transpose(0,1)
 
+            dot_description = describe_plan_specific_dots(self.context, plan)
+            previous_text = " ".join(w for sent in self.text_history for w in sent)
+            plan_description = describe_plan_sparse(plan)
+            generator_input = f"{dot_description} [MSEP] {previous_text} [MSEP] {plan_description}"
+            outputs = self.language_generator.generate(
+                self.generation_tokenizer(generator_input, return_tensors="pt")["input_ids"],
+                num_beams = 16,
+                num_return_sequences = 16,
+                output_scores = True,
+                return_dict_in_generate = True,
+            )
+            sentence_candidates = self.generation_tokenizer.batch_decode(
+                outputs.sequences, skip_special_tokens=True)
+            lm_scores = outputs.sequences_scores
+            # SAVE FOR LOGGING ONLY
+            self.bart_sentence_candidates = sentence_candidates
+            self.bart_lm_scores = lm_scores
+
         output = super().write(
             force_dots_mentioned = dots_mentioned_per_ref_to_force is not None,
             dots_mentioned_per_ref_to_force = dots_mentioned_per_ref_to_force,
@@ -297,6 +324,7 @@ class BeliefAgent(RnnAgent):
         self.responses.append(None)
         self.response_logits.append(None)
         self.side_infos.append(None)
+
 
         return output
 

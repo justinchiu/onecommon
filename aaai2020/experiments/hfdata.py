@@ -228,8 +228,13 @@ Each example will look like:
 Eg conversation prefixes
 """
 
-def describe_dots(dots):
-    dots = np.array(dots).reshape(-1, 4)
+def describe_dots(
+    dots,
+    use_short_describe = True,
+    use_pairwise_features = True,
+    use_unordered_pairwise = True,
+):
+    dots = np.array(dots, dtype=float).reshape(-1, 4)
     dots[:,1] *= -1
     rounded_dots = (dots.round(2) * 100).astype(int)
 
@@ -284,9 +289,13 @@ def describe_dots(dots):
     return description
 
 
-def describe_plan_specific_dots(dots, plan):
+def describe_plan_specific_dots(
+    dots,
+    plan,
+    use_unordered_pairwise = True,
+):
     boolplan = plan.astype(bool)
-    dots = np.array(dots).reshape(-1, 4)
+    dots = np.array(dots, dtype=float).reshape(-1, 4)
     rounded_dots = (dots.round(2) * 100).astype(int)
 
     num_dots = dots.shape[0]
@@ -405,11 +414,19 @@ def get_examples(conversations, describe_plan=describe_plan_sparse):
                 )
 
                 # linearized dot representation
-                examples["dots"].append(describe_dots(conversation.dots))
+                examples["dots"].append(describe_dots(
+                    conversation.dots,
+                    use_short_describe,
+                    use_pairwise_features,
+                    use_unordered_pairwise,
+                ))
 
                 # plan-specific dot representations
                 examples["plan_specific_dots"].append(
-                    describe_plan_specific_dots(conversation.dots, raw_plan),
+                    describe_plan_specific_dots(
+                        conversation.dots, raw_plan,
+                        use_unordered_pairwise,
+                    ),
                 )
 
                 # concatenate all text
@@ -424,82 +441,83 @@ def get_examples(conversations, describe_plan=describe_plan_sparse):
             assert len(examples[key1]) == len(examples[key2])
     return examples
 
-print(Conversation._fields)
+if __name__ == "__main__":
+    print(Conversation._fields)
 
-for split in splits:
-    conversations = get_conversations(split)
-    examples = get_examples(conversations)
+    for split in splits:
+        conversations = get_conversations(split)
+        examples = get_examples(conversations)
 
-    idx = 11
-    print(f"Data example in {split}")
-    print("dots", examples["dots"][idx])
-    print("plan_specific_dots", examples["plan_specific_dots"][idx])
-    print("text", examples["text"][idx])
-    print("plan", examples["plan"][idx])
-    print("mentions", examples["mentions"][idx])
-    print("outtext", examples["outtext"][idx])
+        idx = 11
+        print(f"Data example in {split}")
+        print("dots", examples["dots"][idx])
+        print("plan_specific_dots", examples["plan_specific_dots"][idx])
+        print("text", examples["text"][idx])
+        print("plan", examples["plan"][idx])
+        print("mentions", examples["mentions"][idx])
+        print("outtext", examples["outtext"][idx])
 
-    m = {True: "y", False: "n"}
-    feature_string = (
-        f"p{m[use_properties]}_2p{m[use_pairwise_features]}"
-        f"_2pu{m[use_unordered_pairwise]}"
-        f"_e{m[use_extrema_features]}"
-        f"_sd{m[use_short_describe]}"
-        f"_ps{m[use_plan_specific_description]}"
-        f"_u{m[use_unks]}"
-    )
-    dot_descs = (
-        examples["plan_specific_dots"]
-        if use_plan_specific_description
-        else examples["dots"]
-    )
+        m = {True: "y", False: "n"}
+        feature_string = (
+            f"p{m[use_properties]}_2p{m[use_pairwise_features]}"
+            f"_2pu{m[use_unordered_pairwise]}"
+            f"_e{m[use_extrema_features]}"
+            f"_sd{m[use_short_describe]}"
+            f"_ps{m[use_plan_specific_description]}"
+            f"_u{m[use_unks]}"
+        )
+        dot_descs = (
+            examples["plan_specific_dots"]
+            if use_plan_specific_description
+            else examples["dots"]
+        )
 
-    # mention gen
-    num_examples = len(examples["mentions"])
-    mention_examples = {}
-    mention_examples["input"] = [
-        f"{dots} [MSEP] {text} [MSEP] {plan}"
-        for dots, text, plan in zip(dot_descs, examples["text"], examples["plan"])
-    ]
-    mention_examples["label"] = examples["mentions"]
-    mention_dataset = Dataset.from_dict(mention_examples)
-    mention_dataset.save_to_disk(f"hf_datasets/{split}_mentions_given_text_plan_{feature_string}.hf")
+        # mention gen
+        num_examples = len(examples["mentions"])
+        mention_examples = {}
+        mention_examples["input"] = [
+            f"{dots} [MSEP] {text} [MSEP] {plan}"
+            for dots, text, plan in zip(dot_descs, examples["text"], examples["plan"])
+        ]
+        mention_examples["label"] = examples["mentions"]
+        mention_dataset = Dataset.from_dict(mention_examples)
+        mention_dataset.save_to_disk(f"hf_datasets/{split}_mentions_given_text_plan_{feature_string}.hf")
 
-    # plan gen
-    num_examples = len(examples["plan"])
-    plan_examples = {}
-    #plan_examples["input"] = examples["text"]
-    plan_examples["input"] = [
-        f"{dots} [MSEP] {text}"
-        for dots, text in zip(examples["dots"], examples["text"])
-    ]
-    # not allowed to use plan-specific dot descriptions
-    input_lens = [len(tokenizer.tokenize(x)) for x in plan_examples["input"]]
-    max_length_input = max(input_lens)
-    print(f"Max length of plan input: {max_length_input}")
-    print(plan_examples["input"][np.argmax(input_lens)])
+        # plan gen
+        num_examples = len(examples["plan"])
+        plan_examples = {}
+        #plan_examples["input"] = examples["text"]
+        plan_examples["input"] = [
+            f"{dots} [MSEP] {text}"
+            for dots, text in zip(examples["dots"], examples["text"])
+        ]
+        # not allowed to use plan-specific dot descriptions
+        input_lens = [len(tokenizer.tokenize(x)) for x in plan_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of plan input: {max_length_input}")
+        print(plan_examples["input"][np.argmax(input_lens)])
 
-    plan_examples["label"] = examples["plan"]
-    max_length_output = max([len(tokenizer.tokenize(x)) for x in plan_examples["label"]])
-    print(f"Max length of plan output: {max_length_output}")
-    plan_dataset = Dataset.from_dict(plan_examples)
-    plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text_{feature_string}.hf")
+        plan_examples["label"] = examples["plan"]
+        max_length_output = max([len(tokenizer.tokenize(x)) for x in plan_examples["label"]])
+        print(f"Max length of plan output: {max_length_output}")
+        plan_dataset = Dataset.from_dict(plan_examples)
+        plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text_{feature_string}.hf")
 
-    # text gen
-    num_examples = len(examples["outtext"])
-    text_examples = {}
-    text_examples["input"] = [
-        f"{dots} [MSEP] {text} [MSEP] {plan}"
-        for dots, text, plan in zip(dot_descs, examples["text"], examples["plan"])
-    ]
-    input_lens = [len(tokenizer.tokenize(x)) for x in text_examples["input"]]
-    max_length_input = max(input_lens)
-    print(f"Max length of text input: {max_length_input}")
-    print(text_examples["input"][np.argmax(input_lens)])
+        # text gen
+        num_examples = len(examples["outtext"])
+        text_examples = {}
+        text_examples["input"] = [
+            f"{dots} [MSEP] {text} [MSEP] {plan}"
+            for dots, text, plan in zip(dot_descs, examples["text"], examples["plan"])
+        ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in text_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of text input: {max_length_input}")
+        print(text_examples["input"][np.argmax(input_lens)])
 
-    text_examples["label"] = examples["outtext"]
-    max_length_output = max([len(tokenizer.tokenize(x)) for x in text_examples["label"]])
-    print(f"Max length of text output: {max_length_output}")
-    text_dataset = Dataset.from_dict(text_examples)
-    text_dataset.save_to_disk(f"hf_datasets/{split}_text_given_plan_{feature_string}.hf")
+        text_examples["label"] = examples["outtext"]
+        max_length_output = max([len(tokenizer.tokenize(x)) for x in text_examples["label"]])
+        print(f"Max length of text output: {max_length_output}")
+        text_dataset = Dataset.from_dict(text_examples)
+        text_dataset.save_to_disk(f"hf_datasets/{split}_text_given_plan_{feature_string}.hf")
 

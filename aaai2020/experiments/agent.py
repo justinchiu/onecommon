@@ -100,17 +100,22 @@ class RnnAgent(Agent):
     def __init__(
         self, model: HierarchicalRnnReferenceModel,
         args, name='Alice', train=False, markable_detector=None,
-        tokenizer = None,
+        confirmation_tokenizer = None,
         confirmation_predictor = None,
+        generation_tokenizer = None,
+        language_generator = None,
     ):
         super(RnnAgent, self).__init__()
         self.model: HierarchicalRnnReferenceModel = model
         self.reference_predictor = ReferencePredictor(model.args)
         self.markable_detector: BiLSTM_CRF = markable_detector
 
-        # actually for BeliefAgent
-        self.tokenizer = tokenizer
+        # pretrained models (mostly for BeliefAgent atm)
+        self.confirmation_tokenizer = confirmation_tokenizer
         self.confirmation_predictor = confirmation_predictor
+        self.generation_tokenizer = generation_tokenizer
+        self.language_generator = language_generator
+        # / pretrained models
 
         self.args = args
         self.name = name
@@ -156,6 +161,7 @@ class RnnAgent(Agent):
         self.sents = []
         # self.sents_beam_best = []
         self.words = []
+        self.text_history = [] # MBP
         # self.words_beam_best = []
         self.decoded_beam_best = []
         self.context = context
@@ -327,6 +333,7 @@ class RnnAgent(Agent):
             can_confirm = self.make_can_confirm(is_self, vars(self.model.args).get("confirmations_resolution_strategy", "any"))
 
         self.sents.append(Variable(self._encode([start_token] + inpt_words, self.model.word_dict)))
+        self.text_history.append([start_token] + inpt_words) # MBP
         inpt = self._encode(inpt_words, self.model.word_dict)
         if self.model.args.feed_context_attend:
             raise NotImplementedError("need to detect markables and pass those as dots_mentioned (if this was reading YOU:; currently not)")
@@ -813,7 +820,9 @@ class RnnAgent(Agent):
         # FOR DEBUGGING
         #meh = self._decode(best_generation_output.outs, self.model.word_dict)
         #import pdb; pdb.set_trace()
-        return self._decode(best_generation_output.outs, self.model.word_dict)
+        text_output = self._decode(best_generation_output.outs, self.model.word_dict)
+        self.text_history.append([start_token] + text_output) # MBP
+        return text_output
 
     def next_mention(self, lens, dots_mentioned_num_markables_to_force=None, min_num_mentions=0, max_num_mentions=12, can_confirm=None):
         mention_beliefs = self.state.make_beliefs(
