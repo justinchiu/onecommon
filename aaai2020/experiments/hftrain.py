@@ -118,14 +118,14 @@ def evaluate(args):
     def convert_to_features(example_batch):
         input_encodings = tokenizer.batch_encode_plus(
             example_batch['input'],
-            max_length = 512,
+            max_length = 768,
             padding="max_length",
             truncation=True,
             return_tensors="np",
         )
         target_encodings = tokenizer.batch_encode_plus(
             example_batch['label'],
-            max_length = 512,
+            max_length = 128,
             padding="max_length",
             truncation=True,
             return_tensors="np",
@@ -162,7 +162,7 @@ def evaluate(args):
 
     exact_match = 0
     num_examples = 0
-    bsz = 16
+    bsz = 4
     max_examples = len(tokenized_valid)
     #for batch_idx in track(range(max_examples // bsz)):
     for batch_idx in range(max_examples // bsz):
@@ -175,6 +175,7 @@ def evaluate(args):
             num_return_sequences = 16 if IS_TEXT else None,
             output_scores = True,
             return_dict_in_generate = True,
+            max_new_tokens = 40,
         )
         output_dots = tokenizer.batch_decode(output.sequences, skip_special_tokens=True)
 
