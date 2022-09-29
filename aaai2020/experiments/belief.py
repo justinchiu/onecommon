@@ -13,15 +13,20 @@ from scipy.special import comb
 from scipy.spatial import ConvexHull, Delaunay
 
 from belief_utils import comb_index, entropy, marginal_entropy
+from structured_prior import ising_prior, mst_prior
 
-#random.seed(1234)
-#np.random.seed(1234)
 
 class Label(Enum):
     ERROR = 0
     COARSE = 1
     UNRESOLVABLE = 2
     SPECIFIC = 3
+
+
+class PriorType(Enum):
+    UNIFORM = 1
+    ISING = 2
+    MST = 3
 
 
 def label_config_sets(writer_configs, reader_configs):
@@ -429,15 +434,48 @@ class AndBelief(Belief):
     under-estimates failure of small configurations due to ignoring partial observability.
     """
 
-    def __init__(self, num_dots, context=None, overlap_size=None, correct=0.9):
+    def __init__(
+        self,
+        num_dots,
+        ctx = None,
+        overlap_size = None,
+        correct = 0.95,
+        num_size_buckets = 5,
+        num_color_buckets = 5,
+        absolute = True,
+        prior_type = PriorType.UNIFORM,
+    ):
         super().__init__(num_dots, overlap_size)
 
-        self.prior = np.ones((2 ** num_dots,))
-        if overlap_size is not None:
-            self.prior[self.configs.sum(-1) < overlap_size] = 0
-            #self.prior[self.configs.sum(-1) != overlap_size] = 0
-            self.prior[-1] = 0
-        self.prior = self.prior / self.prior.sum()
+        self.ctx = np.array(ctx, dtype=float).reshape(num_dots, 4)
+        self.size_color = process_ctx(
+            self.ctx,
+            absolute = absolute,
+            num_size_buckets = num_size_buckets,
+            num_color_buckets = num_color_buckets,
+        )
+        self.sc = self.size_color
+        self.xy = self.ctx[:,:2]
+
+        self.prior_type = prior_type
+        if prior_type == PriorType.UNIFORM:
+            self.prior = np.ones((2 ** num_dots,))
+            if overlap_size is not None:
+                self.prior[self.configs.sum(-1) < overlap_size] = 0
+                #self.prior[self.configs.sum(-1) != overlap_size] = 0
+                self.prior[-1] = 0
+            self.prior = self.prior / self.prior.sum()
+        elif prior_type == PriorType.ISING:
+            dists = ((self.xy[:,None] - self.xy[None]) ** 2).sum(-1)
+            prior = np.exp(ising_prior(self.configs, dists))
+            self.prior = prior
+        elif prior_type == PriorType.MST:
+            dists = ((self.xy[:,None] - self.xy[None]) ** 2).sum(-1)
+            prior = np.exp(mst_prior(self.configs, dists))
+            self.prior = prior
+        else:
+            raise ValueError(f"Invalid prior_type {prior_type}")
+
 
         # initialize basic likelihood
         error = 1 - correct
@@ -681,17 +719,18 @@ class OrBelief(OrAndBelief):
         use_contiguity = False,
         num_size_buckets = 5,
         num_color_buckets = 5,
+        prior_type = PriorType.MST,
     ):
-        super().__init__(num_dots, overlap_size=overlap_size, correct=correct)
-        self.ctx = np.array(ctx, dtype=float).reshape(num_dots, 4)
-        self.size_color = process_ctx(
-            self.ctx,
+        super().__init__(
+            num_dots,
+            ctx = ctx,
+            overlap_size = overlap_size,
+            correct = correct,
             absolute = absolute,
             num_size_buckets = num_size_buckets,
             num_color_buckets = num_color_buckets,
+            prior_type = prior_type,
         )
-        self.sc = self.size_color
-        self.xy = self.ctx[:,:2]
         # initialize config_likelihood based on configuration resolution
         self.config_likelihood = np.zeros(
             (self.num_configs, self.num_configs), dtype=float)
