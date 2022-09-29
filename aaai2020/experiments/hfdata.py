@@ -201,6 +201,7 @@ def describe_dot(i, dot_strings, dots, size_color):
     return f"{dot_strings[i]} size {size_map[size]} and color {color_map[color]}"
 
 def describe_dot_pair(i, j, dot_strings, dots):
+    # does not use quantized properties
     dot1 = dot_strings[i]
     dot2 = dot_strings[j]
     x1, y1, s1, c1 = dots[i]
