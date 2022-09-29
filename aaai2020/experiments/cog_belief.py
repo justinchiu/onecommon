@@ -61,7 +61,7 @@ class CostBelief(OrBelief):
         use_contiguity = False,
         num_size_buckets = 5,
         num_color_buckets = 5,
-        prior_type = PriorType.UNIFORM,
+        prior_type = PriorType.MST,
     ):
         super().__init__(
             num_dots,
