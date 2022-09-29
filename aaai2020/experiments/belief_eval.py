@@ -17,7 +17,7 @@ from scipy.spatial import ConvexHull, Delaunay
 from belief_utils import comb_index, entropy, marginal_entropy
 
 from belief import process_ctx, Belief, OrBelief
-from cog_belief import CostBelief, EgoCostBelief
+from cog_belief import CostBelief, EgoCostBelief, PriorType
 
 np.seterr(all="raise")
 
@@ -28,7 +28,7 @@ def rollout(ctx, ids, belief, response_strategy):
     if isinstance(belief, EgoCostBelief):
         belief_type = f"EgoCostBelief"
     elif isinstance(belief, CostBelief):
-        belief_type = f"CostBelief"
+        belief_type = f"CostBelief_priortype{belief.prior_type}"
     elif isinstance(belief, OrBelief):
         belief_type = f"OrBelief"
     else:
@@ -107,6 +107,8 @@ def main():
 
     beliefs = [
         CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
+        CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, prior_type=PriorType.ISING),
+        CostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5, prior_type=PriorType.MST),
         EgoCostBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
         OrBelief(num_dots, ctx, num_size_buckets=5, num_color_buckets=5),
     ]

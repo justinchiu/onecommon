@@ -15,6 +15,12 @@ from scipy.spatial import ConvexHull, Delaunay
 from belief_utils import comb_index, entropy, marginal_entropy
 
 from belief import process_ctx, Belief, OrBelief
+from structured_prior import ising_prior, mst_prior
+
+class PriorType(Enum):
+    UNIFORM = 1
+    ISING = 2
+    MST = 3
 
 class CostBelief(OrBelief):
     """
@@ -55,6 +61,7 @@ class CostBelief(OrBelief):
         use_contiguity = False,
         num_size_buckets = 5,
         num_color_buckets = 5,
+        prior_type = PriorType.UNIFORM,
     ):
         super().__init__(
             num_dots,
@@ -67,6 +74,23 @@ class CostBelief(OrBelief):
             num_size_buckets = num_size_buckets,
             num_color_buckets = num_color_buckets,
         )
+
+        # redo the prior
+        self.prior_type = prior_type
+        if prior_type ==PriorType.UNIFORM:
+            pass
+        elif prior_type == PriorType.ISING:
+            dists = ((self.xy[:,None] - self.xy[None]) ** 2).sum(-1)
+            prior = np.exp(ising_prior(self.configs, dists))
+            self.prior = prior
+        elif prior_type == PriorType.MST:
+            dists = ((self.xy[:,None] - self.xy[None]) ** 2).sum(-1)
+            prior = np.exp(mst_prior(self.configs, dists))
+            self.prior = prior
+        else:
+            raise ValueError(f"Invalid prior_type {prior_type}")
+
+        # redo the dot likelihood
         self.spatial_resolvable = np.zeros((self.num_configs,), dtype=bool)
         for u, utt in enumerate(self.configs):
             self.spatial_resolvable[u] = self.is_contiguous(utt)

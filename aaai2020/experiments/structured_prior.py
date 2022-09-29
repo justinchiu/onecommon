@@ -57,6 +57,7 @@ def mst_rec(num_dots, dist_pairs, dots, remaining_dots, score, edges):
 
 
 def mst_prior(configs, dists, tau=3):
+    num_dots = configs.shape[1]
     log_unnormalized_prior = np.array([
         -mst_rec(num_dots, dists, x.nonzero()[0][:1], x.nonzero()[0][1:], 0, [])[0] / tau
         for x in configs
