@@ -3235,15 +3235,15 @@
             -0.5500485301017761,
             -0.554048478603363,
             -0.5592114925384521,
-            -0.5615562200546265,
             -0.5719242095947266,
+            -0.574051558971405,
             -0.5749759078025818,
-            -0.6094188094139099,
+            -0.5867614150047302,
+            -0.5947319865226746,
             -0.6114882826805115,
-            -0.6139025092124939,
-            -0.6142784953117371,
             -0.6151462197303772,
-            -0.6182927489280701
+            -0.6463648676872253,
+            -7.115139961242676
         ],
         "plan_beam_ref_res": [
             -4.0574564933776855,
@@ -3394,15 +3394,15 @@
             "YOU: yes, the left one is darker than the right one? <eos>",
             "YOU: yes. the left one is larger and darker than the right? <eos>",
             "YOU: yes, the left one is larger and darker than the right? <eos>",
-            "YOU: i have a large black dot with a smaller light grey dot above and to the",
             "YOU: yes. the left one is darker than the right one? <eos>",
+            "YOU: i have a large black dot with a smaller light grey dot to the right of it <eos>",
             "YOU: yes, the left one is larger and darker than the right one <eos>",
-            "YOU: no. do you have a large dark dot with a smaller lighter dot to the",
+            "YOU: i have a large black dot with a smaller light gray dot to the right of it <eos>",
+            "YOU: i have a large black dot with a smaller light grey dot to the left of it <eos>",
             "YOU: yes, the left one is darker than the right one <eos>",
-            "YOU: no. do you have a large black dot with a smaller light grey dot to",
-            "YOU: i have a large black dot with a smaller light grey dot to the right of",
             "YOU: yes. the left one is larger and darker than the right one <eos>",
-            "YOU: no. do you have a large black dot with a smaller grey dot to the"
+            "YOU: i have a large black dot with a smaller light grey dot above it <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -7088,22 +7088,22 @@
             -9.976737976074219
         ],
         "plan_beam_lm_bart": [
-            -0.5798323750495911,
-            -0.5924496650695801,
+            -0.5673426389694214,
+            -0.5727528929710388,
+            -0.5731766223907471,
+            -0.5776734948158264,
+            -0.5795692205429077,
+            -0.5810198187828064,
+            -0.5886308550834656,
+            -0.5956565737724304,
+            -0.6032806038856506,
             -0.6050014495849609,
-            -0.6092042326927185,
-            -0.6098186373710632,
-            -0.610072910785675,
-            -0.6106952428817749,
-            -0.6110266447067261,
-            -0.6221528053283691,
-            -0.6267558336257935,
-            -0.6292231678962708,
-            -0.6335110068321228,
-            -0.6336498856544495,
+            -0.6146425604820251,
             -0.6353653073310852,
             -0.6384099125862122,
-            -0.6421797871589661
+            -0.6493862271308899,
+            -0.6525506973266602,
+            -0.6548210382461548
         ],
         "plan_beam_ref_res": [
             -7.6127166748046875,
@@ -7247,22 +7247,22 @@
             "i see the triangle <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: ok, let's pick the small black one on the lower right of the",
-            "YOU: ok, let's pick the small black one on the lower right of those",
+            "YOU: ok, let's pick the small black one on the lower right of those two <selection>",
+            "YOU: ok, let's pick the small black one on the lower right of those 2 <selection>",
+            "YOU: let's pick the small black one on the lower right of those two <selection>",
+            "YOU: ok, let's pick the small black one in the middle of those two <selection>",
+            "YOU: let's pick the small black one in the middle of those two <selection>",
+            "YOU: let's pick the small black one on the lower right of those 2 <selection>",
+            "YOU: ok, let's pick the small black one in the middle of those 2 <selection>",
+            "YOU: ok. let's pick the small black one in the middle of those two <selection>",
+            "YOU: ok, let's pick the small black one on the lower right of that pair <selection>",
             "YOU: do you have a med/grey one in between them? <eos>",
-            "YOU: ok, let's pick the small black one in the middle of the two",
-            "YOU: do you have a med/grey one to the left of the black one?",
-            "YOU: let's pick the small black one in the middle of those two <selection",
-            "YOU: let's pick the small black one on the lower right of the two you",
-            "YOU: ok, let's pick the small black one in the middle of those two",
-            "YOU: ok. let's pick the small black one in the middle of the two",
-            "YOU: ok. let's pick the small black one in the middle of those two",
-            "YOU: ok, let's pick the small black one in the middle of those 2",
-            "YOU: let's pick the small black one on the lower right of those two <",
-            "YOU: ok, let's pick the small black one on the bottom of the two",
+            "YOU: do you have a med/grey one to the left of the black one? <eos>",
             "YOU: do you have a med/grey one to the left of those two? <eos>",
             "YOU: do you have a med/grey one to the left of those 2? <eos>",
-            "YOU: let's pick the small black one on the lower right of those 2 <"
+            "YOU: let's pick the small black one in the middle of those two <eos>",
+            "YOU: ok, let's pick the small black one on the lower right of those two <eos>",
+            "YOU: ok, let's pick the small black one in the middle of those two <eos>"
         ],
         "plan_mentions": [
             [

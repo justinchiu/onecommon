@@ -5149,22 +5149,22 @@
             -7.817796230316162
         ],
         "plan_beam_lm_bart": [
+            -0.48922720551490784,
+            -0.49552202224731445,
             -0.4972284436225891,
             -0.49955224990844727,
-            -0.514394223690033,
-            -0.5210253000259399,
+            -0.5103312134742737,
+            -0.5190550088882446,
+            -0.5262476801872253,
             -0.5286876559257507,
-            -0.5366561412811279,
             -0.538284957408905,
-            -0.5458435416221619,
+            -0.5578054785728455,
             -0.5591174960136414,
-            -0.5645768046379089,
-            -0.5659767389297485,
             -0.5663600564002991,
-            -0.5682466626167297,
-            -0.5684972405433655,
             -0.5759288668632507,
-            -0.5764734148979187
+            -0.5794245600700378,
+            -0.5876656174659729,
+            -0.6080577373504639
         ],
         "plan_beam_ref_res": [
             -2.3685007095336914,
@@ -5308,22 +5308,22 @@
             "is the one on the left slightly larger ? <eos>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: i don't have that. do you have a large light grey dot? <eos>",
+            "YOU: i don't have that. do you have a large light gray dot? <eos>",
             "YOU: is your smallest dot light grey? <eos>",
             "YOU: is the smaller dot light grey? <eos>",
-            "YOU: i don't have that. do you have a large light grey dot?",
-            "YOU: i don't have that. do you have a large light gray dot?",
+            "YOU: i don't see that. do you see a large light grey dot? <eos>",
+            "YOU: i don't see that. do you see a large light gray dot? <eos>",
+            "YOU: i don't have any darker dots. do you have a large light dot? <eos>",
             "YOU: do you have a large light grey dot? <eos>",
-            "YOU: i don't see that. do you see a large light grey dot?",
             "YOU: do you have a large light gray dot? <eos>",
-            "YOU: i don't see that. do you see a large light gray dot?",
+            "YOU: i don't have any darker dots. do you have a light gray dot? <eos>",
             "YOU: i don't have that. do you have a light gray dot? <eos>",
-            "YOU: i don't have any darker dots. do you have a light gray dot",
-            "YOU: i don't have any darker dots. do you have a large light dot",
             "YOU: is the smaller dot light gray? <eos>",
-            "YOU: i don't think i have that. do you have a light gray dot",
-            "YOU: i don't think i have that. do you have a large light grey",
             "YOU: i don't have that. i have a very light gray dot. <eos>",
-            "YOU: i don't think i have that. do you have a large light gray"
+            "YOU: i don't have any darker dots. do you have a light grey dot? <eos>",
+            "YOU: i don't think i have that. do you have a light gray dot? <eos>",
+            "YOU: i don't think i have that. do you have a light grey dot? <eos>"
         ],
         "plan_mentions": [
             [
@@ -7082,22 +7082,22 @@
             -6.942671775817871
         ],
         "plan_beam_lm_bart": [
+            -0.5188774466514587,
             -0.5309316515922546,
-            -0.537455677986145,
+            -0.5369724631309509,
             -0.5519397258758545,
             -0.5528577566146851,
             -0.5734741687774658,
-            -0.5738006234169006,
             -0.5791495442390442,
+            -0.5829542279243469,
             -0.5898943543434143,
-            -0.6002793908119202,
             -0.6027296185493469,
-            -0.6066495776176453,
             -0.6066714525222778,
+            -0.6131592988967896,
             -0.6227794885635376,
-            -0.6255161762237549,
-            -0.6389407515525818,
-            -0.6448006629943848
+            -0.631061851978302,
+            -0.6345983743667603,
+            -0.6549285054206848
         ],
         "plan_beam_ref_res": [
             -2.364206552505493,
@@ -7241,22 +7241,22 @@
             "yes , lets pick the black one <selection>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: i don't think i have that. do you have a large black dot? <eos>",
             "YOU: let us select the large dark dot <selection>",
-            "YOU: i don't think i have that. do you have a large black dot",
+            "YOU: i don't think i have that one. do you have a large black dot? <eos>",
             "YOU: let us select the small dark one <selection>",
             "YOU: let us select the small dark dot <selection>",
             "YOU: do you have a large black dot? <eos>",
-            "YOU: i don't think i have that one. do you have a large black",
             "YOU: ok, let's pick the large dark dot <selection>",
+            "YOU: i don't think i have that. do you have a medium sized black dot? <eos>",
             "YOU: ok, let's pick the small dark one <selection>",
-            "YOU: i don't think i have that. do you have a large dark dot",
             "YOU: okay, let's pick the small dark one <selection>",
-            "YOU: i don't think i have that one. i have a large black dot",
             "YOU: ok, let's choose the small dark one <selection>",
+            "YOU: i don't think i have that. do you have a large dark dot? <eos>",
             "YOU: i don't have that. i have a large black dot by itself <eos>",
-            "YOU: i don't think i have that one. do you have a large dark",
-            "YOU: i don't think i have that. i have a dark dot that is",
-            "YOU: i don't think i have that one. do you have a really dark"
+            "YOU: i don't have that. i have a large black dot that is by itself <eos>",
+            "YOU: i don't think i have that one. do you have a large dark dot? <eos>",
+            "YOU: let us select the large dark dot <eos>"
         ],
         "plan_mentions": [
             [

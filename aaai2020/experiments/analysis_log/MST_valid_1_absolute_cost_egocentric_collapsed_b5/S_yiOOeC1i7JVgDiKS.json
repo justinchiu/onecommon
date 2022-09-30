@@ -7091,21 +7091,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.4689408242702484,
+            -0.5080575346946716,
             -0.5095915198326111,
-            -0.5153513550758362,
             -0.5207052826881409,
             -0.5241064429283142,
-            -0.5330637097358704,
-            -0.5338680744171143,
+            -0.5314732789993286,
             -0.5350534319877625,
-            -0.542244553565979,
-            -0.5469470024108887,
+            -0.5412153005599976,
+            -0.5429590940475464,
             -0.5497022271156311,
-            -0.5497214198112488,
-            -0.551199734210968,
-            -0.5512702465057373,
             -0.5514588356018066,
-            -0.5520070791244507
+            -0.5520070791244507,
+            -0.5526289939880371,
+            -0.5528536438941956,
+            -0.563010036945343,
+            -0.5905770063400269
         ],
         "plan_beam_ref_res": [
             -0.6459205150604248,
@@ -7250,21 +7250,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: do you have a large medium gray dot at the top? <eos>",
+            "YOU: i don't have that. do you have a large medium gray dot? <eos>",
             "YOU: do you have a large medium grey dot at the top? <eos>",
-            "YOU: i don't have that. do you have a large medium gray dot at",
             "YOU: do you have a large medium gray dot at the top of the circle? <eos>",
             "YOU: do you have a large grey dot at the top? <eos>",
-            "YOU: i don't have that. do you have a large medium gray dot?",
-            "YOU: i don't have that. how about a large medium gray dot at the",
+            "YOU: i don't see that. do you have a large medium gray dot? <eos>",
             "YOU: do you have a large gray dot at the top? <eos>",
-            "YOU: i don't see that. do you have a large medium gray dot at",
-            "YOU: i don't have that. do you have a large medium grey dot at",
+            "YOU: i don't have that. do you have a large medium grey dot? <eos>",
+            "YOU: i don't have that. how about a large medium gray dot at the top? <eos>",
             "YOU: do you have a large medium gray dot? <eos>",
-            "YOU: i don't think i have that. i have a large medium gray dot",
-            "YOU: i don't have that. i have a large medium gray dot at the",
-            "YOU: i don't see that. do you see a large medium gray dot at",
             "YOU: is the one on the left larger? <eos>",
-            "YOU: do you have a large light gray dot at the top? <eos>"
+            "YOU: do you have a large light gray dot at the top? <eos>",
+            "YOU: i don't have that. do you have a large grey dot at the top? <eos>",
+            "YOU: do you have a large medium gray dot at the top <eos>",
+            "YOU: i don't have that. do you have a large medium gray dot at the top <eos>",
+            "YOU: i don't have that. how about a large medium gray dot at the top <eos>"
         ],
         "plan_mentions": [
             [
@@ -10941,11 +10941,9 @@
         ],
         "plan_beam_lm_bart": [
             -0.31325745582580566,
-            -0.3441835939884186,
             -0.36978867650032043,
             -0.3980121314525604,
             -0.41008561849594116,
-            -0.4174645245075226,
             -0.42461636662483215,
             -0.4301733076572418,
             -0.4456927478313446,
@@ -10953,9 +10951,11 @@
             -0.4669432044029236,
             -0.48599764704704285,
             -0.49884897470474243,
-            -0.4993319809436798,
             -0.5029679536819458,
-            -0.5101714730262756
+            -0.5137988924980164,
+            -0.5138707160949707,
+            -0.5146562457084656,
+            -0.5290343165397644
         ],
         "plan_beam_ref_res": [
             -1.163939118385315,
@@ -11100,11 +11100,9 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: do you have a large gray dot touching the dotted circle line? <eos>",
-            "YOU: do you have a large gray dot at the top touching the dotted circle line?",
             "YOU: do you have a large medium gray dot touching the dotted circle line? <eos>",
             "YOU: do you have a large dark gray dot touching the dotted circle line? <eos>",
             "YOU: do you have a large grey dot touching the dotted circle line? <eos>",
-            "YOU: do you have a large medium gray dot at the top touching the dotted circle line",
             "YOU: okay do you have a large gray dot touching the dotted circle line? <eos>",
             "YOU: do you have a large med gray dot touching the dotted circle line? <eos>",
             "YOU: do you have a large dot touching the dotted circle line? <eos>",
@@ -11112,9 +11110,11 @@
             "YOU: is there a large black dot to the right of it? <eos>",
             "YOU: do you have a large gray dot touching the dotted line? <eos>",
             "YOU: do you have a large gray dot touching the dotted circle line? <selection>",
-            "YOU: do you have a large gray dot touching the dotted circle line at the top?",
             "YOU: okay click that large gray dot <selection>",
-            "YOU: do you have a large medium gray dot at the top touching the dotted line?"
+            "YOU: do you have a large gray dot touching the dotted circle line at all? <eos>",
+            "YOU: do you have a large gray dot at the top touching the dotted circle line <eos>",
+            "YOU: i have a large gray dot at the top touching the dotted circle line <eos>",
+            "YOU: i have a large gray dot at the top touching the dotted circle line. <eos>"
         ],
         "plan_mentions": [
             [

@@ -3231,22 +3231,22 @@
             -9.851303100585938
         ],
         "plan_beam_lm_bart": [
-            -0.437945157289505,
             -0.44320523738861084,
             -0.4496748149394989,
-            -0.4630703032016754,
-            -0.46675631403923035,
-            -0.4789372384548187,
-            -0.48055925965309143,
+            -0.4665384888648987,
+            -0.47865134477615356,
             -0.4827641546726227,
-            -0.4844028949737549,
-            -0.49375951290130615,
-            -0.49495747685432434,
+            -0.4869058132171631,
+            -0.4903186857700348,
+            -0.4914971888065338,
             -0.4956192672252655,
-            -0.4968271255493164,
             -0.49930721521377563,
-            -0.49960005283355713,
-            -0.5049008131027222
+            -0.5049008131027222,
+            -0.507760226726532,
+            -0.5101154446601868,
+            -0.5236743688583374,
+            -0.5378860831260681,
+            -7.134373188018799
         ],
         "plan_beam_ref_res": [
             -3.8808486461639404,
@@ -3390,22 +3390,22 @@
             "yes , let 's choose the tiny light grey one <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't have that. i have a very small very light grey dot",
             "YOU: is the smaller dot very light grey? <eos>",
             "YOU: is the smaller dot light grey? <eos>",
-            "YOU: i don't have that. i have a very small very light gray dot",
-            "YOU: i don't have that. i have a small light grey dot by itself",
-            "YOU: i don't have that. i have a small light gray dot by itself",
-            "YOU: i don't see that. i have a very small very light grey dot",
+            "YOU: i don't have that. i have a very small very light grey dot <eos>",
+            "YOU: i don't have that. i have a small light grey dot by itself <eos>",
             "YOU: i don't have that. i have a very small very light dot <eos>",
-            "YOU: i don't have that. i have a small light grey dot on the",
-            "YOU: i don't have that. i have a small light grey dot at the",
-            "YOU: i don't have that. i have a very small very light dot.",
+            "YOU: i don't have that. i have a very small very light dot. <eos>",
+            "YOU: i don't have that. i have a small light gray dot by itself <eos>",
+            "YOU: i don't have that. i have a very small very light gray dot <eos>",
             "YOU: is the smaller dot very light? <eos>",
-            "YOU: i don't have that. i have a small light gray dot on the",
             "YOU: do you have a tiny light grey dot? <eos>",
-            "YOU: i don't have that. i have a small light grey dot all by",
-            "YOU: do you have a small light grey dot? <eos>"
+            "YOU: do you have a small light grey dot? <eos>",
+            "YOU: i don't have that. i have a tiny light grey dot <eos>",
+            "YOU: i don't see that. i have a very small very light grey dot <eos>",
+            "YOU: i don't have that. i have a very small light grey dot <eos>",
+            "YOU: i don't see that. i have a very small very light dot <eos>",
+            ""
         ],
         "plan_mentions": [
             [

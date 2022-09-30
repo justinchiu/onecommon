@@ -3239,13 +3239,13 @@
             -0.5135080218315125,
             -0.5169159770011902,
             -0.5185052752494812,
-            -0.5417947173118591,
-            -0.5564054250717163,
-            -0.5591659545898438,
-            -0.5615283846855164,
             -0.5654025077819824,
-            -0.5708842873573303,
-            -0.5718352794647217
+            -0.5770739316940308,
+            -0.5844875574111938,
+            -0.5845398306846619,
+            -0.6123071908950806,
+            -0.613201379776001,
+            -0.6241500377655029
         ],
         "plan_beam_ref_res": [
             -2.5740277767181396,
@@ -3398,13 +3398,13 @@
             "YOU: do you have a large light gray dot? <eos>",
             "YOU: is the middle one the lightest color? <eos>",
             "YOU: is the middle one the lightest shade? <eos>",
-            "YOU: i don't see that. do you see a large light grey dot?",
-            "YOU: i don't see that. do you see a large light gray dot?",
-            "YOU: i don't see that. i have a large light grey dot on the",
-            "YOU: i don't see that. i have a large light gray dot on the",
             "YOU: do you see a large light grey dot at the top of the circle? <eos>",
-            "YOU: i don't have that. i have a large light grey dot on the",
-            "YOU: i don't have that. i have a large light gray dot on the"
+            "YOU: do you see a large light grey dot at the top of the line? <eos>",
+            "YOU: do you have a large light grey dot at the top? <eos>",
+            "YOU: do you see a large light grey dot at the top? <eos>",
+            "YOU: i don't see that. i see a large light grey dot <eos>",
+            "YOU: do you see a large light grey dot at the top <eos>",
+            "YOU: do you have a large light grey dot at the top <eos>"
         ],
         "plan_mentions": [
             [

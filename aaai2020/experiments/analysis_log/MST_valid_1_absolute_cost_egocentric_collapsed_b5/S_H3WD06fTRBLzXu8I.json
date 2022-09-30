@@ -5154,8 +5154,6 @@
             -0.42069151997566223,
             -0.4256037175655365,
             -0.4375994801521301,
-            -0.4439051151275635,
-            -0.44392576813697815,
             -0.44893038272857666,
             -0.45398756861686707,
             -0.45746853947639465,
@@ -5165,8 +5163,10 @@
             -0.4699728786945343,
             -0.4804207980632782,
             -0.4840989112854004,
-            -0.48505839705467224,
-            -0.4912940561771393
+            -0.4912940561771393,
+            -0.518923282623291,
+            -0.5217322707176208,
+            -0.5224205851554871
         ],
         "plan_beam_ref_res": [
             -1.1341674327850342,
@@ -5313,8 +5313,6 @@
             "YOU: do you see a tiny light gray dot? <eos>",
             "YOU: do you see a small light gray dot? <eos>",
             "YOU: i don't see that. i see a small light gray dot. <eos>",
-            "YOU: i don't see that. do you see a small light gray dot?",
-            "YOU: i don't see that. do you see a tiny light gray dot?",
             "YOU: i don't see that. i see a small gray dot. <eos>",
             "YOU: do you have a small light gray dot? <eos>",
             "YOU: do you see a very small light gray dot? <eos>",
@@ -5324,8 +5322,10 @@
             "YOU: i don't see that. i see a tiny gray dot. <eos>",
             "YOU: i don't see that. i see a small grey dot. <eos>",
             "YOU: do you see a small gray dot? <eos>",
-            "YOU: i don't see that. do you see a small medium gray dot?",
-            "YOU: i don't have that. i have a small light gray dot. <eos>"
+            "YOU: i don't have that. i have a small light gray dot. <eos>",
+            "YOU: i don't see that. i see a small light gray dot <eos>",
+            "YOU: do you see a small grey dot? <eos>",
+            "YOU: do you have a small gray dot? <eos>"
         ],
         "plan_mentions": [
             [

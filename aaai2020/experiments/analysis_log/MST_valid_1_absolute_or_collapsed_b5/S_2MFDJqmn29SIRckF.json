@@ -1295,22 +1295,22 @@
             -12.275638580322266
         ],
         "plan_beam_lm_bart": [
-            -0.5045449733734131,
+            -0.4992486536502838,
             -0.510012149810791,
-            -0.5110020041465759,
-            -0.5135276913642883,
-            -0.5179063677787781,
-            -0.5269696712493896,
             -0.5297665596008301,
             -0.5307725667953491,
-            -0.5357807874679565,
+            -0.5330890417098999,
             -0.5363777875900269,
             -0.5386220216751099,
-            -0.5390049815177917,
             -0.5394998788833618,
-            -0.5401082038879395,
-            -0.5406820178031921,
-            -0.5452920198440552
+            -0.5457020401954651,
+            -0.555518627166748,
+            -0.5561754703521729,
+            -0.5564877390861511,
+            -0.5686051845550537,
+            -0.5963488221168518,
+            -0.613593339920044,
+            -7.251904010772705
         ],
         "plan_beam_ref_res": [
             -13.414103507995605,
@@ -1454,22 +1454,22 @@
             "i have a group of 3 dots in a vertical line <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: do you see three small dots in a line sloping up to the right?",
+            "YOU: do you see three small dots in a line sloping up to the right? <eos>",
             "YOU: do you see a triangle of small dots? <eos>",
-            "YOU: i have three small dots in a line sloping up and to the right.",
-            "YOU: do you see three small dots in a line sloping up and to the right",
-            "YOU: i have three small dots in a line sloping up to the right. the",
-            "YOU: i have three small dots in a line sloping up and to the left.",
             "YOU: i have three small dots in a line sloping up and to the right <eos>",
             "YOU: do you see three small dots in a triangle shape? <eos>",
-            "YOU: i have three tiny dots in a line sloping up and to the right.",
+            "YOU: do you see three small dots in a line sloping up to the left? <eos>",
             "YOU: i have three small dots in a line sloping up to the right <eos>",
             "YOU: do you have 3 small dots in a triangle shape? <eos>",
-            "YOU: i have three small dots in a line sloping up to the left. the",
             "YOU: do you have three small dots in a triangle shape? <eos>",
-            "YOU: do you see three small dots in a line sloping up and to the left",
-            "YOU: do you see three small dots in a line sloping up to the left?",
-            "YOU: i have three tiny dots in a line sloping up to the right. the"
+            "YOU: i have three tiny dots in a line sloping up and to the right <eos>",
+            "YOU: i have three small dots in a line sloping up and to the left <eos>",
+            "YOU: i have three tiny dots in a line sloping up to the right <eos>",
+            "YOU: do you see three tiny dots in a triangle shape? <eos>",
+            "YOU: i have three small dots in a line sloping up to the left <eos>",
+            "YOU: do you have 3 small dots in a triangle? <eos>",
+            "YOU: i have three small dots that form a triangle <eos>",
+            ""
         ],
         "plan_mentions": [
             [

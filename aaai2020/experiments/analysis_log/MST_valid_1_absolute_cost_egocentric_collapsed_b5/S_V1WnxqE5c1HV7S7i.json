@@ -5161,13 +5161,13 @@
             -0.4852379262447357,
             -0.5061385631561279,
             -0.5105800628662109,
-            -0.514019787311554,
             -0.5223658084869385,
-            -0.5338766574859619,
             -0.5379457473754883,
             -0.5388484001159668,
             -0.5430600047111511,
-            -0.5454753637313843
+            -0.5517352819442749,
+            -0.5602192282676697,
+            -0.564588189125061
         ],
         "plan_beam_ref_res": [
             -2.861599922180176,
@@ -5320,13 +5320,13 @@
             "YOU: i don't have that. do you have a small dark dot? <eos>",
             "YOU: i don't see that. do you see a tiny dark dot? <eos>",
             "YOU: yes! click that small dark dot! <selection>",
-            "YOU: i don't think i see that. do you see a small dark dot",
             "YOU: i do not see that. do you see a small dark dot? <eos>",
-            "YOU: i don't see that. do you see a small dark dot by itself",
             "YOU: i don't have that. do you see a small dark dot? <eos>",
             "YOU: i don't see that. do you have a tiny dark dot? <eos>",
             "YOU: i don't see that. do you see a small black dot? <eos>",
-            "YOU: i don't have 3 in a line. do you have a small dark"
+            "YOU: do you see a small dark dot by itself? <eos>",
+            "YOU: is the middle one the smallest? <eos>",
+            "YOU: i don't see that. how about a small dark dot? <eos>"
         ],
         "plan_mentions": [
             [
@@ -9004,7 +9004,7 @@
             -0.5524272322654724,
             -0.5624437928199768,
             -0.5666859745979309,
-            -0.5743539929389954
+            -0.5925045013427734
         ],
         "plan_beam_ref_res": [
             -4.556979179382324,
@@ -9163,7 +9163,7 @@
             "YOU: is there a slightly larger slightly lighter dot to the left of it? <eos>",
             "YOU: is there a slightly larger and lighter dot up to its left? <eos>",
             "YOU: is there a slightly larger slightly lighter dot up to its left? <eos>",
-            "YOU: does it have a slightly larger slightly lighter dot down and to the left of it"
+            "YOU: does it have a slightly larger slightly lighter dot to the right? <eos>"
         ],
         "plan_mentions": [
             [

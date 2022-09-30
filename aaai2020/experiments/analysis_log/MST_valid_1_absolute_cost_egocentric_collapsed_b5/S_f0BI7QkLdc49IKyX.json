@@ -3237,20 +3237,20 @@
         "plan_beam_lm_bart": [
             -0.4675968587398529,
             -0.4679437577724457,
-            -0.48500800132751465,
-            -0.48951399326324463,
             -0.5014427304267883,
+            -0.5108792185783386,
             -0.5139967203140259,
             -0.5176345705986023,
+            -0.5181154012680054,
             -0.5284934639930725,
             -0.529973566532135,
-            -0.5377675890922546,
-            -0.5453846454620361,
-            -0.5527234077453613,
-            -0.5578780770301819,
+            -0.5581632852554321,
             -0.559791624546051,
             -0.5615463852882385,
-            -0.5625157952308655
+            -0.5640775561332703,
+            -0.5734241604804993,
+            -0.5787681341171265,
+            -0.5866047143936157
         ],
         "plan_beam_ref_res": [
             -0.4520566463470459,
@@ -3396,20 +3396,20 @@
         "plan_beam_sents_bart": [
             "YOU: yes! if the larger one is to the left click that larger one! <eos>",
             "YOU: yes! if the larger one is to the right click that larger one! <eos>",
-            "YOU: yes! if the larger one is to the left click that larger one! <",
-            "YOU: yes! if the larger one is to the right click that larger one! <",
             "YOU: no. do you have a large black dot? <eos>",
+            "YOU: yes! if the larger one is to the right click that one! <selection>",
             "YOU: no. do you have a large dark grey dot? <eos>",
             "YOU: yes! if the larger one is to the right click that one! <eos>",
+            "YOU: yes! if the larger one is to the left click that one! <selection>",
             "YOU: do you have a large black dot? <eos>",
             "YOU: yes! if the larger one is to the left click that one! <eos>",
-            "YOU: yes! if the larger one is to the right click that one! <selection",
-            "YOU: yes! if the larger one is to the left click that one! <selection",
-            "YOU: i don't have that. i have a large dark grey dot on the",
-            "YOU: i don't see that. i have a large dark grey dot on the",
+            "YOU: i don't see that. do you see a large dark grey dot? <eos>",
             "YOU: no. do you see a large black dot? <eos>",
             "YOU: do you have a large dark grey dot? <eos>",
-            "YOU: i don't have that. i have a large dark grey dot by itself"
+            "YOU: no. do you see a large dark grey dot? <eos>",
+            "YOU: no. do you have a large dark dot? <eos>",
+            "YOU: i don't have that. i have a large dark grey dot by itself <eos>",
+            "YOU: i don't have that. i have a large black dot by itself <eos>"
         ],
         "plan_mentions": [
             [

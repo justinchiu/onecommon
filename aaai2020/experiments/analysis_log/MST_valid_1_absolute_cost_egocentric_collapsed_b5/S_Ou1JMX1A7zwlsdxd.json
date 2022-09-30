@@ -3230,22 +3230,22 @@
             -6.989877223968506
         ],
         "plan_beam_lm_bart": [
-            -0.6123756766319275,
-            -0.6248139142990112,
-            -0.6263325214385986,
-            -0.62871253490448,
-            -0.6316996812820435,
-            -0.6531334519386292,
-            -0.6620138883590698,
-            -0.6639055013656616,
-            -0.668433427810669,
-            -0.6697548031806946,
-            -0.673989474773407,
-            -0.6755092740058899,
-            -0.6770731806755066,
-            -0.6800541281700134,
-            -0.6807821393013,
-            -0.6862772107124329
+            -0.5825347900390625,
+            -0.5942660570144653,
+            -0.6187705993652344,
+            -0.625930905342102,
+            -0.6373831629753113,
+            -0.6490592360496521,
+            -0.6622469425201416,
+            -0.7018048763275146,
+            -0.7021432518959045,
+            -0.7024107575416565,
+            -0.7086660861968994,
+            -0.7357611656188965,
+            -0.7367221117019653,
+            -0.7416786551475525,
+            -0.7505050301551819,
+            -6.930645942687988
         ],
         "plan_beam_ref_res": [
             -10.723790168762207,
@@ -3389,22 +3389,22 @@
             "yes , let 's pick the smaller one <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't have that. do you have a medium sized black dot?",
-            "YOU: i don't see that. do you see a medium sized black dot?",
-            "YOU: i don't see that. do you see a medium sized dark grey dot",
-            "YOU: i don't have that. i have a medium sized black dot by itself",
-            "YOU: i don't have that. do you have a medium sized dark grey dot",
-            "YOU: i don't see that. do you see a medium sized dark gray dot",
-            "YOU: i don't have that. i have a medium sized dark grey dot at",
-            "YOU: i don't have that. i have a medium sized black dot at the",
-            "YOU: i don't have that. i have a dark gray dot at the bottom",
-            "YOU: i don't have that. i have a dark gray dot at the top",
-            "YOU: i don't have that. i have a medium sized dark gray dot at",
-            "YOU: i don't have that. i have a dark grey dot at the bottom",
-            "YOU: i don't have that. i have a dark grey dot at the top",
-            "YOU: i don't have that. i have a medium sized dark grey dot on",
-            "YOU: i don't have that. i have a small dark grey dot at the",
-            "YOU: i don't see that. i have a medium sized dark grey dot at"
+            "YOU: i don't have that. do you have a medium sized black dot? <eos>",
+            "YOU: i don't see that. do you see a medium sized black dot? <eos>",
+            "YOU: i don't have that. do you have a medium sized dark grey dot? <eos>",
+            "YOU: i don't see that. do you see a medium sized dark grey dot? <eos>",
+            "YOU: i don't have that. i have a medium sized black dot by itself <eos>",
+            "YOU: i don't see that. do you see a medium sized dark gray dot? <eos>",
+            "YOU: i don't have that. i have a medium sized black dot by itself. <eos>",
+            "YOU: i don't have that. i have a medium sized black dot at the top of my circle <eos>",
+            "YOU: i don't have that. i have a medium sized black dot at the top of the circle <eos>",
+            "YOU: i don't have that. i have a medium sized black dot at the bottom of the circle <eos>",
+            "YOU: i don't have that. i have a medium sized black dot at the bottom of my circle <eos>",
+            "YOU: i don't have that. i have a medium sized dark grey dot on the right side <eos>",
+            "YOU: i don't have that. i have a medium sized black dot at the bottom <eos>",
+            "YOU: i don't have that. i have a medium sized dark grey dot at the bottom <eos>",
+            "YOU: i don't have that. i have a medium sized dark grey dot at the top <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -5163,14 +5163,14 @@
             -0.507875919342041,
             -0.5324658155441284,
             -0.5475998520851135,
-            -0.5655514001846313,
             -0.5719208121299744,
             -0.5729352235794067,
             -0.5836074948310852,
             -0.5875934958457947,
             -0.5904814004898071,
             -0.5922616124153137,
-            -0.5988143682479858
+            -0.5988143682479858,
+            -0.6000213027000427
         ],
         "plan_beam_ref_res": [
             -0.10182636231184006,
@@ -5322,14 +5322,14 @@
             "YOU: is the bottom one black? <eos>",
             "YOU: is the top one black? <eos>",
             "YOU: do you have a small black dot? <eos>",
-            "YOU: i don't have that. i have a tiny black dot close to the",
             "YOU: do you have a black dot? <eos>",
             "YOU: i don't have that. i have a tiny black dot by itself <eos>",
             "YOU: i don't have that. i have a small black dot by itself <eos>",
             "YOU: i don't see that. do you see a black dot? <eos>",
             "YOU: i don't see that. i have a tiny black dot by itself <eos>",
             "YOU: i don't have that. i have one tiny black dot <eos>",
-            "YOU: do you have a tiny black dot <eos>"
+            "YOU: do you have a tiny black dot <eos>",
+            "YOU: do you have one black dot? <eos>"
         ],
         "plan_mentions": [
             [

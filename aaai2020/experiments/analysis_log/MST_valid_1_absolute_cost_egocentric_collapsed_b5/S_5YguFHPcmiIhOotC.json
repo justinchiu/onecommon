@@ -5161,12 +5161,12 @@
             -0.5025712847709656,
             -0.5041472315788269,
             -0.5210563540458679,
-            -0.5402505993843079,
-            -0.5611699819564819,
             -0.5653156638145447,
             -0.5654592514038086,
-            -0.5682580471038818,
-            -0.5701693892478943
+            -0.5701693892478943,
+            -0.5990555882453918,
+            -0.6177358031272888,
+            -0.6347183585166931
         ],
         "plan_beam_ref_res": [
             -0.023882918059825897,
@@ -5320,12 +5320,12 @@
             "YOU: yes! click the bigger darker one! <selection>",
             "YOU: yes. let's choose the bigger darker one. <selection>",
             "YOU: yes! let's pick the bigger darker one on the bottom <selection>",
-            "YOU: yes! let's pick the bigger and darker one on the bottom <selection",
-            "YOU: yes... let's pick the bigger and darker one on the bottom <selection",
             "YOU: yes. let's choose the bigger and darker one. <eos>",
             "YOU: yes. let's pick the bigger and darker one. <eos>",
-            "YOU: yes! let's pick the bigger and darker one on the right <selection",
-            "YOU: yes... let's pick the bigger and darker one <eos>"
+            "YOU: yes... let's pick the bigger and darker one <eos>",
+            "YOU: yes... let's pick the bigger and darker one on the bottom <eos>",
+            "YOU: yes! let's pick the bigger and darker one on the bottom! <eos>",
+            "YOU: yes! let's pick the bigger and darker one on the right. <eos>"
         ],
         "plan_mentions": [
             [

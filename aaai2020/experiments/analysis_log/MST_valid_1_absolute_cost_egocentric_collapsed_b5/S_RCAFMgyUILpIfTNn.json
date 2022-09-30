@@ -3231,12 +3231,12 @@
             -0.44272300601005554,
             -0.4445556700229645,
             -0.453311026096344,
-            -0.45932990312576294,
             -0.4666556715965271,
-            -0.47247761487960815,
             -0.47534263134002686,
             -0.47758781909942627,
-            -0.5518735647201538
+            -0.5737691521644592,
+            -0.578266441822052,
+            -0.6392576694488525
         ],
         "plan_beam_ref_res": [
             -7.202063083648682,
@@ -3390,12 +3390,12 @@
             "YOU: is there a large dark grey dot to the right of it? <eos>",
             "YOU: is there a large medium gray dot to the left and slightly above it? <eos>",
             "YOU: is there a large medium grey dot to the left and slightly above it? <eos>",
-            "YOU: is there a large medium gray dot up and to its right? if so click",
             "YOU: is there a large medium gray dot to the left and slightly below it? <eos>",
-            "YOU: is there a large medium gray dot up and to its left? if so click",
             "YOU: is there a large medium gray dot up and to its right? <eos>",
             "YOU: is there a large medium gray dot up and to its left? <eos>",
-            "YOU: i have a tiny black dot with a large dark grey dot to the right of"
+            "YOU: is there a large medium gray dot above and to the left of it <eos>",
+            "YOU: is there a large medium gray dot above and to the right of it <eos>",
+            "YOU: is there a large medium gray dot to the left and slightly above it <eos>"
         ],
         "plan_mentions": [
             [

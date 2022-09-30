@@ -3230,22 +3230,22 @@
             -16.379201889038086
         ],
         "plan_beam_lm_bart": [
+            -0.47084203362464905,
+            -0.47801053524017334,
+            -0.5076659321784973,
             -0.5131084322929382,
-            -0.515641987323761,
             -0.5206243991851807,
-            -0.5236628651618958,
             -0.5319687128067017,
             -0.533341109752655,
             -0.5353193283081055,
             -0.5358946323394775,
+            -0.5397751927375793,
             -0.5402553081512451,
             -0.5404589176177979,
             -0.54795241355896,
             -0.5487543940544128,
             -0.5555932521820068,
-            -0.5557622313499451,
-            -0.5914222598075867,
-            -0.6071305274963379
+            -0.6650881767272949
         ],
         "plan_beam_ref_res": [
             -0.9679098129272461,
@@ -3389,22 +3389,22 @@
             "i have two light grey dots that are very close together and the same size and color <eos>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: is there a slightly larger, slightly darker dot down and to the left of it? <eos>",
+            "YOU: is there a slightly larger, slightly darker dot down and to the right of it? <eos>",
+            "YOU: is there a slightly larger, slightly darker dot up and to the left of it? <eos>",
             "YOU: is there a slightly larger, slightly darker dot up and to its right? <eos>",
-            "YOU: is there a slightly larger, slightly darker dot down and to the left of it",
             "YOU: is there a slightly larger, slightly darker dot up and to its left? <eos>",
-            "YOU: is there a slightly larger, slightly darker dot down and to the right of it",
             "YOU: is there a slightly larger and darker dot to the right of it? <eos>",
             "YOU: is there a slightly larger, slightly darker dot to the right of it? <eos>",
             "YOU: is there a slightly larger and darker dot to the left of it? <eos>",
             "YOU: is there a larger, slightly darker dot to the right of it? <eos>",
+            "YOU: is there a slightly larger, slightly darker dot to the left and slightly above it? <eos>",
             "YOU: is there a larger, slightly darker dot to the left of it? <eos>",
             "YOU: is there a slightly larger, slightly darker dot up to its right? <eos>",
             "YOU: is there a slightly larger, slightly darker dot up to its left? <eos>",
             "YOU: is there a slightly larger, slightly darker dot down and to its right? <eos>",
             "YOU: is there a slightly larger, slightly darker dot down and to its left? <eos>",
-            "YOU: is there a slightly larger, slightly darker dot up and to the left of it",
-            "YOU: is there a slightly larger, slightly darker dot to the left and slightly above it",
-            "YOU: i don't have that. i have a small light dot with a larger"
+            "YOU: is there a slightly larger, slightly darker dot down and to the left of it <eos>"
         ],
         "plan_mentions": [
             [
@@ -5157,22 +5157,22 @@
             -8.559157371520996
         ],
         "plan_beam_lm_bart": [
+            -0.5947462916374207,
+            -0.602862536907196,
+            -0.6067765355110168,
+            -0.6107514500617981,
             -0.6123295426368713,
-            -0.6212776303291321,
-            -0.6223515868186951,
-            -0.6244097948074341,
-            -0.6298807263374329,
+            -0.6144870519638062,
+            -0.6227462887763977,
+            -0.6263724565505981,
+            -0.6268543601036072,
+            -0.6276608109474182,
             -0.63027024269104,
-            -0.6348159313201904,
+            -0.6311601400375366,
             -0.6456038951873779,
-            -0.6490443348884583,
-            -0.6498903036117554,
-            -0.6512848734855652,
-            -0.6542792916297913,
-            -0.6546597480773926,
-            -0.6547990441322327,
+            -0.6534409523010254,
             -0.6570895910263062,
-            -0.6594198346138
+            -0.6828851699829102
         ],
         "plan_beam_ref_res": [
             -3.7233026027679443,
@@ -5316,22 +5316,22 @@
             "i have a cluster of 4 dots . <eos>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: do you see a large medium grey dot in between two smaller light grey dots? <eos>",
+            "YOU: do you have a large medium grey dot in the middle of two smaller ones? <eos>",
+            "YOU: do you see a large medium grey dot in the middle of two smaller ones? <eos>",
+            "YOU: do you see a large medium grey dot in the middle of two smaller lighter dots? <eos>",
             "YOU: i have a large medium grey dot in the middle of two smaller ones <eos>",
-            "YOU: do you see a large medium grey dot in between two smaller light grey dots?",
-            "YOU: no. do you have a large medium grey dot in the middle of two smaller",
-            "YOU: do you have a large medium grey dot in the middle of two smaller ones?",
-            "YOU: do you see a large medium grey dot in the middle of two smaller ones?",
+            "YOU: do you have a large medium grey dot in the middle of two smaller lighter dots? <eos>",
+            "YOU: do you have a large medium grey dot in the middle of two smaller lighter ones? <eos>",
+            "YOU: do you see a large medium grey dot in the middle of two smaller lighter ones? <eos>",
+            "YOU: do you see a large medium grey dot in the middle of two smaller dots? <eos>",
+            "YOU: i have a large medium grey dot in the middle of two smaller light grey dots <eos>",
             "YOU: i have a large medium gray dot in the middle of two smaller ones <eos>",
-            "YOU: i have a large medium grey dot in the middle of two smaller light grey dots",
+            "YOU: do you have a large medium grey dot in the middle of two smaller dots? <eos>",
             "YOU: i have a large medium grey dot in the middle of two smaller dots <eos>",
-            "YOU: do you see a large medium grey dot in the middle of two smaller light grey",
-            "YOU: do you have a large medium grey dot in the middle of two smaller light grey",
-            "YOU: do you see a large medium grey dot in the middle of two smaller dots?",
-            "YOU: no, i have a large medium grey dot in the middle of two smaller ones",
-            "YOU: do you have a large medium grey dot in the middle of two smaller dots?",
-            "YOU: do you see a large medium grey dot in the middle of two smaller lighter dots",
+            "YOU: no, i have a large medium grey dot in the middle of two smaller ones <eos>",
             "YOU: i have a large medium grey dot in the middle of two smaller lighter ones <eos>",
-            "YOU: do you have a large medium grey dot in the middle of two smaller lighter dots"
+            "YOU: do you see a large medium grey dot in the middle of two smaller light grey dots <eos>"
         ],
         "plan_mentions": [
             [
@@ -7096,22 +7096,22 @@
             -4.092365264892578
         ],
         "plan_beam_lm_bart": [
-            -0.564689576625824,
-            -0.5678179264068604,
-            -0.5704318284988403,
-            -0.5819095373153687,
-            -0.5827902555465698,
-            -0.5834555625915527,
-            -0.5848748683929443,
-            -0.5980722308158875,
-            -0.5999897718429565,
-            -0.6044395565986633,
-            -0.6050785183906555,
-            -0.6081551313400269,
-            -0.608208417892456,
-            -0.6088898181915283,
-            -0.6189575791358948,
-            -0.6201856136322021
+            -0.5135033130645752,
+            -0.5391587615013123,
+            -0.5414516925811768,
+            -0.5445584654808044,
+            -0.5487803816795349,
+            -0.5574216246604919,
+            -0.5607027411460876,
+            -0.5752137303352356,
+            -0.5770257711410522,
+            -0.5794557332992554,
+            -0.5831711292266846,
+            -0.5919575691223145,
+            -0.6057063937187195,
+            -0.6068310737609863,
+            -0.6252325177192688,
+            -0.6770403981208801
         ],
         "plan_beam_ref_res": [
             -3.0529513359069824,
@@ -7255,22 +7255,22 @@
             "i have that . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't have a large dark dot on the lower right. do you",
-            "YOU: i don't have a large dark dot on the right. do you have",
-            "YOU: i don't have a large dark dot on the right. do you see",
-            "YOU: i don't see that. how about a triangle of small light grey dots",
-            "YOU: i don't see that. do you see three light grey dots in a",
-            "YOU: i don't see that. do you see a triangle of small light grey",
-            "YOU: i don't see that. do you see a triangle of light grey dots",
-            "YOU: i don't have a large dark dot on the lower right. i have",
-            "YOU: i don't see that. do you see a triangle of light dots?",
-            "YOU: i don't see that. do you see three small light grey dots in",
-            "YOU: i don't see that. do you see a small light grey dot with",
-            "YOU: i don't think i see that. do you see a triangle of small",
-            "YOU: i don't see that. do you see a triangle of small light dots",
-            "YOU: i don't have a large dark dot on the right. i have a",
-            "YOU: i don't see that. do you see a tiny light grey dot with",
-            "YOU: i don't see that. do you see three small light grey dots that"
+            "YOU: i don't see that. do you see a triangle of small light grey dots? <eos>",
+            "YOU: i don't see that. do you see three small light grey dots that form a triangle? <eos>",
+            "YOU: i don't see that. how about a triangle of small light grey dots? <eos>",
+            "YOU: i don't see that. do you see a triangle of light grey dots? <eos>",
+            "YOU: i don't think i see that. do you see a triangle of small light grey dots? <eos>",
+            "YOU: i don't see that. do you see three small light grey dots in a line sloping up to the right? <eos>",
+            "YOU: i don't see that. do you see a triangle of small light dots? <eos>",
+            "YOU: i don't see that. do you see three small light grey dots in a triangle? <eos>",
+            "YOU: i don't see that. do you see three small light grey dots in a line sloping up to the left? <eos>",
+            "YOU: i don't see that. do you see a triangle of light dots? <eos>",
+            "YOU: i don't see that. do you see three light grey dots in a triangle? <eos>",
+            "YOU: i don't think i see that. do you see a triangle of small light dots? <eos>",
+            "YOU: i don't see that. do you see three small light grey dots in a triangle shape? <eos>",
+            "YOU: i don't have a large dark dot on the lower right. do you see a triangle of small light dots? <eos>",
+            "YOU: i don't see that. do you see three small light grey dots in a line? <eos>",
+            "YOU: i don't see that. do you see three small light grey dots that form a triangle <eos>"
         ],
         "plan_mentions": [
             [
@@ -9027,7 +9027,6 @@
         "plan_beam_lm_bart": [
             -0.46878358721733093,
             -0.5073889493942261,
-            -0.5124591588973999,
             -0.5212439298629761,
             -0.5288758277893066,
             -0.548930287361145,
@@ -9038,9 +9037,10 @@
             -0.5583676695823669,
             -0.5591636300086975,
             -0.5649714469909668,
-            -0.5659570693969727,
-            -0.5697973370552063,
-            -0.5724059343338013
+            -0.5843080878257751,
+            -0.5959091782569885,
+            -0.6371309161186218,
+            -7.0507493019104
         ],
         "plan_beam_ref_res": [
             -25.01038360595703,
@@ -9186,7 +9186,6 @@
         "plan_beam_sents_bart": [
             "YOU: let's choose the light grey in the middle of the bunch <selection>",
             "YOU: the light grey in the middle of the other dots. <selection>",
-            "YOU: let's choose the light grey in the middle of the bunch. <selection",
             "YOU: the light grey in the middle of the bunch <selection>",
             "YOU: the light grey in the middle of the bunch. <selection>",
             "YOU: the light grey in the middle of the other dots <selection>",
@@ -9197,9 +9196,10 @@
             "YOU: the light grey in the middle of the other dots? <eos>",
             "YOU: the light grey in the middle of the others. <selection>",
             "YOU: the light grey in the middle of the bunch? <selection>",
-            "YOU: let's choose the light grey one in the middle of the bunch <selection",
-            "YOU: let's choose the light grey on the lower right of the group <selection",
-            "YOU: let's choose the light grey on the lower right of the bunch <selection"
+            "YOU: the light grey in the middle of the others? <eos>",
+            "YOU: let's choose the light grey in the middle of the bunch <eos>",
+            "YOU: the light grey in the middle of the group? <eos>",
+            ""
         ],
         "plan_mentions": [
             [

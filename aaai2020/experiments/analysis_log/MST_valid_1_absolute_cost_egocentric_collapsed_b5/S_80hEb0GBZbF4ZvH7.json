@@ -3234,12 +3234,12 @@
             -0.5233911871910095,
             -0.5290761590003967,
             -0.5337879657745361,
+            -0.538392961025238,
+            -0.5574718713760376,
             -0.5598032474517822,
-            -0.5660430192947388,
-            -0.5859626531600952,
-            -0.598872184753418,
-            -0.6008083820343018,
-            -0.6011431217193604
+            -0.5695711970329285,
+            -0.5836725234985352,
+            -0.5951237082481384
         ],
         "plan_beam_ref_res": [
             -1.0403461456298828,
@@ -3393,12 +3393,12 @@
             "YOU: is the top one the smallest and lightest? <eos>",
             "YOU: do you see a tiny light grey dot? <eos>",
             "YOU: do you see a small light grey dot by itself? <eos>",
+            "YOU: i don't see that. do you see a tiny light grey dot? <eos>",
+            "YOU: i don't see that. do you see a small light grey dot? <eos>",
             "YOU: do you see a small light grey dot? <eos>",
-            "YOU: i don't see that. do you see a tiny light grey dot?",
-            "YOU: i don't see that. do you see a small light grey dot?",
-            "YOU: i don't see that. do you see a tiny light gray dot?",
-            "YOU: i don't see that. do you see a small grey dot by itself",
-            "YOU: i don't see that. i see a small light grey dot by itself"
+            "YOU: i don't see that. do you see a tiny light gray dot? <eos>",
+            "YOU: i don't see that. do you see a small light gray dot? <eos>",
+            "YOU: i don't see that. do you see a tiny medium grey dot? <eos>"
         ],
         "plan_mentions": [
             [
@@ -8990,15 +8990,15 @@
             -0.6566210389137268,
             -0.6726502776145935,
             -0.6803007125854492,
-            -0.6902514696121216,
-            -0.7023579478263855,
             -0.7060362696647644,
-            -0.7082524299621582,
             -0.709265410900116,
             -0.7103078365325928,
-            -0.7161529660224915,
-            -0.7343729138374329,
-            -0.7397738099098206
+            -0.7397738099098206,
+            -0.7471963763237,
+            -0.750370979309082,
+            -0.7532022595405579,
+            -0.7565193176269531,
+            -0.7682902216911316
         ],
         "plan_beam_ref_res": [
             -12.43600845336914,
@@ -9149,15 +9149,15 @@
             "YOU: no. do you have a medium sized medium gray dot? <eos>",
             "YOU: no. do you see a medium sized medium gray dot? <eos>",
             "YOU: no. do you see a medium sized darker grey dot? <eos>",
-            "YOU: no. do you see a medium grey dot at the bottom of the circle?",
-            "YOU: no. do you have a medium grey dot at the bottom of the circle?",
             "YOU: no, i have a medium sized medium grey dot by itself <eos>",
-            "YOU: no. do you see a medium grey dot at the top of the circle?",
             "YOU: no, i have a medium sized dark grey dot by itself <eos>",
             "YOU: no. do you have a medium sized medium shade dot? <eos>",
-            "YOU: no. do you have a medium grey dot at the top of the circle?",
-            "YOU: no. do you see a medium sized dark grey dot to the right of the",
-            "YOU: no. do you see a medium sized dark grey dot to the right? <eos>"
+            "YOU: no. do you see a medium sized dark grey dot to the right? <eos>",
+            "YOU: no. do you see a medium grey dot at the bottom of the circle <eos>",
+            "YOU: no, i have a medium sized dark grey dot <eos>",
+            "YOU: no. do you see a medium sized dark grey dot to the left? <eos>",
+            "YOU: no. do you see a medium grey dot at the top of the circle <eos>",
+            "YOU: no, i have a medium sized medium grey dot <eos>"
         ],
         "plan_mentions": [
             [

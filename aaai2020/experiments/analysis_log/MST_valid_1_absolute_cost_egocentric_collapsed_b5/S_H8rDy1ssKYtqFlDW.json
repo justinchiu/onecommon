@@ -3236,20 +3236,20 @@
         "plan_beam_lm_bart": [
             -0.44848862290382385,
             -0.4530908167362213,
-            -0.4666837751865387,
             -0.46786436438560486,
-            -0.4689147472381592,
             -0.46898436546325684,
             -0.47126463055610657,
-            -0.47243189811706543,
-            -0.4769684672355652,
             -0.4825441539287567,
-            -0.48414742946624756,
-            -0.48632028698921204,
             -0.48916345834732056,
             -0.4920206069946289,
             -0.492094486951828,
-            -0.4945457875728607
+            -0.4945457875728607,
+            -0.4956204891204834,
+            -0.4970468282699585,
+            -0.5050998330116272,
+            -0.6107996702194214,
+            -0.6260936856269836,
+            -7.098705768585205
         ],
         "plan_beam_ref_res": [
             -13.54559326171875,
@@ -3395,20 +3395,20 @@
         "plan_beam_sents_bart": [
             "YOU: yes, i have that. let's pick the large black dot. <eos>",
             "YOU: yes, i have that. let's pick the large black one. <eos>",
-            "YOU: yes, i have that. let's pick the large black one. <",
             "YOU: yes, i have that. let's pick the large black dot <eos>",
-            "YOU: yes, i have that. let's pick the large black dot. <",
             "YOU: i have a large black dot with a small gray to the right of it <eos>",
             "YOU: yes, i have that. let's choose the large black dot. <eos>",
-            "YOU: i have a large black dot with a small gray dot to the right of it",
-            "YOU: yes, i have that. let's pick the large black dot <selection",
             "YOU: i have a large black dot with a small gray to the left of it <eos>",
-            "YOU: i have a large black dot that forms a triangle with a small gray ( bottom",
-            "YOU: yes, i have that. let's choose the large black dot. <",
             "YOU: yes, i have that. let's pick the large black one <eos>",
             "YOU: yes i have that. let's pick the large black dot <eos>",
             "YOU: yes, i have that. let's choose the large black one. <eos>",
-            "YOU: yes, i see that. let's pick the large black dot. <eos>"
+            "YOU: yes, i see that. let's pick the large black dot. <eos>",
+            "YOU: yes. i have that. let's pick the large black dot. <eos>",
+            "YOU: yes, i see that. let's pick the large black one. <eos>",
+            "YOU: yes, i have that. let's choose the large black dot <eos>",
+            "YOU: yes, i see that. <eos>",
+            "YOU: yes, i have that. <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -5140,8 +5140,6 @@
             -11.864920616149902
         ],
         "plan_beam_lm_bart": [
-            -0.4356651306152344,
-            -0.4364621043205261,
             -0.438633531332016,
             -0.4391564130783081,
             -0.44001710414886475,
@@ -5149,13 +5147,15 @@
             -0.44852325320243835,
             -0.4708448648452759,
             -0.47091469168663025,
-            -0.4760459065437317,
             -0.482094943523407,
             -0.48883113265037537,
-            -0.4896652400493622,
             -0.49691516160964966,
-            -0.49879229068756104,
-            -0.500137448310852
+            -0.5251306891441345,
+            -0.5318114161491394,
+            -0.5325294137001038,
+            -0.5423650145530701,
+            -0.55771803855896,
+            -0.5752753615379333
         ],
         "plan_beam_ref_res": [
             -9.752967834472656,
@@ -5299,8 +5299,6 @@
             "lets click the smaller one on the right . <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: let's pick the small gray dot on the bottom left of the triangle <",
-            "YOU: let's pick the small gray on the bottom left of the triangle <selection",
             "YOU: let's pick the small gray dot on the bottom left. <selection>",
             "YOU: let's pick the small gray on the bottom left. <selection>",
             "YOU: let's pick the small gray on the bottom left <selection>",
@@ -5308,13 +5306,15 @@
             "YOU: let's choose the small gray on the bottom left. <selection>",
             "YOU: let's pick the small gray one on the bottom left <selection>",
             "YOU: let's choose the small gray dot on the bottom left. <selection>",
-            "YOU: let's choose the small gray on the bottom left of the triangle <selection",
             "YOU: let's pick the small gray dot <selection>",
             "YOU: let's choose the small gray on the bottom left <selection>",
-            "YOU: let's pick the small dark gray dot on the bottom left of the triangle",
             "YOU: let's pick the small gray dot on the bottom left of the triangle <eos>",
-            "YOU: let's pick the small gray dot on the bottom left of the triangle.",
-            "YOU: let's choose the small gray dot on the bottom left of the triangle <"
+            "YOU: let's pick the small gray on the bottom left of the triangle <eos>",
+            "YOU: let's pick the small gray on the bottom left <eos>",
+            "YOU: let's pick the small gray dot on the bottom left <eos>",
+            "YOU: let's choose the small gray dot on the bottom left of the triangle <eos>",
+            "YOU: let's choose the small gray on the bottom left <eos>",
+            "YOU: let's choose the small gray dot <eos>"
         ],
         "plan_mentions": [
             [

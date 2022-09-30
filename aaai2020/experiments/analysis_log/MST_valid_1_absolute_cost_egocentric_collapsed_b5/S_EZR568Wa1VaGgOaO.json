@@ -7080,22 +7080,22 @@
             -6.885392665863037
         ],
         "plan_beam_lm_bart": [
+            -0.5246861577033997,
+            -0.5389255881309509,
             -0.5440657138824463,
+            -0.5509583950042725,
             -0.561499297618866,
             -0.5695479512214661,
-            -0.5799162983894348,
-            -0.5956546068191528,
+            -0.5708224177360535,
+            -0.5778287649154663,
+            -0.5832844376564026,
+            -0.5917139053344727,
             -0.5968998074531555,
             -0.60261070728302,
-            -0.6089540123939514,
-            -0.6171407699584961,
-            -0.6309090256690979,
-            -0.6386528611183167,
             -0.6425310969352722,
             -0.6444050073623657,
-            -0.644682765007019,
             -0.6454294919967651,
-            -0.6539995670318604
+            -0.6546499729156494
         ],
         "plan_beam_ref_res": [
             -2.082540512084961,
@@ -7239,22 +7239,22 @@
             "i think i have that . <eos>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: ok, let's pick the darker one on the left of those two <selection>",
+            "YOU: ok, let's pick the darker one on the left of those 2 <selection>",
             "YOU: let's pick the darker one on the left of those two <selection>",
+            "YOU: ok, let's pick the darker one on the left of the pair <selection>",
             "YOU: let's pick the darker one on the left of those 2 <selection>",
             "YOU: let's pick the darker one on the left of the pair <selection>",
-            "YOU: ok, let's pick the darker one on the left of those two <",
-            "YOU: ok, let's pick the darker one on the left of those 2 <",
+            "YOU: ok, let's choose the darker one on the left of those two <selection>",
+            "YOU: ok, let's pick the darker one on the right of those two <selection>",
+            "YOU: ok, let's choose the darker one on the left of those 2 <selection>",
+            "YOU: ok, let's pick the darker one on the left of that pair <selection>",
             "YOU: let's choose the darker one on the left of those two <selection>",
             "YOU: let's pick the darker one on the right of those two <selection>",
-            "YOU: ok, let's pick the darker one on the left of the pair <",
-            "YOU: ok, let's pick the darker one on the left of the two you",
-            "YOU: ok, let's choose the darker one on the left of those two <",
-            "YOU: ok, let's pick the darker one on the right of those two <",
             "YOU: ok, let's pick the darker one on the left of those two <eos>",
             "YOU: do they form a triangle with a small black dot? <eos>",
-            "YOU: ok, let's choose the darker one on the left of those 2 <",
             "YOU: do you have a small black dot between them? <eos>",
-            "YOU: ok, let's pick the darker one on the left of that pair <"
+            "YOU: let's pick the darker one on the left of those two <eos>"
         ],
         "plan_mentions": [
             [

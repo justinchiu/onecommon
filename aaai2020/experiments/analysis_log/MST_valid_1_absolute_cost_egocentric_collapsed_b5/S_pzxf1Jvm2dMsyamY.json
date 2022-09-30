@@ -3234,16 +3234,16 @@
             -0.5377064347267151,
             -0.5500120520591736,
             -0.5651232004165649,
-            -0.5690397024154663,
             -0.5696439743041992,
             -0.5714059472084045,
             -0.5718879103660583,
             -0.5751292705535889,
             -0.57740318775177,
             -0.5803670883178711,
-            -0.5871964693069458,
             -0.5894633531570435,
-            -0.5902242064476013
+            -0.5902242064476013,
+            -0.5990659594535828,
+            -7.199560165405273
         ],
         "plan_beam_ref_res": [
             -4.414872169494629,
@@ -3393,16 +3393,16 @@
             "YOU: i don't see that. do you have a large black dot? <eos>",
             "YOU: yes, let's pick the one on the far right. <selection>",
             "YOU: is the middle one the largest? <eos>",
-            "YOU: i don't have that. i have a large black dot in the middle",
             "YOU: yes, let's pick the middle one. <eos>",
             "YOU: yes. let's pick the middle one. <eos>",
             "YOU: yes. let's pick the middle one <eos>",
             "YOU: is the middle one the darkest? <eos>",
             "YOU: yes, let's pick the one on the far right. <eos>",
             "YOU: yes, let's pick the one on the far right <eos>",
-            "YOU: i don't have that. i have a large black dot at the top",
             "YOU: yes, lets pick the middle one <eos>",
-            "YOU: yes, let's choose the middle one <eos>"
+            "YOU: yes, let's choose the middle one <eos>",
+            "YOU: i don't have that. i have a large black dot by itself <eos>",
+            ""
         ],
         "plan_mentions": [
             [

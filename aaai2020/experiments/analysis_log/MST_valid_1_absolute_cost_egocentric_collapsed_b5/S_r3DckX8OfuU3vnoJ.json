@@ -7095,13 +7095,13 @@
             -0.5115116238594055,
             -0.5120819211006165,
             -0.5144833326339722,
-            -0.5174705386161804,
-            -0.5340576171875,
-            -0.5340964198112488,
             -0.5368896722793579,
-            -0.5440803170204163,
             -0.548499584197998,
-            -0.5515451431274414
+            -0.5550065636634827,
+            -0.5614381432533264,
+            -0.6008477807044983,
+            -0.6117530465126038,
+            -7.019268989562988
         ],
         "plan_beam_ref_res": [
             -0.11160527169704437,
@@ -7254,13 +7254,13 @@
             "YOU: is the grey dot bigger? <eos>",
             "YOU: is the grey dot slightly larger and to the left? <eos>",
             "YOU: is the grey one larger? <eos>",
-            "YOU: i don't have that. do you have a large medium grey dot?",
-            "YOU: i don't see that. do you have a large medium grey dot?",
-            "YOU: i don't have that. do you have a large light grey dot?",
             "YOU: is the grey one slightly larger? <eos>",
-            "YOU: i don't think i have that. i have a large medium grey dot",
             "YOU: i don't have that. do you have a large grey dot? <eos>",
-            "YOU: i don't think i have that. i have a large light grey dot"
+            "YOU: is the grey dot to the left? <eos>",
+            "YOU: is the grey dot to the right? <eos>",
+            "YOU: let us select the grey dot <eos>",
+            "YOU: is the grey dot on the left side? <eos>",
+            ""
         ],
         "plan_mentions": [
             [

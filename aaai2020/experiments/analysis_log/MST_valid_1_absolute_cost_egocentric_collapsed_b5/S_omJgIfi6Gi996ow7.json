@@ -3231,22 +3231,22 @@
             -12.556390762329102
         ],
         "plan_beam_lm_bart": [
-            -0.49586260318756104,
+            -0.4715426564216614,
+            -0.4804404675960541,
+            -0.48132967948913574,
+            -0.49309396743774414,
             -0.49741852283477783,
             -0.5016885995864868,
-            -0.5051679611206055,
             -0.5054624080657959,
-            -0.5061074495315552,
-            -0.5061829686164856,
             -0.5066697597503662,
+            -0.509437620639801,
+            -0.5109710693359375,
             -0.5127125978469849,
-            -0.5139133334159851,
-            -0.5184835195541382,
-            -0.5243276953697205,
-            -0.5258899331092834,
+            -0.5310277342796326,
             -0.5327858328819275,
-            -0.5356926918029785,
-            -0.5372927784919739
+            -0.542568564414978,
+            -0.5629605054855347,
+            -0.5660578608512878
         ],
         "plan_beam_ref_res": [
             -3.399379253387451,
@@ -3390,22 +3390,22 @@
             "i have a small dark gray dot at the top of the circle <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't see that. do you see a tiny medium gray dot?",
+            "YOU: i don't see that. do you see a tiny medium gray dot? <eos>",
+            "YOU: i don't see that. do you see a small medium gray dot? <eos>",
+            "YOU: i don't see that. do you see a tiny dark grey dot? <eos>",
+            "YOU: i don't see that. do you see a small dark grey dot? <eos>",
             "YOU: do you see a tiny dark grey dot? <eos>",
             "YOU: do you see a tiny medium gray dot? <eos>",
-            "YOU: i don't see that. do you see a small medium gray dot?",
             "YOU: do you see a small medium gray dot? <eos>",
-            "YOU: i don't see that one. do you see a small medium gray dot",
-            "YOU: i don't see that. do you see a tiny dark grey dot?",
             "YOU: do you see a small dark grey dot? <eos>",
+            "YOU: i don't see that. do you see a small dark gray dot? <eos>",
+            "YOU: i don't see that. do you see a small medium grey dot? <eos>",
             "YOU: do you have a small medium gray dot? <eos>",
-            "YOU: i don't see that one. do you see a tiny medium gray dot",
-            "YOU: i don't see that. do you see a small dark grey dot?",
-            "YOU: i don't see that one. do you see a small dark grey dot",
-            "YOU: i don't have that. i have a small medium gray dot by itself",
+            "YOU: i don't have that. i have a small medium gray dot by itself <eos>",
             "YOU: do you see a small dark gray dot? <eos>",
-            "YOU: i don't see that. do you see a small dark gray dot?",
-            "YOU: i don't see that. do you see a small medium grey dot?"
+            "YOU: i don't see that. i see a small medium gray dot by itself <eos>",
+            "YOU: i don't see that. i see a small dark grey dot <eos>",
+            "YOU: i don't see that. i see a small medium gray dot <eos>"
         ],
         "plan_mentions": [
             [

@@ -3236,14 +3236,14 @@
             -0.4944831132888794,
             -0.5036491751670837,
             -0.5044212937355042,
-            -0.5172412991523743,
             -0.5204387903213501,
-            -0.5227780342102051,
             -0.5263073444366455,
-            -0.5367900133132935,
-            -0.5425295829772949,
-            -0.5431200265884399,
-            -0.5484195947647095
+            -0.5494483113288879,
+            -0.5570878982543945,
+            -0.5626689195632935,
+            -0.627644956111908,
+            -0.6329412460327148,
+            -7.088358402252197
         ],
         "plan_beam_ref_res": [
             -0.2327246516942978,
@@ -3395,14 +3395,14 @@
             "YOU: is the lighter dot on top slightly to the right? <eos>",
             "YOU: is the lighter dot slightly smaller? <eos>",
             "YOU: is the lighter one slightly to the right? <eos>",
-            "YOU: i don't have that. i have a large light grey dot on the",
             "YOU: is the lighter dot slightly larger? <eos>",
-            "YOU: i don't have that. i have a large light gray dot on the",
             "YOU: is the lighter one slightly larger? <eos>",
-            "YOU: i don't have that. i have a large light grey dot by itself",
-            "YOU: i don't have that. i have a large light gray dot by itself",
-            "YOU: i don't have that. i have a large light grey dot at the",
-            "YOU: i don't have that. i have a large light gray dot at the"
+            "YOU: is the lighter dot to the left? <eos>",
+            "YOU: i don't have that. i have a large light grey dot by itself <eos>",
+            "YOU: i don't have that. i have a large light gray dot by itself <eos>",
+            "YOU: i don't have that. i have a large light grey dot on the bottom right <eos>",
+            "YOU: i don't have that. i have a large light gray dot on the bottom right <eos>",
+            ""
         ],
         "plan_mentions": [
             [

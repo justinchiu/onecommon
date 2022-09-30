@@ -1295,22 +1295,22 @@
             -13.95853328704834
         ],
         "plan_beam_lm_bart": [
-            -0.5048269629478455,
-            -0.5094819068908691,
-            -0.5119004845619202,
-            -0.5678524971008301,
-            -0.5713511109352112,
-            -0.5718143582344055,
-            -0.5736905336380005,
-            -0.5744025111198425,
-            -0.5763355493545532,
-            -0.579598069190979,
-            -0.5800889730453491,
-            -0.5832296013832092,
-            -0.5862532258033752,
-            -0.5894345045089722,
-            -0.5954522490501404,
-            -0.5963425040245056
+            -0.49658891558647156,
+            -0.49713966250419617,
+            -0.5016385912895203,
+            -0.5016807317733765,
+            -0.5187054872512817,
+            -0.5251393914222717,
+            -0.5256703495979309,
+            -0.5267598628997803,
+            -0.5292321443557739,
+            -0.529731273651123,
+            -0.5302428603172302,
+            -0.5309054851531982,
+            -0.5319220423698425,
+            -0.5348137021064758,
+            -0.5404330492019653,
+            -0.5465497374534607
         ],
         "plan_beam_ref_res": [
             -1.870556354522705,
@@ -1454,22 +1454,22 @@
             "two dots almost identical in size almost vertical and almost identical in size ? <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: do you have a large medium gray dot with a smaller dot of the same color",
-            "YOU: do you see a large medium gray dot with a smaller dot of the same color",
-            "YOU: do you have a large medium grey dot with a smaller dot of the same color",
-            "YOU: i have a large dark grey dot with a smaller lighter grey dot above and to",
-            "YOU: do you have a large dark grey dot with a smaller lighter grey dot to the",
-            "YOU: do you see a large dark grey dot with a smaller lighter grey dot to the",
-            "YOU: i have a large dark grey dot with a smaller lighter grey dot to the right",
-            "YOU: i have a large medium gray dot with a smaller lighter grey dot above and to",
-            "YOU: two dots very close together? <eos>",
-            "YOU: i have a large dark grey dot with a smaller lighter grey dot to the left",
-            "YOU: i have a large medium gray dot with a smaller lighter grey dot to the right",
-            "YOU: do you have a large medium gray dot with a smaller lighter grey dot to the",
-            "YOU: i have a large medium gray dot with a smaller lighter grey dot to the left",
-            "YOU: do you see a large medium gray dot with a smaller lighter grey dot to the",
-            "YOU: do you have a large dark grey dot with a smaller lighter grey dot to its",
-            "YOU: do you see a large medium gray dot with a smaller darker dot to the right"
+            "YOU: i have a large dark grey dot with a smaller lighter grey dot above and to the left of it <eos>",
+            "YOU: i have a large dark grey dot with a smaller lighter grey dot above and to the right of it <eos>",
+            "YOU: i have a large medium gray dot with a smaller lighter grey dot above and to the right of it <eos>",
+            "YOU: i have a large medium gray dot with a smaller lighter grey dot above and to the left of it <eos>",
+            "YOU: do you have a large medium gray dot with a smaller dot of the same color down and to the left? <eos>",
+            "YOU: do you have a large medium gray dot with a smaller dot of the same color down and to the right? <eos>",
+            "YOU: do you have a large medium gray dot with a smaller dot of the same color below it and to the left? <eos>",
+            "YOU: do you have a large medium gray dot with a smaller dot of the same color below it and to the right? <eos>",
+            "YOU: do you see a large medium gray dot with a smaller dot of the same color below it and to the left? <eos>",
+            "YOU: do you have a large medium gray dot with a smaller dot of the same color to the right of it? <eos>",
+            "YOU: do you see a large medium gray dot with a smaller dot of the same color below it and to the right? <eos>",
+            "YOU: do you have a large medium grey dot with a smaller dot of the same color below it and to the left? <eos>",
+            "YOU: do you have a large medium grey dot with a smaller dot of the same color below it and to the right? <eos>",
+            "YOU: do you have a large dark grey dot with a smaller lighter grey dot to the right of it? <eos>",
+            "YOU: i have a large dark grey dot with a smaller lighter grey dot to the right of it <eos>",
+            "YOU: i have a large medium gray dot with a smaller lighter grey dot to the right of it <eos>"
         ],
         "plan_mentions": [
             [
@@ -5177,21 +5177,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.5148902535438538,
-            -0.5206396579742432,
-            -0.5215125679969788,
-            -0.5260426998138428,
-            -0.5343465209007263,
             -0.5370208621025085,
-            -0.537209153175354,
-            -0.5441076159477234,
-            -0.5445767045021057,
-            -0.5461580157279968,
             -0.5487033724784851,
             -0.5529152154922485,
             -0.5575416684150696,
             -0.5579755306243896,
             -0.5600930452346802,
-            -0.5626619458198547
+            -0.5626619458198547,
+            -0.5650530457496643,
+            -0.5709691047668457,
+            -0.5855711102485657,
+            -0.5932061672210693,
+            -0.5945837497711182,
+            -0.6810495257377625,
+            -0.6914028525352478,
+            -0.6982685327529907
         ],
         "plan_beam_ref_res": [
             -7.661993980407715,
@@ -5336,21 +5336,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: yes! if the smaller one is to the right click that smaller one! <eos>",
-            "YOU: yes! if the smaller one is slightly to the right click that smaller one!",
-            "YOU: yes! if the smaller one is to the right click that smaller one! <",
-            "YOU: yes! if the smaller one is to the right of the larger one click that",
-            "YOU: yes, the smaller one is up and to the right of the larger one?",
             "YOU: yes! if the larger one is to the right click that larger one! <eos>",
-            "YOU: yes if the smaller one is to the right click that smaller one! <selection",
-            "YOU: yes, the smaller one is up and to the left of the larger one?",
-            "YOU: yes! if the larger one is to the right click that larger one! <",
-            "YOU: yes! if the smaller one is to the right of the larger one click the",
             "YOU: yes, the smaller one is up and to the right of the larger one <eos>",
             "YOU: yes, the smaller one is to the right of the larger one? <eos>",
             "YOU: yes, the smaller one is up and to the left of the larger one <eos>",
             "YOU: yes, the smaller one is to the left of the larger one? <eos>",
             "YOU: yes! if the smaller one is to the left click that smaller one! <eos>",
-            "YOU: yes, the smaller one is to the right of the larger one <eos>"
+            "YOU: yes, the smaller one is to the right of the larger one <eos>",
+            "YOU: yes, the smaller one is to the left of the larger one <eos>",
+            "YOU: yes. the smaller one is to the right of the larger one? <eos>",
+            "YOU: yes if the smaller one is to the right click that smaller one! <eos>",
+            "YOU: yes. the smaller one is to the right of the larger one <eos>",
+            "YOU: yes. the smaller one is to the left of the larger one <eos>",
+            "YOU: yes and they're both medium grey <eos>",
+            "YOU: yes, they are very close together <eos>",
+            "YOU: yes they are <eos>"
         ],
         "plan_mentions": [
             [
@@ -7095,13 +7095,9 @@
             -13.585519790649414
         ],
         "plan_beam_lm_bart": [
-            -0.6085197329521179,
-            -0.6250002980232239,
             -0.6396734118461609,
-            -0.6522890329360962,
             -0.6537410020828247,
             -0.6567272543907166,
-            -0.6574109792709351,
             -0.6576699614524841,
             -0.6589071154594421,
             -0.6655985116958618,
@@ -7109,8 +7105,12 @@
             -0.666532576084137,
             -0.6683392524719238,
             -0.6721789240837097,
-            -0.6730275750160217,
-            -0.6809442639350891
+            -0.6809442639350891,
+            -0.7015208601951599,
+            -0.718727707862854,
+            -0.8518988490104675,
+            -0.8714408874511719,
+            -6.932959079742432
         ],
         "plan_beam_ref_res": [
             -8.804940223693848,
@@ -7254,13 +7254,9 @@
             "i think i see the same one . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: yes! if the black one is slightly to the right click that black one!",
-            "YOU: do you have 3 dots in a line sloping up and to the right?",
             "YOU: do you have 3 dots in a line sloping up to the right? <eos>",
-            "YOU: do you have 3 dots in a line sloping up and to the left?",
             "YOU: is there a dark grey smaller one to the right of them? <eos>",
             "YOU: is there a dark grey one to the left of the black one? <eos>",
-            "YOU: yes! if the black one is to the right of the dark grey one click",
             "YOU: is there a dark grey smaller one to the left of them? <eos>",
             "YOU: is there a dark grey smaller one to the left of the black one? <eos>",
             "YOU: is there a dark grey one to the right of the black one? <eos>",
@@ -7268,8 +7264,12 @@
             "YOU: is there a black one to the right of them? <eos>",
             "YOU: do you have 3 dots in a line sloping up to the left? <eos>",
             "YOU: is there a dark grey one to the left of them? <eos>",
-            "YOU: yes! if the black one is to the left of the dark grey one click",
-            "YOU: is there a black one to the left of them? <eos>"
+            "YOU: is there a black one to the left of them? <eos>",
+            "YOU: are they in a triangle shape? <eos>",
+            "YOU: do you have 3 dots in a triangle shape? <eos>",
+            "YOU: yes, i see that. <eos>",
+            "YOU: yes, i see that <eos>",
+            ""
         ],
         "plan_mentions": [
             [

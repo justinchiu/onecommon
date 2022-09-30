@@ -3237,19 +3237,19 @@
             -0.4001099765300751,
             -0.40511107444763184,
             -0.4222163259983063,
+            -0.4267362058162689,
             -0.42904987931251526,
-            -0.4375319182872772,
-            -0.4454236328601837,
-            -0.44851866364479065,
-            -0.4513051509857178,
-            -0.4627937376499176,
-            -0.4734143614768982,
-            -0.491896390914917,
-            -0.4993019998073578,
-            -0.5065992474555969,
-            -0.5076786875724792,
+            -0.4367918074131012,
+            -0.4521525800228119,
+            -0.46158933639526367,
             -0.509239912033081,
-            -0.5129572749137878
+            -0.5352599024772644,
+            -0.5460982918739319,
+            -0.5488739013671875,
+            -0.5626403093338013,
+            -0.5717800259590149,
+            -0.5756236910820007,
+            -0.5782245397567749
         ],
         "plan_beam_ref_res": [
             -0.9634267091751099,
@@ -3396,19 +3396,19 @@
             "YOU: yes! if the bottom one is slightly to the left click that one! <eos>",
             "YOU: yes! if the bottom one is slightly to the right click that one! <eos>",
             "YOU: yes! if the top one is slightly to the left click that one! <eos>",
+            "YOU: yes! if the bottom one is slightly to the left click that bottom one! <eos>",
             "YOU: yes! if the top one is slightly to the right click that one! <eos>",
-            "YOU: yes! if the bottom one is slightly to the left click that bottom one!",
-            "YOU: yes! if the one on the bottom is slightly to the right click that one",
-            "YOU: yes! if the bottom one is slightly to the right click that bottom one!",
-            "YOU: yes! if the one on the bottom is slightly to the left click that one",
-            "YOU: yes! if the top one is slightly to the left click that top one!",
-            "YOU: yes! if the top one is slightly to the right click that top one!",
-            "YOU: yes! if the one on the right is slightly lower and to the right click",
-            "YOU: yes! if the bottom one is slightly to the left click that one! <",
-            "YOU: yes! if the bottom one is slightly to the right click that one! <",
-            "YOU: yes! if the one on the right is slightly lower and to the left click",
+            "YOU: yes! if the bottom one is slightly to the right click that bottom one! <eos>",
+            "YOU: yes! if the top one is slightly to the left click that top one! <eos>",
+            "YOU: yes! if the top one is slightly to the right click that top one! <eos>",
             "YOU: yes, the bottom one is slightly to the left? <eos>",
-            "YOU: yes! if the one on the left is slightly lower and to the right click"
+            "YOU: yes, the top one is slightly to the left? <eos>",
+            "YOU: yes, the bottom one is slightly to the right? <eos>",
+            "YOU: yes, the one on top is slightly to the left? <eos>",
+            "YOU: no. do you have a large black dot? <eos>",
+            "YOU: yes, the one on top is slightly to the right? <eos>",
+            "YOU: yes, the one on the right is slightly lower? <eos>",
+            "YOU: yes, the top one is slightly to the right? <eos>"
         ],
         "plan_mentions": [
             [
@@ -7083,7 +7083,7 @@
             -0.41172879934310913,
             -0.41346046328544617,
             -0.4152212142944336,
-            -0.42074671387672424
+            -0.4239133298397064
         ],
         "plan_beam_ref_res": [
             -0.46025437116622925,
@@ -7242,7 +7242,7 @@
             "YOU: let's choose the one to the right <selection>",
             "YOU: ok, let's choose the darker one on the right. <selection>",
             "YOU: okay, let's pick the one to the right <selection>",
-            "YOU: okay, let's pick the one to the right slightly above <selection"
+            "YOU: let's pick the one on the right <selection>"
         ],
         "plan_mentions": [
             [

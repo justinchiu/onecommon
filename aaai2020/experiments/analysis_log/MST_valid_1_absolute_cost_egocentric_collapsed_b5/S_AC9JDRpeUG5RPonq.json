@@ -3235,15 +3235,15 @@
             -0.520783007144928,
             -0.5218847990036011,
             -0.5226777195930481,
-            -0.5422503352165222,
             -0.5445249080657959,
-            -0.5570084452629089,
-            -0.5587299466133118,
             -0.5651181936264038,
             -0.569028377532959,
             -0.5697168707847595,
             -0.5748492479324341,
-            -0.5768622756004333
+            -0.5768622756004333,
+            -0.5809365510940552,
+            -0.5816674828529358,
+            -0.5856014490127563
         ],
         "plan_beam_ref_res": [
             -0.12711870670318604,
@@ -3394,15 +3394,15 @@
             "YOU: yes! if the middle one is the largest click that one! <eos>",
             "YOU: no. do you have a large black dot? <eos>",
             "YOU: no. do you have a large dark gray dot? <eos>",
-            "YOU: yes! if the middle one is the largest click that middle one! <selection",
             "YOU: i don't see that. do you see a large black dot? <eos>",
-            "YOU: i don't see that. do you see a large dark grey dot?",
-            "YOU: i don't see that. do you see a large dark gray dot?",
             "YOU: i don't see that. do you see a large dark dot? <eos>",
             "YOU: do you have a large black dot? <eos>",
             "YOU: no. do you have a large dark dot? <eos>",
             "YOU: yes! if the middle one is the largest click that middle one! <eos>",
-            "YOU: no. do you see a large dark grey dot? <eos>"
+            "YOU: no. do you see a large dark grey dot? <eos>",
+            "YOU: no. do you see a large dark gray dot? <eos>",
+            "YOU: do you have a large dark grey dot? <eos>",
+            "YOU: i don't see that. do you have a large dark dot? <eos>"
         ],
         "plan_mentions": [
             [

@@ -1295,22 +1295,22 @@
             -15.574124336242676
         ],
         "plan_beam_lm_bart": [
-            -0.4752999246120453,
-            -0.47609052062034607,
-            -0.49097031354904175,
-            -0.5068325400352478,
-            -0.5103138089179993,
-            -0.5104565620422363,
+            -0.44056883454322815,
+            -0.4411202371120453,
+            -0.46723681688308716,
+            -0.4707435965538025,
+            -0.49180394411087036,
+            -0.5006400346755981,
+            -0.504061758518219,
+            -0.5075361132621765,
+            -0.510093629360199,
             -0.5113765001296997,
-            -0.5244987607002258,
-            -0.5298061966896057,
-            -0.5298289060592651,
-            -0.5393458604812622,
-            -0.541847288608551,
-            -0.5454676151275635,
-            -0.5462015271186829,
-            -0.5493901371955872,
-            -0.5500816106796265
+            -0.5143930315971375,
+            -0.5184053182601929,
+            -0.5201610922813416,
+            -0.5209410190582275,
+            -0.5234057903289795,
+            -0.5241823792457581
         ],
         "plan_beam_ref_res": [
             -0.00922134518623352,
@@ -1454,22 +1454,22 @@
             "i have two dark dots that are almost identical in size and almost vertical <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i have two dots very close together. the one on the left is smaller and",
-            "YOU: i have a small black dot with a larger dark grey dot above and to the",
-            "YOU: i see two dots very close together. the one on the left is smaller and",
-            "YOU: i have a small black dot with a larger dark grey dot below and to the",
-            "YOU: i have two dots very close together. the one on the right is smaller and",
-            "YOU: i have two dots very close to each other. the one on the left is",
+            "YOU: i have a small black dot with a larger dark grey dot above and to the right of it <eos>",
+            "YOU: i have a small black dot with a larger dark grey dot above and to the left of it <eos>",
+            "YOU: i have a small black dot with a larger dark grey dot below and to the left of it <eos>",
+            "YOU: i have a small black dot with a larger dark grey dot below and to the right of it <eos>",
+            "YOU: i have a small black dot with a larger dark grey dot to the right of it <eos>",
+            "YOU: do you have a small black dot with a larger dark grey dot to the right of it? <eos>",
+            "YOU: i have a small black dot with a larger dark grey dot above and to the left of it. <eos>",
+            "YOU: i have a small black dot with a larger dark grey dot above and to the right of it. <eos>",
+            "YOU: i have a small black dot with a larger dark grey dot to the left of it <eos>",
             "YOU: two dots very close together? <eos>",
-            "YOU: i see two dots very close together. the one on the right is smaller and",
-            "YOU: i have a small black dot with a larger dark grey dot to the right of",
-            "YOU: do you have a small black dot with a larger dark grey dot above and to",
-            "YOU: do you have a small black dot with a larger dark grey dot to the right",
-            "YOU: do you see a small black dot with a larger dark grey dot above and to",
-            "YOU: i have a small black dot with a larger dark grey dot to the right and",
-            "YOU: i have two dots very close together. the one on the left is larger and",
-            "YOU: i have a small black dot with a larger dark grey dot to the left of",
-            "YOU: i have a small black dot with a larger dark grey dot to the left and"
+            "YOU: do you have a small black dot with a larger dark grey dot above and to the right of it <eos>",
+            "YOU: do you have a small black dot with a larger dark grey dot above and to the left of it <eos>",
+            "YOU: do you see a small black dot with a larger dark grey dot above and to the right of it <eos>",
+            "YOU: i have two dots very close together. the one on the left is smaller and darker. <eos>",
+            "YOU: i see two dots very close together. the one on the left is smaller and darker. <eos>",
+            "YOU: do you see a small black dot with a larger dark grey dot above and to the left of it <eos>"
         ],
         "plan_mentions": [
             [
@@ -3242,7 +3242,7 @@
             -0.4679550230503082,
             -0.47063058614730835,
             -0.4764666259288788,
-            -0.5249469876289368
+            -0.5652168989181519
         ],
         "plan_beam_ref_res": [
             -3.821533679962158,
@@ -3401,7 +3401,7 @@
             "YOU: is there a large dark grey dot to the left and slightly above it? <eos>",
             "YOU: is there a larger dark grey dot up to its right? <eos>",
             "YOU: is there a larger dark grey dot above it to the left? <eos>",
-            "YOU: i have a tiny light grey dot with a larger dark grey dot above and to"
+            "YOU: i have a tiny light grey dot with a larger dark grey dot above it <eos>"
         ],
         "plan_mentions": [
             [
@@ -5154,22 +5154,22 @@
             -3.1593220233917236
         ],
         "plan_beam_lm_bart": [
-            -0.3837808668613434,
-            -0.4000381529331207,
-            -0.40989887714385986,
-            -0.42472317814826965,
-            -0.4268701374530792,
-            -0.42810145020484924,
+            -0.3645918369293213,
+            -0.38003626465797424,
+            -0.38940393924713135,
+            -0.40348702669143677,
+            -0.4066963791847229,
+            -0.4208924174308777,
             -0.43303120136260986,
-            -0.4410952925682068,
             -0.4423925578594208,
-            -0.44304466247558594,
             -0.44815656542778015,
-            -0.45001640915870667,
-            -0.4518758952617645,
             -0.4570084810256958,
             -0.4583366811275482,
-            -0.4649972915649414
+            -0.46933305263519287,
+            -0.47044190764427185,
+            -0.576307475566864,
+            -0.5912119150161743,
+            -0.6589374542236328
         ],
         "plan_beam_ref_res": [
             -5.5142388343811035,
@@ -5313,22 +5313,22 @@
             "i have that . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i see that. let's pick the tiny light grey dot. <selection",
-            "YOU: i see that. let's choose the tiny light grey dot. <selection",
-            "YOU: i have that. let's pick the tiny light grey dot. <selection",
-            "YOU: i see that. let's pick the tiny light grey one. <selection",
-            "YOU: i see that too. let's pick the tiny light grey dot. <",
-            "YOU: i have that. let's choose the tiny light grey dot. <selection",
+            "YOU: i see that. let's pick the tiny light grey dot. <selection>",
+            "YOU: i see that. let's choose the tiny light grey dot. <selection>",
+            "YOU: i have that. let's pick the tiny light grey dot. <selection>",
+            "YOU: i see that. let's pick the tiny light grey one. <selection>",
+            "YOU: i have that. let's choose the tiny light grey dot. <selection>",
+            "YOU: i have that. let's pick the tiny light grey one. <selection>",
             "YOU: i see that. let's pick the tiny light grey dot. <eos>",
-            "YOU: i see that too. let's choose the tiny light grey dot. <",
             "YOU: i see that. let's pick the tiny grey dot. <selection>",
-            "YOU: i have that. let's pick the tiny light grey one. <selection",
             "YOU: i see that too. let's pick the tiny light grey dot. <eos>",
-            "YOU: i see that too. let's pick the tiny light grey one. <",
-            "YOU: i have that too. let's pick the tiny light grey dot. <",
             "YOU: i have that. let's pick the tiny light grey dot. <eos>",
             "YOU: i see that. let's choose the tiny light grey dot. <eos>",
-            "YOU: i have that too. let's choose the tiny light grey dot. <"
+            "YOU: i see that too. let's pick the tiny light grey one. <eos>",
+            "YOU: i see that too. let's choose the tiny light grey dot. <eos>",
+            "YOU: i see that. <eos>",
+            "YOU: i see that too. <eos>",
+            "YOU: i have that too. <eos>"
         ],
         "plan_mentions": [
             [
@@ -7083,22 +7083,22 @@
             -4.384244918823242
         ],
         "plan_beam_lm_bart": [
-            -0.48230037093162537,
-            -0.48656439781188965,
-            -0.5002334713935852,
-            -0.5102782845497131,
-            -0.5186998248100281,
-            -0.5221232175827026,
-            -0.526685357093811,
-            -0.5316088795661926,
-            -0.5347051024436951,
-            -0.5349706411361694,
-            -0.5363636016845703,
-            -0.5406140685081482,
-            -0.5420047640800476,
-            -0.542136013507843,
-            -0.547497570514679,
-            -0.5550553202629089
+            -0.45463618636131287,
+            -0.4581853449344635,
+            -0.4640263617038727,
+            -0.4709727168083191,
+            -0.47773846983909607,
+            -0.48378080129623413,
+            -0.48497316241264343,
+            -0.4891270101070404,
+            -0.49276480078697205,
+            -0.4934948980808258,
+            -0.49569645524024963,
+            -0.49601706862449646,
+            -0.5038175582885742,
+            -0.5050284266471863,
+            -0.5249063372612,
+            -0.5347533822059631
         ],
         "plan_beam_ref_res": [
             -8.655282020568848,
@@ -7242,22 +7242,22 @@
             "yes , i see that . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i see that. let's pick the tiny light grey dot. <selection",
-            "YOU: let's pick the tiny light grey dot next to the medium dark grey one",
-            "YOU: yes, i see that. let's pick the tiny light grey dot.",
-            "YOU: i think i see that. let's pick the tiny light grey dot.",
-            "YOU: i see that. let's choose the tiny light grey dot. <selection",
-            "YOU: i see that. let's pick the tiny light grey one. <selection",
-            "YOU: yes, i see that. let's pick the tiny light grey one.",
-            "YOU: yes, i see that. let's pick the tiny one. <selection",
-            "YOU: i see that too. let's pick the tiny light grey dot. <",
-            "YOU: yes, i see that. let's choose the tiny light grey dot.",
-            "YOU: i see that. let's pick the tiny light grey dot. <eos>",
-            "YOU: yes i see that. let's pick the tiny light grey dot. <",
-            "YOU: i think i see that. let's choose the tiny light grey dot.",
-            "YOU: i don't have that. i have a tiny light grey dot with a",
-            "YOU: i think i see that. let's pick the tiny light grey one.",
-            "YOU: i see that too. let's pick the tiny light grey dot. <eos>"
+            "YOU: yes, i see that. let's pick the tiny light grey dot. <selection>",
+            "YOU: i see that. let's pick the tiny light grey dot. <selection>",
+            "YOU: i think i see that. let's pick the tiny light grey dot. <selection>",
+            "YOU: let's pick the tiny light grey dot next to the medium dark grey one <selection>",
+            "YOU: yes, i see that. let's pick the tiny light grey one. <selection>",
+            "YOU: i see that too. let's pick the tiny light grey dot. <selection>",
+            "YOU: yes, i see that. let's choose the tiny light grey dot. <selection>",
+            "YOU: yes i see that. let's pick the tiny light grey dot. <selection>",
+            "YOU: i see that. let's choose the tiny light grey dot. <selection>",
+            "YOU: i think i see that. let's choose the tiny light grey dot. <selection>",
+            "YOU: i think i see that. let's pick the tiny light grey one. <selection>",
+            "YOU: i see that. let's pick the tiny light grey one. <selection>",
+            "YOU: let's pick the tiny light grey dot next to the medium dark grey one <eos>",
+            "YOU: yes, i see that. let's pick the tiny one. <selection>",
+            "YOU: yes, i see that. let's pick the tiny light grey dot. <eos>",
+            "YOU: i think i see that. let's pick the tiny light grey dot. <eos>"
         ],
         "plan_mentions": [
             [

@@ -3230,22 +3230,22 @@
             -3.476304531097412
         ],
         "plan_beam_lm_bart": [
-            -0.4908314347267151,
-            -0.4999988377094269,
-            -0.5469827055931091,
-            -0.5689067244529724,
-            -0.5770480632781982,
-            -0.582611083984375,
-            -0.5838627219200134,
-            -0.5872133374214172,
-            -0.5881534814834595,
-            -0.5910986065864563,
-            -0.5930867195129395,
-            -0.5934346318244934,
-            -0.5969067811965942,
-            -0.5996745824813843,
-            -0.6005921363830566,
-            -0.6015905737876892
+            -0.5251303911209106,
+            -0.5273595452308655,
+            -0.5360507965087891,
+            -0.5387568473815918,
+            -0.5421147346496582,
+            -0.543524980545044,
+            -0.5507103800773621,
+            -0.5526992082595825,
+            -0.5528425574302673,
+            -0.559200644493103,
+            -0.5613177418708801,
+            -0.5632303357124329,
+            -0.5673232078552246,
+            -0.5690630674362183,
+            -0.5732072591781616,
+            -0.5734464526176453
         ],
         "plan_beam_ref_res": [
             -6.252303600311279,
@@ -3389,22 +3389,22 @@
             "yes i see that <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't have that. i have three black dots that form a triangle",
-            "YOU: i don't have that. i have three dark dots that form a triangle",
-            "YOU: i don't have that. i have three black dots in a diagonal line",
-            "YOU: i don't have any large grey dots. i have three black dots in",
-            "YOU: i don't have any large grey dots. i have three black dots that",
-            "YOU: i don't have that. i have three black dots in a line sl",
-            "YOU: i don't have that. i have three black dots in a triangle.",
-            "YOU: i don't have that. i have a cluster of three black dots.",
-            "YOU: i don't have that. i have three dark dots in a triangle.",
-            "YOU: i don't have that. i have three black dots in a line going",
-            "YOU: i don't have that. i have three dark dots in a line sl",
-            "YOU: i don't have any large grey dots. i have 3 black dots in",
-            "YOU: i don't have that. i have three dark dots in a triangle,",
-            "YOU: i don't have that. i have three black dots in a triangle,",
-            "YOU: i don't have any large grey dots. i have three dark dots in",
-            "YOU: i don't have that. i have three dark dots in a line going"
+            "YOU: i don't have that. i have three black dots in a line sloping up and to the right. <eos>",
+            "YOU: i don't have that. i have three black dots that form a triangle. <eos>",
+            "YOU: i don't have that. i have three dark dots in a line sloping up and to the right. <eos>",
+            "YOU: i don't have that. i have three dark dots that form a triangle. <eos>",
+            "YOU: i don't have that. i have three black dots in a line sloping up and to the right <eos>",
+            "YOU: i don't have that. i have three black dots in a line sloping up and to the left. <eos>",
+            "YOU: i don't have any large grey dots. i have three black dots that form a triangle. <eos>",
+            "YOU: i don't have that. i have three dark dots in a line sloping up and to the left. <eos>",
+            "YOU: i don't have that. i have three dark dots in a line sloping up and to the right <eos>",
+            "YOU: i don't have that. i have three black dots in a line sloping up to the right. <eos>",
+            "YOU: i don't have that. i have three black dots in a line sloping down and to the right. <eos>",
+            "YOU: i don't have that. i have three black dots that form a triangle <eos>",
+            "YOU: i don't have that. i have three black dots in a line sloping up and to the left <eos>",
+            "YOU: i don't have that. i have three dark dots in a line sloping up to the right. <eos>",
+            "YOU: i don't have that. i have three black dots in a line sloping up to the right <eos>",
+            "YOU: i don't have that. i have three dark dots that form a triangle <eos>"
         ],
         "plan_mentions": [
             [
@@ -5164,10 +5164,6 @@
             -18.018218994140625
         ],
         "plan_beam_lm_bart": [
-            -0.4731666147708893,
-            -0.4780673384666443,
-            -0.4821646213531494,
-            -0.4853602945804596,
             -0.5033470988273621,
             -0.5060296654701233,
             -0.5102550387382507,
@@ -5179,7 +5175,11 @@
             -0.5216888785362244,
             -0.532010555267334,
             -0.5340566039085388,
-            -0.5395126342773438
+            -0.5395126342773438,
+            -0.5944570302963257,
+            -0.6005406379699707,
+            -0.6010203957557678,
+            -0.6059762239456177
         ],
         "plan_beam_ref_res": [
             -0.030506212264299393,
@@ -5323,10 +5323,6 @@
             "i have two very light grey dots that are almost on the left side . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: is there a slightly larger and darker dot down and to the left of it?",
-            "YOU: is there a slightly larger slightly darker dot down and to the left of it?",
-            "YOU: is there a slightly larger and darker dot down and to the right of it?",
-            "YOU: is there a slightly larger slightly darker dot down and to the right of it?",
             "YOU: is it to the left of a slightly larger and darker dot? <eos>",
             "YOU: is there a slightly larger and darker dot to the right of it? <eos>",
             "YOU: is there a slightly larger slightly darker dot up and to its right? <eos>",
@@ -5338,7 +5334,11 @@
             "YOU: is there a slightly larger slightly darker dot up to its right? <eos>",
             "YOU: is there a slightly larger and darker dot up to its left? <eos>",
             "YOU: is there a slightly larger slightly darker dot up to its left? <eos>",
-            "YOU: is there a slightly larger and darker dot down to its left? <eos>"
+            "YOU: is there a slightly larger and darker dot down to its left? <eos>",
+            "YOU: is there a slightly larger and darker dot down and to the left of it <eos>",
+            "YOU: is there a slightly larger slightly darker dot down and to the left of it <eos>",
+            "YOU: is there a slightly larger and darker dot down and to the right of it <eos>",
+            "YOU: is there a slightly larger slightly darker dot down and to the right of it <eos>"
         ],
         "plan_mentions": [
             [

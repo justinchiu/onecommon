@@ -3229,15 +3229,15 @@
             -0.6988231539726257,
             -0.7049025893211365,
             -0.7095188498497009,
-            -0.7147536277770996,
             -0.7151331305503845,
-            -0.7252736687660217,
             -0.7256690859794617,
-            -0.7269307374954224,
+            -0.7273534536361694,
             -0.7320526242256165,
+            -0.7348028421401978,
             -0.7361974716186523,
-            -0.7413129210472107,
-            -0.7427999973297119
+            -0.7523111701011658,
+            -0.8324016332626343,
+            -0.8401349782943726
         ],
         "plan_beam_ref_res": [
             -1.7440462112426758,
@@ -3388,15 +3388,15 @@
             "YOU: is it to the right? <eos>",
             "YOU: is it on the left side? <eos>",
             "YOU: is it on the right side? <eos>",
-            "YOU: i don't have that one. i have a medium sized dark grey dot",
             "YOU: yes i have that one <eos>",
-            "YOU: i don't have that one. i have a medium sized dark gray dot",
             "YOU: yes i see that one <eos>",
-            "YOU: i don't have that one. i have a medium size dark grey dot",
+            "YOU: i don't have that one. i have a medium sized black dot by itself <eos>",
             "YOU: is it to the left? <eos>",
+            "YOU: i don't have that one. i have a medium size black dot by itself <eos>",
             "YOU: yes i see it <eos>",
-            "YOU: i don't have that one. i have a medium size dark gray dot",
-            "YOU: i don't see that one. i have a medium sized dark grey dot"
+            "YOU: i don't have that. i have a medium sized dark grey dot by itself <eos>",
+            "YOU: is it on the left side <eos>",
+            "YOU: is it on the right side <eos>"
         ],
         "plan_mentions": [
             [

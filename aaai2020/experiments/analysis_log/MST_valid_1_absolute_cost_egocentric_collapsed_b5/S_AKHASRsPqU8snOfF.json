@@ -3235,15 +3235,15 @@
             -0.5747827887535095,
             -0.5783587694168091,
             -0.5927115082740784,
+            -0.6002465486526489,
             -0.6022604703903198,
-            -0.6060326099395752,
             -0.6157475113868713,
-            -0.6309051513671875,
-            -0.6342164278030396,
-            -0.6417778134346008,
-            -0.6487902402877808,
-            -0.6494765281677246,
-            -0.6508925557136536
+            -0.6173006892204285,
+            -0.620067834854126,
+            -0.6512067317962646,
+            -0.6577295064926147,
+            -0.6604403853416443,
+            -0.6794794797897339
         ],
         "plan_beam_ref_res": [
             -6.223121643066406,
@@ -3394,15 +3394,15 @@
             "YOU: is the smallest one the lightest? <eos>",
             "YOU: is the smallest one the darkest? <eos>",
             "YOU: let us select the small darkish grey <eos>",
+            "YOU: i don't see that. do you see a tiny medium grey dot? <eos>",
             "YOU: do you see a small medium grey dot by itself? <eos>",
-            "YOU: i don't see that. do you see a small darkish grey dot",
             "YOU: do you see a small dark grey dot by itself? <eos>",
-            "YOU: i don't see that. do you see a tiny medium grey dot?",
-            "YOU: i don't see that. i see a small dark grey dot on the",
-            "YOU: i don't see that. do you see a small medium grey dot by",
-            "YOU: i don't see that. do you see a small medium grey dot?",
-            "YOU: i don't see that. i see a small dark grey dot by itself",
-            "YOU: i don't have that. i have a small medium grey dot by itself"
+            "YOU: i don't see that. do you see a small medium grey dot? <eos>",
+            "YOU: i don't see that. do you see a tiny dark grey dot? <eos>",
+            "YOU: i don't see that. i see a small dark grey dot by itself <eos>",
+            "YOU: i don't have that. i have a small medium grey dot by itself <eos>",
+            "YOU: do you see a tiny dark grey dot? <eos>",
+            "YOU: do you see a small medium grey dot by itself <eos>"
         ],
         "plan_mentions": [
             [

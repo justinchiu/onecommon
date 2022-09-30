@@ -3228,22 +3228,22 @@
             -10.32747745513916
         ],
         "plan_beam_lm_bart": [
-            -0.47689518332481384,
             -0.47745320200920105,
             -0.4956901967525482,
             -0.5043127536773682,
-            -0.5050771236419678,
             -0.5107658505439758,
             -0.5147849321365356,
             -0.5189892649650574,
             -0.5434294939041138,
             -0.5439250469207764,
-            -0.5441186428070068,
-            -0.5444967150688171,
             -0.5446913838386536,
-            -0.557714581489563,
+            -0.5555709600448608,
             -0.5621199607849121,
-            -0.562515914440155
+            -0.5638188123703003,
+            -0.5763416290283203,
+            -0.5784420371055603,
+            -0.5796595811843872,
+            -0.5827304124832153
         ],
         "plan_beam_ref_res": [
             -1.0385338068008423,
@@ -3387,22 +3387,22 @@
             "is it a little bit away ? <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't have a big gray dot. i have a small gray dot",
             "YOU: do you have a tiny light grey dot? <eos>",
             "YOU: do you have a small light grey dot? <eos>",
             "YOU: do you have a tiny light gray dot? <eos>",
-            "YOU: i don't have a big gray dot. i have a small grey dot",
             "YOU: do you have a small light gray dot? <eos>",
             "YOU: my smallest dot is medium gray <eos>",
             "YOU: do you see a tiny light grey dot? <eos>",
             "YOU: do you see a small light grey dot? <eos>",
             "YOU: do you have a small medium gray dot? <eos>",
-            "YOU: i don't have that. i have a small medium gray dot by itself",
-            "YOU: i don't have a big gray dot. i have a tiny gray dot",
             "YOU: do you have a small grey dot? <eos>",
-            "YOU: i don't have a big gray dot. do you have a small gray",
+            "YOU: i don't have that. i have a small medium gray dot by itself <eos>",
             "YOU: do you have a small gray dot? <eos>",
-            "YOU: i don't have a big gray dot. do you have a small grey"
+            "YOU: i don't have a big gray dot. i have a small gray dot <eos>",
+            "YOU: i don't have that. i have a small gray dot by itself <eos>",
+            "YOU: i don't see that. i have a small medium gray dot by itself <eos>",
+            "YOU: i don't have that. i have a small light gray dot by itself <eos>",
+            "YOU: i don't have that. i have a small light grey dot by itself <eos>"
         ],
         "plan_mentions": [
             [

@@ -3228,22 +3228,22 @@
             -11.928141593933105
         ],
         "plan_beam_lm_bart": [
-            -0.4255959391593933,
             -0.5047758221626282,
             -0.5409420728683472,
             -0.5409514307975769,
-            -0.5500585436820984,
             -0.5522722005844116,
-            -0.5762194991111755,
             -0.5839200019836426,
-            -0.5863822102546692,
-            -0.5948877334594727,
             -0.5969709157943726,
             -0.5980482697486877,
             -0.5993044972419739,
             -0.6059505939483643,
-            -0.6061504483222961,
-            -0.6156817078590393
+            -0.6156817078590393,
+            -0.6171936988830566,
+            -0.6448952555656433,
+            -0.6534815430641174,
+            -0.6661472916603088,
+            -0.6756198406219482,
+            -7.263026237487793
         ],
         "plan_beam_ref_res": [
             -3.128431558609009,
@@ -3387,22 +3387,22 @@
             "yes , let 's choose the light one on the right <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i have one touching line at 2:00 and one below the 12:00",
             "YOU: is the one below the 12:00 touching line? <eos>",
             "YOU: is the one below the 12:00 touching the line? <eos>",
             "YOU: is the one below the 12:00 slightly to the left? <eos>",
-            "YOU: i have one touching line at 2:00 and one below at 12:00",
             "YOU: i have one touching line at 2:00 and one below 12:00 <eos>",
-            "YOU: i have one touching line at 2:00 and one below line at 12:",
             "YOU: is the one below the 12:00 slightly to the right? <eos>",
-            "YOU: is the one below the 12:00 slightly to the left? if so click",
-            "YOU: i have one touching line at 2:00 and one to the left at 12",
             "YOU: i have one touching line at 2:00 and one at 12:00 <eos>",
             "YOU: is the one below the 12:00 slightly to the left a little? <eos>",
             "YOU: i have one touching line at 2:00 and below the 12:00 <eos>",
             "YOU: is the one below the 12:00 slightly to the left a bit? <eos>",
-            "YOU: i have one touching line at 2:00 and one below 12:00 do",
-            "YOU: is the one below the 12:00 touching the dotted line? <eos>"
+            "YOU: is the one below the 12:00 touching the dotted line? <eos>",
+            "YOU: is the one below the 12:00 slightly to the right a little? <eos>",
+            "YOU: i have one touching line at 2:00 <eos>",
+            "YOU: i have a medium gray dot touching the line at 2:00 <eos>",
+            "YOU: is the one below the 12:00 a medium grey? <eos>",
+            "YOU: is the one below the 12:00 touching the line <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -7082,21 +7082,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.3513818681240082,
-            -0.3589397370815277,
-            -0.4014231562614441,
-            -0.43178120255470276,
             -0.4371587336063385,
             -0.44272148609161377,
             -0.4490679204463959,
-            -0.4497828781604767,
-            -0.46148595213890076,
-            -0.4634992778301239,
             -0.4662231206893921,
             -0.48212769627571106,
             -0.486328125,
-            -0.4894767105579376,
             -0.4897969663143158,
-            -0.4939795434474945
+            -0.49760839343070984,
+            -0.501409649848938,
+            -0.5033391714096069,
+            -0.5076668858528137,
+            -0.5191718339920044,
+            -0.5548510551452637,
+            -0.5858640074729919,
+            -7.418493270874023
         ],
         "plan_beam_ref_res": [
             -1.8691524267196655,
@@ -7241,21 +7241,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: i have a small grey at 1:00 and one at 9:00 <eos>",
-            "YOU: i have a small grey at 1:00 and one at 9:00 do",
-            "YOU: i have a small grey at 1:00 and a small gray at 9:",
-            "YOU: i have a small gray at 1:00 and a small grey at 9:",
             "YOU: i have a small grey at 9:00 <eos>",
             "YOU: i have a small grey at 1:00 and at 9:00 <eos>",
             "YOU: i have a small gray at 1:00 and one at 9:00 <eos>",
-            "YOU: i have a small grey at 1:00 and at 9:00 do u",
-            "YOU: i have a small gray at 1:00 and one at 9:00 do",
-            "YOU: no i have a small grey at 1:00 and one at 9:00",
             "YOU: i have a small grey at 2:00 and one at 9:00 <eos>",
             "YOU: i have a small grey at 1:00 and one at 9 <eos>",
             "YOU: i have the small grey at 1:00 and the 9:00 <eos>",
-            "YOU: i have a small grey at 2:00 and one at 9:00 do",
             "YOU: no i have a small grey at 9:00 <eos>",
-            "YOU: i have a small grey at 1:00 do u have one at 9:"
+            "YOU: i have a small grey at 1:00 and a small gray at 9 <eos>",
+            "YOU: i have a small grey at 1:00 <eos>",
+            "YOU: i have a small grey at 9:00 do u? <eos>",
+            "YOU: i have a small grey at 9:00 do u have that <eos>",
+            "YOU: i have a small grey at 9:00 do u have it <eos>",
+            "YOU: i have a small grey at 9:00 do u have one <eos>",
+            "YOU: small grey at 1:00 <eos>",
+            ""
         ],
         "plan_mentions": [
             [

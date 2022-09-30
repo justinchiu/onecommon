@@ -3228,18 +3228,18 @@
             -0.5240997076034546,
             -0.5261126756668091,
             -0.5304655432701111,
-            -0.53607177734375,
             -0.5382394194602966,
             -0.5415017604827881,
             -0.5445640683174133,
-            -0.5470238924026489,
-            -0.5494205951690674,
             -0.5510009527206421,
             -0.5513869524002075,
             -0.5538327693939209,
             -0.5633238554000854,
             -0.5639899969100952,
-            -0.5700225830078125
+            -0.5768359303474426,
+            -0.5805414915084839,
+            -0.6108664870262146,
+            -0.6750324368476868
         ],
         "plan_beam_ref_res": [
             -6.1072516441345215,
@@ -3387,18 +3387,18 @@
             "YOU: is there a smaller slightly darker dot up and to the left of it? <eos>",
             "YOU: is there a smaller slightly darker dot down and to the right of it? <eos>",
             "YOU: is it medium in size? <eos>",
-            "YOU: is there a slightly smaller slightly darker dot down and to the left of it?",
             "YOU: is there a slightly smaller slightly darker dot down and to the left? <eos>",
             "YOU: is there a slightly smaller, slightly darker dot down and to the left? <eos>",
             "YOU: is there a smaller slightly darker dot down and to the left? <eos>",
-            "YOU: is there a slightly smaller slightly darker dot down and to the right of it?",
-            "YOU: is there a slightly smaller slightly darker dot up and to the left of it?",
             "YOU: is there a smaller, slightly darker dot down and to the left? <eos>",
             "YOU: is there a slightly smaller, slightly darker dot down and to the right? <eos>",
             "YOU: is there a slightly smaller slightly darker dot down and to the right? <eos>",
             "YOU: is there a smaller slightly darker dot down and to the right? <eos>",
             "YOU: is there a smaller, slightly darker dot down and to the right? <eos>",
-            "YOU: is there a slightly smaller, slightly darker dot down and to the left of it"
+            "YOU: is there a slightly smaller slightly darker dot up and to the left? <eos>",
+            "YOU: is there a smaller slightly darker dot up and to the left? <eos>",
+            "YOU: is it medium sized? <eos>",
+            "YOU: is there a slightly smaller slightly darker dot down and to the left of it <eos>"
         ],
         "plan_mentions": [
             [

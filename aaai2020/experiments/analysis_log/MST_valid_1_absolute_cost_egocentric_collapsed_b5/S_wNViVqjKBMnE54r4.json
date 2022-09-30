@@ -3239,11 +3239,11 @@
             -0.5020117163658142,
             -0.5039801001548767,
             -0.5162822604179382,
-            -0.5194057822227478,
             -0.5253775119781494,
             -0.5300912857055664,
             -0.5367605686187744,
-            -0.5373718738555908
+            -0.5373718738555908,
+            -0.5427371859550476
         ],
         "plan_beam_ref_res": [
             -8.892013549804688,
@@ -3398,11 +3398,11 @@
             "YOU: is the smallest one black? <eos>",
             "YOU: do you see a tiny black dot? <eos>",
             "YOU: i don't have that. i have a small black dot by itself <eos>",
-            "YOU: i don't think i see that. do you see a tiny black dot",
             "YOU: i don't have that. i have a tiny black dot <eos>",
             "YOU: i don't have that. i have one tiny black dot <eos>",
             "YOU: i don't have that. i have a tiny black dot by itself <eos>",
-            "YOU: i don't see that. i have a small black dot by itself <eos>"
+            "YOU: i don't see that. i have a small black dot by itself <eos>",
+            "YOU: do you see a small black dot? <eos>"
         ],
         "plan_mentions": [
             [

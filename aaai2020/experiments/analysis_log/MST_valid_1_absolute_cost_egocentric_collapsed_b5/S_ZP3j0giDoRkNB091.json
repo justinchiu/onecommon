@@ -3240,10 +3240,10 @@
             -0.5188807845115662,
             -0.5265122652053833,
             -0.5383424162864685,
-            -0.5837270617485046,
-            -0.5978745222091675,
-            -0.5989975333213806,
-            -0.6075772047042847
+            -0.614764392375946,
+            -0.6281135678291321,
+            -0.6286907196044922,
+            -0.6298721432685852
         ],
         "plan_beam_ref_res": [
             -1000000000.0,
@@ -3399,10 +3399,10 @@
             "YOU: no. do you have a medium gray dot? <eos>",
             "YOU: no. do you have a medium sized grey dot? <eos>",
             "YOU: no. do you have a medium grey dot? <eos>",
-            "YOU: no. do you have a medium gray dot at the bottom of the circle?",
-            "YOU: no. do you have a medium gray dot at the top of the circle?",
-            "YOU: no. do you have a medium grey dot at the bottom of the circle?",
-            "YOU: no. do you have a medium gray dot at the bottom of your circle?"
+            "YOU: no. do you have a medium gray dot at the bottom? <eos>",
+            "YOU: no. do you have a medium sized medium gray dot at the bottom? <eos>",
+            "YOU: no. do you have a medium sized medium gray dot near the bottom? <eos>",
+            "YOU: no, i have a medium sized medium gray dot <eos>"
         ],
         "plan_mentions": [
             [

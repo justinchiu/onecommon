@@ -5157,20 +5157,20 @@
         "plan_beam_lm_bart": [
             -0.47226080298423767,
             -0.4948379695415497,
-            -0.5004395246505737,
             -0.5047107934951782,
             -0.5071513652801514,
-            -0.5077376365661621,
-            -0.5086001753807068,
-            -0.5118423104286194,
             -0.5174039006233215,
+            -0.5191894173622131,
             -0.5200837850570679,
-            -0.5284798741340637,
             -0.5306724309921265,
             -0.5351232290267944,
-            -0.5447707176208496,
+            -0.535133957862854,
+            -0.5470220446586609,
             -0.5526459217071533,
-            -0.5615758299827576
+            -0.5558832287788391,
+            -0.5871599912643433,
+            -0.6044349074363708,
+            -0.6152111887931824
         ],
         "plan_beam_ref_res": [
             -4.132928371429443,
@@ -5316,20 +5316,20 @@
         "plan_beam_sents_bart": [
             "YOU: no. do you see a medium sized medium gray dot? <eos>",
             "YOU: no. do you see a medium sized medium grey dot? <eos>",
-            "YOU: no, i don't see that. do you see a medium gray dot",
             "YOU: no. do you see a medium gray dot by itself? <eos>",
             "YOU: no. do you see a medium sized medium gray dot by itself? <eos>",
-            "YOU: no, i don't see that. do you see a medium sized medium",
-            "YOU: i don't see that. do you see a medium sized medium gray dot",
-            "YOU: no, i don't see that. do you see a medium grey dot",
             "YOU: no. do you see a medium grey dot by itself? <eos>",
+            "YOU: no i don't. do you see a medium sized medium gray dot? <eos>",
             "YOU: no. do you have a medium sized medium gray dot? <eos>",
-            "YOU: i don't see that. do you see a medium sized medium grey dot",
             "YOU: yes. let's choose the left one. <selection>",
             "YOU: no i dont. do you see a medium sized medium gray dot? <eos>",
-            "YOU: no i don't. do you see a medium sized medium gray dot?",
+            "YOU: no i don't. do you see a medium sized medium grey dot? <eos>",
+            "YOU: no i don't. do you see a medium gray dot by itself? <eos>",
             "YOU: no i dont. do you see a medium sized medium grey dot? <eos>",
-            "YOU: no i don't. do you see a medium sized medium grey dot?"
+            "YOU: no i don't. do you see a medium grey dot by itself? <eos>",
+            "YOU: yes. let's pick the left one <eos>",
+            "YOU: yes. let's choose the left one <eos>",
+            "YOU: yes. let's choose the left one. <eos>"
         ],
         "plan_mentions": [
             [

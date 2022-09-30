@@ -3229,14 +3229,14 @@
             -0.5915566682815552,
             -0.5956971049308777,
             -0.5958304405212402,
-            -0.6073851585388184,
-            -0.6174578666687012,
             -0.6194385290145874,
-            -0.6214385032653809,
             -0.6256126761436462,
-            -0.6270875930786133,
-            -0.633781373500824,
-            -0.6363137364387512
+            -0.6461229920387268,
+            -0.655858039855957,
+            -0.6588718891143799,
+            -0.6840542554855347,
+            -0.7333031892776489,
+            -7.169986724853516
         ],
         "plan_beam_ref_res": [
             -4.68025541305542,
@@ -3388,14 +3388,14 @@
             "YOU: let us select the small dark grey dot <eos>",
             "YOU: i don't see that. i have a small black dot by itself <eos>",
             "YOU: i have a small black dot by itself <eos>",
-            "YOU: i don't have that. i have a small black dot all by itself",
-            "YOU: i don't have that. i have a small dark grey dot by itself",
             "YOU: i don't have that. i have a lonely black dot <eos>",
-            "YOU: i don't have that. i have a small black dot on the right",
             "YOU: i have a small dark grey dot by itself <eos>",
-            "YOU: i don't have that. i have a small black dot at the bottom",
-            "YOU: i don't have that. i have a small black dot at the top",
-            "YOU: i don't have that. i have a small black dot near the bottom"
+            "YOU: do you have a small black dot? <eos>",
+            "YOU: let us select the dark grey dot <eos>",
+            "YOU: let us select the small dark dot <eos>",
+            "YOU: let us select the small dark grey <eos>",
+            "YOU: yes i see that one <eos>",
+            ""
         ],
         "plan_mentions": [
             [

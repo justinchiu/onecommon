@@ -3232,8 +3232,6 @@
         "plan_beam_lm_bart": [
             -0.4502543807029724,
             -0.45880430936813354,
-            -0.4630497395992279,
-            -0.46727627515792847,
             -0.48705077171325684,
             -0.4898703992366791,
             -0.49393412470817566,
@@ -3243,9 +3241,11 @@
             -0.5040685534477234,
             -0.5084143877029419,
             -0.5108656287193298,
-            -0.5123742818832397,
-            -0.5194334983825684,
-            -0.5239921808242798
+            -0.5239921808242798,
+            -0.5287546515464783,
+            -0.5335560441017151,
+            -0.5471558570861816,
+            -0.5679505467414856
         ],
         "plan_beam_ref_res": [
             -0.1300467997789383,
@@ -3391,8 +3391,6 @@
         "plan_beam_sents_bart": [
             "YOU: yes! if the middle one is the largest click that one! <selection>",
             "YOU: yes! if the middle one is the largest click that one! <eos>",
-            "YOU: yes! if the middle one is the largest and lightest click that one!",
-            "YOU: yes! middle one is largest and lightest? if so click that one!",
             "YOU: yes! if the middle one is largest and lightest click that one! <eos>",
             "YOU: yes if the middle one is the largest click that one! <selection>",
             "YOU: yes! if the middle one is slightly to the right click that one! <eos>",
@@ -3402,9 +3400,11 @@
             "YOU: yes! if the top one is the largest click that one! <selection>",
             "YOU: yes! if the middle one is largest click that one! <selection>",
             "YOU: yes! middle one is largest and lightest? if so click it! <eos>",
-            "YOU: yes! if the middle one is slightly to the right click that middle one!",
-            "YOU: yes! middle one is largest and lightest? if so click that middle one",
-            "YOU: yes! if the top one is the largest click that one! <eos>"
+            "YOU: yes! if the top one is the largest click that one! <eos>",
+            "YOU: yes! if the middle one is largest click that one! <eos>",
+            "YOU: yes if the middle one is the largest click that one! <eos>",
+            "YOU: yes, the middle one is the largest? if so click that one! <eos>",
+            "YOU: yes! is the middle one the largest and lightest? <eos>"
         ],
         "plan_mentions": [
             [

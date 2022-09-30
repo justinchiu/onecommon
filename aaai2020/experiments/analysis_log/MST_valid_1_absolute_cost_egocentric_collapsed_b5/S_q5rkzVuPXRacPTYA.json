@@ -3241,9 +3241,9 @@
             -0.6033733487129211,
             -0.6077141761779785,
             -0.6097471714019775,
-            -0.6193628907203674,
             -0.61992347240448,
-            -0.6258014440536499
+            -0.6320858597755432,
+            -0.6350157260894775
         ],
         "plan_beam_ref_res": [
             -0.009614118374884129,
@@ -3400,9 +3400,9 @@
             "YOU: no. do you see a small dark dot by itself? <eos>",
             "YOU: i don't see it. do you have a small black dot? <eos>",
             "YOU: no. do you have a tiny dark grey dot? <eos>",
-            "YOU: i don't see it. do you see a small dark dot by itself",
             "YOU: no, do you have a small black dot? <eos>",
-            "YOU: i don't see it. do you see a tiny dark grey dot?"
+            "YOU: i don't see it. do you see a small dark dot? <eos>",
+            "YOU: i don't see it. do you see a tiny dark dot? <eos>"
         ],
         "plan_mentions": [
             [

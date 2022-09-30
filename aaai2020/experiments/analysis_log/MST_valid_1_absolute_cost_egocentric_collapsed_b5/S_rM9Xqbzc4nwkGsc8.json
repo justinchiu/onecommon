@@ -5167,8 +5167,8 @@
             -0.5237256288528442,
             -0.5343167781829834,
             -0.5554631948471069,
-            -0.5592939257621765,
-            -0.5705928206443787
+            -0.5727187991142273,
+            -0.5884093642234802
         ],
         "plan_beam_ref_res": [
             -5.4472246170043945,
@@ -5326,8 +5326,8 @@
             "YOU: do you have a black dot? <eos>",
             "YOU: i don't see that. do you see a black dot? <eos>",
             "YOU: i don't see that. do u see a black dot? <eos>",
-            "YOU: i don't think i see that. do you see a large black dot",
-            "YOU: i don't think i see that. do u see a large black dot"
+            "YOU: i don't see that, do you see a black dot? <eos>",
+            "YOU: i don't see that, do u see a black dot? <eos>"
         ],
         "plan_mentions": [
             [

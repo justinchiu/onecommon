@@ -5164,17 +5164,17 @@
             -0.4397817850112915,
             -0.4481811225414276,
             -0.45894911885261536,
-            -0.47431525588035583,
             -0.4783705770969391,
             -0.49004942178726196,
             -0.49973931908607483,
             -0.5015584826469421,
             -0.5049506425857544,
-            -0.5118624567985535,
-            -0.5270976424217224,
-            -0.5278083682060242,
-            -0.5315369963645935,
-            -0.5317177772521973
+            -0.5401495695114136,
+            -0.5433923602104187,
+            -0.5639545321464539,
+            -0.5768676996231079,
+            -0.6066059470176697,
+            -0.6380484700202942
         ],
         "plan_beam_ref_res": [
             -1000000000.0,
@@ -5323,17 +5323,17 @@
             "YOU: do you have a black dot? <eos>",
             "YOU: do you see a medium sized black dot? <eos>",
             "YOU: let us select the black dot <selection>",
-            "YOU: i don't see your medium grey dot. do you see a black dot",
             "YOU: do you have a medium black dot? <eos>",
             "YOU: i don't see that. do you see a medium black dot? <eos>",
             "YOU: let us select the black dot <eos>",
             "YOU: i don't see your dot. do you see a black dot? <eos>",
             "YOU: i don't see that. do you see a black dot? <eos>",
-            "YOU: i don't see that. do you see a medium sized black dot?",
-            "YOU: i don't see your medium grey dot, do you see a black dot",
-            "YOU: i don't see your medium grey dot. do you see a medium black",
-            "YOU: i don't see your dot. do you see a medium black dot?",
-            "YOU: i don't see your medium grey dot. do you have a black dot"
+            "YOU: do you see a medium black dot <eos>",
+            "YOU: i don't see your dot. do you have a black dot? <eos>",
+            "YOU: i don't see that. do you have a black dot? <eos>",
+            "YOU: do you see a black dot <eos>",
+            "YOU: do you have a black dot <eos>",
+            "YOU: do you see a medium sized black dot <eos>"
         ],
         "plan_mentions": [
             [

@@ -7086,14 +7086,14 @@
             -0.49063676595687866,
             -0.4923538863658905,
             -0.4995497465133667,
-            -0.5047513842582703,
             -0.5131064653396606,
-            -0.5172911286354065,
-            -0.5329679846763611,
             -0.5556944012641907,
-            -0.5564771890640259,
             -0.5619168281555176,
-            -0.5675654411315918
+            -0.5685313940048218,
+            -0.5701591968536377,
+            -0.5711542367935181,
+            -0.5807821154594421,
+            -0.5894539952278137
         ],
         "plan_beam_ref_res": [
             -3.1294145584106445,
@@ -7245,14 +7245,14 @@
             "YOU: yes! click the largest lightest one on top! <selection>",
             "YOU: yes! click the lightest one on top! <selection>",
             "YOU: yes! click the largest lightest one on the bottom! <selection>",
-            "YOU: i don't see that. do you see a large light grey dot?",
             "YOU: i dont see that. do you see a large light grey dot? <eos>",
-            "YOU: i don't have that. do you have a large light grey dot?",
-            "YOU: i don't see that. do you have a large light grey dot?",
             "YOU: do you have a large light grey dot? <eos>",
-            "YOU: i don't see that. do you see a large light gray dot?",
             "YOU: yes! click the lightest one on the bottom <selection>",
-            "YOU: i don't have that. do you have a large light gray dot?"
+            "YOU: i don't see that. do you see a large light dot? <eos>",
+            "YOU: do you see a large light grey dot? <eos>",
+            "YOU: i don't have that. do you have a large light dot? <eos>",
+            "YOU: yes! click the lightest one on the bottom! <eos>",
+            "YOU: yes! click the lightest one on the bottom? <eos>"
         ],
         "plan_mentions": [
             [

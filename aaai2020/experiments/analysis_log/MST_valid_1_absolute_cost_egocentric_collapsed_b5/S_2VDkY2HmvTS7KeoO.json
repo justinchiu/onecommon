@@ -3228,14 +3228,14 @@
             -0.6202014088630676,
             -0.6217787265777588,
             -0.662270188331604,
-            -0.668071985244751,
-            -0.6826062202453613,
-            -0.6959002017974854,
-            -0.7108160853385925,
-            -0.7157885432243347,
-            -0.7269508242607117,
-            -0.742418110370636,
-            -0.7448901534080505
+            -0.6865847110748291,
+            -0.6922844052314758,
+            -0.700194776058197,
+            -0.7039474248886108,
+            -0.7065859436988831,
+            -0.7096080780029297,
+            -0.7102358937263489,
+            -0.7114832401275635
         ],
         "plan_beam_ref_res": [
             -8.313600540161133,
@@ -3387,14 +3387,14 @@
             "YOU: no. do you have a small black dot? <eos>",
             "YOU: no. do you see a medium sized dark grey dot? <eos>",
             "YOU: no. do you have a small dark grey dot? <eos>",
-            "YOU: i don't have that one. i have a medium sized dark grey dot",
-            "YOU: i don't see that one. i have a medium sized dark grey dot",
-            "YOU: i don't have that one. i have a medium sized dark gray dot",
-            "YOU: i don't see that one. i have a medium sized dark gray dot",
-            "YOU: i don't have that one. i have a medium size dark grey dot",
-            "YOU: i don't have that one. i have a medium sized black dot by",
-            "YOU: i don't see it. i have a medium sized dark grey dot by",
-            "YOU: i don't see that one. i have a medium sized black dot by"
+            "YOU: i don't have that one. i have a medium sized dark grey dot by itself <eos>",
+            "YOU: i don't have that one. i have a medium sized black dot by itself <eos>",
+            "YOU: i don't see that one. i have a medium sized dark grey dot by itself <eos>",
+            "YOU: i don't see it. i have a medium sized dark grey dot by itself <eos>",
+            "YOU: i don't see that one. i have a medium sized black dot by itself <eos>",
+            "YOU: i don't see that. i have a medium sized dark grey dot by itself <eos>",
+            "YOU: i don't have that one. i have a medium sized black dot by itself. <eos>",
+            "YOU: i don't have that one. i have a medium sized dark gray dot by itself <eos>"
         ],
         "plan_mentions": [
             [

@@ -3235,15 +3235,15 @@
             -0.4334610104560852,
             -0.45793965458869934,
             -0.46138492226600647,
-            -0.4889024496078491,
-            -0.49263572692871094,
-            -0.4950472116470337,
-            -0.5012748837471008,
-            -0.5041645765304565,
-            -0.5141456723213196,
-            -0.5148813128471375,
+            -0.47811874747276306,
+            -0.4911625385284424,
+            -0.49948030710220337,
+            -0.5110799074172974,
+            -0.5132378339767456,
+            -0.5161632299423218,
+            -0.5163449645042419,
             -0.5196611881256104,
-            -0.5205836296081543
+            -0.5318059325218201
         ],
         "plan_beam_ref_res": [
             -0.8467607498168945,
@@ -3394,15 +3394,15 @@
             "YOU: yes! click the small light grey dot! <selection>",
             "YOU: yes! click the small light one! <selection>",
             "YOU: let us select the small light grey dot <eos>",
-            "YOU: is the small light grey dot above and to the right? if so click it",
-            "YOU: i don't have that. i have a small light grey dot to the",
-            "YOU: is the small light grey dot above and to the right? if so click that",
-            "YOU: i don't have that. i have a small light grey dot by itself",
-            "YOU: i don't have that. i have a small light grey dot on the",
-            "YOU: i don't have that. do you have a small light grey dot?",
-            "YOU: i don't see that. i have a small light grey dot to the",
+            "YOU: is the small light grey dot above and to the right? if so click it! <eos>",
+            "YOU: i don't have that. do you have a small light grey dot? <eos>",
+            "YOU: i don't have that. do you have a tiny light grey dot? <eos>",
+            "YOU: i don't see that. do you see a small light grey dot? <eos>",
+            "YOU: i don't have that. i have a small light grey dot all by itself <eos>",
+            "YOU: i don't see that. do you see a tiny light grey dot? <eos>",
+            "YOU: i don't have that. i have a small light grey dot by itself <eos>",
             "YOU: is the small light grey dot to the right? <eos>",
-            "YOU: i don't see that. i have a small light grey dot on the"
+            "YOU: is the small light grey dot above and to the right? if so click it <eos>"
         ],
         "plan_mentions": [
             [

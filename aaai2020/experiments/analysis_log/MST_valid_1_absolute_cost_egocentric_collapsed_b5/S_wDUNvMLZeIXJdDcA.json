@@ -10942,12 +10942,12 @@
             -0.5057388544082642,
             -0.5116571187973022,
             -0.5118728876113892,
-            -0.5131824016571045,
             -0.5273844599723816,
             -0.537338376045227,
             -0.5453096032142639,
             -0.5509331822395325,
-            -0.5586372017860413
+            -0.5826014876365662,
+            -0.6163652539253235
         ],
         "plan_beam_ref_res": [
             -1.8809605836868286,
@@ -11101,12 +11101,12 @@
             "YOU: let's choose the larger, darker one. <selection>",
             "YOU: okay, let's pick the larger, darker dot. <selection>",
             "YOU: ok. let's pick the larger, darker dot. <selection>",
-            "YOU: let's pick the larger, darker dot on the upper right. <selection",
             "YOU: ok, let's pick the larger, darker one. <selection>",
             "YOU: ok, let's choose the larger, darker one. <selection>",
             "YOU: let's pick the larger, darker dot <selection>",
             "YOU: okay, let's pick the larger, darker one. <selection>",
-            "YOU: let's pick the larger, darker dot on the upper left. <selection"
+            "YOU: let's pick the larger, darker dot on the upper right <selection>",
+            "YOU: let's pick the larger, darker dot on the upper left <selection>"
         ],
         "plan_mentions": [
             [
@@ -14790,22 +14790,22 @@
             -9.252382278442383
         ],
         "plan_beam_lm_bart": [
-            -0.542796790599823,
+            -0.5400325059890747,
             -0.5445613861083984,
             -0.544878363609314,
+            -0.5466721057891846,
             -0.566697359085083,
-            -0.5815680027008057,
+            -0.569878101348877,
+            -0.5766040682792664,
             -0.5887274146080017,
-            -0.5968780517578125,
-            -0.6005041003227234,
-            -0.6042165160179138,
-            -0.6136581897735596,
-            -0.6151087880134583,
-            -0.6155021786689758,
+            -0.6116662621498108,
             -0.6176493763923645,
-            -0.6235266327857971,
-            -0.6258070468902588,
-            -0.6279871463775635
+            -0.6333076357841492,
+            -0.6379536390304565,
+            -0.6411709785461426,
+            -0.6415241360664368,
+            -0.6429966688156128,
+            -0.6548867225646973
         ],
         "plan_beam_ref_res": [
             -1.3310763835906982,
@@ -14949,22 +14949,22 @@
             "yes , i think we 're talking about the same thing . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: yes it is. let's pick the darker one that is lower to the",
+            "YOU: yes it is. let's pick the darker one of that pair. <selection>",
             "YOU: yes it is. let's choose the darker one. <selection>",
             "YOU: yes it is. let's pick the darker one. <selection>",
+            "YOU: yes it is. let's pick the darker one of the pair. <selection>",
             "YOU: yes, it is. let's pick the darker one. <selection>",
-            "YOU: yes it is. let's pick the darker one on the upper left of",
+            "YOU: yes it is. let's pick the darker one on the upper left. <selection>",
+            "YOU: yes it is. let's pick the darker one on the lower right. <selection>",
             "YOU: the upper to the left is the same shade as the lower one. <eos>",
-            "YOU: yes it is. let's pick the darker one of that pair. <",
-            "YOU: yes it is. let's pick the darker one on the lower right of",
-            "YOU: yes it is. let's pick the darker one of the pair. <",
-            "YOU: yes, it is. let's pick the darker one on the lower right",
-            "YOU: yes it is. let's pick the darker, larger dot at the lower",
-            "YOU: yes it is. let's pick the darker one on the lower left of",
+            "YOU: yes it is. let's pick the darker one that is lower to the right. <eos>",
             "YOU: the upper to the left of that is a light grey dot. <eos>",
-            "YOU: yes it is. let's pick the darker one on the upper left.",
-            "YOU: yes, it is. let's pick the darker one on the upper left",
-            "YOU: yes it is. let's pick the darker, larger dot on the lower"
+            "YOU: yes it is. let's pick the darker one of that pair. <eos>",
+            "YOU: yes it is. let's pick the darker one. <eos>",
+            "YOU: yes it is. let's pick the darker one of the pair. <eos>",
+            "YOU: yes it is. let's choose the darker one. <eos>",
+            "YOU: the upper to the left of that is a lighter shade. <eos>",
+            "YOU: yes, it is. let's pick the darker one. <eos>"
         ],
         "plan_mentions": [
             [
@@ -16709,9 +16709,9 @@
             -0.5076159238815308,
             -0.5135224461555481,
             -0.5426353216171265,
-            -0.5534170866012573,
-            -0.559425950050354,
-            -0.5658323764801025
+            -0.5658323764801025,
+            -0.5662626028060913,
+            -0.571776807308197
         ],
         "plan_beam_ref_res": [
             -0.011896966025233269,
@@ -16868,9 +16868,9 @@
             "YOU: okay, let's choose the smaller, lighter dot <selection>",
             "YOU: okay. let's pick the smaller, lighter dot <selection>",
             "YOU: okay, let's pick the smaller, lighter dot <eos>",
-            "YOU: okay, let's pick the lightest, smallest dot. <selection",
-            "YOU: okay, let's choose the lightest, smallest dot. <selection",
-            "YOU: okay, let's pick the smaller, lighter dot. <eos>"
+            "YOU: okay, let's pick the smaller, lighter dot. <eos>",
+            "YOU: okay, let's pick the smaller, lighter dot? <eos>",
+            "YOU: let's pick the smaller, lighter dot <eos>"
         ],
         "plan_mentions": [
             [

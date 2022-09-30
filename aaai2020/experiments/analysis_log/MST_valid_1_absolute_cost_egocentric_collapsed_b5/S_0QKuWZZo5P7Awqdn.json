@@ -3242,10 +3242,10 @@
             -0.5781916379928589,
             -0.5859905481338501,
             -0.5986724495887756,
-            -0.6012648940086365,
             -0.601571798324585,
-            -0.6106656193733215,
-            -0.6383606195449829
+            -0.6175467371940613,
+            -0.625008225440979,
+            -0.6501353979110718
         ],
         "plan_beam_ref_res": [
             -5.543615818023682,
@@ -3401,10 +3401,10 @@
             "YOU: no. do you have a medium black dot? <eos>",
             "YOU: no. do you have a medium sized medium gray dot? <eos>",
             "YOU: no. do you have a medium size dark grey dot? <eos>",
-            "YOU: i don't have that. i have a medium sized black dot by itself",
             "YOU: i do not. do you have a medium sized dark grey dot? <eos>",
-            "YOU: i don't see that. i have a medium sized black dot by itself",
-            "YOU: i don't have that. i have a medium size black dot by itself"
+            "YOU: i don't have that. i have a medium sized black dot by itself <eos>",
+            "YOU: i don't see that. i have a medium sized black dot by itself <eos>",
+            "YOU: i don't have that. i have a medium size black dot by itself <eos>"
         ],
         "plan_mentions": [
             [

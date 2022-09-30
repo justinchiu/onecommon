@@ -5152,16 +5152,16 @@
             -0.4426734149456024,
             -0.4498584270477295,
             -0.45209363102912903,
-            -0.4601041376590729,
             -0.4646682143211365,
             -0.48666462302207947,
             -0.4906215965747833,
             -0.5202283263206482,
             -0.5348248481750488,
             -0.5508701205253601,
-            -0.551058292388916,
-            -0.5519277453422546,
-            -0.5701398849487305
+            -0.5701398849487305,
+            -0.580466628074646,
+            -0.5839211940765381,
+            -0.5845601558685303
         ],
         "plan_beam_ref_res": [
             -0.0046249800361692905,
@@ -5311,16 +5311,16 @@
             "YOU: i do not. do you have a large black dot? <eos>",
             "YOU: i don't see that. do you see a large black dot? <eos>",
             "YOU: do you see a large black dot? <eos>",
-            "YOU: i don't have that one. do you have a large black dot?",
             "YOU: i don't see that. do you have a large black dot? <eos>",
             "YOU: no, do you have a large black dot? <eos>",
             "YOU: no. do you see a large black dot? <eos>",
             "YOU: no do you have a large black dot? <eos>",
             "YOU: is there a large black dot to the right of it? <eos>",
             "YOU: i don't have that. do you have a large dark dot? <eos>",
-            "YOU: i don't have that. do you have a very dark large dot?",
-            "YOU: i don't have that. do you have a very dark medium sized dot",
-            "YOU: i don't have that. do you have a very dark dot? <eos>"
+            "YOU: i don't have that. do you have a very dark dot? <eos>",
+            "YOU: do you have a black dot? <eos>",
+            "YOU: i don't have that. i have a large black dot by itself <eos>",
+            "YOU: i don't have that. i have a large black dot <eos>"
         ],
         "plan_mentions": [
             [

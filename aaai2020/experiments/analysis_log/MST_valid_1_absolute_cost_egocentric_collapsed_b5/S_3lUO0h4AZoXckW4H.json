@@ -3225,21 +3225,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.39403197169303894,
+            -0.40890103578567505,
             -0.41019633412361145,
-            -0.4120168089866638,
-            -0.41597506403923035,
+            -0.4144638180732727,
+            -0.424295574426651,
             -0.4265553951263428,
-            -0.42878010869026184,
-            -0.4344410002231598,
+            -0.43129172921180725,
+            -0.43283334374427795,
             -0.4405713379383087,
             -0.4432603120803833,
             -0.450416624546051,
             -0.4524867832660675,
-            -0.45561403036117554,
-            -0.45765405893325806,
             -0.46215739846229553,
             -0.4668289124965668,
-            -0.47100791335105896
+            -0.47100791335105896,
+            -0.47711706161499023
         ],
         "plan_beam_ref_res": [
             -0.8853405714035034,
@@ -3384,21 +3384,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: yes! if the top one is slightly to the left click that one! <eos>",
+            "YOU: yes! if the bottom one is slightly to the left click that bottom one! <eos>",
             "YOU: yes! if the top one is slightly to the right click that one! <eos>",
-            "YOU: yes! if the bottom one is slightly to the left click that bottom one!",
-            "YOU: yes! if the top one is slightly to the left click that top one!",
+            "YOU: yes! if the top one is slightly to the left click that top one! <eos>",
+            "YOU: yes! if the bottom one is slightly to the right click that bottom one! <eos>",
             "YOU: yes! if the bottom one is slightly to the left click that one! <eos>",
-            "YOU: yes! if the bottom one is slightly to the right click that bottom one!",
-            "YOU: yes! if the top one is slightly to the right click that top one!",
+            "YOU: yes! if the top one is slightly to the right click that top one! <eos>",
+            "YOU: yes if the top one is slightly to the left click that one! <selection>",
             "YOU: yes! if the bottom one is slightly to the right click that one! <eos>",
             "YOU: yes if the top one is slightly to the left click that one! <eos>",
             "YOU: yes if the bottom one is slightly to the left click that bottom one! <eos>",
             "YOU: yes if the top one is slightly to the left click that top one! <eos>",
-            "YOU: yes if the top one is slightly to the left click that one! <selection",
-            "YOU: yes! if the top one is slightly to the left click that one! <",
             "YOU: yes if the top one is slightly to the right click that one! <eos>",
             "YOU: yes if the bottom one is slightly to the right click that bottom one! <eos>",
-            "YOU: yes if the top one is slightly to the right click that top one! <eos>"
+            "YOU: yes if the top one is slightly to the right click that top one! <eos>",
+            "YOU: yes if the bottom one is slightly to the left click that one! <eos>"
         ],
         "plan_mentions": [
             [

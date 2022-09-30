@@ -5161,14 +5161,14 @@
             -0.5075405836105347,
             -0.5098807215690613,
             -0.5164039134979248,
+            -0.5246342420578003,
             -0.5246797204017639,
-            -0.5249872207641602,
             -0.5371149182319641,
-            -0.5517153143882751,
-            -0.5601707696914673,
-            -0.5709477066993713,
-            -0.5757635831832886,
-            -0.5791155099868774
+            -0.5791155099868774,
+            -0.604498565196991,
+            -0.6088600754737854,
+            -0.6179936528205872,
+            -0.6185048818588257
         ],
         "plan_beam_ref_res": [
             -9.716679573059082,
@@ -5320,14 +5320,14 @@
             "YOU: is the gray dot larger? <eos>",
             "YOU: let us select the gray <eos>",
             "YOU: is the gray dot medium sized? <eos>",
+            "YOU: i don't see that. do you see a large medium gray dot? <eos>",
             "YOU: is the gray dot slightly larger? <eos>",
-            "YOU: i don't think i see that. do you see a medium gray dot",
             "YOU: i don't see that. do you see a medium gray dot? <eos>",
-            "YOU: i don't see that. do you see a large medium gray dot?",
-            "YOU: i don't think i see that. do you see a medium grey dot",
-            "YOU: i don't see that. i see a medium gray dot at the bottom",
-            "YOU: i don't see that. i see a medium gray dot on the right",
-            "YOU: is the gray larger? <eos>"
+            "YOU: is the gray larger? <eos>",
+            "YOU: i don't see that. i see a medium sized light gray dot <eos>",
+            "YOU: i don't see that. i see a medium gray dot at the bottom <eos>",
+            "YOU: i don't see that. i see a medium gray dot that is alone <eos>",
+            "YOU: i don't see that. i see a medium gray dot at the top <eos>"
         ],
         "plan_mentions": [
             [

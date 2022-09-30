@@ -5147,20 +5147,20 @@
         "plan_beam_lm_bart": [
             -0.45534032583236694,
             -0.4692677855491638,
-            -0.4774078130722046,
             -0.48051658272743225,
             -0.5013533234596252,
             -0.5015721917152405,
             -0.5117554664611816,
             -0.5118878483772278,
-            -0.5183841586112976,
             -0.523711621761322,
             -0.5266775488853455,
             -0.5319018363952637,
             -0.5351645946502686,
             -0.5402516722679138,
-            -0.5458558797836304,
-            -0.5493184328079224
+            -0.5445938110351562,
+            -0.5493184328079224,
+            -0.558284342288971,
+            -6.869498252868652
         ],
         "plan_beam_ref_res": [
             -4.23507833480835,
@@ -5306,20 +5306,20 @@
         "plan_beam_sents_bart": [
             "YOU: no. do you see a small black dot? <eos>",
             "YOU: no. do you have a small black dot? <eos>",
-            "YOU: no, i don't see that. do you see a small black dot",
             "YOU: no. do you see a tiny black dot? <eos>",
             "YOU: no. do you see a black dot on the very edge? <eos>",
             "YOU: i don't see that. do you see a small black dot? <eos>",
             "YOU: no, i don't. do you see a small black dot? <eos>",
             "YOU: no. do you see a small black dot on the very edge? <eos>",
-            "YOU: no, i don't see that. do you see a tiny black dot",
             "YOU: no, i don't. do you have a small black dot? <eos>",
             "YOU: no i don't. do you see a small black dot? <eos>",
             "YOU: yes! is the lower one black? <eos>",
             "YOU: no i don't. do you have a small black dot? <eos>",
             "YOU: yes. is the lower one black? <eos>",
-            "YOU: no, i don't see that. do you have a small black dot",
-            "YOU: no. do you see a black dot? <eos>"
+            "YOU: no, i don't see that. do you see a black dot? <eos>",
+            "YOU: no. do you see a black dot? <eos>",
+            "YOU: do you see a small black dot? <eos>",
+            ""
         ],
         "plan_mentions": [
             [

@@ -3230,16 +3230,16 @@
             -0.621951162815094,
             -0.6238424181938171,
             -0.6524986624717712,
-            -0.6565843820571899,
             -0.6578872203826904,
             -0.6613573431968689,
             -0.6618824005126953,
-            -0.6774472594261169,
             -0.6816467642784119,
-            -0.6839504241943359,
             -0.6873968243598938,
             -0.6896117925643921,
-            -0.6908769607543945
+            -0.6908769607543945,
+            -0.6913037300109863,
+            -0.7339562177658081,
+            -7.023218154907227
         ],
         "plan_beam_ref_res": [
             -1000000000.0,
@@ -3389,16 +3389,16 @@
             "YOU: do you see a medium gray dot by itself? <eos>",
             "YOU: do you have a medium sized medium gray dot by itself? <eos>",
             "YOU: do you have a medium sized medium gray dot? <eos>",
-            "YOU: i don't have that. i have a medium sized medium gray dot by",
             "YOU: is the one on the right the darkest? <eos>",
             "YOU: i have a medium sized medium gray dot by itself <eos>",
             "YOU: is the middle one the darkest and the smallest? <eos>",
-            "YOU: i don't have that. i have a medium sized medium gray dot at",
             "YOU: i have a medium sized medium gray dot all by itself <eos>",
-            "YOU: i don't have that. i have a medium sized medium gray dot on",
             "YOU: do you have a medium sized medium grey dot? <eos>",
             "YOU: do you see a medium sized medium gray dot? <eos>",
-            "YOU: i don't have that. i have a medium gray dot by itself <eos>"
+            "YOU: i don't have that. i have a medium gray dot by itself <eos>",
+            "YOU: do you have a medium sized dark grey dot? <eos>",
+            "YOU: do you see a medium gray dot by itself <eos>",
+            ""
         ],
         "plan_mentions": [
             [

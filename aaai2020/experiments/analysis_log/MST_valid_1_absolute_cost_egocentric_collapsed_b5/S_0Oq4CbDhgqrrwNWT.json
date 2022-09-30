@@ -7082,21 +7082,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.5219479203224182,
-            -0.5251145362854004,
-            -0.5370703339576721,
+            -0.5505739450454712,
             -0.5518738031387329,
             -0.5582820773124695,
             -0.5606092214584351,
             -0.5648173093795776,
-            -0.5676891207695007,
             -0.568885862827301,
-            -0.5710188746452332,
             -0.5725449323654175,
-            -0.5882675051689148,
+            -0.5842052698135376,
+            -0.5883335471153259,
             -0.5906610488891602,
             -0.5911415219306946,
-            -0.6085290908813477,
-            -0.6096932888031006
+            -0.6096932888031006,
+            -0.6527861952781677,
+            -0.6582992672920227,
+            -7.532427787780762
         ],
         "plan_beam_ref_res": [
             -2.8406758308410645,
@@ -7241,21 +7241,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: okay, let's pick the top right dark dot. <selection>",
-            "YOU: okay, i think we have the same one. let's pick the",
-            "YOU: okay, i think we have the same dot. let's pick the",
+            "YOU: okay, let's pick the top right dot of the triangle. <selection>",
             "YOU: okay, do you have a small black dot by itself? <eos>",
             "YOU: okay, do you have a medium sized dark grey dot by itself? <eos>",
             "YOU: okay, do you have a small dark dot that is by itself? <eos>",
             "YOU: okay, do you have a medium sized black dot? <eos>",
-            "YOU: okay, i think we have the same one. let's choose the",
             "YOU: okay, do you have a medium sized black dot by itself? <eos>",
-            "YOU: okay, i think we have the same dot. let's choose the",
             "YOU: okay, do you have a small dark grey dot by itself? <eos>",
-            "YOU: okay, i think we have the same dot. let's pick that",
+            "YOU: okay, do you have a medium sized dark grey dot that is by itself? <eos>",
+            "YOU: okay, let's pick the top right dot of the triangle <selection>",
             "YOU: okay, do you have a small black dot? <eos>",
             "YOU: okay, do you have a really small dark dot? <eos>",
-            "YOU: okay, let's pick the top right dot of the triangle. <",
-            "YOU: okay, do you have a medium sized dark grey dot? <eos>"
+            "YOU: okay, do you have a medium sized dark grey dot? <eos>",
+            "YOU: okay, let's pick the top right dark dot. <eos>",
+            "YOU: okay, let's pick the top right dot of the triangle <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -12856,22 +12856,22 @@
             -15.714476585388184
         ],
         "plan_beam_lm_bart": [
+            -0.45883744955062866,
             -0.47366300225257874,
             -0.4762178361415863,
             -0.4780499041080475,
-            -0.48298680782318115,
             -0.4863983690738678,
-            -0.501075804233551,
+            -0.4878450334072113,
             -0.5027982592582703,
             -0.5047698020935059,
-            -0.5135210752487183,
             -0.5194081664085388,
-            -0.5266737341880798,
-            -0.5670759677886963,
-            -0.5825697183609009,
-            -0.5930001735687256,
             -0.5963289737701416,
-            -0.6010162234306335
+            -0.5988560914993286,
+            -0.6014350056648254,
+            -0.6015049815177917,
+            -0.6015448570251465,
+            -0.6224144101142883,
+            -0.6378179788589478
         ],
         "plan_beam_ref_res": [
             -4.265205383300781,
@@ -13015,22 +13015,22 @@
             "i have a medium dark gray dot at the top right <eos>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: let's pick the darker dot on the bottom of the triangle. <selection>",
             "YOU: let's pick the darker dot on the bottom. <selection>",
             "YOU: let's pick the darker one on the bottom. <selection>",
             "YOU: let's choose the darker dot on the bottom. <selection>",
-            "YOU: let's pick the darker dot on the bottom of the triangle. <selection",
             "YOU: let's try the darker dot on the bottom. <selection>",
-            "YOU: okay, let's pick the darker dot on the bottom of the triangle",
+            "YOU: okay, let's pick the darker dot on the bottom. <selection>",
             "YOU: ok, let's pick the darker dot on the bottom. <selection>",
             "YOU: let's pick the darker dot on the bottom of the triangle <selection>",
-            "YOU: okay, let's pick the darker dot on the bottom. <selection",
             "YOU: let's pick the darker dot on the bottom left. <selection>",
-            "YOU: ok, let's pick the darker dot on the bottom of the triangle.",
-            "YOU: ok, let's pick the darker dot on the bottom of the triangle <",
-            "YOU: i don't have that. do you have a small dark dot that is",
-            "YOU: i don't think i have that. do you have a small dark dot",
             "YOU: let's pick the darker dot on the bottom of the triangle. <eos>",
-            "YOU: i don't have that. do you have a really dark dot that is"
+            "YOU: okay, let's pick the darker dot on the bottom of the triangle <eos>",
+            "YOU: i don't have that. do you have a small dark dot? <eos>",
+            "YOU: ok, let's pick the darker dot on the bottom of the triangle. <eos>",
+            "YOU: i don't have that. do you have a medium sized dark dot? <eos>",
+            "YOU: ok, let's pick the darker dot on the bottom of the triangle <eos>",
+            "YOU: okay, let's pick the darker dot on the bottom. <eos>"
         ],
         "plan_mentions": [
             [

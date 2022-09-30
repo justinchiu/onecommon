@@ -7078,22 +7078,22 @@
             -8.285444259643555
         ],
         "plan_beam_lm_bart": [
-            -0.42060616612434387,
+            -0.3995758593082428,
+            -0.4218825399875641,
             -0.43181249499320984,
-            -0.44408687949180603,
-            -0.4578370153903961,
             -0.4579683840274811,
-            -0.47114768624305725,
+            -0.4643235206604004,
+            -0.4783236086368561,
             -0.4938681423664093,
             -0.4965458810329437,
-            -0.5009794235229492,
-            -0.5063520669937134,
+            -0.5022242665290833,
+            -0.5081756711006165,
             -0.5286017656326294,
-            -0.5360468029975891,
             -0.5382713675498962,
             -0.5403566956520081,
             -0.542483389377594,
-            -0.5554121732711792
+            -0.5554121732711792,
+            -0.5561419725418091
         ],
         "plan_beam_ref_res": [
             -11.401246070861816,
@@ -7237,22 +7237,22 @@
             "ok , lets pick the top one <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: yes! if the middle one is the lightest click that one! <selection",
+            "YOU: yes! if the middle one is the lightest click that one! <selection>",
+            "YOU: yes! if the bottom one is the lightest click that one! <selection>",
             "YOU: yes! if the middle one is the lightest click that one! <eos>",
-            "YOU: yes! if the bottom one is the lightest click that one! <selection",
-            "YOU: yes! if the middle one is slightly to the right click that middle one!",
             "YOU: yes! if the bottom one is the lightest click that one! <eos>",
-            "YOU: yes! if the middle one is slightly to the left click that middle one!",
+            "YOU: yes! if the middle one is slightly to the right click that middle one! <eos>",
+            "YOU: yes! if the middle one is slightly to the left click that middle one! <eos>",
             "YOU: yes! is the middle one the lightest? <eos>",
             "YOU: yes! is the bottom one the lightest? <eos>",
-            "YOU: yes! if the bottom one is slightly to the right click that bottom one!",
-            "YOU: yes! if the bottom one is slightly to the left click that bottom one!",
+            "YOU: yes! if the bottom one is slightly to the right click that bottom one! <eos>",
+            "YOU: yes! if the bottom one is slightly to the left click that bottom one! <eos>",
             "YOU: yes! if the bottom one is slightly to the right click that one! <eos>",
-            "YOU: yes! if the middle one is the lightest click that middle one! <",
             "YOU: yes! if the middle one is slightly to the right click that one! <eos>",
             "YOU: yes, the middle one is the lightest? <eos>",
             "YOU: yes! if the bottom one is slightly to the left click that one! <eos>",
-            "YOU: yes! if the middle one is the lightest click that middle one! <eos>"
+            "YOU: yes! if the middle one is the lightest click that middle one! <eos>",
+            "YOU: yes! if the middle one is the lightest click that one <eos>"
         ],
         "plan_mentions": [
             [

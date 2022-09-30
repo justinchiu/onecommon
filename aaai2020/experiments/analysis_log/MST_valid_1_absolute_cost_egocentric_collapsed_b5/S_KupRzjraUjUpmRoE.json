@@ -7084,20 +7084,20 @@
         "plan_beam_lm_bart": [
             -0.37376707792282104,
             -0.3875426948070526,
-            -0.39474695920944214,
             -0.4030504524707794,
             -0.41054001450538635,
-            -0.42273205518722534,
-            -0.42422300577163696,
-            -0.43606793880462646,
             -0.43840402364730835,
             -0.4403321146965027,
             -0.44735467433929443,
-            -0.4475580155849457,
             -0.448942095041275,
             -0.45375391840934753,
             -0.45436641573905945,
-            -0.4558379352092743
+            -0.4558379352092743,
+            -0.45870333909988403,
+            -0.46351197361946106,
+            -0.4655011296272278,
+            -0.4714864492416382,
+            -0.47491782903671265
         ],
         "plan_beam_ref_res": [
             -1.0615051984786987,
@@ -7243,20 +7243,20 @@
         "plan_beam_sents_bart": [
             "YOU: yes! click the smallest one on the right! <selection>",
             "YOU: yes! click the smaller one on the right! <selection>",
-            "YOU: yes! if the top one is slightly to the right click that top one!",
             "YOU: yes! click the one on the right! <selection>",
             "YOU: yes! if the bottom one is the smallest click that one! <selection>",
-            "YOU: yes! if the top one is slightly to the left click that top one!",
-            "YOU: yes! if the bottom one is slightly to the right click that bottom one!",
-            "YOU: yes! if the one on the right is smallest click that one! <selection",
             "YOU: yes! click the smaller one on top! <selection>",
             "YOU: yes! if the bottom one is the smallest click that one! <eos>",
             "YOU: yes! if the one on the right is smallest click that one! <eos>",
-            "YOU: yes! if the bottom one is slightly to the left click that bottom one!",
             "YOU: yes! click the smallest one on top! <selection>",
             "YOU: yes! if the bottom one is slightly to the right click that one! <eos>",
             "YOU: yes! click the smallest one! <selection>",
-            "YOU: yes! click the one on the right that is smallest! <selection>"
+            "YOU: yes! click the one on the right that is smallest! <selection>",
+            "YOU: yes! click the top one! <selection>",
+            "YOU: yes! if the one on the right is slightly lower click that one! <eos>",
+            "YOU: yes! if the top one is slightly to the right click that one! <eos>",
+            "YOU: yes! let's pick the smallest one on the right <selection>",
+            "YOU: yes! let's pick the one on the right! <selection>"
         ],
         "plan_mentions": [
             [

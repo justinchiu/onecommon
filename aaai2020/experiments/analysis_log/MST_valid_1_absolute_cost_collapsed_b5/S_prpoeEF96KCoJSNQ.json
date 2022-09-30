@@ -3236,16 +3236,16 @@
             -0.5516879558563232,
             -0.567875325679779,
             -0.5899725556373596,
-            -0.6026349067687988,
             -0.6110095977783203,
             -0.6257065534591675,
-            -0.6269932985305786,
             -0.6313495635986328,
             -0.6375064253807068,
-            -0.6439592242240906,
-            -0.6458554267883301,
-            -0.6493636965751648,
-            -0.6587677597999573
+            -0.6587677597999573,
+            -0.6615815758705139,
+            -0.6621904373168945,
+            -0.6688331961631775,
+            -0.6893404722213745,
+            -0.7337875366210938
         ],
         "plan_beam_ref_res": [
             -11.64682674407959,
@@ -3395,16 +3395,16 @@
             "YOU: yes, i have that. let's pick the nose <selection>",
             "YOU: yes, i have that. let's choose the nose. <eos>",
             "YOU: yes, i have that. let's choose the nose <selection>",
-            "YOU: no. do you have 3 dots in a line sloping up and to the",
             "YOU: yes, i have that. let's pick the nose! <selection>",
             "YOU: yes, i have that. let's pick the nose, ok? <eos>",
-            "YOU: yes, i have that. let's pick the nose just below <selection",
             "YOU: yes, i have that. let's pick the nose <eos>",
             "YOU: yes, i have that. let's pick the nose! <eos>",
-            "YOU: no. do you have 3 dots in a line sloping up to the right",
-            "YOU: yes, i have that. let's pick the nose just below the nose",
-            "YOU: no. do you have 3 dots that form a triangle with the nose being the",
-            "YOU: yes, i have that. let's choose the nose <eos>"
+            "YOU: yes, i have that. let's choose the nose <eos>",
+            "YOU: no. do you have 3 dots in a triangle shape? <eos>",
+            "YOU: no. do you have 3 dots that form a triangle? <eos>",
+            "YOU: yes, i have that. let's pick the nose just below. <eos>",
+            "YOU: no. do you have three dots that form a triangle? <eos>",
+            "YOU: yes, i have that. let's pick the nose just below them <eos>"
         ],
         "plan_mentions": [
             [

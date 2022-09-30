@@ -3231,21 +3231,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.529280960559845,
+            -0.5300747156143188,
             -0.5367701053619385,
             -0.5443358421325684,
             -0.5447995066642761,
             -0.5450074076652527,
-            -0.5571050047874451,
+            -0.5471632480621338,
             -0.5579541325569153,
-            -0.5750976800918579,
-            -0.5977018475532532,
             -0.6012610197067261,
             -0.6015792489051819,
+            -0.6016345620155334,
             -0.6086607575416565,
-            -0.6108518838882446,
             -0.6184560656547546,
-            -0.6210957169532776,
-            -0.6232988834381104
+            -0.6190083622932434,
+            -0.6240355372428894,
+            -0.6347500085830688
         ],
         "plan_beam_ref_res": [
             -3.1062979698181152,
@@ -3390,21 +3390,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: no. do you see a medium sized light grey dot? <eos>",
+            "YOU: no. do you see a medium gray dot at the top of the circle? <eos>",
             "YOU: no. do you see a medium sized medium gray dot? <eos>",
             "YOU: no. do you see a medium sized light gray dot? <eos>",
             "YOU: no. do you have a medium sized medium gray dot? <eos>",
             "YOU: no. do you have a medium sized light grey dot? <eos>",
-            "YOU: no. do you see a medium gray dot at the top of the circle?",
+            "YOU: no. do you see a medium grey dot at the top of the circle? <eos>",
             "YOU: no. do you see a medium sized medium grey dot? <eos>",
-            "YOU: no. do you see a medium grey dot at the top of the circle?",
-            "YOU: no. do you see a medium gray dot on the right side of the circle",
             "YOU: no. do you see a medium gray dot at the top of the circle <eos>",
             "YOU: no i do not. do you see a medium sized light grey dot? <eos>",
+            "YOU: no. do you see a medium gray dot at the top of your circle? <eos>",
             "YOU: no i do not. do you see a medium sized medium gray dot? <eos>",
-            "YOU: i do not. do you see a medium gray dot at the top of the",
             "YOU: no. do you see a medium grey dot at the top of the circle <eos>",
-            "YOU: no. do you see a medium sized light grey dot at the top of the",
-            "YOU: no. do you see a medium sized medium gray dot at the top of the"
+            "YOU: no. do you see a medium grey dot at the top of your circle? <eos>",
+            "YOU: no i do not. do you see a medium sized medium grey dot? <eos>",
+            "YOU: no. do you see a medium sized light grey dot at the top? <eos>"
         ],
         "plan_mentions": [
             [

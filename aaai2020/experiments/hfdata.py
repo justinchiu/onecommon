@@ -207,6 +207,7 @@ def describe_dot_pair(i, j, dot_strings, dots):
     x1, y1, s1, c1 = dots[i]
     x2, y2, s2, c2 = dots[j]
 
+    # TODO: i think the y values are negated, so this needs to be flipped
     vert_comp = "above" if y1 > y2 else "below"
     hor_comp = "right" if x1 > x2 else "left"
     size_comp = "bigger" if s1 > s2 else "smaller"

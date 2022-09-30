@@ -3233,17 +3233,17 @@
             -0.5510035753250122,
             -0.5554400682449341,
             -0.5562418699264526,
+            -0.5649999976158142,
             -0.5822370052337646,
             -0.5826600790023804,
             -0.5869758129119873,
-            -0.593718945980072,
+            -0.591193437576294,
+            -0.5917205214500427,
             -0.5989463925361633,
+            -0.6010412573814392,
             -0.6017458438873291,
-            -0.6211110353469849,
-            -0.6218145489692688,
-            -0.6316828727722168,
-            -0.6376051902770996,
-            -0.6493955850601196
+            -0.621568500995636,
+            -0.6257700324058533
         ],
         "plan_beam_ref_res": [
             -0.010384573601186275,
@@ -3392,17 +3392,17 @@
             "YOU: no. do you have a tiny medium grey dot? <eos>",
             "YOU: no. do you see a tiny medium gray dot? <eos>",
             "YOU: no. do you have a small medium gray dot? <eos>",
+            "YOU: i don't see that. do you see a tiny medium gray dot? <eos>",
             "YOU: no, do you have a tiny medium grey dot? <eos>",
             "YOU: no, do you see a tiny medium gray dot? <eos>",
             "YOU: no, do you have a small medium gray dot? <eos>",
-            "YOU: i don't see that. do you see a tiny medium gray dot?",
+            "YOU: i don't see that. do you see a small medium gray dot? <eos>",
+            "YOU: i don't see that. do you see a tiny medium grey dot? <eos>",
             "YOU: no. do you have a small medium grey dot? <eos>",
+            "YOU: i don't see that. do you see a tiny dark grey dot? <eos>",
             "YOU: no. do you see a small medium gray dot? <eos>",
-            "YOU: i don't see that. do you see a small medium gray dot?",
-            "YOU: i don't see that. do you see a tiny medium grey dot?",
-            "YOU: i don't see that. do you see a tiny dark grey dot?",
-            "YOU: i don't have that. i have a small medium gray dot by itself",
-            "YOU: i don't have that one. i have a small medium gray dot at"
+            "YOU: i don't see that. do you see a small medium grey dot? <eos>",
+            "YOU: i don't see that. do you see a small dark grey dot? <eos>"
         ],
         "plan_mentions": [
             [
@@ -5153,22 +5153,22 @@
             -7.456007480621338
         ],
         "plan_beam_lm_bart": [
-            -0.5217762589454651,
-            -0.5360308289527893,
-            -0.5452030301094055,
-            -0.5608294010162354,
-            -0.5659019947052002,
+            -0.5191611051559448,
+            -0.5338553786277771,
+            -0.5369213819503784,
+            -0.5462871789932251,
+            -0.5589651465415955,
             -0.5821083784103394,
+            -0.5851356387138367,
             -0.5886669754981995,
             -0.5919650197029114,
-            -0.5942632555961609,
-            -0.6071393489837646,
+            -0.5962576866149902,
             -0.6093838214874268,
             -0.6140857934951782,
             -0.6147099137306213,
             -0.6169360280036926,
             -0.6214442253112793,
-            -0.6286482214927673
+            -0.6389431357383728
         ],
         "plan_beam_ref_res": [
             -8.51457691192627,
@@ -5312,22 +5312,22 @@
             "i think i see that . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i have two small black ones, one is above and to the right of the",
-            "YOU: i have two small black ones, one is above and to the left of the",
-            "YOU: i don't have that. do you have a small black dot with a",
-            "YOU: i have two small black ones, one is above and to the right of a",
-            "YOU: i have two small black ones, one is above and to the left of a",
+            "YOU: i have two small black ones, one is above and to the right of the other <eos>",
+            "YOU: i have two small black ones, one is above and to the right of the other. <eos>",
+            "YOU: i have two small black ones, one is above and to the left of the other <eos>",
+            "YOU: i have two small black ones, one is above and to the left of the other. <eos>",
+            "YOU: do you have a small black dot with a small gray dot to the right of it? <eos>",
             "YOU: i don't have that. do you have two small black dots? <eos>",
+            "YOU: i have two small black ones, one is above and to the right of the other one <eos>",
             "YOU: i have two small black ones and one small gray one <eos>",
             "YOU: i don't have that. do you have two small black ones? <eos>",
-            "YOU: i don't have that. i have a small black dot with a small",
-            "YOU: i don't have that. do you have a small black one with a",
+            "YOU: i have two small black ones, one is above and to the left of the other one <eos>",
             "YOU: i don't see that. do you see two small black dots? <eos>",
             "YOU: i have two small black ones and one small gray one. <eos>",
             "YOU: i don't see that. do you have two small black dots? <eos>",
             "YOU: do you have two small black ones? <eos>",
             "YOU: i don't see that. do you have two small black ones? <eos>",
-            "YOU: i don't have that. do you have two small black dots? one"
+            "YOU: i don't see that. do you see two small black ones? <eos>"
         ],
         "plan_mentions": [
             [

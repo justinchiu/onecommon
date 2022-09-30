@@ -3229,8 +3229,6 @@
         ],
         "plan_beam_lm_bart": [
             -0.400623619556427,
-            -0.4121682643890381,
-            -0.41346362233161926,
             -0.4311676025390625,
             -0.4561362564563751,
             -0.456588476896286,
@@ -3239,11 +3237,13 @@
             -0.47205477952957153,
             -0.479907363653183,
             -0.48175519704818726,
-            -0.48179230093955994,
             -0.4834473729133606,
             -0.487215518951416,
             -0.4879092276096344,
-            -0.49699100852012634
+            -0.49699100852012634,
+            -0.4998871088027954,
+            -0.5190381407737732,
+            -0.5924554467201233
         ],
         "plan_beam_ref_res": [
             -0.01972745731472969,
@@ -3388,8 +3388,6 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: yes! click that small light one! <selection>",
-            "YOU: yes! if the lower one is slightly to the right click that lower one!",
-            "YOU: yes! if the lower one is slightly to the left click that lower one!",
             "YOU: yes! click the smaller light one! <selection>",
             "YOU: yes! if the light one is slightly to the right click that one! <eos>",
             "YOU: yes! click that smaller light one! <selection>",
@@ -3398,11 +3396,13 @@
             "YOU: yes! if the lower one is slightly to the right click that one! <eos>",
             "YOU: yes! if the smaller one is to the right click that one! <eos>",
             "YOU: yes! if the light one is slightly to the left click that one! <eos>",
-            "YOU: yes! if the light one is slightly lower and to the right click that one",
             "YOU: yes! if the lower one is slightly to the left click that one! <eos>",
             "YOU: yes! click the light one! <selection>",
             "YOU: yes! if the smaller one is to the lower right click that one! <eos>",
-            "YOU: yes! click the smaller lighter one! <selection>"
+            "YOU: yes! click the smaller lighter one! <selection>",
+            "YOU: yes! if the smaller one is up to the left click that one! <eos>",
+            "YOU: yes! if the light one is slightly lower click that one! <eos>",
+            "YOU: yes! click that small light one! <eos>"
         ],
         "plan_mentions": [
             [

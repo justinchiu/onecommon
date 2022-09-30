@@ -1295,22 +1295,22 @@
             -13.341585159301758
         ],
         "plan_beam_lm_bart": [
-            -0.4976610839366913,
             -0.5001760721206665,
-            -0.5020622611045837,
-            -0.5021250247955322,
-            -0.5069240927696228,
-            -0.5179288387298584,
-            -0.5191051363945007,
-            -0.5210533738136292,
-            -0.5227397680282593,
-            -0.5498241186141968,
-            -0.5511868000030518,
-            -0.5588820576667786,
-            -0.56780606508255,
-            -0.570377767086029,
-            -0.5708209276199341,
-            -0.5714777112007141
+            -0.5101678967475891,
+            -0.5155808329582214,
+            -0.51816725730896,
+            -0.5236746668815613,
+            -0.5375654101371765,
+            -0.5448698401451111,
+            -0.5545339584350586,
+            -0.5552518963813782,
+            -0.5641494393348694,
+            -0.5891252756118774,
+            -0.611338198184967,
+            -0.6136887073516846,
+            -0.6167599558830261,
+            -0.6283209919929504,
+            -7.2524566650390625
         ],
         "plan_beam_ref_res": [
             -4.397412300109863,
@@ -1454,22 +1454,22 @@
             "two dots almost identical in size and color in size ? <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i have two dots very close together. the one on the left is smaller and",
             "YOU: two dots very close together? <eos>",
-            "YOU: i see two dots very close together. the one on the left is smaller and",
-            "YOU: i have two dots very close together. the one on the left is larger and",
-            "YOU: i see two dots very close together. the one on the left is larger and",
-            "YOU: i have two dots very close together. the one on the right is larger and",
-            "YOU: i have two dots very close together. the one on the right is smaller and",
-            "YOU: i see two dots very close together. the one on the right is larger and",
-            "YOU: i see two dots very close together. the one on the right is smaller and",
-            "YOU: i have two dots very close together. the one on top is smaller and lighter",
-            "YOU: i have two dots very close together. the one on top is larger and darker",
-            "YOU: i see two dots very close together. the one on top is smaller and lighter",
-            "YOU: i have a medium sized black dot with a small light grey dot to the right",
-            "YOU: i have two dots very close together. the one on the left is darker and",
-            "YOU: i have two dots very close together. the one on the right is darker and",
-            "YOU: i see two dots very close together. the one on the right is darker and"
+            "YOU: i see two dots very close together. the one on the left is larger and darker. <eos>",
+            "YOU: i see two dots very close together. the one on the right is larger and darker. <eos>",
+            "YOU: i have two dots very close together. the one on the left is larger and darker. <eos>",
+            "YOU: i have two dots very close together. the one on the right is larger and darker. <eos>",
+            "YOU: i have a medium sized black dot with a small light grey dot to the right of it <eos>",
+            "YOU: i see two dots very close together. the one on the left is smaller and lighter. <eos>",
+            "YOU: i see two dots very close together. the one on the right is larger and darker <eos>",
+            "YOU: i see two dots very close together. the one on the left is larger and darker <eos>",
+            "YOU: i have two dots very close together. the one on the right is larger and darker <eos>",
+            "YOU: i have two dots very close together. the one on the left is larger and darker. they are pretty close together <eos>",
+            "YOU: i have two dots very close together. the one on the left is larger and darker. they are close together <eos>",
+            "YOU: i have two dots very close together. the one on the left is larger and darker. they are fairly close together <eos>",
+            "YOU: i have two dots very close together. the one on the left is larger and darker. they are the same size <eos>",
+            "YOU: i have two dots very close together. the one on the left is larger and darker. they are very close <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -3225,19 +3225,19 @@
             -0.5345664024353027,
             -0.5539916753768921,
             -0.5563015341758728,
-            -0.5722038149833679,
             -0.5750307440757751,
             -0.5796809196472168,
+            -0.588777482509613,
             -0.5892933011054993,
             -0.5910452604293823,
-            -0.6148773431777954,
-            -0.6244797706604004,
+            -0.601810872554779,
+            -0.6091347932815552,
+            -0.6228331327438354,
             -0.6267544031143188,
-            -0.6268455386161804,
             -0.628227710723877,
             -0.6282821893692017,
-            -0.6352883577346802,
-            -0.6359835267066956
+            -0.6328909397125244,
+            -0.637320339679718
         ],
         "plan_beam_ref_res": [
             -5.295712947845459,
@@ -3384,19 +3384,19 @@
             "YOU: do you see a large light grey dot in between two smaller darker dots? <eos>",
             "YOU: do you have a large light grey dot in between two smaller darker dots? <eos>",
             "YOU: do you see a large light gray dot in between two smaller darker dots? <eos>",
-            "YOU: do you have a large light grey dot in the middle of two smaller darker dots",
             "YOU: do you have a large light gray dot in between two smaller darker dots? <eos>",
             "YOU: i have a large light grey dot in the middle of two smaller darker dots <eos>",
+            "YOU: do you have a large light grey dot in the middle of two darker dots? <eos>",
             "YOU: do you see a large light grey dot in between two darker dots? <eos>",
             "YOU: i have a large light gray dot in the middle of two smaller darker dots <eos>",
-            "YOU: do you have a large light grey dot in the middle of two darker dots?",
-            "YOU: i have a large light grey dot in the middle of two smaller darker dots.",
+            "YOU: do you have a large light grey dot in the middle of two smaller dots? <eos>",
+            "YOU: do you have a large light grey dot with two smaller darker dots above it? <eos>",
+            "YOU: i have a large light grey dot in the middle of two smaller darker dots. <eos>",
             "YOU: i have a large light grey dot in the middle of two darker dots <eos>",
-            "YOU: do you have a large light grey dot in the middle of two smaller dots?",
             "YOU: i have a large light grey dot in the middle of two smaller darker ones <eos>",
             "YOU: i have a large light grey dot in the middle of 2 smaller darker dots <eos>",
-            "YOU: i have a large light gray dot in the middle of two smaller darker dots.",
-            "YOU: do you have a large light grey dot with two smaller darker dots above it?"
+            "YOU: i have a large light gray dot in the middle of two smaller darker dots. <eos>",
+            "YOU: i have a large light gray dot in the middle of two smaller darker ones <eos>"
         ],
         "plan_mentions": [
             [
@@ -5165,8 +5165,8 @@
             -0.5453562140464783,
             -0.5459457635879517,
             -0.5559041500091553,
-            -0.5902236104011536,
-            -0.632457971572876
+            -0.632457971572876,
+            -0.6499887704849243
         ],
         "plan_beam_ref_res": [
             -1.2883989810943604,
@@ -5324,8 +5324,8 @@
             "YOU: yes. is the darker one to the left of the light one? <eos>",
             "YOU: yes. is the darker one to the right of the light one? <eos>",
             "YOU: yes i have that. let's pick the lightest one <selection>",
-            "YOU: yes i have that. let's pick the lightest gray one <selection",
-            "YOU: yes i have that. let's pick the lightest gray one <eos>"
+            "YOU: yes i have that. let's pick the lightest gray one <eos>",
+            "YOU: yes i have that. let's pick the lightest gray one. <eos>"
         ],
         "plan_mentions": [
             [
@@ -9013,16 +9013,16 @@
             -0.49775683879852295,
             -0.4982650578022003,
             -0.5109497308731079,
+            -0.512848973274231,
             -0.5132536888122559,
-            -0.5146001577377319,
             -0.5199229121208191,
             -0.5214688777923584,
-            -0.5284630656242371,
             -0.53401780128479,
             -0.5374483466148376,
-            -0.5389947891235352,
-            -0.5509365200996399,
-            -0.5681694149971008
+            -0.5405789613723755,
+            -0.5837662816047668,
+            -0.5965914130210876,
+            -7.465014934539795
         ],
         "plan_beam_ref_res": [
             -17.410327911376953,
@@ -9172,16 +9172,16 @@
             "YOU: is there a smaller dark gray dot to the left of it? <eos>",
             "YOU: is there a dark gray dot to the right of it? <eos>",
             "YOU: is there a dark grey dot to the right of it? <eos>",
+            "YOU: is there a dark gray dot to the left of the large light gray dot? <eos>",
             "YOU: is there a smaller dark grey dot to the right of it? <eos>",
-            "YOU: i don't have that. do you have a large light gray dot with",
             "YOU: is there a smaller dark gray dot to the right of it? <eos>",
             "YOU: is there a dark gray dot to the left and slightly above it? <eos>",
-            "YOU: i don't have that. do you have a large light grey dot with",
             "YOU: is there a dark grey dot to the left and slightly above it? <eos>",
             "YOU: is there a dark gray dot to the left and slightly below it? <eos>",
-            "YOU: is there a dark gray dot to the left of the large light gray dot?",
-            "YOU: i don't have that. do you have a medium sized black dot with",
-            "YOU: is there a dark gray dot to the left of the large light grey dot?"
+            "YOU: is there a dark gray dot to the left of the large light grey dot? <eos>",
+            "YOU: is there a dark gray dot to the left of the large light gray? <eos>",
+            "YOU: is there a dark gray dot above it? <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -10919,21 +10919,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.4277585744857788,
-            -0.4514482915401459,
+            -0.4288758635520935,
+            -0.43099483847618103,
             -0.4514510929584503,
-            -0.45367878675460815,
             -0.45790255069732666,
+            -0.458716481924057,
             -0.4611562192440033,
             -0.46936288475990295,
             -0.4728739857673645,
             -0.47632020711898804,
-            -0.48285946249961853,
-            -0.48331546783447266,
-            -0.49406754970550537,
             -0.5179826617240906,
-            -0.5183405876159668,
             -0.5282966494560242,
-            -0.5314874053001404
+            -0.5331486463546753,
+            -0.5430511236190796,
+            -0.5432488918304443,
+            -0.5502786636352539
         ],
         "plan_beam_ref_res": [
             -2.9823861122131348,
@@ -11078,21 +11078,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: let's pick the large light gray dot northwest of the pair <selection>",
-            "YOU: let's pick the large light gray dot northwest of the pair. <selection",
+            "YOU: let's pick the large light gray dot northwest of the pair. <selection>",
+            "YOU: let's choose the large light gray dot northwest of the pair. <selection>",
             "YOU: let's choose the large light gray dot northwest of the pair <selection>",
-            "YOU: let's choose the large light gray dot northwest of the pair. <selection",
             "YOU: let's pick the light gray dot northwest of the pair. <selection>",
+            "YOU: ok let's pick the large light gray dot northwest of the pair <selection>",
             "YOU: let's pick the light gray dot northwest of the pair <selection>",
             "YOU: lets pick the large light gray dot northwest of the pair <selection>",
             "YOU: let's choose the light gray dot northwest of the pair. <selection>",
             "YOU: pick the large light gray dot northwest of the pair <selection>",
-            "YOU: ok let's pick the large light gray dot northwest of the pair <selection",
-            "YOU: let's pick the large light gray dot northwest of the pair of small dots",
-            "YOU: let's choose the large light gray dot northwest of the pair of small dots",
             "YOU: let's pick the large light gray dot northwest of the pair <eos>",
-            "YOU: ok let's pick the large light gray dot northwest of the pair. <",
             "YOU: let's choose the large light gray dot northwest of the pair <eos>",
-            "YOU: ok let's choose the large light gray dot northwest of the pair. <"
+            "YOU: pick the large light gray dot northwest of the pair? <eos>",
+            "YOU: let's pick the large light gray dot northwest of the pair of small dots <eos>",
+            "YOU: let's pick the large light gray dot northwest of the pair. <eos>",
+            "YOU: let's choose the large light gray dot northwest of the pair of small dots <eos>"
         ],
         "plan_mentions": [
             [

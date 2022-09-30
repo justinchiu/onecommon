@@ -3228,22 +3228,22 @@
             -6.155706405639648
         ],
         "plan_beam_lm_bart": [
+            -0.5037950277328491,
             -0.5128304958343506,
+            -0.5136805772781372,
+            -0.5184919238090515,
+            -0.5264661312103271,
             -0.5291547179222107,
-            -0.5303105711936951,
             -0.5366385579109192,
-            -0.5407163500785828,
             -0.540728747844696,
-            -0.5457809567451477,
-            -0.5541749000549316,
-            -0.5549388527870178,
-            -0.5634685754776001,
             -0.5656131505966187,
             -0.5661670565605164,
-            -0.5791386365890503,
-            -0.5834283232688904,
-            -0.5871351957321167,
-            -0.5911591053009033
+            -0.5911591053009033,
+            -0.6000984907150269,
+            -0.657852053642273,
+            -0.6699392199516296,
+            -0.6701167821884155,
+            -0.7138492465019226
         ],
         "plan_beam_ref_res": [
             -2.126396894454956,
@@ -3387,22 +3387,22 @@
             "yes click the larger one <selection>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: yes! if the largest one is to the right click that one! <selection>",
             "YOU: yes! if the largest one is to the right click that one! <eos>",
+            "YOU: yes! if the largest one is on the right click that one! <selection>",
+            "YOU: yes! if the largest one is on the left click that one! <selection>",
+            "YOU: yes! if the largest one is to the left click that one! <selection>",
             "YOU: yes! if the largest one is on the right click that one! <eos>",
-            "YOU: yes! if the largest one is to the right click that one! <selection",
             "YOU: yes! if the largest one is on the left click that one! <eos>",
-            "YOU: yes! if the largest one is on the right click that one! <selection",
             "YOU: yes! if the largest one is to the left click that one! <eos>",
-            "YOU: yes! if the largest one is on the left click that one! <selection",
-            "YOU: yes! if the largest one is to the left click that one! <selection",
-            "YOU: i don't have that. i have a large dark grey dot on the",
-            "YOU: i don't see that. i have a large dark grey dot on the",
             "YOU: yes, pick the large one <selection>",
             "YOU: yes, choose the large one <selection>",
-            "YOU: i don't have that. i have a large dark grey dot at the",
-            "YOU: i don't have that. i have a large dark gray dot on the",
-            "YOU: i don't see that. i see a large dark grey dot on the",
-            "YOU: yes, select the large one <selection>"
+            "YOU: yes, select the large one <selection>",
+            "YOU: yes, choose the large one? <eos>",
+            "YOU: i don't have that. i have a large dark grey dot at the top <eos>",
+            "YOU: i don't see that. i have a large dark grey dot at the top <eos>",
+            "YOU: i don't have that. i have a large dark grey dot at the bottom <eos>",
+            "YOU: yes, choose the large one <eos>"
         ],
         "plan_mentions": [
             [

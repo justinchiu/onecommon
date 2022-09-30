@@ -3237,17 +3237,17 @@
             -0.3958381116390228,
             -0.40250682830810547,
             -0.40399324893951416,
-            -0.4055972397327423,
             -0.40563511848449707,
             -0.41159316897392273,
             -0.41891828179359436,
             -0.4270419180393219,
             -0.43362390995025635,
-            -0.43412676453590393,
-            -0.4389513432979584,
-            -0.44004228711128235,
             -0.4438244700431824,
-            -0.4490194022655487
+            -0.4490194022655487,
+            -0.4515930116176605,
+            -0.4518868029117584,
+            -0.45532116293907166,
+            -0.4788660705089569
         ],
         "plan_beam_ref_res": [
             -2.394925117492676,
@@ -3396,17 +3396,17 @@
             "YOU: yes! if the one on the right is the darkest click that one! <eos>",
             "YOU: yes! if the middle one is black click that one! <eos>",
             "YOU: yes! if the one on the right is darkest click that one! <eos>",
-            "YOU: yes! if the darkest one is furthest to the right click that one!",
             "YOU: yes! if the bottom one is the darkest click that one! <eos>",
             "YOU: yes! if the middle one is black click that one! <selection>",
             "YOU: yes! if the bottom one is the darkest click that one! <selection>",
             "YOU: yes! if the middle one is black click that middle one! <selection>",
             "YOU: yes! if the darkest one is on the right click that one! <eos>",
-            "YOU: yes! if the one on the right is darkest click that one! <selection",
-            "YOU: yes! if the darkest one is furthest to the left click that one!",
-            "YOU: yes! if the black one is furthest to the right click that one!",
             "YOU: yes! if the middle one is black click that middle one! <eos>",
-            "YOU: yes! if the middle one is darkest click that one! <eos>"
+            "YOU: yes! if the middle one is darkest click that one! <eos>",
+            "YOU: yes! click the darkest one in the middle! <selection>",
+            "YOU: yes! if the middle one is darkest click that one! <selection>",
+            "YOU: yes! if the bottom one is black click that one! <eos>",
+            "YOU: yes! if the middle one is the darkest click it! <eos>"
         ],
         "plan_mentions": [
             [

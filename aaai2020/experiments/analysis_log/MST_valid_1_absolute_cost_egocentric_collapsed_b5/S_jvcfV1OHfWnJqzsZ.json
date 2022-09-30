@@ -5164,7 +5164,7 @@
             -0.5697962045669556,
             -0.5801278352737427,
             -0.5957757830619812,
-            -0.596846878528595
+            -6.913517951965332
         ],
         "plan_beam_ref_res": [
             -7.978639602661133,
@@ -5323,7 +5323,7 @@
             "YOU: no. do you have a medium gray dot at the bottom? <eos>",
             "YOU: no. do you have a medium sized medium gray dot at the top? <eos>",
             "YOU: no i do not. do you have a medium sized medium shade dot? <eos>",
-            "YOU: no. do you have a medium sized medium gray dot at the bottom of the"
+            ""
         ],
         "plan_mentions": [
             [
@@ -9000,21 +9000,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.3437173664569855,
-            -0.4343755543231964,
             -0.4384656548500061,
-            -0.44701921939849854,
+            -0.4602580666542053,
             -0.48043093085289,
-            -0.48069095611572266,
-            -0.480712890625,
             -0.4839205741882324,
+            -0.48700976371765137,
             -0.49510109424591064,
+            -0.4994767904281616,
             -0.5015998482704163,
-            -0.5103439688682556,
-            -0.5198232531547546,
-            -0.5218675136566162,
+            -0.5114955306053162,
             -0.5251522660255432,
-            -0.5256509780883789,
-            -0.5332692265510559
+            -0.5368552207946777,
+            -0.5387970209121704,
+            -0.5527130961418152,
+            -0.5535597801208496,
+            -0.5875571370124817
         ],
         "plan_beam_ref_res": [
             -2.398000717163086,
@@ -9159,21 +9159,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: let us select the gray one diagonally to the left <selection>",
-            "YOU: let us select the gray one diagonally to the left of the black one",
             "YOU: let us select the gray one diagonally to the left <eos>",
-            "YOU: i do not have a very small very light gray dot. do you have a",
+            "YOU: let us select the gray one diagonally to the left of the black one <eos>",
             "YOU: do you have a medium sized medium gray dot? <eos>",
-            "YOU: i do not have a very small gray dot. do you have a medium sized",
-            "YOU: i do not have a very small gray dot. do you have a medium gray",
             "YOU: let us select the gray one diagonally to the right <selection>",
+            "YOU: let us select the gray one diagonally to the left of the black <selection>",
             "YOU: let us select the gray one diagonally <selection>",
+            "YOU: i don't have that. do you have a medium sized medium gray dot? <eos>",
             "YOU: let us select the gray one diagonally to the left. <selection>",
-            "YOU: i do not have any small gray dots. do you have a medium gray dot",
-            "YOU: i do not have any small gray dots. do you have a medium sized medium",
-            "YOU: i don't have that. do you have a medium sized medium gray dot",
+            "YOU: let us select the gray one diagonally to the left of it <selection>",
             "YOU: let us select the gray one <selection>",
-            "YOU: i do not have a very small gray dot. do you have a medium size",
-            "YOU: i do not have a very small gray dot. do you have a medium grey"
+            "YOU: do you have a medium sized medium grey dot? <eos>",
+            "YOU: i don't have that. do you have a medium sized medium grey dot? <eos>",
+            "YOU: let us select the gray one diagonally to the left of the black one. <eos>",
+            "YOU: let us select the gray one diagonally to the left. <eos>",
+            "YOU: do you have a medium gray dot touching the edge? <eos>"
         ],
         "plan_mentions": [
             [

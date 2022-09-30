@@ -3234,16 +3234,16 @@
             -0.46277284622192383,
             -0.47511497139930725,
             -0.4918418526649475,
-            -0.5096144676208496,
-            -0.51251220703125,
-            -0.5336688160896301,
-            -0.5364996194839478,
-            -0.5442529916763306,
-            -0.5567806959152222,
-            -0.5573872923851013,
-            -0.5601165890693665,
-            -0.5603159666061401,
-            -0.5606218576431274
+            -0.5181264281272888,
+            -0.5275274515151978,
+            -0.530619204044342,
+            -0.5333483219146729,
+            -0.5445160865783691,
+            -0.5529263615608215,
+            -0.5541659593582153,
+            -0.5707935690879822,
+            -0.5890420079231262,
+            -0.6406771540641785
         ],
         "plan_beam_ref_res": [
             -1.654858112335205,
@@ -3393,16 +3393,16 @@
             "YOU: is the lighter one slightly smaller? <eos>",
             "YOU: is the lighter dot slightly to the left? <eos>",
             "YOU: is the lighter dot slightly to the right? <eos>",
-            "YOU: i don't have that. i have a small light grey dot by itself",
-            "YOU: i don't have that. i have a small light gray dot by itself",
-            "YOU: i don't have that. i have a small light grey dot on the",
-            "YOU: i don't have that. i have a small light gray dot on the",
-            "YOU: i don't have that. do you have a small light grey dot?",
-            "YOU: i don't have that. i have a small light grey dot all by",
-            "YOU: i don't have that. i have a small light grey dot at the",
-            "YOU: i don't have that. i have a small light gray dot at the",
-            "YOU: i don't have that. do you have a small light gray dot?",
-            "YOU: i don't have that. i have a light gray dot on the right"
+            "YOU: i don't have that. do you have a small light grey dot? <eos>",
+            "YOU: i don't have that. i have a small light grey dot by itself <eos>",
+            "YOU: i don't have that. i have a small light gray dot by itself <eos>",
+            "YOU: i don't have that. do you have a small light gray dot? <eos>",
+            "YOU: i don't have that. i have a small light grey dot all by itself <eos>",
+            "YOU: i don't have that. i have a small light grey dot by itself. <eos>",
+            "YOU: i don't have that. i have a small light gray dot by itself. <eos>",
+            "YOU: let us select the lighter dot <eos>",
+            "YOU: i don't have that. i have a small light grey dot on its own <eos>",
+            "YOU: i don't have that. i have a light gray dot on the right side <eos>"
         ],
         "plan_mentions": [
             [
@@ -5161,7 +5161,6 @@
             -0.48483243584632874,
             -0.4848809838294983,
             -0.4961215555667877,
-            -0.5045236349105835,
             -0.5112576484680176,
             -0.5143847465515137,
             -0.5156177878379822,
@@ -5169,9 +5168,10 @@
             -0.5264968872070312,
             -0.5285236835479736,
             -0.5298567414283752,
-            -0.5368244647979736,
-            -0.5390539169311523,
-            -0.541120171546936
+            -0.541120171546936,
+            -0.5420102477073669,
+            -0.5477702617645264,
+            -7.037042617797852
         ],
         "plan_beam_ref_res": [
             -3.253847360610962,
@@ -5320,7 +5320,6 @@
             "YOU: yes. let's choose the lightest gray dot. <selection>",
             "YOU: yes, let's choose the lightest gray dot. <selection>",
             "YOU: yes, i do. let's pick the lighter one. <selection>",
-            "YOU: no, i don't see that. do you see a medium gray dot",
             "YOU: yes. let's pick the lightest gray dot. <eos>",
             "YOU: yes, let's pick the lightest gray dot. <eos>",
             "YOU: yes, i do. let's choose the lighter one. <selection>",
@@ -5328,9 +5327,10 @@
             "YOU: yes, let's choose the lightest gray dot. <eos>",
             "YOU: yes, i do. let's pick the lighter one. <eos>",
             "YOU: yes. let's choose the lightest gray dot. <eos>",
-            "YOU: yes, i do. let's pick the lightest gray dot. <",
-            "YOU: no, i don't see that. do you see a medium grey dot",
-            "YOU: yes. let's pick the lighter one. <eos>"
+            "YOU: yes. let's pick the lighter one. <eos>",
+            "YOU: yes, let's pick the lighter one. <eos>",
+            "YOU: yes, i do. let's choose the lighter one. <eos>",
+            ""
         ],
         "plan_mentions": [
             [

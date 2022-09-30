@@ -5172,11 +5172,11 @@
             -0.4526565670967102,
             -0.45310989022254944,
             -0.4559650421142578,
-            -0.4982492923736572,
             -0.5017799735069275,
             -0.5152817964553833,
             -0.5266515612602234,
-            -0.5465418100357056
+            -0.576714277267456,
+            -6.821369171142578
         ],
         "plan_beam_ref_res": [
             -2.7418097943154862e-06,
@@ -5331,11 +5331,11 @@
             "YOU: i dont see that. do you have a large black dot? <eos>",
             "YOU: i dont see that. do you see a large black dot? <eos>",
             "YOU: do you have a large black dot? <eos>",
-            "YOU: i don't have that. do you have a very large black dot?",
             "YOU: do you see a large black dot? <eos>",
             "YOU: i don't see that. i have a large black dot by itself <eos>",
             "YOU: i don't have that. i have a large black dot by itself <eos>",
-            "YOU: i don't see that. i have a large black dot on the right"
+            "YOU: i don't see that. do you see a large black dot <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -7086,22 +7086,22 @@
             -9.11304759979248
         ],
         "plan_beam_lm_bart": [
+            -0.38066965341567993,
+            -0.3857094645500183,
             -0.398510217666626,
-            -0.40070489048957825,
             -0.40124115347862244,
             -0.40212294459342957,
-            -0.4060099422931671,
+            -0.4032648205757141,
+            -0.4067789614200592,
+            -0.4086311459541321,
             -0.41052907705307007,
             -0.4230347275733948,
-            -0.42448925971984863,
-            -0.42818838357925415,
             -0.4299696683883667,
-            -0.4301380217075348,
             -0.43640652298927307,
             -0.4479539692401886,
             -0.4607178270816803,
-            -0.466360479593277,
-            -0.46810808777809143
+            -0.4756860136985779,
+            -0.4869445264339447
         ],
         "plan_beam_ref_res": [
             -0.0001722425949992612,
@@ -7245,22 +7245,22 @@
             "yes , let 's choose the large black dot <selection>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: yes, let's pick the larger and darker one on the left <selection>",
+            "YOU: yes! let's pick the larger and darker one on the left <selection>",
             "YOU: yes, let's pick the larger darker one on the left <selection>",
-            "YOU: yes, let's pick the larger and darker one on the left <selection",
             "YOU: yes, let's pick the larger one on the left <selection>",
             "YOU: yes! let's pick the larger darker one on the left <selection>",
-            "YOU: yes! let's pick the larger and darker one on the left <selection",
+            "YOU: yes. let's pick the larger and darker one on the left <selection>",
+            "YOU: yes, let's choose the larger and darker one on the left <selection>",
+            "YOU: yes! let's choose the larger and darker one on the left <selection>",
             "YOU: yes! let's pick the larger one on the left <selection>",
             "YOU: yes. let's pick the larger darker one on the left <selection>",
-            "YOU: yes. let's pick the larger and darker one on the left <selection",
-            "YOU: yes, let's choose the larger and darker one on the left <selection",
             "YOU: yes. let's pick the larger one on the left <selection>",
-            "YOU: yes! let's choose the larger and darker one on the left <selection",
             "YOU: yes, let's choose the larger darker one on the left <selection>",
             "YOU: yes, let's choose the larger and darker one. <selection>",
             "YOU: yes, let's pick the larger and darker one on the left <eos>",
-            "YOU: yes, let's choose the larger and darker one on the left. <",
-            "YOU: yes! let's choose the larger and darker one on the left. <"
+            "YOU: yes, let us select the larger and darker one <selection>",
+            "YOU: yes, let's pick the larger darker one on the left <eos>"
         ],
         "plan_mentions": [
             [

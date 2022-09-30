@@ -3224,10 +3224,6 @@
             -9.881462097167969
         ],
         "plan_beam_lm_bart": [
-            -0.3394564390182495,
-            -0.33989545702934265,
-            -0.38168612122535706,
-            -0.38282284140586853,
             -0.38476473093032837,
             -0.3894865810871124,
             -0.4062989056110382,
@@ -3238,8 +3234,12 @@
             -0.42368265986442566,
             -0.43623653054237366,
             -0.4386458992958069,
-            -0.44619596004486084,
-            -0.44996562600135803
+            -0.4626174569129944,
+            -0.4725898802280426,
+            -0.5126103162765503,
+            -0.513042151927948,
+            -0.5181952118873596,
+            -0.5497551560401917
         ],
         "plan_beam_ref_res": [
             -7.787596225738525,
@@ -3383,10 +3383,6 @@
             "yes , the one on the right is slightly higher ? <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: yes! if the top one is slightly to the right click that top one!",
-            "YOU: yes! if the top one is slightly to the left click that top one!",
-            "YOU: yes! if the bottom one is slightly to the left click that bottom one!",
-            "YOU: yes! if the bottom one is slightly to the right click that bottom one!",
             "YOU: yes! if the top one is slightly to the right click that one! <eos>",
             "YOU: yes! if the top one is slightly to the left click that one! <eos>",
             "YOU: yes! if the lower one is slightly to the right click that one! <eos>",
@@ -3397,8 +3393,12 @@
             "YOU: yes! if the bottom one is slightly to the left click that one! <eos>",
             "YOU: yes! if the one on the right is slightly lower click that one! <eos>",
             "YOU: yes! click the top one! <selection>",
-            "YOU: yes if the top one is slightly to the left click that top one! <",
-            "YOU: yes if the top one is slightly to the right click that top one! <"
+            "YOU: yes! if the top one is lighter click that top one! <eos>",
+            "YOU: yes! click that one! <selection>",
+            "YOU: yes, choose the top one? <eos>",
+            "YOU: yes, pick the top one <selection>",
+            "YOU: yes click the top one! <selection>",
+            "YOU: yes, pick the top one? <eos>"
         ],
         "plan_mentions": [
             [

@@ -3220,22 +3220,22 @@
             -8.324308395385742
         ],
         "plan_beam_lm_bart": [
-            -0.47763729095458984,
-            -0.48726963996887207,
-            -0.4898488521575928,
-            -0.5012022256851196,
+            -0.4980534613132477,
+            -0.5006960034370422,
             -0.5013924241065979,
-            -0.5017854571342468,
-            -0.5082840323448181,
-            -0.5222446918487549,
-            -0.5263314247131348,
-            -0.5266814231872559,
-            -0.5343957543373108,
-            -0.5382890105247498,
-            -0.5393421053886414,
-            -0.5427947044372559,
-            -0.5486703515052795,
-            -0.5541024804115295
+            -0.5020461082458496,
+            -0.5083767175674438,
+            -0.5132493376731873,
+            -0.5240671634674072,
+            -0.526300847530365,
+            -0.5272995233535767,
+            -0.5304447412490845,
+            -0.5375719666481018,
+            -0.5383641123771667,
+            -0.540243923664093,
+            -0.5437381863594055,
+            -0.5637176036834717,
+            -0.5644201040267944
         ],
         "plan_beam_ref_res": [
             -2.430159091949463,
@@ -3379,22 +3379,22 @@
             "yes , let 's choose the smaller one <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't think i see that. do you see a medium grey dot",
-            "YOU: i don't see that. do you see a medium sized medium grey dot",
-            "YOU: i don't see that. do you see a medium sized medium gray dot",
-            "YOU: i don't think i see that. do you see a medium gray dot",
+            "YOU: i don't see that. do you see a small medium grey dot? <eos>",
+            "YOU: i don't see that. do you see a medium sized medium grey dot? <eos>",
             "YOU: let us select the tiny grey dot <eos>",
-            "YOU: i don't think i see that. do you see a tiny grey dot",
-            "YOU: i don't think i see that. do you see a med grey dot",
-            "YOU: i don't see that. do you see a small medium grey dot?",
-            "YOU: i don't think i see that. do you see a small medium grey",
-            "YOU: i don't think i see that. do you see a medium sized medium",
-            "YOU: i don't see that. do you see a medium grey dot at the",
-            "YOU: i don't see that. do you see a small medium gray dot?",
-            "YOU: i don't have that. i have a medium sized medium gray dot by",
-            "YOU: i don't think i see that. do you see a small medium gray",
-            "YOU: i don't have that. i have a medium sized medium grey dot by",
-            "YOU: i don't see that. i see a medium sized medium gray dot by"
+            "YOU: i don't see that. do you see a medium sized medium gray dot? <eos>",
+            "YOU: i don't think i see that. do you see a tiny grey dot? <eos>",
+            "YOU: i don't see that. do you see a small medium gray dot? <eos>",
+            "YOU: i don't think i see that. do you see a small medium grey dot? <eos>",
+            "YOU: i don't think i see that. do you see a medium sized medium grey dot? <eos>",
+            "YOU: i don't think i see that. do you see a medium sized medium gray dot? <eos>",
+            "YOU: i don't have that. i have a medium sized medium gray dot by itself <eos>",
+            "YOU: i don't think i see that. do you see a small medium gray dot? <eos>",
+            "YOU: i don't have that. i have a medium sized medium grey dot by itself <eos>",
+            "YOU: i don't see that. i see a medium sized medium gray dot by itself <eos>",
+            "YOU: i don't see that. i see a medium sized medium grey dot by itself <eos>",
+            "YOU: i don't see that. i see a medium sized medium gray dot by itself. <eos>",
+            "YOU: i don't have that. i have a medium sized medium gray dot by itself. <eos>"
         ],
         "plan_mentions": [
             [
@@ -9017,14 +9017,14 @@
             -0.5444626808166504,
             -0.5517231822013855,
             -0.5570940375328064,
-            -0.5592895150184631,
             -0.5673813223838806,
             -0.569406270980835,
-            -0.5703507661819458,
             -0.5742529034614563,
-            -0.5762442350387573,
             -0.5782670378684998,
-            -0.5801656246185303
+            -0.5801656246185303,
+            -0.5888603329658508,
+            -0.5913662910461426,
+            -0.5935930609703064
         ],
         "plan_beam_ref_res": [
             -13.616972923278809,
@@ -9176,14 +9176,14 @@
             "YOU: yes. the one on the top is smaller and lighter than the other two <eos>",
             "YOU: yes. the one on top is smaller and lighter than the other two. <eos>",
             "YOU: yes, the top one is smaller and lighter than the other two <eos>",
-            "YOU: yes. the one on the top is smaller and lighter than the other two.",
             "YOU: yes. the one on the top is smaller and lighter than the other 2 <eos>",
             "YOU: yes, the one on top is smaller and lighter than the other two. <eos>",
-            "YOU: yes, the one on top is smaller and lighter than the two on the bottom",
             "YOU: yes, the top one is smaller and lighter than the other 2 <eos>",
-            "YOU: yes. the one on top is smaller and lighter than the two on the bottom",
             "YOU: yes. the one on top is smaller and lighter than the other two? <eos>",
-            "YOU: yes, they form a \\ <eos>"
+            "YOU: yes, they form a \\ <eos>",
+            "YOU: yes, the one on top is smaller and lighter than the two below it <eos>",
+            "YOU: yes. the top one is smaller and lighter than the other two <eos>",
+            "YOU: yes they form a triangle <eos>"
         ],
         "plan_mentions": [
             [

@@ -3230,22 +3230,22 @@
             -7.130644798278809
         ],
         "plan_beam_lm_bart": [
-            -0.4915729761123657,
             -0.5184874534606934,
-            -0.5239513516426086,
+            -0.5300329923629761,
+            -0.5413269400596619,
             -0.5510438084602356,
-            -0.5545823574066162,
+            -0.5561186075210571,
+            -0.5600388050079346,
             -0.5623106360435486,
-            -0.5629165768623352,
-            -0.5649896860122681,
             -0.5651624798774719,
-            -0.5659222602844238,
-            -0.568449854850769,
+            -0.5670347809791565,
+            -0.5677707195281982,
+            -0.5733638405799866,
+            -0.5745658874511719,
             -0.574865996837616,
-            -0.5781218409538269,
-            -0.5797783732414246,
-            -0.5873240232467651,
-            -0.587721049785614
+            -0.5758121013641357,
+            -0.586388349533081,
+            -0.5908476710319519
         ],
         "plan_beam_ref_res": [
             -1.6448277235031128,
@@ -3389,22 +3389,22 @@
             "yes , let 's pick the light grey one <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: no, i don't see that. do you see a small light grey",
             "YOU: no. do you see a small light grey circle by itself? <eos>",
-            "YOU: no, i don't see that. do you see a very light grey",
+            "YOU: no, i don't see that. do you see a small light grey circle? <eos>",
+            "YOU: no, i don't see that. do you see a small light grey dot? <eos>",
             "YOU: no. do you see a small light grey circle? <eos>",
-            "YOU: no, i don't see that. do you have a small light grey",
+            "YOU: no, i don't see that. do you see a tiny light grey circle? <eos>",
+            "YOU: no, i don't see that. do you see a very light grey circle? <eos>",
             "YOU: no. do you have a small light grey circle? <eos>",
-            "YOU: no, i don't see that. do you see a light grey circle",
-            "YOU: no, i don't see that. do you see a tiny light grey",
             "YOU: no. do you see a small light grey dot? <eos>",
-            "YOU: no, i don't see that. i see a small light grey circle",
-            "YOU: no, i don't see that. i have a small light grey circle",
+            "YOU: no, i don't. do you see a small light grey circle? <eos>",
+            "YOU: i don't see that. do you see a small light grey circle? <eos>",
+            "YOU: no, i don't. do you have a small light grey circle? <eos>",
+            "YOU: no, i don't see that. do you have a small light grey circle? <eos>",
             "YOU: no. do you have a small light grey dot? <eos>",
-            "YOU: no, i don't see that. do you see a small light gray",
-            "YOU: no, i don't see that. do you see a light grey small",
-            "YOU: no, i don't see that. do you see a very light gray",
-            "YOU: no, i don't see that. i have a small light grey dot"
+            "YOU: no, i don't see that. do you see a tiny light grey dot? <eos>",
+            "YOU: no, i don't see that. do you have a small light grey dot? <eos>",
+            "YOU: no, i don't see that. do you see a light grey small circle? <eos>"
         ],
         "plan_mentions": [
             [
@@ -5155,22 +5155,22 @@
             -10.80231761932373
         ],
         "plan_beam_lm_bart": [
-            -0.33636006712913513,
+            -0.32127901911735535,
             -0.34769874811172485,
-            -0.3795933127403259,
-            -0.3872131407260895,
-            -0.39157646894454956,
-            -0.3916647434234619,
-            -0.39944562315940857,
+            -0.36193567514419556,
+            -0.3734187185764313,
+            -0.3734521269798279,
+            -0.3796859681606293,
+            -0.38136574625968933,
+            -0.3902483284473419,
             -0.4068703353404999,
             -0.4125274419784546,
             -0.4131811261177063,
             -0.4176371991634369,
+            -0.4192415475845337,
             -0.41957753896713257,
-            -0.425346314907074,
-            -0.4379584789276123,
-            -0.4426928460597992,
-            -0.4455796778202057
+            -0.42796921730041504,
+            -0.43143659830093384
         ],
         "plan_beam_ref_res": [
             -0.14475271105766296,
@@ -5314,22 +5314,22 @@
             "i have a large light gray dot on the right side <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't see that. do you see a large light grey circle?",
+            "YOU: i don't see that. do you see a large light grey circle? <eos>",
             "YOU: do you see a large light grey circle? <eos>",
-            "YOU: i don't see that. do you have a large light grey circle?",
-            "YOU: i don't think i see that. do you see a large light grey",
-            "YOU: i don't have that. do you have a large light grey circle?",
-            "YOU: i don't see that. do you see the large light grey circle?",
-            "YOU: i don't have that. do you see a large light grey circle?",
+            "YOU: i don't see that. do you have a large light grey circle? <eos>",
+            "YOU: i don't see that. do you see the large light grey circle? <eos>",
+            "YOU: i don't have that. do you have a large light grey circle? <eos>",
+            "YOU: i don't think i see that. do you see a large light grey circle? <eos>",
+            "YOU: i don't have that. do you see a large light grey circle? <eos>",
+            "YOU: i don't see that. do you see a large light grey circle by itself? <eos>",
             "YOU: i do not see that. do you see a large light grey circle? <eos>",
             "YOU: do you see the large light grey circle? <eos>",
             "YOU: i don't see that. how about a large light grey circle? <eos>",
             "YOU: do you have a large light grey circle? <eos>",
+            "YOU: i don't think i see that. do you have a large light grey circle? <eos>",
             "YOU: do you see a large light grey circle by itself? <eos>",
-            "YOU: i don't see that. do you see a large light grey circle at",
-            "YOU: i don't see that. do you see a large light grey circle on",
-            "YOU: i don't see that. do you see a large light grey circle by",
-            "YOU: i don't see that. do you see a large, light grey circle"
+            "YOU: i don't see that. do you see a large light gray circle? <eos>",
+            "YOU: i don't see that. do you see a large, light grey circle? <eos>"
         ],
         "plan_mentions": [
             [

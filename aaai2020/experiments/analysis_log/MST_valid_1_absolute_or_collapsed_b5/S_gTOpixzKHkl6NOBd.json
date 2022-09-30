@@ -3226,22 +3226,22 @@
             -3.952859401702881
         ],
         "plan_beam_lm_bart": [
-            -0.4685094654560089,
-            -0.489347904920578,
-            -0.5078949928283691,
-            -0.5082989931106567,
-            -0.5088927149772644,
-            -0.5216419100761414,
-            -0.5272848010063171,
-            -0.5287127494812012,
-            -0.5307733416557312,
-            -0.5423583388328552,
-            -0.5589037537574768,
-            -0.5592179298400879,
-            -0.5605215430259705,
+            -0.46366986632347107,
+            -0.4805964231491089,
+            -0.48105043172836304,
+            -0.48303574323654175,
+            -0.49306520819664,
+            -0.49965155124664307,
+            -0.5047468543052673,
+            -0.5099474787712097,
+            -0.5183154940605164,
+            -0.5330734252929688,
+            -0.5450555682182312,
+            -0.5495439171791077,
+            -0.5579179525375366,
+            -0.5600686073303223,
             -0.5609661340713501,
-            -0.5643367767333984,
-            -0.5752648115158081
+            -7.368823051452637
         ],
         "plan_beam_ref_res": [
             -1.5603272914886475,
@@ -3385,22 +3385,22 @@
             "i have that . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't have that. i have two small light grey dots that are",
-            "YOU: i don't think i have that. i have two small light grey dots",
-            "YOU: i don't have that. i have 2 small light grey dots that are",
-            "YOU: i don't have that. i have a pair of small light grey dots",
-            "YOU: i don't see that. i have two small light grey dots that are",
-            "YOU: i don't have that. i have two small light grey dots right next",
-            "YOU: i don't have that. i have two small light grey dots, one",
-            "YOU: i don't have that. i have two small light grey dots close together",
-            "YOU: i don't have that. i have two small light grey dots close to",
-            "YOU: i don't have that. i have two small light grey dots. the",
-            "YOU: i don't see that. i have two small light grey dots, one",
-            "YOU: i don't have that. i have two small light grey dots. one",
-            "YOU: i don't have that. i have 2 small light grey dots, one",
+            "YOU: i don't have that. i have two small light grey dots, one is above and to the right of the other <eos>",
+            "YOU: i don't have that. i have two small light grey dots, one is above and to the left of the other <eos>",
+            "YOU: i don't have that. i have two small light grey dots. one is above and to the right of the other. <eos>",
+            "YOU: i don't have that. i have two small light grey dots. one is above and to the right of the other <eos>",
+            "YOU: i don't have that. i have two small light grey dots, one is above and to the right of the other. <eos>",
+            "YOU: i don't have that. i have two small light grey dots. one is above and to the left of the other <eos>",
+            "YOU: i don't have that. i have two small light grey dots right next to each other <eos>",
+            "YOU: i don't have that. i have two small light grey dots close to each other. the one on the right is slightly higher <eos>",
+            "YOU: i don't have that. i have two small light grey dots right next to each other. <eos>",
+            "YOU: i don't have that. i have two small light grey dots that are very close to each other <eos>",
+            "YOU: i don't have that. i have two small light grey dots that are very close to each other. <eos>",
+            "YOU: i don't have that. i have two small light grey dots close to each other <eos>",
+            "YOU: i don't have that. i have two small light grey dots that are very close together <eos>",
+            "YOU: i don't have that. i have two small light grey dots close to each other. <eos>",
             "YOU: i don't have that. i have two small light grey dots. <eos>",
-            "YOU: i don't have that. i have two small light grey dots, the",
-            "YOU: i don't have that. i have two tiny light grey dots. the"
+            ""
         ],
         "plan_mentions": [
             [
@@ -5161,22 +5161,22 @@
             -18.264726638793945
         ],
         "plan_beam_lm_bart": [
-            -0.48158520460128784,
+            -0.4575059413909912,
+            -0.469443142414093,
+            -0.47532138228416443,
+            -0.4828839600086212,
+            -0.4851168990135193,
+            -0.4862836003303528,
+            -0.4865422546863556,
             -0.4882518947124481,
             -0.4908633232116699,
             -0.4920214116573334,
             -0.4934423267841339,
-            -0.49415066838264465,
+            -0.4962403476238251,
             -0.5001001954078674,
-            -0.5003383159637451,
-            -0.5106493830680847,
-            -0.5118774771690369,
-            -0.5121721029281616,
-            -0.5165168642997742,
-            -0.5266398191452026,
-            -0.5279601812362671,
-            -0.5350176095962524,
-            -0.5448638796806335
+            -0.5015621781349182,
+            -0.5035624504089355,
+            -0.5119232535362244
         ],
         "plan_beam_ref_res": [
             -8.62014102935791,
@@ -5320,22 +5320,22 @@
             "no . i have a group of 3 dots that are in a vertical line . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: yes, i see that. let's pick the smaller black dot <selection",
+            "YOU: yes, i see that. let's pick the smaller black dot <selection>",
+            "YOU: yes, i have that. let's pick the smaller black dot <selection>",
+            "YOU: yes, i see that. let's pick the small black dot <selection>",
+            "YOU: i have a small black dot below and to the left of a large light grey dot <eos>",
+            "YOU: yes, i have that. let's pick the small black dot <selection>",
+            "YOU: yes, i see that. let's choose the smaller black dot <selection>",
+            "YOU: i have a small black dot below and to the left of a large light gray dot <eos>",
             "YOU: yes i see that, let's pick the smaller black dot <selection>",
             "YOU: i see that, let's pick the smaller black dot <selection>",
             "YOU: yes i see that, let's pick the small black dot <selection>",
             "YOU: i see that, let's pick the small black dot <selection>",
-            "YOU: yes, i have that. let's pick the smaller black dot <selection",
+            "YOU: i have a tiny black dot below and to the left of a large light grey dot <eos>",
             "YOU: yes i see that. let's pick the smaller black dot <selection>",
-            "YOU: yes, i see that. let's pick the small black dot <selection",
-            "YOU: yes, i have that. let's pick the small black dot <selection",
-            "YOU: yes, i see that. let's choose the smaller black dot <selection",
-            "YOU: i have a small black dot below and to the left of a large light grey",
-            "YOU: i have a small black dot below and to the left of a large light gray",
-            "YOU: i have a tiny black dot below and to the left of a large light grey",
-            "YOU: yes, i see that. let's pick the small black one <selection",
-            "YOU: i have a tiny black dot below and to the left of a large light gray",
-            "YOU: i have a small black dot below and to the left of a larger light grey"
+            "YOU: yes, i see that. let's pick the small black one <selection>",
+            "YOU: i have a tiny black dot below and to the left of a large light gray dot <eos>",
+            "YOU: i have a small black dot below and to the left of a larger light grey dot <eos>"
         ],
         "plan_mentions": [
             [
@@ -7097,13 +7097,13 @@
             -0.5367307662963867,
             -0.5449694395065308,
             -0.548150897026062,
+            -0.5482062101364136,
             -0.5529778003692627,
             -0.5749027729034424,
-            -0.5770591497421265,
-            -0.5802446007728577,
             -0.5856565237045288,
             -0.5856852531433105,
-            -0.5933022499084473
+            -0.5939781069755554,
+            -0.6090654134750366
         ],
         "plan_beam_ref_res": [
             -9.6365327835083,
@@ -7256,13 +7256,13 @@
             "YOU: i see that, lets pick the large light gray dot <selection>",
             "YOU: i see that, let's pick the large light grey one <selection>",
             "YOU: i see that, lets choose the large light gray dot <selection>",
+            "YOU: i see that, let's pick the large light gray dot. <selection>",
             "YOU: i see that, pick the large light gray dot <selection>",
             "YOU: i see that, choose the large light gray dot? <eos>",
-            "YOU: i see that, let's pick the large light gray dot. <selection",
-            "YOU: i see that, let's pick the large light gray dot above and to",
             "YOU: i see that, let's pick the large light gray one? <eos>",
             "YOU: i see that, choose the large light gray? <eos>",
-            "YOU: yes, i see that, let's pick the large light gray dot <"
+            "YOU: i see that, choose the large light one? <eos>",
+            "YOU: yes, i see that, let's pick the large light gray one? <eos>"
         ],
         "plan_mentions": [
             [

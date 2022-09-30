@@ -3228,22 +3228,22 @@
             -6.107341289520264
         ],
         "plan_beam_lm_bart": [
-            -0.4489925801753998,
-            -0.4568800628185272,
             -0.47070929408073425,
             -0.47154322266578674,
             -0.4720291197299957,
             -0.4726680815219879,
             -0.4813188314437866,
-            -0.4848695993423462,
             -0.48646414279937744,
             -0.4939424693584442,
             -0.4944065809249878,
             -0.49527695775032043,
             -0.4980578124523163,
-            -0.498950719833374,
-            -0.5046629905700684,
-            -0.5062259435653687
+            -0.5062259435653687,
+            -0.511377215385437,
+            -0.5143412351608276,
+            -0.5145297646522522,
+            -0.5710853934288025,
+            -0.5904614925384521
         ],
         "plan_beam_ref_res": [
             -1.713402509689331,
@@ -3387,22 +3387,22 @@
             "yes , pick the smaller one <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: yes! if the smaller one is slightly to the left click that smaller one!",
-            "YOU: yes! if the smaller one is slightly to the right click that smaller one!",
             "YOU: yes! if the smaller one is slightly to the right click that one! <eos>",
             "YOU: yes, pick the smaller one <selection>",
             "YOU: yes! click the smaller one on top! <selection>",
             "YOU: yes! if the smaller one is slightly to the left click that one! <eos>",
             "YOU: yes! if the smaller one is to the right click that one! <eos>",
-            "YOU: yes! if the smaller one is up to the left click that smaller one!",
             "YOU: yes! if the smaller one is to the right click that smaller one! <eos>",
             "YOU: yes! if the smaller one is up to the right click that one! <eos>",
             "YOU: yes! click the smaller one! <selection>",
             "YOU: yes! if the smaller one is up to the left click that one! <eos>",
             "YOU: yes! if the smaller one is to the left click that smaller one! <eos>",
-            "YOU: yes! if the smaller one is up to the right click that smaller one!",
-            "YOU: yes! if the smaller one is slightly up and to the right click that smaller",
-            "YOU: yes! if the smaller one is to the left click that one! <eos>"
+            "YOU: yes! if the smaller one is to the left click that one! <eos>",
+            "YOU: yes, let's pick the smaller one <selection>",
+            "YOU: yes, choose the smaller one? <eos>",
+            "YOU: yes! click that smaller one! <selection>",
+            "YOU: yes, pick the smaller one? <eos>",
+            "YOU: yes, let's pick the smaller one <eos>"
         ],
         "plan_mentions": [
             [

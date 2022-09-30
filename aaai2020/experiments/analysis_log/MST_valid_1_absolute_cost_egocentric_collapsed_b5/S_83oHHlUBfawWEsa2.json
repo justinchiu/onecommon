@@ -3227,15 +3227,15 @@
             -0.5502492785453796,
             -0.5511212348937988,
             -0.5868625640869141,
+            -0.591227650642395,
             -0.5990416407585144,
             -0.6155024170875549,
-            -0.6210322380065918,
-            -0.6354215741157532,
+            -0.637344241142273,
             -0.6423196196556091,
-            -0.6608269214630127,
-            -0.6640824675559998,
-            -0.6689603924751282,
-            -0.6696591973304749
+            -0.6538830995559692,
+            -0.6772237420082092,
+            -0.6808034181594849,
+            -0.6832699775695801
         ],
         "plan_beam_ref_res": [
             -6.594330310821533,
@@ -3386,15 +3386,15 @@
             "YOU: no. do you have a tiny black dot? <eos>",
             "YOU: yes, the one on the left is smaller and darker? <eos>",
             "YOU: no. do you have a medium sized dark grey dot? <eos>",
+            "YOU: no, i don't. do you have a medium sized black dot? <eos>",
             "YOU: no, i don't. do you have a small black dot? <eos>",
             "YOU: no. do you have a small dark grey dot? <eos>",
-            "YOU: no, i don't. do you have a medium sized black dot?",
-            "YOU: no, i don't. do you have a medium sized dark grey dot",
+            "YOU: no, i don't. do you have a medium size black dot? <eos>",
             "YOU: yes, the one on the left is smaller and darker <eos>",
-            "YOU: no, i don't. do you have a small black dot by itself",
-            "YOU: no, i don't. do you have a medium sized dark gray dot",
-            "YOU: i don't have that. i have a medium sized black dot by itself",
-            "YOU: no, i don't. do you have a medium size black dot?"
+            "YOU: no, i don't. do you have a small dark grey dot? <eos>",
+            "YOU: no, i don't. do you have a small dark gray dot? <eos>",
+            "YOU: i don't have that. i have a medium sized black dot by itself <eos>",
+            "YOU: i don't have that. i have a small black dot by itself <eos>"
         ],
         "plan_mentions": [
             [

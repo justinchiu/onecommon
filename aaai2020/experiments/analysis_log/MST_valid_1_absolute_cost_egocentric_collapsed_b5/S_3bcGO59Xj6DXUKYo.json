@@ -3233,17 +3233,17 @@
             -0.5242756605148315,
             -0.5362080335617065,
             -0.5447324514389038,
-            -0.5447648167610168,
             -0.5472294092178345,
             -0.5476475954055786,
             -0.5528932213783264,
             -0.5598765015602112,
             -0.561840295791626,
-            -0.5662044882774353,
             -0.574770450592041,
-            -0.5766410231590271,
             -0.5802833437919617,
-            -0.5807343125343323
+            -0.5807343125343323,
+            -0.5844972133636475,
+            -0.5896103978157043,
+            -6.8921942710876465
         ],
         "plan_beam_ref_res": [
             -0.8877819776535034,
@@ -3392,17 +3392,17 @@
             "YOU: no. do you have a small light grey dot? <eos>",
             "YOU: no. do you have a small light grey dot toward the bottom? <eos>",
             "YOU: no. do you have a tiny light grey dot? <eos>",
-            "YOU: no. do you have a small light grey dot toward the top of the circle",
             "YOU: no. do you have a small light grey dot at the top? <eos>",
             "YOU: no. do you have a very light grey small dot? <eos>",
             "YOU: no. do you have a small light grey dot towards the top? <eos>",
             "YOU: no. do you have a small light grey one toward the top? <eos>",
             "YOU: no. do you have a small light grey dot near the top? <eos>",
-            "YOU: no. do you have a small light grey dot at the top of the circle",
             "YOU: no. do you have a light grey small dot toward the top? <eos>",
-            "YOU: no. do you have a small light grey dot to the right of the circle",
             "YOU: no. do you have a small light grey dot toward the top right? <eos>",
-            "YOU: no. do you see a small light grey dot toward the top? <eos>"
+            "YOU: no. do you see a small light grey dot toward the top? <eos>",
+            "YOU: no. do you have a small light grey dot near the bottom? <eos>",
+            "YOU: no. do you have a small light grey one at the top? <eos>",
+            ""
         ],
         "plan_mentions": [
             [

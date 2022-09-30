@@ -5160,17 +5160,17 @@
             -0.5059592723846436,
             -0.5104421377182007,
             -0.5261508822441101,
+            -0.5268657207489014,
             -0.5307345390319824,
-            -0.541496992111206,
             -0.5435701012611389,
+            -0.5470016598701477,
             -0.5498520731925964,
-            -0.5536417961120605,
             -0.5582289695739746,
+            -0.5606900453567505,
             -0.561712384223938,
-            -0.5635778307914734,
-            -0.5641116499900818,
             -0.5710436105728149,
-            -0.5743288397789001
+            -0.586854100227356,
+            -0.5990672707557678
         ],
         "plan_beam_ref_res": [
             -4.516770362854004,
@@ -5319,17 +5319,17 @@
             "YOU: no. do you see a medium sized black dot? <eos>",
             "YOU: no i don't. do you have a medium sized black dot? <eos>",
             "YOU: no i do not. do you have a medium sized black dot? <eos>",
+            "YOU: no, i don't. do you have a medium sized black dot? <eos>",
             "YOU: no i dont. do you have a medium sized black dot? <eos>",
-            "YOU: no, i don't see that. do you see a medium sized dark",
             "YOU: no. do you have a medium sized dark gray dot? <eos>",
+            "YOU: no i don't. do you have a medium sized dark grey dot? <eos>",
             "YOU: no. do you see a medium sized dark grey dot? <eos>",
-            "YOU: no, i don't. do you have a medium sized black dot?",
             "YOU: no i don't. do you see a medium sized black dot? <eos>",
+            "YOU: no, i don't. do you have a medium sized dark grey dot? <eos>",
             "YOU: no i do not. do you have a medium sized dark grey dot? <eos>",
-            "YOU: no, i don't see that. do you see a medium sized black",
-            "YOU: no, i don't. do you have a medium sized dark grey dot",
             "YOU: no i dont. do you have a medium sized dark grey dot? <eos>",
-            "YOU: no, i don't see that. do you see a dark grey dot"
+            "YOU: no i don't. do you see a medium sized dark grey dot? <eos>",
+            "YOU: no, i don't. do you see a medium sized dark grey dot? <eos>"
         ],
         "plan_mentions": [
             [
@@ -7074,12 +7074,12 @@
             -0.5529493093490601,
             -0.5566967129707336,
             -0.5582987070083618,
-            -0.5591443181037903,
-            -0.5675331354141235,
             -0.5691710710525513,
-            -0.5709802508354187,
-            -0.5730549097061157,
-            -0.5738660097122192
+            -0.5738660097122192,
+            -0.575492262840271,
+            -0.5795513391494751,
+            -0.5862381458282471,
+            -0.5911808013916016
         ],
         "plan_beam_ref_res": [
             -10.2986478805542,
@@ -7233,12 +7233,12 @@
             "YOU: do you see a black dot to the left of the two light ones? <eos>",
             "YOU: is there a black dot to the right of them? <eos>",
             "YOU: do you have a black dot to the left of the two light ones? <eos>",
-            "YOU: is there a black dot to the right of the two light shaded ones?",
-            "YOU: is there a black dot to the left of the two light shaded ones?",
             "YOU: is there a black dot to the left of the two light ones? <eos>",
-            "YOU: is there a black dot to the right of the two light shaded dots?",
-            "YOU: do you have a black dot in the middle of the two light shaded ones",
-            "YOU: is there a black dot to the left of them? <eos>"
+            "YOU: is there a black dot to the left of them? <eos>",
+            "YOU: do they form a triangle with a black dot? <eos>",
+            "YOU: do you see a black dot in between them? <eos>",
+            "YOU: do you see a black dot between them? <eos>",
+            "YOU: do you have a black dot in between them? <eos>"
         ],
         "plan_mentions": [
             [

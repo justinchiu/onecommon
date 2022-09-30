@@ -3230,22 +3230,22 @@
             -7.335398197174072
         ],
         "plan_beam_lm_bart": [
-            -0.5154880285263062,
-            -0.5267300605773926,
-            -0.5332266092300415,
-            -0.5470898747444153,
-            -0.5498173832893372,
-            -0.5559972524642944,
+            -0.5337955355644226,
+            -0.5383312702178955,
+            -0.5429977178573608,
+            -0.5557341575622559,
+            -0.5621247291564941,
+            -0.5622025728225708,
             -0.5641734004020691,
-            -0.5677739977836609,
-            -0.5708556175231934,
-            -0.5733422040939331,
-            -0.573725700378418,
-            -0.577846348285675,
-            -0.582186758518219,
-            -0.5955191850662231,
-            -0.5992630124092102,
-            -0.601839542388916
+            -0.5700203776359558,
+            -0.5728182792663574,
+            -0.5741956830024719,
+            -0.5826101899147034,
+            -0.5898658037185669,
+            -0.6218005418777466,
+            -0.6446048021316528,
+            -0.656341552734375,
+            -0.6717025637626648
         ],
         "plan_beam_ref_res": [
             -7.862313270568848,
@@ -3389,22 +3389,22 @@
             "yes , lets pick the top one <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't see that. do you see a medium sized medium gray dot",
-            "YOU: i don't have that. do you have a medium sized medium gray dot",
-            "YOU: i don't see that. do you see a medium sized medium grey dot",
-            "YOU: i don't have that. do you have a medium sized medium grey dot",
-            "YOU: i don't have that. i have a small medium gray dot on the",
-            "YOU: i don't have that. i have a small medium gray dot by itself",
+            "YOU: i don't see that. do you see a medium sized medium gray dot by itself? <eos>",
+            "YOU: i don't see that. do you see a medium sized medium gray dot? <eos>",
+            "YOU: i don't have that. do you have a medium sized medium gray dot? <eos>",
+            "YOU: i don't see that. do you see a medium sized medium grey dot? <eos>",
+            "YOU: i don't have that. do you have a medium sized medium grey dot? <eos>",
+            "YOU: i don't have that. i have a medium sized medium gray dot by itself <eos>",
             "YOU: is the middle one the smallest? <eos>",
-            "YOU: i don't think i see that. do you see a medium gray dot",
-            "YOU: i don't have that. i have a small medium gray dot at the",
-            "YOU: i don't have that. i have a medium sized medium gray dot at",
-            "YOU: i don't have that. i have a medium sized medium gray dot by",
-            "YOU: i don't have that. i have a medium sized medium gray dot on",
-            "YOU: i don't think i see that. do you see a medium sized medium",
-            "YOU: i don't have that. i have a medium sized medium gray dot in",
-            "YOU: i don't see that. do you see a small medium gray dot?",
-            "YOU: i don't have that. do you have a small medium gray dot?"
+            "YOU: i don't see that. do you see a small medium gray dot? <eos>",
+            "YOU: i don't have that. do you have a small medium gray dot? <eos>",
+            "YOU: i don't have that. i have a small medium gray dot by itself <eos>",
+            "YOU: i don't think i see that. do you see a medium sized medium gray dot? <eos>",
+            "YOU: i don't have that. i have a medium sized medium gray dot by itself. <eos>",
+            "YOU: i don't have that. i have a medium sized medium gray dot in the middle <eos>",
+            "YOU: i don't have that. i have a medium sized medium gray dot in the center <eos>",
+            "YOU: i don't see that. do you see a medium sized medium gray dot by itself <eos>",
+            "YOU: i don't have that. i have a medium sized medium gray dot on the right side <eos>"
         ],
         "plan_mentions": [
             [
@@ -5158,15 +5158,15 @@
             -0.5090316534042358,
             -0.5159795880317688,
             -0.5195456147193909,
-            -0.5256255865097046,
             -0.5272138714790344,
-            -0.5337888598442078,
             -0.5488550066947937,
             -0.5526968836784363,
             -0.5559909343719482,
-            -0.5560848712921143,
-            -0.5652357935905457,
-            -0.5663062930107117
+            -0.5663062930107117,
+            -0.5663083791732788,
+            -0.5748431086540222,
+            -0.5952058434486389,
+            -6.974241733551025
         ],
         "plan_beam_ref_res": [
             -3.7404837608337402,
@@ -5317,15 +5317,15 @@
             "YOU: is the top right one light gray? <eos>",
             "YOU: is the top right the lightest? <eos>",
             "YOU: is the top right light grey? <eos>",
-            "YOU: i don't have that. do you have a large light grey dot?",
             "YOU: is the top right dot light grey? <eos>",
-            "YOU: i don't have that. do you have a large light gray dot?",
             "YOU: is the top right one very light? <eos>",
             "YOU: is the top right one the lightest shade? <eos>",
             "YOU: do you have a large light grey dot? <eos>",
-            "YOU: i don't see that. do you see a large light grey dot?",
-            "YOU: i don't see that. do you see a large light gray dot?",
-            "YOU: is the top right one the lightest color? <eos>"
+            "YOU: is the top right one the lightest color? <eos>",
+            "YOU: do you have a large light gray dot? <eos>",
+            "YOU: is the top right light gray? <eos>",
+            "YOU: i don't have that. do you have a large light dot? <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -10933,22 +10933,22 @@
             -9.763263702392578
         ],
         "plan_beam_lm_bart": [
-            -0.3254384994506836,
-            -0.34448668360710144,
+            -0.3091665804386139,
+            -0.32726234197616577,
+            -0.3496186137199402,
             -0.3627014458179474,
-            -0.36801961064338684,
             -0.373515248298645,
             -0.37529516220092773,
             -0.3753589689731598,
+            -0.3793393671512604,
+            -0.3801763951778412,
             -0.3802209496498108,
             -0.3803936243057251,
             -0.38531967997550964,
             -0.3871571123600006,
-            -0.39930459856987,
-            -0.4001856744289398,
             -0.41359665989875793,
-            -0.4165745675563812,
-            -0.4228912889957428
+            -0.4228912889957428,
+            -0.4314896762371063
         ],
         "plan_beam_ref_res": [
             -3.6212942600250244,
@@ -11092,22 +11092,22 @@
             "yes , let 's pick the large dark grey dot <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: yes, let's pick the large dark dot on the bottom right <selection",
-            "YOU: yes, let's choose the large dark dot on the bottom right <selection",
+            "YOU: yes, let's pick the large dark dot on the bottom right <selection>",
+            "YOU: yes, let's choose the large dark dot on the bottom right <selection>",
+            "YOU: yes, let's pick the large dark one on the bottom right <selection>",
             "YOU: yes, lets pick the large dark dot on the bottom right <selection>",
-            "YOU: yes, let's pick the large dark one on the bottom right <selection",
             "YOU: yes, let's choose the large dark dot on bottom right <selection>",
             "YOU: yes, let's pick the large dark dot on the bottom right <eos>",
             "YOU: yes, let's pick the large dark dot on bottom right <selection>",
+            "YOU: yes, let's choose the large dark one on the bottom right <selection>",
+            "YOU: yes! let's pick the large dark dot on the bottom right <selection>",
             "YOU: yes, let's choose the large dark dot on the bottom right <eos>",
             "YOU: yes! click the large dark one on the bottom right! <selection>",
             "YOU: yes, lets choose the large dark dot on the bottom right <selection>",
             "YOU: yes! click the large dark dot on the bottom right! <selection>",
-            "YOU: yes, let's choose the large dark one on the bottom right <selection",
-            "YOU: yes! let's pick the large dark dot on the bottom right <selection",
             "YOU: yes, pick the large dark dot on the bottom right <selection>",
-            "YOU: yes, let's choose the large dark dot on the bottom right. <",
-            "YOU: yes, let's pick the large dark one on the bottom right <eos>"
+            "YOU: yes, let's pick the large dark one on the bottom right <eos>",
+            "YOU: yes, lets pick the large dark dot on the bottom right <eos>"
         ],
         "plan_mentions": [
             [

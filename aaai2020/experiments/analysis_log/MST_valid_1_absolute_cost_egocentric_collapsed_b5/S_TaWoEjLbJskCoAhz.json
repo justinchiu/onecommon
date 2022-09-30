@@ -3234,22 +3234,22 @@
             -4.502401351928711
         ],
         "plan_beam_lm_bart": [
+            -0.4858132004737854,
+            -0.4891486167907715,
             -0.5053316354751587,
-            -0.508909285068512,
-            -0.5125406384468079,
             -0.5223374366760254,
-            -0.5275746583938599,
+            -0.5235640406608582,
+            -0.5246442556381226,
+            -0.5265901684761047,
+            -0.5333353281021118,
             -0.536041259765625,
+            -0.5386179685592651,
             -0.5408406853675842,
-            -0.5492132306098938,
-            -0.5496827960014343,
-            -0.5520178079605103,
             -0.5543882250785828,
             -0.5579183101654053,
-            -0.55949866771698,
-            -0.5645243525505066,
-            -0.5646578073501587,
-            -0.5687876343727112
+            -0.5687876343727112,
+            -0.5827786326408386,
+            -0.5832088589668274
         ],
         "plan_beam_ref_res": [
             -3.9985315799713135,
@@ -3393,22 +3393,22 @@
             "i have that <eos>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: do you have a small black dot in the middle of two larger lighter dots? <eos>",
+            "YOU: do you see a small black dot in the middle of two larger lighter dots? <eos>",
             "YOU: i have a small black dot in the middle of two larger lighter dots <eos>",
-            "YOU: do you have a small black dot in the middle of two larger lighter dots?",
-            "YOU: do you see a small black dot in the middle of two larger lighter dots?",
             "YOU: i have a small black dot in the middle of two larger grey dots <eos>",
-            "YOU: i don't have that. i have a small black dot in the middle",
+            "YOU: do you have a small black dot in the middle of 2 larger lighter dots? <eos>",
+            "YOU: do you have a small black dot in the middle of two larger lighter ones? <eos>",
+            "YOU: do you have a tiny black dot in the middle of two larger lighter dots? <eos>",
+            "YOU: do you see a small black dot in the middle of 2 larger lighter dots? <eos>",
             "YOU: i have a small black dot in the middle of two larger lighter ones <eos>",
+            "YOU: do you see a small black dot in the middle of two larger lighter ones? <eos>",
             "YOU: i have a small black dot in the middle of 2 larger lighter dots <eos>",
-            "YOU: do you have a small black dot in the middle of 2 larger lighter dots?",
-            "YOU: do you have a small black dot in the middle of two larger lighter ones?",
-            "YOU: do you have a tiny black dot in the middle of two larger lighter dots?",
             "YOU: i have a small black dot in the middle of two larger dots <eos>",
             "YOU: do you see a small black dot in the middle of two larger dots? <eos>",
-            "YOU: do you see a small black dot in the middle of 2 larger lighter dots?",
-            "YOU: i don't have that. i have a small black dot in between two",
-            "YOU: do you see a small black dot in the middle of two larger lighter ones?",
-            "YOU: i have a small black dot in the middle of 2 larger lighter ones <eos>"
+            "YOU: i have a small black dot in the middle of 2 larger lighter ones <eos>",
+            "YOU: do you see a small black dot in the middle of two larger lighter dots <eos>",
+            "YOU: do you have a small black dot in the middle of two larger lighter dots <eos>"
         ],
         "plan_mentions": [
             [

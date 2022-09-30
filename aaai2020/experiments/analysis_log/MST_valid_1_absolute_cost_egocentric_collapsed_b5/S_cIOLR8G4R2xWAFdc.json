@@ -7090,22 +7090,22 @@
             -14.55455493927002
         ],
         "plan_beam_lm_bart": [
+            -0.506670355796814,
             -0.5081479549407959,
             -0.5096432566642761,
             -0.5208718776702881,
             -0.522857129573822,
             -0.5239033699035645,
-            -0.5333371758460999,
+            -0.5281537175178528,
+            -0.5346459746360779,
+            -0.5360230207443237,
+            -0.5378310680389404,
             -0.5382529497146606,
-            -0.5559512972831726,
-            -0.562785267829895,
-            -0.5642347931861877,
-            -0.566137969493866,
-            -0.5701056122779846,
+            -0.5416003465652466,
             -0.5795260071754456,
             -0.5806629061698914,
             -0.5939254760742188,
-            -0.5966013073921204
+            -0.5969942808151245
         ],
         "plan_beam_ref_res": [
             -8.989437103271484,
@@ -7249,22 +7249,22 @@
             "do you see two dots that are almost identical in size and opposite in shade ? <eos>"
         ],
         "plan_beam_sents_bart": [
+            "YOU: let's pick the smaller dot that is below the darker one. <selection>",
             "YOU: let's pick the darker one below the light one. <selection>",
             "YOU: let's pick the smaller one below the darker one. <selection>",
             "YOU: let's pick the smaller one below the black one. <selection>",
             "YOU: let's pick the darker one below the lighter one. <selection>",
             "YOU: let's pick the darker one below the light grey one. <selection>",
-            "YOU: let's pick the smaller dot that is below the darker one. <selection",
+            "YOU: ok. let's pick the darker one below the light one. <selection>",
+            "YOU: let's pick the smaller dot that is below the black one. <selection>",
+            "YOU: let's pick the smaller darker dot below the light grey dot. <selection>",
+            "YOU: let's choose the smaller darker dot below the light grey dot. <selection>",
             "YOU: let's pick the darker dot below the light grey dot. <selection>",
-            "YOU: ok. let's pick the darker one below the light one. <selection",
-            "YOU: let's pick the smaller dot that is below the black one. <selection",
-            "YOU: let's pick the smaller darker dot below the light grey dot. <selection",
-            "YOU: let's choose the smaller darker dot below the light grey dot. <selection",
-            "YOU: let's pick the smaller darker dot below the light grey one. <selection",
+            "YOU: let's pick the smaller darker dot below the light grey one. <selection>",
             "YOU: let's pick the smaller dot that is below the darker one. <eos>",
             "YOU: let's pick the darker one below the light one. <eos>",
             "YOU: let's pick the smaller one below the darker one. <eos>",
-            "YOU: let's pick the black dot that is below the smaller lighter dot. <"
+            "YOU: let's pick the darker one below the light grey one. <eos>"
         ],
         "plan_mentions": [
             [

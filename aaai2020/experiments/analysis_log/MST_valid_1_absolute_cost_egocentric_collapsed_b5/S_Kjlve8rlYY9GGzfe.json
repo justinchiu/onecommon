@@ -7071,21 +7071,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.3638390302658081,
-            -0.3898923397064209,
             -0.39617645740509033,
             -0.40704256296157837,
-            -0.4211459457874298,
             -0.42540478706359863,
             -0.44408857822418213,
             -0.4471660256385803,
             -0.4495936930179596,
-            -0.45069414377212524,
-            -0.4580535292625427,
             -0.4612540006637573,
-            -0.4709698557853699,
             -0.4711988866329193,
-            -0.47161269187927246,
-            -0.48308277130126953
+            -0.4871888756752014,
+            -0.4946632981300354,
+            -0.5069336891174316,
+            -0.5316789746284485,
+            -0.5481886863708496,
+            -0.5558554530143738,
+            -7.546135425567627
         ],
         "plan_beam_ref_res": [
             -1.6219103336334229,
@@ -7230,21 +7230,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: let's pick the larger darker dot at 2 o clock <selection>",
-            "YOU: ok, let's pick the larger darker dot at 2 o clock <selection",
             "YOU: let's choose the larger darker dot at 2 o clock <selection>",
             "YOU: ok let's pick the larger darker dot at 2 o clock <selection>",
-            "YOU: ok, let's choose the larger darker dot at 2 o clock <selection",
             "YOU: let's pick the larger darker one at 2 o clock <selection>",
             "YOU: let's pick the larger darker dot at 2 o clock. <selection>",
             "YOU: let's pick the larger dot at 2 o clock <selection>",
             "YOU: ok, let's pick the larger dot at 2 o clock <selection>",
-            "YOU: ok, let's pick the larger darker one at 2 o clock <selection",
-            "YOU: ok. let's pick the larger darker dot at 2 o clock <selection",
             "YOU: let's pick the larger darker dot at 2 o clock <eos>",
-            "YOU: ok, let's pick the larger darker dot at 2 oclock <selection",
             "YOU: ok, let's pick the larger darker dot at 2 o clock <eos>",
-            "YOU: okay, let's pick the larger darker dot at 2 o clock <",
-            "YOU: ok, let's pick the larger darker dot at 2 o clock. <"
+            "YOU: let's choose the larger darker dot at 2 o clock <eos>",
+            "YOU: ok, let's choose the larger darker dot at 2 o clock <eos>",
+            "YOU: ok let's pick the larger darker dot at 2 o clock <eos>",
+            "YOU: okay, let's pick the larger darker dot at 2 o clock <eos>",
+            "YOU: ok, let's pick the larger darker dot at 2 o clock. <eos>",
+            "YOU: ok, let's pick the larger darker dot at 2 o'clock <eos>",
+            ""
         ],
         "plan_mentions": [
             [

@@ -1295,22 +1295,22 @@
             -18.69556427001953
         ],
         "plan_beam_lm_bart": [
-            -0.45827603340148926,
-            -0.45951467752456665,
-            -0.48122861981391907,
-            -0.4860250949859619,
-            -0.4880145788192749,
-            -0.48808106780052185,
-            -0.49015551805496216,
-            -0.49095606803894043,
-            -0.4922601282596588,
-            -0.49454739689826965,
-            -0.49475517868995667,
-            -0.49493464827537537,
-            -0.49511316418647766,
-            -0.49897098541259766,
-            -0.49911653995513916,
-            -0.4994002878665924
+            -0.43983906507492065,
+            -0.44600239396095276,
+            -0.44712239503860474,
+            -0.4522330164909363,
+            -0.45288482308387756,
+            -0.4539906084537506,
+            -0.4551732838153839,
+            -0.45590123534202576,
+            -0.4565194547176361,
+            -0.506904661655426,
+            -0.5081768035888672,
+            -0.5138278603553772,
+            -0.5145549774169922,
+            -0.5233362913131714,
+            -0.525713324546814,
+            -0.5342115163803101
         ],
         "plan_beam_ref_res": [
             -3.067091703414917,
@@ -1454,22 +1454,22 @@
             "i have two dots that are almost exactly the same size , almost on the left side <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i have a large black dot with a medium grey dot to the right of it",
-            "YOU: i have a large black dot with a medium gray dot to the right of it",
-            "YOU: do you have a large black dot with a medium grey dot to the right of",
-            "YOU: do you see a large black dot with a medium grey dot to the right of",
-            "YOU: do you have a large black dot with a medium gray dot to the right of",
-            "YOU: do you have a large black dot with a medium grey dot to the right and",
-            "YOU: do you see a large black dot with a medium grey dot to the right and",
-            "YOU: do you see a large black dot with a smaller light grey dot to the right",
-            "YOU: do you have a large black dot with a medium grey dot to the left and",
-            "YOU: do you have a large black dot with a smaller light grey dot to the right",
-            "YOU: do you see a large black dot with a medium grey dot to the left and",
-            "YOU: do you see a large black dot with a medium gray dot to the right of",
-            "YOU: do you have a large black dot with a medium gray dot to the right and",
-            "YOU: do you have a large black dot with a smaller grey dot to the right of",
-            "YOU: do you have a large black dot with a medium gray dot to the left and",
-            "YOU: do you see a large black dot with a medium gray dot to the right and"
+            "YOU: do you have a large black dot with a medium grey dot to the right of it? <eos>",
+            "YOU: do you have a large black dot with a medium gray dot to the right of it? <eos>",
+            "YOU: do you see a large black dot with a medium grey dot to the right of it? <eos>",
+            "YOU: do you have a large black dot with a smaller grey dot to the right of it? <eos>",
+            "YOU: i have a large black dot with a medium grey dot to the right of it <eos>",
+            "YOU: i have a large black dot with a medium gray dot to the right of it <eos>",
+            "YOU: do you see a large black dot with a medium gray dot to the right of it? <eos>",
+            "YOU: do you have a large black dot with a smaller light grey dot to the right of it? <eos>",
+            "YOU: do you see a large black dot with a smaller light grey dot to the right of it? <eos>",
+            "YOU: do you see a large black dot with a medium grey dot to the right of it <eos>",
+            "YOU: do you have a large black dot with a medium grey dot to the right of it <eos>",
+            "YOU: do you have a large black dot with a medium gray dot to the right of it <eos>",
+            "YOU: do you see a large black dot with a medium gray dot to the right of it <eos>",
+            "YOU: do you have a large black dot with a smaller grey dot to the right of it <eos>",
+            "YOU: do you see a large black dot with a smaller light grey dot to the right of it <eos>",
+            "YOU: do you have a large black dot with a smaller light grey dot to the right of it <eos>"
         ],
         "plan_mentions": [
             [
@@ -3244,22 +3244,22 @@
             -4.106722831726074
         ],
         "plan_beam_lm_bart": [
-            -0.5322858691215515,
-            -0.5335853099822998,
             -0.5665001273155212,
             -0.5712517499923706,
-            -0.5768797397613525,
-            -0.5889183878898621,
-            -0.5900266170501709,
-            -0.591519832611084,
-            -0.5928910970687866,
-            -0.5929876565933228,
-            -0.593623161315918,
-            -0.5969710350036621,
-            -0.6001695990562439,
-            -0.6095923185348511,
-            -0.6123018860816956,
-            -0.616076648235321
+            -0.6056175827980042,
+            -0.6078526377677917,
+            -0.6092475652694702,
+            -0.6103982925415039,
+            -0.6143418550491333,
+            -0.6231981515884399,
+            -0.6262432932853699,
+            -0.6268444657325745,
+            -0.6271960735321045,
+            -0.6282848119735718,
+            -0.6317399740219116,
+            -0.6323318481445312,
+            -0.6342052221298218,
+            -0.6363157629966736
         ],
         "plan_beam_ref_res": [
             -13.033020973205566,
@@ -3403,22 +3403,22 @@
             "i have that too <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't have that. i have three dots that form a triangle.",
-            "YOU: i don't have that. i have 3 dots that form a triangle.",
             "YOU: do you see three dots in a triangle shape? <eos>",
             "YOU: do you have 3 dots in a triangle shape? <eos>",
-            "YOU: i don't think i have that. i have three dots that form a",
-            "YOU: i don't have that. i have three dots that form a triangle,",
-            "YOU: i don't think i have that. i have three dots in a line",
-            "YOU: i don't think i have that. i have a triangle of three dots",
-            "YOU: i don't think i have that. i have a triangle of 3 dots",
-            "YOU: i don't think i have that. i have 3 dots in a line",
-            "YOU: i don't have that. i have 3 dots that form a triangle,",
-            "YOU: i don't have that. i have a triangle of three dots. the",
-            "YOU: i don't have that. i have a triangle of 3 dots. the",
-            "YOU: i don't think i have that. i have three dots in a triangle",
-            "YOU: i don't think i have that. i have 3 dots in a triangle",
-            "YOU: i don't have that. i have a cluster of three dots that form"
+            "YOU: i don't have that. i have three dots that form a triangle. the one on the bottom right is the largest and darkest. the top one is the lightest and smallest",
+            "YOU: i don't have that. i have 3 dots that form a triangle. the one on the bottom right is the largest and darkest. the top one is the lightest and smallest",
+            "YOU: i don't think i have that. i have three dots that form a triangle. the one on the bottom right is the largest and darkest. the top one is the smallest and",
+            "YOU: i don't have that. i have three dots that form a triangle. the one on the bottom right is the largest and darkest. the top one is the smallest and lightest",
+            "YOU: i don't have that. i have 3 dots that form a triangle. the one on the bottom right is the largest and darkest. the top one is the smallest and lightest",
+            "YOU: i don't have that. i have three dots that form a triangle. the one on the bottom right is the largest and darkest. the top one is the smallest and medium grey",
+            "YOU: i don't have that. i have three dots that form a triangle. the top one is the largest and darkest. the bottom two are the same size and medium grey. the",
+            "YOU: i don't have that. i have three dots that form a triangle. the top one is the largest and darkest. the bottom two are the same shade and size. the one",
+            "YOU: i don't have that. i have 3 dots that form a triangle. the one on the bottom right is the largest and darkest. the top one is the smallest and medium grey",
+            "YOU: i don't have that. i have three dots that form a triangle. the one on the bottom right is the largest and darkest. the top one is the smallest and medium gray",
+            "YOU: i don't have that. i have 3 dots that form a triangle. the top one is the largest and darkest. the bottom two are the same shade and size. the one",
+            "YOU: i don't have that. i have 3 dots that form a triangle. the one on the bottom right is the largest and darkest. the top one is the smallest and medium gray",
+            "YOU: i don't have that. i have three dots that form a triangle. the top dot is the largest and darkest. the bottom two are the same shade and size. the one",
+            "YOU: i don't have that. i have three dots that form a triangle. the one on the bottom right is the largest and darkest. <eos>"
         ],
         "plan_mentions": [
             [
@@ -7122,8 +7122,8 @@
             -0.6708303689956665,
             -0.6900345683097839,
             -0.6949793100357056,
-            -0.7004432678222656,
-            -0.7033824920654297
+            -0.7191740274429321,
+            -0.7490200400352478
         ],
         "plan_beam_ref_res": [
             -8.571553230285645,
@@ -7281,8 +7281,8 @@
             "YOU: do they form a triangle with two other dots that are the same shade? <eos>",
             "YOU: is there a smaller dot to the left of the top one? <eos>",
             "YOU: do they form a triangle with two other dots that are the same color? <eos>",
-            "YOU: are they kind of in a line with another dot that is the same shade but",
-            "YOU: are they kind of in a line with another dot of the same color and size"
+            "YOU: do they form a triangle with a small medium grey dot? <eos>",
+            "YOU: do you see a triangle of three dots? <eos>"
         ],
         "plan_mentions": [
             [
@@ -9043,7 +9043,6 @@
             -0.6574324369430542,
             -0.6574594378471375,
             -0.6690195798873901,
-            -0.6699016094207764,
             -0.6835636496543884,
             -0.6896424293518066,
             -0.6976692080497742,
@@ -9051,8 +9050,9 @@
             -0.699711799621582,
             -0.714172899723053,
             -0.725776195526123,
-            -0.7293680310249329,
-            -0.732628345489502
+            -0.732628345489502,
+            -0.7349064350128174,
+            -0.7819764614105225
         ],
         "plan_beam_ref_res": [
             -7.135056018829346,
@@ -9202,7 +9202,6 @@
             "YOU: yes. the top one is black and the bottom one is light grey <eos>",
             "YOU: yes. the top one is black and the bottom one is medium grey <eos>",
             "YOU: they are the only ones i have that are that close to each other <eos>",
-            "YOU: yes. they are the only ones i have that are that close to each other",
             "YOU: yes. the top one is black and the bottom one is medium grey? <eos>",
             "YOU: yes. the top one is black and the bottom one is medium gray <eos>",
             "YOU: yes. the top one is really dark and the bottom one is medium gray <eos>",
@@ -9210,8 +9209,9 @@
             "YOU: yes. the top one is black and the bottom one is light grey <eos>",
             "YOU: they are the only ones i have that are that close to each other. <eos>",
             "YOU: yes. the top one is black and the bottom one is grey <eos>",
-            "YOU: they are the only ones i have that are that close to each other. the",
-            "YOU: yes. they are the only ones i have that are the same size <eos>"
+            "YOU: yes. they are the only ones i have that are the same size <eos>",
+            "YOU: yes. the top one is black and the bottom is medium grey <eos>",
+            "YOU: they are <eos>"
         ],
         "plan_mentions": [
             [

@@ -3239,11 +3239,11 @@
             -0.6002804040908813,
             -0.6020961999893188,
             -0.6093993186950684,
-            -0.6097995638847351,
             -0.6196966767311096,
-            -0.6231347918510437,
-            -0.631489634513855,
-            -0.6333475112915039
+            -0.6259860992431641,
+            -0.6333475112915039,
+            -0.6679030060768127,
+            -0.6722000241279602
         ],
         "plan_beam_ref_res": [
             -4.750894546508789,
@@ -3398,11 +3398,11 @@
             "YOU: do you have a large medium gray dot at the top? <eos>",
             "YOU: no. do you have a large medium grey dot at the bottom? <eos>",
             "YOU: my largest dot is medium grey <eos>",
-            "YOU: i don't have that one. i have a large medium gray dot at",
             "YOU: no. do you have a large medium gray dot at the bottom <eos>",
-            "YOU: i don't have that. i have a large medium gray dot at the",
-            "YOU: i don't have that. i have a large medium gray dot on the",
-            "YOU: do you have a large medium gray dot at the top <eos>"
+            "YOU: i do not. do you have a large medium gray dot at the bottom? <eos>",
+            "YOU: do you have a large medium gray dot at the top <eos>",
+            "YOU: i don't have that one. i have a large medium gray dot at the bottom <eos>",
+            "YOU: i don't have that one. i have a large medium gray dot at the top <eos>"
         ],
         "plan_mentions": [
             [

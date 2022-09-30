@@ -3234,22 +3234,22 @@
             -8.26361083984375
         ],
         "plan_beam_lm_bart": [
-            -0.6246333718299866,
+            -0.5963733196258545,
+            -0.6130099892616272,
             -0.6354340314865112,
             -0.6422473192214966,
             -0.6484043598175049,
-            -0.6507753729820251,
+            -0.6508340239524841,
             -0.6510564088821411,
-            -0.6553431153297424,
-            -0.6688117980957031,
-            -0.6731199622154236,
-            -0.674216091632843,
-            -0.6868557929992676,
-            -0.6927860379219055,
-            -0.6975583434104919,
-            -0.6990240216255188,
+            -0.6538316607475281,
+            -0.66636723279953,
+            -0.6680784821510315,
+            -0.6767473816871643,
+            -0.6897681355476379,
+            -0.6973915100097656,
             -0.7010982632637024,
-            -0.701470136642456
+            -0.7130872011184692,
+            -7.080600738525391
         ],
         "plan_beam_ref_res": [
             -0.0003793711948674172,
@@ -3393,22 +3393,22 @@
             "i have the same <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't have that. i have a large black dot with a smaller",
+            "YOU: i think i see that. is the middle one the lightest of the four? <eos>",
+            "YOU: i think i see that. is the middle one the lightest of the 4? <eos>",
             "YOU: i have a group of 4 dots that form a backwards 7 <eos>",
             "YOU: i think i see that. is the middle one the lightest? <eos>",
             "YOU: i have a group of four dots that form a backwards 7 <eos>",
-            "YOU: i don't have that. i have a large black dot with a small",
+            "YOU: i don't have that. i have a cluster of 4 dots that form a backwards 7 <eos>",
             "YOU: yes i see that <eos>",
-            "YOU: i think i see that. is the middle one the lightest of the four",
-            "YOU: i don't have that. i have a group of 4 dots that form",
-            "YOU: i don't have that. i have a cluster of 4 dots that form",
-            "YOU: i think i see that. is the middle one the lightest of the 4",
-            "YOU: i don't have that. i have a group of four dots that form",
-            "YOU: i don't see that. i have a group of 4 dots that form",
-            "YOU: i don't see that. i have a cluster of 4 dots that form",
-            "YOU: i don't have that. i have a cluster of four dots that form",
+            "YOU: i don't have that. i have a group of 4 dots that form a backwards 7 <eos>",
+            "YOU: i don't see that. i have a cluster of 4 dots that form a backwards 7 <eos>",
+            "YOU: i don't see that. i have a group of 4 dots that form a backwards 7 <eos>",
+            "YOU: i don't have that. i have a group of four dots that form a backwards 7 <eos>",
+            "YOU: i don't have that. i have a large black dot with a smaller black dot to the right of it and a smaller light gray dot below it <eos>",
+            "YOU: i don't have that. i have a large black dot with a smaller black dot to the right of it and a smaller light grey dot below it <eos>",
             "YOU: yes, i see that <eos>",
-            "YOU: i don't have that. i have a group of 4 dots that are"
+            "YOU: yes, i see that. <eos>",
+            ""
         ],
         "plan_mentions": [
             [

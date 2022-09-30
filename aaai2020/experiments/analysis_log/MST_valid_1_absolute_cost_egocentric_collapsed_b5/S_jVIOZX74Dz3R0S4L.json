@@ -3232,20 +3232,20 @@
         "plan_beam_lm_bart": [
             -0.44083452224731445,
             -0.4427291452884674,
+            -0.4862596392631531,
             -0.490790992975235,
             -0.49379920959472656,
+            -0.4970138669013977,
             -0.49741700291633606,
             -0.5023744106292725,
-            -0.5095723271369934,
-            -0.5118522644042969,
-            -0.5157003998756409,
+            -0.5062529444694519,
+            -0.5125755071640015,
             -0.5169176459312439,
-            -0.522361695766449,
             -0.5225960612297058,
             -0.5278016328811646,
-            -0.5484151244163513,
-            -0.5555121898651123,
-            -0.5559952259063721
+            -0.5331743359565735,
+            -0.5414209365844727,
+            -0.5618847012519836
         ],
         "plan_beam_ref_res": [
             -0.02914458140730858,
@@ -3391,20 +3391,20 @@
         "plan_beam_sents_bart": [
             "YOU: yes! click the light one! <selection>",
             "YOU: yes! click that light one! <selection>",
+            "YOU: yes! if the light one is to the right click that one! <selection>",
             "YOU: yes! if the light one is to the right click that one! <eos>",
             "YOU: no. do you have a very large very light grey dot? <eos>",
+            "YOU: i don't see that. do you see a large light grey dot? <eos>",
             "YOU: yes! if the light one is slightly to the right click that one! <eos>",
             "YOU: no. do you have a large light grey dot? <eos>",
-            "YOU: yes! if the light one is slightly to the right click that light one!",
-            "YOU: yes! if the light one is to the right click that one! <selection",
-            "YOU: yes! if the light one is slightly to the left click that light one!",
+            "YOU: yes! if the light one is slightly to the right click that light one! <eos>",
+            "YOU: yes! if the light one is slightly to the left click that light one! <eos>",
             "YOU: yes! if the light one is slightly to the left click that one! <eos>",
-            "YOU: i don't see that. do you see a large light grey dot?",
             "YOU: yes! if the light one is to the right click that light one! <eos>",
             "YOU: no. do you see a large light grey dot? <eos>",
-            "YOU: yes! if the light one is to the right click that light one! <",
-            "YOU: i don't have that. i have a very large very light grey dot",
-            "YOU: yes! if the light one is slightly to the right click that one! <"
+            "YOU: i don't see that. do you have a large light grey dot? <eos>",
+            "YOU: i don't see that. do you see a large light gray dot? <eos>",
+            "YOU: no. do you have a large light gray dot? <eos>"
         ],
         "plan_mentions": [
             [

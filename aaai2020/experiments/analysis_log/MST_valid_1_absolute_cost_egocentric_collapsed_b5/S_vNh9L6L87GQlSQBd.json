@@ -3237,13 +3237,13 @@
             -0.520164966583252,
             -0.5256884098052979,
             -0.5479381084442139,
-            -0.5677116513252258,
             -0.5736854672431946,
             -0.5742610096931458,
             -0.5786893367767334,
-            -0.5811926126480103,
-            -0.5866382718086243,
-            -0.5960215330123901
+            -0.6427125930786133,
+            -0.6537845730781555,
+            -0.6583382487297058,
+            -6.880295276641846
         ],
         "plan_beam_ref_res": [
             -14.85878849029541,
@@ -3396,13 +3396,13 @@
             "YOU: no. do you have a medium sized medium grey dot? <eos>",
             "YOU: no. do you see a medium sized medium grey dot? <eos>",
             "YOU: no. do you have a medium size light grey dot? <eos>",
-            "YOU: no, i don't. do you see a medium sized light grey dot",
             "YOU: i do not. do you see a medium sized light grey dot? <eos>",
             "YOU: no i dont. do you see a medium sized light grey dot? <eos>",
             "YOU: no. do you have a medium sized light grey one? <eos>",
-            "YOU: no, i don't. do you have a medium sized light grey dot",
-            "YOU: no, i don't. do you see a medium sized medium gray dot",
-            "YOU: no, i don't. do you have a medium sized medium gray dot"
+            "YOU: no, i don't. do you see a medium sized grey dot? <eos>",
+            "YOU: no, i don't. do you have a medium sized grey dot? <eos>",
+            "YOU: no, i don't. do you see a medium sized gray dot? <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -7091,20 +7091,20 @@
         "plan_beam_lm_bart": [
             -0.5447820425033569,
             -0.5890212059020996,
-            -0.607023298740387,
-            -0.6113779544830322,
-            -0.6121509075164795,
-            -0.622589111328125,
+            -0.6103576421737671,
+            -0.6293702721595764,
             -0.633996307849884,
-            -0.6356680989265442,
-            -0.6368893384933472,
-            -0.6405792236328125,
-            -0.6450064182281494,
+            -0.6355339884757996,
+            -0.6386471390724182,
+            -0.644334077835083,
+            -0.6447286605834961,
+            -0.6466236114501953,
+            -0.6467759609222412,
             -0.6485215425491333,
-            -0.6490492820739746,
-            -0.6505370140075684,
-            -0.6525434255599976,
-            -0.6531955003738403
+            -0.6517786383628845,
+            -0.6538298726081848,
+            -0.6554526090621948,
+            -6.798428058624268
         ],
         "plan_beam_ref_res": [
             -12.806938171386719,
@@ -7250,20 +7250,20 @@
         "plan_beam_sents_bart": [
             "YOU: the large black one or the light grey one? <eos>",
             "YOU: the large black one or the light one? <eos>",
-            "YOU: it's in between two other dots. the one on the right being light",
-            "YOU: let's choose the large black spot in between the two other dots. the",
-            "YOU: let's choose the large black spot between two other dots. the one on",
-            "YOU: let's choose the large black spot in between the light grey and light grey",
+            "YOU: let's choose the large black spot in between the two other dots. the one on the right being light grey and slightly smaller. <selection>",
+            "YOU: let's choose the large black spot in between the two other dots. the one on the right being light grey and the other one being dark grey <eos>",
             "YOU: the large black spot or the light grey spot? <eos>",
-            "YOU: let's choose the large black spot in between the light grey and medium grey",
-            "YOU: let's choose the large black one in between the two other dots. the",
-            "YOU: let's choose the large black spot between the two other dots. the one",
-            "YOU: it's in between two other dots. the one on the left is light",
+            "YOU: let's choose the large black spot in between the two other dots. the one on the right being light grey and slightly smaller than the black one <eos>",
+            "YOU: let's choose the large black spot between the two other dots. the one on the right being light grey and the other one being dark grey <eos>",
+            "YOU: let's choose the large black one in between the two other dots. the one on the right being light grey and the other one being dark grey <eos>",
+            "YOU: let's choose the large black spot in between the two other dots. the one on the right being light grey and the other being dark grey <eos>",
+            "YOU: let's choose the large black spot in between the two other dots. the one on the right being light grey and the left being dark grey <eos>",
+            "YOU: let's choose the large black one between the two other dots. the one on the right being light grey and the other one being dark grey <eos>",
             "YOU: let's choose the large black spot between two light grey dots <eos>",
-            "YOU: it's in between two other dots. the one on the right is light",
-            "YOU: let's choose the large black spot between the light grey one and the slightly",
-            "YOU: let's choose the large black spot between the light grey one and the medium",
-            "YOU: let's choose the large black one between the two other dots. the one"
+            "YOU: let's choose the large black spot between the two other dots. the one on the right being light grey and the other one being dark grey. <eos>",
+            "YOU: let's choose the large black spot in between the two other dots. the one on the right being light grey and slightly smaller <eos>",
+            "YOU: let's choose the large black spot between the two other dots. the one on the right being light grey and the other being dark grey <eos>",
+            ""
         ],
         "plan_mentions": [
             [

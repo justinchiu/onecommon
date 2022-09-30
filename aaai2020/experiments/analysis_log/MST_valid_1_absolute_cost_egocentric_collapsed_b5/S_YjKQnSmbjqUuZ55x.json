@@ -3233,13 +3233,13 @@
             -0.5791835188865662,
             -0.5872764587402344,
             -0.5893065929412842,
-            -0.5943232178688049,
-            -0.6060312986373901,
-            -0.6086675524711609,
             -0.618378758430481,
             -0.618669867515564,
             -0.6205481290817261,
-            -0.6233223080635071
+            -0.6371433138847351,
+            -0.6504082083702087,
+            -0.6518731713294983,
+            -6.914340019226074
         ],
         "plan_beam_ref_res": [
             -2.537754535675049,
@@ -3392,13 +3392,13 @@
             "YOU: no. do you see a small light grey dot? <eos>",
             "YOU: no i do not. do you have a small light grey dot? <eos>",
             "YOU: no i dont. do you have a small light grey dot? <eos>",
-            "YOU: no. do you have a small light grey dot to the right of the circle",
-            "YOU: no. do you have a small light grey dot at the top of the circle",
-            "YOU: no. do you have a small light grey dot at the bottom of the circle",
             "YOU: no. do you have a small light grey dot at the bottom? <eos>",
             "YOU: no i do not. do you have a small light gray dot? <eos>",
             "YOU: no. do you have a small light grey dot at the top? <eos>",
-            "YOU: no. do you have a small light grey dot to the left of the circle"
+            "YOU: no. do you have a small light grey dot on the right side? <eos>",
+            "YOU: no. do you have a small light grey dot at the very top? <eos>",
+            "YOU: no. do you have a small light grey dot at the very bottom? <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -7074,22 +7074,22 @@
             -9.720039367675781
         ],
         "plan_beam_lm_bart": [
-            -0.45861169695854187,
+            -0.5170948505401611,
+            -0.517910897731781,
+            -0.519423246383667,
+            -0.5252233743667603,
+            -0.5257672071456909,
             -0.5284265875816345,
-            -0.5324275493621826,
+            -0.5349734425544739,
+            -0.5377058982849121,
+            -0.5387910008430481,
+            -0.5391351580619812,
             -0.5393558740615845,
-            -0.5424699783325195,
-            -0.5505009293556213,
-            -0.5505292415618896,
-            -0.5546817779541016,
-            -0.5572131872177124,
-            -0.5602944493293762,
-            -0.5614963173866272,
+            -0.5506870746612549,
             -0.5616976022720337,
-            -0.5636184215545654,
+            -0.5627646446228027,
             -0.570304811000824,
-            -0.5713019371032715,
-            -0.5715876221656799
+            -0.5713019371032715
         ],
         "plan_beam_ref_res": [
             -0.11203218996524811,
@@ -7233,22 +7233,22 @@
             "i have a light grey dot <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i have one close and to the right, but it's on the left",
+            "YOU: i have one close and to the right, but it's on the left side <eos>",
+            "YOU: i don't have that one, do you have a small light grey dot? <eos>",
+            "YOU: i don't have that one, do you have a very light small dot? <eos>",
+            "YOU: i don't have that one, do you have a small light gray dot? <eos>",
+            "YOU: i don't see that, do you see a small light grey dot? <eos>",
             "YOU: do you have a small light grey dot? <eos>",
-            "YOU: i don't have that one, do you have a small light grey dot",
+            "YOU: i don't see that, do you see a small light gray dot? <eos>",
+            "YOU: i don't have that one, do you have a small light dot? <eos>",
+            "YOU: i don't have that one, do you have a small very light dot? <eos>",
+            "YOU: i don't see that, do you see a very light small dot? <eos>",
             "YOU: do you have a small light gray dot? <eos>",
-            "YOU: i don't have that one, do you have a small light gray dot",
-            "YOU: i don't see that, do you see a small light grey dot?",
-            "YOU: i don't have that one, do you have a very light small dot",
-            "YOU: i have one close and to the right, but it's on the right",
-            "YOU: i have one close and to the right, but it's on my left",
-            "YOU: i don't see that, do you see a small light gray dot?",
-            "YOU: i don't have that one, do you have a small light dot?",
+            "YOU: i don't have that, do you have a small light grey dot? <eos>",
             "YOU: i don't see that, do you see a small light dot? <eos>",
-            "YOU: i don't see that, do you see a very light small dot?",
+            "YOU: i don't see that one, do you see a small light grey dot? <eos>",
             "YOU: do you have a small light dot? <eos>",
-            "YOU: do you see a small light grey dot? <eos>",
-            "YOU: i don't see that one, do you see a small light grey dot"
+            "YOU: do you see a small light grey dot? <eos>"
         ],
         "plan_mentions": [
             [
@@ -12848,7 +12848,7 @@
             -0.5003935694694519,
             -0.5012369155883789,
             -0.5049954056739807,
-            -0.5757086873054504
+            -7.002780914306641
         ],
         "plan_beam_ref_res": [
             -8.949389457702637,
@@ -13007,7 +13007,7 @@
             "YOU: ok. let's pick the dark dot in the middle. <selection>",
             "YOU: ok. let's pick the darkest dot in the group <selection>",
             "YOU: ok. let's pick the large dark dot in the middle <selection>",
-            "YOU: ok. let's pick the large dark dot in the middle of the group"
+            ""
         ],
         "plan_mentions": [
             [

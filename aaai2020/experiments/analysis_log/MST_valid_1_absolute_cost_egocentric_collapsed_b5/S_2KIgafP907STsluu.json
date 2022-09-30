@@ -3226,20 +3226,20 @@
         "plan_beam_lm_bart": [
             -0.42662546038627625,
             -0.43363767862319946,
-            -0.4401158392429352,
-            -0.44098949432373047,
+            -0.4338463246822357,
+            -0.4375085234642029,
+            -0.44439697265625,
             -0.44619303941726685,
-            -0.45094409584999084,
+            -0.4521412253379822,
             -0.45305657386779785,
-            -0.45619305968284607,
-            -0.46108537912368774,
+            -0.4557117521762848,
             -0.4619799256324768,
-            -0.4712083637714386,
+            -0.4656645357608795,
             -0.4876747131347656,
             -0.4947664439678192,
+            -0.4986058175563812,
             -0.49882781505584717,
-            -0.5139696598052979,
-            -0.5150870084762573
+            -0.5139696598052979
         ],
         "plan_beam_ref_res": [
             -5.279357433319092,
@@ -3385,20 +3385,20 @@
         "plan_beam_sents_bart": [
             "YOU: yes! if the middle one is the darkest click that one! <eos>",
             "YOU: yes! if the bottom one is the darkest click that one! <eos>",
-            "YOU: yes! if the bottom one is slightly to the right click that bottom one!",
-            "YOU: yes! if the middle one is slightly to the right click that middle one!",
+            "YOU: yes! if the bottom one is slightly to the right click that bottom one! <eos>",
+            "YOU: yes! if the middle one is slightly to the right click that middle one! <eos>",
+            "YOU: yes! if the bottom one is slightly to the left click that bottom one! <eos>",
             "YOU: yes! if the middle one is the darkest click that one! <selection>",
-            "YOU: yes! if the bottom one is slightly to the left click that bottom one!",
+            "YOU: yes! if the middle one is slightly to the left click that middle one! <eos>",
             "YOU: yes! if the bottom one is the darkest click that one! <selection>",
-            "YOU: yes! if the middle one is slightly to the left click that middle one!",
-            "YOU: yes! if the top one is slightly to the right click that top one!",
+            "YOU: yes! if the top one is slightly to the right click that top one! <eos>",
             "YOU: yes! if the top one is the darkest click that one! <eos>",
-            "YOU: yes! if the top one is slightly to the left click that top one!",
+            "YOU: yes! if the top one is slightly to the left click that top one! <eos>",
             "YOU: yes! if the bottom one is slightly to the right click that one! <eos>",
             "YOU: yes if the middle one is the darkest click that one! <selection>",
+            "YOU: yes! middle one is the darkest? if so click that one! <selection>",
             "YOU: yes! middle one is the darkest? if so click that one! <eos>",
-            "YOU: yes if the middle one is the darkest click that one! <eos>",
-            "YOU: yes! if the middle one is the smallest click that one! <eos>"
+            "YOU: yes if the middle one is the darkest click that one! <eos>"
         ],
         "plan_mentions": [
             [

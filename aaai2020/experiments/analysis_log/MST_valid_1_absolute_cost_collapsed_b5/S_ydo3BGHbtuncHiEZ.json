@@ -1295,22 +1295,22 @@
             -12.193753242492676
         ],
         "plan_beam_lm_bart": [
-            -0.5928778648376465,
             -0.6060794591903687,
-            -0.6077550053596497,
-            -0.6139646768569946,
-            -0.6185393333435059,
-            -0.6276029944419861,
-            -0.6290145516395569,
-            -0.6351580023765564,
-            -0.6374046206474304,
-            -0.6374636292457581,
+            -0.6259039044380188,
+            -0.6354065537452698,
             -0.6408052444458008,
+            -0.6421962380409241,
             -0.6436496376991272,
-            -0.6443875432014465,
-            -0.6469355225563049,
-            -0.6475634574890137,
-            -0.6511526703834534
+            -0.6449182629585266,
+            -0.6507115960121155,
+            -0.650850772857666,
+            -0.6510621905326843,
+            -0.6823473572731018,
+            -0.691394031047821,
+            -0.6953404545783997,
+            -0.708251953125,
+            -0.7239145636558533,
+            -7.185052871704102
         ],
         "plan_beam_ref_res": [
             -2.666123867034912,
@@ -1454,22 +1454,22 @@
             "two dots almost identical in size and almost vertical <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i have two dark grey dots close to each other. the one on the left",
             "YOU: do you see two dark dots close together? <eos>",
-            "YOU: i have two dark grey dots close to each other. the one on the right",
-            "YOU: i have two dark dots close together. the one on the left is smaller and",
-            "YOU: i have two dark grey dots close to each other. the one on top is",
-            "YOU: i have two dark grey dots close together. the one on the left is smaller",
-            "YOU: i have two dark dots close together. the one on the left is larger and",
-            "YOU: i have two dark grey dots close together. the one on the left is larger",
-            "YOU: i have two dark grey dots close to each other, the one on the left",
-            "YOU: i see two dark dots close together. the one on the left is smaller and",
+            "YOU: i have two dark dots close together. the one on the left is larger and a little higher <eos>",
+            "YOU: i have two dark dots close together. the one on the left is smaller and a little higher <eos>",
             "YOU: do you see two dark dots close to each other? <eos>",
+            "YOU: i have two dark grey dots close to each other, the one on the left is smaller <eos>",
             "YOU: do you see two dark grey dots close together? <eos>",
-            "YOU: i have two dark dots close together. the one on the right is smaller and",
-            "YOU: i have two dark grey dots close together. the one on the right is larger",
-            "YOU: i have two dark grey dots close together. the one on the right is smaller",
-            "YOU: i have two dark grey dots close to each other, the one on the right"
+            "YOU: i have two dark grey dots close to each other. the one on the left is smaller <eos>",
+            "YOU: i have two dark grey dots close to each other. the one on the right is smaller <eos>",
+            "YOU: i have two dark grey dots close to each other. the one on the right is larger <eos>",
+            "YOU: i have two dark grey dots close to each other, the one on the right is smaller <eos>",
+            "YOU: i have two dark grey dots close to each other <eos>",
+            "YOU: i see two dark dots close together <eos>",
+            "YOU: i see two dark grey dots close together <eos>",
+            "YOU: i have two dark grey dots close together <eos>",
+            "YOU: i have two dark dots close together <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -3232,22 +3232,22 @@
             -2.951385021209717
         ],
         "plan_beam_lm_bart": [
-            -0.45889192819595337,
-            -0.4764021933078766,
             -0.4804931581020355,
-            -0.48146095871925354,
             -0.48326924443244934,
             -0.48831918835639954,
             -0.5109857320785522,
-            -0.515185534954071,
             -0.5174170136451721,
-            -0.5180301070213318,
             -0.5189909338951111,
             -0.5218226909637451,
             -0.5237499475479126,
             -0.5241314172744751,
             -0.537846565246582,
-            -0.554248571395874
+            -0.554248571395874,
+            -0.5543052554130554,
+            -0.5622815489768982,
+            -0.579757034778595,
+            -0.5805707573890686,
+            -0.5859198570251465
         ],
         "plan_beam_ref_res": [
             -5.518983840942383,
@@ -3391,22 +3391,22 @@
             "i have that <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i have a small black dot in the center of a large black dot and a",
-            "YOU: i don't have that. i have a small black dot in the center",
             "YOU: i have a small black dot in the center of two larger ones <eos>",
-            "YOU: i have a small black dot in the center of a larger black dot and a",
             "YOU: i have a small black dot in the center of two bigger ones <eos>",
             "YOU: i have a small black dot in the center of two larger black dots <eos>",
             "YOU: i have a small black dot in the middle of two larger ones <eos>",
-            "YOU: i don't have that. i have a small black dot in the middle",
             "YOU: i have a small black dot in the center of two large black dots <eos>",
-            "YOU: i see a small black dot in the center of a larger black dot and a",
             "YOU: i have a small black dot in the middle of two larger black dots <eos>",
             "YOU: i see a small black dot in the center of two bigger ones <eos>",
             "YOU: i see a small black dot in the center of two larger ones <eos>",
             "YOU: i see a small black dot in the center of two larger black dots <eos>",
             "YOU: i have a small black dot in the middle of two bigger ones <eos>",
-            "YOU: i see a small black dot in the middle of two larger ones <eos>"
+            "YOU: i see a small black dot in the middle of two larger ones <eos>",
+            "YOU: i have a small black dot in the center of two larger black dots. <eos>",
+            "YOU: i have a small black dot in the center of two larger ones. <eos>",
+            "YOU: i have a small black dot in the middle of two larger black dots. <eos>",
+            "YOU: i have a small black dot in the center of two large black dots. <eos>",
+            "YOU: i see a small black dot in the center of two larger black dots. <eos>"
         ],
         "plan_mentions": [
             [

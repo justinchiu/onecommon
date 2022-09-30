@@ -3235,15 +3235,15 @@
             -0.469137579202652,
             -0.49280962347984314,
             -0.49931469559669495,
-            -0.5112699270248413,
             -0.5134008526802063,
-            -0.513826847076416,
-            -0.5368196964263916,
-            -0.5371603965759277,
-            -0.5380427241325378,
             -0.538568913936615,
-            -0.5464630126953125,
-            -0.5484932065010071
+            -0.551403284072876,
+            -0.5541238188743591,
+            -0.5580597519874573,
+            -0.5635696053504944,
+            -0.5746036171913147,
+            -0.5938753485679626,
+            -6.702914237976074
         ],
         "plan_beam_ref_res": [
             -9.61905288696289,
@@ -3394,15 +3394,15 @@
             "YOU: do you see a large black dot? <eos>",
             "YOU: do you see a large dark gray dot? <eos>",
             "YOU: do you have a large dark dot? <eos>",
-            "YOU: i don't have that. i have a large dark grey dot by itself",
             "YOU: no. do you have a large dark grey dot? <eos>",
-            "YOU: i don't have that. i have a large dark grey dot on the",
-            "YOU: i don't have that. i have a large dark gray dot by itself",
-            "YOU: i don't have that. i have a large dark gray dot on the",
-            "YOU: i don't see that. i have a large dark grey dot on the",
             "YOU: do you see a large dark dot? <eos>",
-            "YOU: i don't have that. i have a large dark grey dot in the",
-            "YOU: i don't have that. i have a large dark grey dot near the"
+            "YOU: i don't have that. i have a large black dot by itself <eos>",
+            "YOU: i have a large dark grey dot by itself <eos>",
+            "YOU: my largest dot is medium gray <eos>",
+            "YOU: large dark grey dot? <eos>",
+            "YOU: large black dot? <eos>",
+            "YOU: i don't have that. i have a large black dot <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -5154,21 +5154,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.5534780621528625,
-            -0.5686714053153992,
             -0.5697711110115051,
-            -0.5857090353965759,
-            -0.5894123315811157,
-            -0.6064968109130859,
             -0.617424726486206,
-            -0.6196577548980713,
             -0.627514123916626,
             -0.6292029023170471,
             -0.636987030506134,
             -0.6480368971824646,
             -0.6490075588226318,
-            -0.6514479517936707,
             -0.6515130996704102,
-            -0.6541743874549866
+            -0.6586885452270508,
+            -0.6717947721481323,
+            -0.6718409657478333,
+            -0.672173798084259,
+            -0.6731357574462891,
+            -0.6732735633850098,
+            -7.31371545791626
         ],
         "plan_beam_ref_res": [
             -11.234124183654785,
@@ -5313,21 +5313,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: no. it is at least 2 inches away from other dots <eos>",
-            "YOU: no. it is at least 2 inches away from other dots. do you have",
             "YOU: no. it is at least 2 inches away from other dots. <eos>",
-            "YOU: no. it is at least 2 inches away from other dots. do you see",
-            "YOU: yes. it is about 2 inches away from another dot that is the same size",
-            "YOU: no. it is at least 2 inches away from other dots. is there a",
             "YOU: no. it is about 2 inches away from a dark grey dot <eos>",
-            "YOU: no. it is at least 2 inches away from two other dots. one is",
             "YOU: yes. it is about 2 inches away from a slightly larger dark grey dot <eos>",
             "YOU: yes. it is about 2 inches away from a dark grey dot <eos>",
             "YOU: no. it is about 2 inches away from a dark grey dot. <eos>",
             "YOU: yes. it is about 2 inches away from other dots. <eos>",
             "YOU: yes. it is about 2 inches away from other dots <eos>",
-            "YOU: no. it is at least 2 inches away from another dot that is the same",
             "YOU: yes. it is about 2 inches away from a slightly darker dot <eos>",
-            "YOU: yes. it is about 2 inches away from a slightly larger dark grey dot."
+            "YOU: yes. it is about 2 inches away from a slightly larger darker dot <eos>",
+            "YOU: no. it is about 2 inches away from a slightly darker dot <eos>",
+            "YOU: yes. it is about 2 inches away from a slightly larger darker dot. <eos>",
+            "YOU: yes. it is about 2 inches away from a darker dot <eos>",
+            "YOU: no. it is about 2 inches away from a darker dot <eos>",
+            "YOU: no. it is at least 2 inches away from two other dots <eos>",
+            ""
         ],
         "plan_mentions": [
             [

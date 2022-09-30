@@ -3229,21 +3229,21 @@
         ],
         "plan_beam_lm_bart": [
             -0.5081341862678528,
+            -0.5137718915939331,
+            -0.5294350385665894,
             -0.5305135250091553,
-            -0.5399231910705566,
+            -0.5311859250068665,
+            -0.5313226580619812,
             -0.5444861650466919,
             -0.5455085039138794,
             -0.5468288064002991,
-            -0.5563299059867859,
-            -0.5580623745918274,
-            -0.5582235455513,
+            -0.5470845699310303,
+            -0.5498650074005127,
             -0.5646151900291443,
             -0.5659540891647339,
             -0.5683997869491577,
             -0.5737718343734741,
-            -0.5748791098594666,
-            -0.5775460004806519,
-            -0.5784094333648682
+            -0.5923518538475037
         ],
         "plan_beam_ref_res": [
             -1.4102752208709717,
@@ -3388,21 +3388,21 @@
         ],
         "plan_beam_sents_bart": [
             "YOU: no. do you have a large medium gray dot? <eos>",
+            "YOU: i don't see that. do you see a large medium gray dot? <eos>",
+            "YOU: i don't see that. do you have a large medium gray dot? <eos>",
             "YOU: no. do you have a large medium grey dot? <eos>",
-            "YOU: i don't see that. do you see a large medium gray dot?",
+            "YOU: i don't see that. do you see a large medium grey dot? <eos>",
+            "YOU: i don't have that. do you have a large medium gray dot? <eos>",
             "YOU: yes! do you want to pick the lightest one on top? <eos>",
             "YOU: do you have a large medium gray dot? <eos>",
             "YOU: no. do you see a large medium gray dot? <eos>",
-            "YOU: i don't see that. do you have a large medium gray dot?",
-            "YOU: i don't have that. do you have a large medium gray dot?",
-            "YOU: i don't see that. do you see a large medium grey dot?",
+            "YOU: i don't see that. do you have a large medium grey dot? <eos>",
+            "YOU: i don't have that. do you have a large medium grey dot? <eos>",
             "YOU: yes! do you want to pick the lightest one? <eos>",
             "YOU: do you see a large medium gray dot? <eos>",
             "YOU: no. do you see a large medium grey dot? <eos>",
             "YOU: do you have a large medium grey dot? <eos>",
-            "YOU: i don't see that. do you have a large medium grey dot?",
-            "YOU: i don't have that. do you have a large medium grey dot?",
-            "YOU: i don't see that. i have a large medium gray dot on the"
+            "YOU: do you see a large medium grey dot? <eos>"
         ],
         "plan_mentions": [
             [

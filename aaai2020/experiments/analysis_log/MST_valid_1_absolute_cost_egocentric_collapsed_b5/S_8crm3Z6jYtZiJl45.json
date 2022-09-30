@@ -9005,22 +9005,22 @@
             -13.23166275024414
         ],
         "plan_beam_lm_bart": [
-            -0.453561395406723,
+            -0.43183571100234985,
+            -0.44856709241867065,
             -0.4580092132091522,
+            -0.464973121881485,
             -0.4684845209121704,
-            -0.4713345170021057,
+            -0.4695059657096863,
             -0.4728181064128876,
             -0.4743943512439728,
+            -0.4805430471897125,
             -0.4854249954223633,
-            -0.48859143257141113,
-            -0.4932357370853424,
+            -0.4871026873588562,
+            -0.49616360664367676,
             -0.4968390166759491,
-            -0.4978548288345337,
             -0.5003166198730469,
-            -0.5045831799507141,
             -0.5080090165138245,
-            -0.511910617351532,
-            -0.5212965607643127
+            -0.5085086822509766
         ],
         "plan_beam_ref_res": [
             -0.01672508381307125,
@@ -9164,22 +9164,22 @@
             "yes , let 's choose the smaller one on the right <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i don't see that. do you see a small dark grey dot?",
+            "YOU: i don't see that. do you see a small dark grey dot? <eos>",
+            "YOU: i don't see that. do you see a tiny dark grey dot? <eos>",
             "YOU: do you have a small dark grey dot? <eos>",
+            "YOU: i don't see that. do you have a small dark grey dot? <eos>",
             "YOU: do you have a small black dot? <eos>",
-            "YOU: i don't see that. do you see a tiny dark grey dot?",
+            "YOU: i don't have that. do you have a small dark grey dot? <eos>",
             "YOU: do you see a small dark grey dot? <eos>",
             "YOU: i don't see that. do you see a small black dot? <eos>",
+            "YOU: i don't see that, do you see a small dark grey dot? <eos>",
             "YOU: do you have a tiny dark grey dot? <eos>",
-            "YOU: i don't see that. do you have a small dark grey dot?",
-            "YOU: i don't have that. do you have a small dark grey dot?",
+            "YOU: i don't have that. do you have a tiny dark grey dot? <eos>",
+            "YOU: i don't see that, do you see a tiny dark grey dot? <eos>",
             "YOU: do you see a tiny dark grey dot? <eos>",
-            "YOU: i don't see that. do you see a very small dark grey dot",
             "YOU: do you see a small black dot? <eos>",
-            "YOU: i don't see that, do you see a small dark grey dot?",
             "YOU: do you have a tiny black dot? <eos>",
-            "YOU: i don't have that. do you have a tiny dark grey dot?",
-            "YOU: i don't see that, do you see a tiny dark grey dot?"
+            "YOU: i don't have that, do you have a small dark grey dot? <eos>"
         ],
         "plan_mentions": [
             [

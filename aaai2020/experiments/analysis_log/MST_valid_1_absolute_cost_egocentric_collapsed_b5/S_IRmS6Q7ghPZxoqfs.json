@@ -3243,7 +3243,7 @@
             -0.5634279251098633,
             -0.5634707808494568,
             -0.5656408667564392,
-            -0.5676456689834595
+            -0.5708940625190735
         ],
         "plan_beam_ref_res": [
             -0.30628401041030884,
@@ -3402,7 +3402,7 @@
             "YOU: yes, let's pick the black dot on the left <eos>",
             "YOU: let's pick the black dot on the left <eos>",
             "YOU: let us select the black dot on the right <eos>",
-            "YOU: i don't have that. i have a small black dot all by itself"
+            "YOU: yes, let's pick the black dot on the left. <eos>"
         ],
         "plan_mentions": [
             [

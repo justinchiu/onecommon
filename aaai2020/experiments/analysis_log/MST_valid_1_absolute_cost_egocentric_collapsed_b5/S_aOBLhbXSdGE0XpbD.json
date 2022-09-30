@@ -3232,14 +3232,14 @@
             -0.5339706540107727,
             -0.5524848699569702,
             -0.5706185102462769,
-            -0.5720095038414001,
             -0.5799314975738525,
-            -0.582729697227478,
-            -0.5851627588272095,
-            -0.5872673392295837,
             -0.5883402228355408,
-            -0.5887287259101868,
-            -0.590861439704895
+            -0.590861439704895,
+            -0.5945343971252441,
+            -0.5949033498764038,
+            -0.6331662535667419,
+            -0.6366400718688965,
+            -6.77214241027832
         ],
         "plan_beam_ref_res": [
             -6.2364888191223145,
@@ -3391,14 +3391,14 @@
             "YOU: i do not. do you see a large light grey dot? <eos>",
             "YOU: i do not. do you see a large light gray dot? <eos>",
             "YOU: no. do you have a large light grey dot at the top? <eos>",
-            "YOU: no. do you see a large light grey dot at the top of the circle",
             "YOU: no. do you see a large light grey dot at the top? <eos>",
-            "YOU: no. do you have a large light grey dot at the top of the circle",
-            "YOU: no. do you have a large light grey dot at the top of your circle",
-            "YOU: no. do you see a large light grey dot at the top of your circle",
             "YOU: no. do you have a large light gray dot at the top? <eos>",
-            "YOU: no. do you see a large light gray dot at the top of the circle",
-            "YOU: no. do you have a large light grey dot on the right side? <eos>"
+            "YOU: no. do you have a large light grey dot on the right side? <eos>",
+            "YOU: no. do you have a large light grey dot at the bottom? <eos>",
+            "YOU: no. do you have a large light grey dot near the top? <eos>",
+            "YOU: no. do you see a large light grey dot on the right side <eos>",
+            "YOU: no. do you have a large light grey dot on the right side <eos>",
+            ""
         ],
         "plan_mentions": [
             [

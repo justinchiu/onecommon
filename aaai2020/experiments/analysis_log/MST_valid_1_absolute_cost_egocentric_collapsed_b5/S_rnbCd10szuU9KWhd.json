@@ -3244,8 +3244,8 @@
             -0.5877099633216858,
             -0.5884371399879456,
             -0.5982116460800171,
-            -0.6267358660697937,
-            -0.6337037682533264
+            -0.6406276226043701,
+            -0.645746111869812
         ],
         "plan_beam_ref_res": [
             -0.4291910231113434,
@@ -3403,8 +3403,8 @@
             "YOU: no. do you have a lonely black dot? <eos>",
             "YOU: no. do you see a lonely black dot? <eos>",
             "YOU: i don't see that. do you see a lonely black dot? <eos>",
-            "YOU: i don't see that. do you see a very dark medium sized dot",
-            "YOU: i don't see that. do you see a small black dot by itself"
+            "YOU: i don't see that. do you see a black dot? <eos>",
+            "YOU: i don't see that. i have a small black dot by itself <eos>"
         ],
         "plan_mentions": [
             [

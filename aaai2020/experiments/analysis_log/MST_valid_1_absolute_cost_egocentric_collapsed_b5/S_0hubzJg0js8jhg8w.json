@@ -3237,13 +3237,13 @@
             -0.47215548157691956,
             -0.4737674295902252,
             -0.47739315032958984,
-            -0.4782687723636627,
-            -0.4783501923084259,
             -0.48662135004997253,
             -0.48889270424842834,
             -0.5037921071052551,
             -0.504314124584198,
-            -0.5084506869316101
+            -0.5084506869316101,
+            -0.5243634581565857,
+            -0.5251931548118591
         ],
         "plan_beam_ref_res": [
             -0.00011836781777674332,
@@ -3396,13 +3396,13 @@
             "YOU: i don't have that. do you have a small black dot? <eos>",
             "YOU: i don't have that. i have a tiny black dot by itself <eos>",
             "YOU: let us select the tiny black dot <selection>",
-            "YOU: i don't have that. i have a tiny black dot all by itself",
-            "YOU: i don't have that. i have a small black dot all by itself",
             "YOU: i don't have that. i have a tiny black dot <eos>",
             "YOU: i don't see that. i have a small black dot by itself <eos>",
             "YOU: do you have a small black dot? <eos>",
             "YOU: do you see a tiny black dot? <eos>",
-            "YOU: i don't have that. i have a tiny black dot. <eos>"
+            "YOU: i don't have that. i have a tiny black dot. <eos>",
+            "YOU: is the tiny grey dot black? <eos>",
+            "YOU: let us select the tiny black dot <eos>"
         ],
         "plan_mentions": [
             [

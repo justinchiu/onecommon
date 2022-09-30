@@ -3234,12 +3234,12 @@
             -0.5514619946479797,
             -0.5573068261146545,
             -0.5590357184410095,
-            -0.5631316304206848,
             -0.5659369230270386,
-            -0.5883293151855469,
-            -0.5925324559211731,
-            -0.603674054145813,
-            -0.6119785904884338
+            -0.5683700442314148,
+            -0.5920457243919373,
+            -0.5924270749092102,
+            -0.5939412117004395,
+            -0.5959866642951965
         ],
         "plan_beam_ref_res": [
             -6.586866855621338,
@@ -3393,12 +3393,12 @@
             "YOU: is the gray dot to the right? <eos>",
             "YOU: is the gray dot to the left? <eos>",
             "YOU: is the gray dot slightly smaller? <eos>",
-            "YOU: i don't have that. i have a small medium gray dot by itself",
             "YOU: i don't have that. i have a medium gray dot by itself <eos>",
-            "YOU: i don't have that. i have a small medium gray dot on the",
-            "YOU: i don't have that. i have a small medium grey dot by itself",
-            "YOU: i don't have that. i have a medium gray dot on the right",
-            "YOU: i don't see that. i see a medium gray dot on the right"
+            "YOU: i don't have that. i have a small medium gray dot by itself <eos>",
+            "YOU: i don't have that. i have a medium sized light grey dot by itself <eos>",
+            "YOU: i don't have that. i have a medium sized medium gray dot by itself <eos>",
+            "YOU: i don't have that. i have a medium sized light gray dot by itself <eos>",
+            "YOU: i don't have that. i have a small medium grey dot by itself <eos>"
         ],
         "plan_mentions": [
             [

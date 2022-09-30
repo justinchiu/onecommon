@@ -1297,20 +1297,20 @@
         "plan_beam_lm_bart": [
             -0.49384212493896484,
             -0.5023677349090576,
+            -0.5240353345870972,
+            -0.5357352495193481,
+            -0.5372613668441772,
+            -0.5510796904563904,
+            -0.556465208530426,
+            -0.5614072680473328,
+            -0.5656511187553406,
+            -0.5729060769081116,
             -0.5768100023269653,
+            -0.5775527954101562,
             -0.5805001854896545,
-            -0.6194190382957458,
-            -0.6243035793304443,
-            -0.6250429749488831,
-            -0.6276450157165527,
-            -0.6283672451972961,
-            -0.6292641162872314,
-            -0.6300604343414307,
-            -0.6309978365898132,
-            -0.6357413530349731,
-            -0.6358131766319275,
-            -0.6368843913078308,
-            -0.6383975148200989
+            -0.580678403377533,
+            -0.582267701625824,
+            -0.5958355665206909
         ],
         "plan_beam_ref_res": [
             -4.576801300048828,
@@ -1456,20 +1456,20 @@
         "plan_beam_sents_bart": [
             "YOU: three dots very close together forming a triangle? <eos>",
             "YOU: 3 dots very close together forming a triangle? <eos>",
+            "YOU: do you have a large black dot with a small dark grey dot above and to the right of it? <eos>",
+            "YOU: do you have a large black dot with a smaller dark grey dot above and to the right of it? <eos>",
+            "YOU: do you have a large black dot with a small dark grey dot above and to the left of it? <eos>",
+            "YOU: do you have a large black dot with a smaller dark grey dot above and to the left of it? <eos>",
+            "YOU: do you have a large black dot with a small dark grey dot below it and to the right? <eos>",
+            "YOU: do you have a large black dot with a small grey dot below it and to the right? <eos>",
+            "YOU: do you have a large black dot with a smaller dark grey dot below it and to the right? <eos>",
+            "YOU: do you have a large black dot with a small dark grey dot below it and to the left? <eos>",
             "YOU: do you see three dots in a triangle shape? <eos>",
+            "YOU: do you have a large black dot with a small grey dot below it and to the left? <eos>",
             "YOU: do you have 3 dots in a triangle shape? <eos>",
-            "YOU: do you have a large black dot with a small dark grey dot above and to",
-            "YOU: do you have a large black dot with a small dark grey dot below it and",
-            "YOU: do you have a large black dot with a smaller dark grey dot above and to",
-            "YOU: do you have a large black dot with a smaller dark grey dot below it and",
-            "YOU: do you have a large black dot with a small grey dot below it and to",
-            "YOU: do you have a large black dot with a small dark grey dot to the right",
-            "YOU: do you have a large black dot with a small dark grey dot above it and",
-            "YOU: do you have a large black dot with a smaller dark grey dot above it and",
-            "YOU: do you have a large black dot with a smaller dark grey dot to the right",
-            "YOU: do you have a large black dot with a small grey dot to the right and",
-            "YOU: do you see a triangle of dots? <eos>",
-            "YOU: do you have a large black dot with a small dark grey dot to the left"
+            "YOU: do you have a large black dot with a small dark grey dot above it and to the right? <eos>",
+            "YOU: do you have a large black dot with a smaller dark grey dot below it and to the left? <eos>",
+            "YOU: do you have a large black dot with a small dark grey dot to the right of it? <eos>"
         ],
         "plan_mentions": [
             [
@@ -3250,9 +3250,9 @@
             -0.6736257076263428,
             -0.6782506704330444,
             -0.6811068654060364,
-            -0.6962411999702454,
-            -0.6985597014427185,
-            -0.7028237581253052
+            -0.7028237581253052,
+            -0.7571485042572021,
+            -6.999913215637207
         ],
         "plan_beam_ref_res": [
             -10.023324966430664,
@@ -3409,9 +3409,9 @@
             "YOU: yes i see that <eos>",
             "YOU: do you have a small medium gray dot in between them? <eos>",
             "YOU: yes, i have that. is there a small grey dot between them? <eos>",
-            "YOU: yes, i have that. is there a small medium gray dot between them?",
-            "YOU: yes, i have that. is there a small medium grey dot between them?",
-            "YOU: yes i have that <eos>"
+            "YOU: yes i have that <eos>",
+            "YOU: yes, i see that <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -7105,22 +7105,22 @@
             -10.031039237976074
         ],
         "plan_beam_lm_bart": [
-            -0.5507675409317017,
-            -0.5514844059944153,
-            -0.5542608499526978,
+            -0.524433970451355,
+            -0.5251001119613647,
+            -0.5492221117019653,
+            -0.5508834719657898,
+            -0.5564297437667847,
+            -0.5568460822105408,
+            -0.5571264028549194,
             -0.5643280148506165,
-            -0.5646424889564514,
-            -0.5767697095870972,
-            -0.5785412788391113,
+            -0.5764433145523071,
             -0.5826353430747986,
-            -0.583953320980072,
-            -0.5845728516578674,
-            -0.5848506093025208,
-            -0.5885264873504639,
             -0.5936222672462463,
-            -0.5973582863807678,
-            -0.6015492677688599,
-            -0.6032570004463196
+            -0.6521522402763367,
+            -0.6660428047180176,
+            -0.6670295000076294,
+            -0.6795114278793335,
+            -0.7258484363555908
         ],
         "plan_beam_ref_res": [
             -1.1815285682678223,
@@ -7264,22 +7264,22 @@
             "yes , they are in a vertical line . <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: yes it is. is there a larger dark dot to the right of it?",
-            "YOU: yes it is. is there a larger dark dot to the left of it?",
-            "YOU: yes it is. is there a larger dark dot down and to the left of",
+            "YOU: yes it is. is there a larger dark dot to the right of it? <eos>",
+            "YOU: yes it is. is there a larger dark dot to the left of it? <eos>",
+            "YOU: yes it is. is there a larger black dot to the right of it? <eos>",
+            "YOU: yes it is. is there a larger black dot to the left of it? <eos>",
+            "YOU: yes it is. is there a large black dot to the right of it? <eos>",
+            "YOU: yes it is. is there a large dark dot to the right of it? <eos>",
+            "YOU: yes it is. is there a large dark dot to the left of it? <eos>",
             "YOU: yes it is. let's pick the smallest and darkest <selection>",
-            "YOU: yes it is. is there a larger dark dot down and to the right of",
-            "YOU: yes it is. is there a larger black dot to the right of it?",
-            "YOU: yes it is. is there a larger black dot to the left of it?",
+            "YOU: yes it is. is there a larger dark dot up and to its right? <eos>",
             "YOU: yes it is. let's pick that one <selection>",
-            "YOU: yes it is. is there a large black dot to the right of it?",
-            "YOU: yes it is. is there a large dark dot to the right of it?",
-            "YOU: yes it is. is there a large dark dot to the left of it?",
-            "YOU: yes it is. is there a larger dark dot up and to the left of",
             "YOU: yes it is. let's choose that one. <selection>",
-            "YOU: yes it is. is there a larger dark dot up and to the right of",
-            "YOU: yes it is. is there a larger dark dot up and to its right?",
-            "YOU: yes it is. is there a larger very dark dot to the right of it"
+            "YOU: yes it is the smallest and darkest <eos>",
+            "YOU: yes, it is the smallest and darkest <eos>",
+            "YOU: yes it is. let's choose that one. <eos>",
+            "YOU: yes it is <eos>",
+            "YOU: it is the smallest and darkest <eos>"
         ],
         "plan_mentions": [
             [

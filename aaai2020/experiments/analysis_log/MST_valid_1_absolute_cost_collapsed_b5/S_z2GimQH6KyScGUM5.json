@@ -1295,22 +1295,22 @@
             -4.559147834777832
         ],
         "plan_beam_lm_bart": [
-            -0.4361591935157776,
-            -0.4398723840713501,
-            -0.4413759410381317,
-            -0.44316366314888,
-            -0.44631877541542053,
-            -0.458629310131073,
-            -0.46095380187034607,
-            -0.46125486493110657,
-            -0.46572378277778625,
-            -0.46595802903175354,
-            -0.4678128957748413,
-            -0.4681625962257385,
-            -0.4695279002189636,
-            -0.46955710649490356,
-            -0.4702910780906677,
-            -0.4707539677619934
+            -0.39656662940979004,
+            -0.39761897921562195,
+            -0.42913806438446045,
+            -0.43166646361351013,
+            -0.43281319737434387,
+            -0.4349013864994049,
+            -0.4417520761489868,
+            -0.4537183344364166,
+            -0.4568960964679718,
+            -0.459746778011322,
+            -0.4619447588920593,
+            -0.4630168080329895,
+            -0.46420174837112427,
+            -0.47028911113739014,
+            -0.4715414345264435,
+            -0.49172914028167725
         ],
         "plan_beam_ref_res": [
             -0.9031534194946289,
@@ -1454,22 +1454,22 @@
             "two dots close together ? <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: do you see a large dark grey dot with a small light grey dot to the",
-            "YOU: do you see a large dark grey dot with a smaller light grey dot to the",
-            "YOU: i have a large dark grey dot with a smaller light grey dot above and to",
-            "YOU: do you have a large dark grey dot with a small light grey dot to the",
-            "YOU: do you have a large dark grey dot with a smaller light grey dot to the",
-            "YOU: i have a large dark grey dot with a smaller light grey dot to the right",
-            "YOU: do you see a large dark grey dot with a smaller light grey dot above and",
-            "YOU: do you see a large dark grey dot with a small light grey dot above and",
-            "YOU: do you see a large dark grey dot with a smaller light grey dot to its",
-            "YOU: do you see a large medium gray dot with a small light grey dot to the",
-            "YOU: do you have a large dark grey dot with a smaller light grey dot above and",
-            "YOU: do you see a large dark grey dot with a small light gray dot to the",
-            "YOU: i have a large dark grey dot with a smaller light grey dot to the left",
-            "YOU: do you have a large dark grey dot with a small light grey dot above and",
-            "YOU: do you see a large dark grey dot with a smaller light grey dot above it",
-            "YOU: do you see a large dark grey dot with a small light grey dot to its"
+            "YOU: i have a large dark grey dot with a smaller light grey dot above and to the left of it <eos>",
+            "YOU: i have a large dark grey dot with a smaller light grey dot above and to the right of it <eos>",
+            "YOU: do you see a large dark grey dot with a small light grey dot to the right of it? <eos>",
+            "YOU: do you have a large dark grey dot with a small light grey dot to the right of it? <eos>",
+            "YOU: do you see a large dark grey dot with a smaller light grey dot to the right of it? <eos>",
+            "YOU: do you have a large dark grey dot with a smaller light grey dot to the right of it? <eos>",
+            "YOU: i have a large dark grey dot with a smaller light grey dot to the right of it <eos>",
+            "YOU: i have a large dark grey dot with a smaller light grey dot above and to the left of it. <eos>",
+            "YOU: i have a large dark grey dot with a smaller light grey dot above and to the right of it. <eos>",
+            "YOU: do you see a large dark grey dot with a small light grey dot above and to the right of it <eos>",
+            "YOU: do you see a large dark grey dot with a smaller light grey dot above and to the right of it <eos>",
+            "YOU: do you see a large dark grey dot with a small light grey dot above and to the left of it <eos>",
+            "YOU: do you see a large dark grey dot with a smaller light grey dot above and to the left of it <eos>",
+            "YOU: do you have a large dark grey dot with a small light grey dot above and to the right of it <eos>",
+            "YOU: do you have a large dark grey dot with a smaller light grey dot above and to the right of it <eos>",
+            "YOU: i have a large dark grey dot with a smaller light grey dot above and to the left <eos>"
         ],
         "plan_mentions": [
             [
@@ -3228,19 +3228,19 @@
             -0.5160185098648071,
             -0.5170431733131409,
             -0.5290809869766235,
+            -0.5519164800643921,
+            -0.553546667098999,
             -0.5547419190406799,
-            -0.6055560111999512,
-            -0.6188390254974365,
-            -0.6296534538269043,
-            -0.6299078464508057,
-            -0.639654278755188,
-            -0.6433563232421875,
-            -0.6463885307312012,
-            -0.6466225981712341,
-            -0.6506065726280212,
-            -0.6543455719947815,
-            -0.6600367426872253,
-            -0.6646307110786438
+            -0.5548272728919983,
+            -0.5840352177619934,
+            -0.5867624878883362,
+            -0.5873414874076843,
+            -0.5911295413970947,
+            -0.5933196544647217,
+            -0.5958577394485474,
+            -0.5984170436859131,
+            -0.6096773743629456,
+            -0.6159205436706543
         ],
         "plan_beam_ref_res": [
             -4.772035598754883,
@@ -3387,19 +3387,19 @@
             "YOU: is there a large light grey dot to the left of it? <eos>",
             "YOU: is there a large light grey dot to the right of it? <eos>",
             "YOU: is there a large light grey dot to the left and slightly above it? <eos>",
+            "YOU: i have a tiny light grey dot with a larger slightly darker dot above and to the left of it <eos>",
+            "YOU: is there a large light grey dot to the right of it? if so click the tiny one! <eos>",
             "YOU: is there a large light grey dot to the left and slightly below it? <eos>",
-            "YOU: is there a large light grey dot to the right of it? if so click",
-            "YOU: i have a tiny light grey dot with a larger slightly darker dot up and to",
-            "YOU: i have a tiny light grey dot with a larger slightly darker dot above and to",
-            "YOU: i have a tiny light grey dot with a larger slightly darker dot to the right",
-            "YOU: i have a tiny light grey dot with a larger slightly darker dot to the left",
-            "YOU: do you have a large light grey dot with a tiny light gray dot to the",
-            "YOU: i have a tiny light grey dot with a large light gray dot to the right",
-            "YOU: do you have a large light grey dot with a small light gray dot to the",
-            "YOU: do you see a large light grey dot with a tiny light gray dot to the",
-            "YOU: i have a tiny light grey dot with a large light gray dot to the left",
-            "YOU: i have a tiny very light grey dot with a larger very light gray dot to",
-            "YOU: i have a very tiny very light grey dot, with a larger very light gray"
+            "YOU: i have a tiny light grey dot with a larger slightly darker dot above and to the right of it <eos>",
+            "YOU: i have a tiny light grey dot with a larger slightly darker dot up and to the left of it <eos>",
+            "YOU: is there a large light grey dot to the right of it? if so click that tiny one! <eos>",
+            "YOU: do you have a large light grey dot with a tiny light gray dot to the right of it? <eos>",
+            "YOU: do you have a large light grey dot with a small light gray dot to the right of it? <eos>",
+            "YOU: i have a tiny light grey dot with a larger slightly darker dot up and to the right of it <eos>",
+            "YOU: do you see a large light grey dot with a tiny light gray dot to the right of it? <eos>",
+            "YOU: i have a tiny light grey dot with a larger slightly darker dot to the right of it <eos>",
+            "YOU: i have a tiny light grey dot with a large light gray dot to the right of it <eos>",
+            "YOU: i have a tiny light grey dot with a larger slightly darker dot to the left of it <eos>"
         ],
         "plan_mentions": [
             [
@@ -5174,8 +5174,8 @@
             -0.4991309344768524,
             -0.5017398595809937,
             -0.5083441734313965,
-            -0.5196912884712219,
-            -0.5321653485298157
+            -0.5366393327713013,
+            -0.539335310459137
         ],
         "plan_beam_ref_res": [
             -2.293783187866211,
@@ -5333,8 +5333,8 @@
             "YOU: is there a larger very light grey dot up and to its left? <eos>",
             "YOU: is there a very large very light grey dot up to its right? <eos>",
             "YOU: is there a very large very light grey dot up to its left? <eos>",
-            "YOU: is there a larger very light grey dot up to its right? if so click",
-            "YOU: is there a very large very light grey dot up to its right? if so"
+            "YOU: does it have a large light grey dot above it? <eos>",
+            "YOU: does it have a larger very light grey dot above it? <eos>"
         ],
         "plan_mentions": [
             [
@@ -9017,16 +9017,16 @@
             -0.5109328031539917,
             -0.5113810300827026,
             -0.5159338116645813,
-            -0.5250979661941528,
             -0.5284296274185181,
             -0.5318911075592041,
             -0.5352450013160706,
-            -0.535992443561554,
             -0.5405322313308716,
             -0.5406902432441711,
             -0.5415624380111694,
             -0.5426602959632874,
-            -0.5435601472854614
+            -0.5435601472854614,
+            -0.545109212398529,
+            -0.5455512404441833
         ],
         "plan_beam_ref_res": [
             -5.040820121765137,
@@ -9176,16 +9176,16 @@
             "YOU: i see that. let's choose the tiny light grey dot <selection>",
             "YOU: is it above a large light grey dot? <eos>",
             "YOU: i see it. let's pick the tiny light grey dot <selection>",
-            "YOU: i see that too. let's pick the tiny light grey dot <selection",
             "YOU: does it have a large light grey dot above it? <eos>",
             "YOU: i see that too. let's pick the tiny one. <selection>",
             "YOU: is the large light grey dot to the left of it? <eos>",
-            "YOU: i see that too. let's choose the tiny light grey dot <selection",
             "YOU: is it above the large light grey dot? <eos>",
             "YOU: i see that. let's click the tiny light grey dot <selection>",
             "YOU: is it up above the large light grey dot? <eos>",
             "YOU: i see that too. let's pick the tiny one <selection>",
-            "YOU: is it to the right of the large light grey? <eos>"
+            "YOU: is it to the right of the large light grey? <eos>",
+            "YOU: is it to the left of the large light grey? <eos>",
+            "YOU: is the large light grey dot to the right of it? <eos>"
         ],
         "plan_mentions": [
             [

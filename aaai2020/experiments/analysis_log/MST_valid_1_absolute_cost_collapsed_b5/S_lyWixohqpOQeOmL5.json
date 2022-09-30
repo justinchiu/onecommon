@@ -1295,22 +1295,22 @@
             -15.158337593078613
         ],
         "plan_beam_lm_bart": [
-            -0.5205591320991516,
-            -0.5210979580879211,
-            -0.5227019786834717,
-            -0.5305838584899902,
-            -0.5307636857032776,
-            -0.5313330292701721,
-            -0.5358555316925049,
-            -0.5386380553245544,
-            -0.540742814540863,
-            -0.5417240262031555,
-            -0.5435138940811157,
-            -0.547957181930542,
-            -0.5488075613975525,
-            -0.550937831401825,
-            -0.5540305972099304,
-            -0.5563132166862488
+            -0.4459035396575928,
+            -0.44895169138908386,
+            -0.45154350996017456,
+            -0.4562670588493347,
+            -0.4565775394439697,
+            -0.45833253860473633,
+            -0.45890456438064575,
+            -0.4595642387866974,
+            -0.4682580530643463,
+            -0.47006845474243164,
+            -0.49736663699150085,
+            -0.5093896985054016,
+            -0.5131821632385254,
+            -0.5177817940711975,
+            -0.520249605178833,
+            -0.52945876121521
         ],
         "plan_beam_ref_res": [
             -0.6444176435470581,
@@ -1454,22 +1454,22 @@
             "i see two dots that are very close together and almost on the left side <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i have a large light grey dot with a small dark grey dot above and to",
-            "YOU: do you see a large light grey dot with a small dark grey dot to the",
-            "YOU: do you see a large light grey dot with a small dark dot above and to",
-            "YOU: do you see a large medium gray dot with a small black dot above and to",
-            "YOU: do you see a large light grey dot with a small dark grey dot above and",
-            "YOU: i see a large light grey dot with a small dark grey dot above and to",
-            "YOU: do you see a large medium gray dot with a small dark dot above and to",
-            "YOU: do you have a large light grey dot with a small dark grey dot to the",
-            "YOU: do you see a large light grey dot with a small dark dot to the right",
-            "YOU: do you see a large medium gray dot with a small black dot to the right",
-            "YOU: do you see a large light grey dot with a small dark grey dot above it",
-            "YOU: i have a large light grey dot with a small dark grey dot to the right",
-            "YOU: do you see a large light grey dot with a small black dot to the right",
-            "YOU: do you have a large light grey dot with a small dark grey dot above and",
-            "YOU: do you see a large light grey dot with a small dark dot to the left",
-            "YOU: do you see a large medium gray dot with a small black dot to the left"
+            "YOU: do you see a large light grey dot with a small dark dot above and to the right of it? <eos>",
+            "YOU: do you see a large light grey dot with a small dark dot above and to the left of it? <eos>",
+            "YOU: do you see a large medium gray dot with a small black dot above and to the right of it? <eos>",
+            "YOU: do you see a large medium gray dot with a small dark dot above and to the right of it? <eos>",
+            "YOU: do you see a large medium gray dot with a small black dot above and to the left of it? <eos>",
+            "YOU: i have a large light grey dot with a small dark grey dot above and to the right of it <eos>",
+            "YOU: do you see a large medium gray dot with a small dark dot above and to the left of it? <eos>",
+            "YOU: i have a large light grey dot with a small dark grey dot above and to the left of it <eos>",
+            "YOU: i see a large light grey dot with a small dark grey dot above and to the right of it <eos>",
+            "YOU: i see a large light grey dot with a small dark grey dot above and to the left of it <eos>",
+            "YOU: do you see a large light grey dot with a small dark grey dot to the right of it? <eos>",
+            "YOU: do you see a large light grey dot with a small dark grey dot above and to the right of it <eos>",
+            "YOU: do you see a large light grey dot with a small dark grey dot above and to the left of it <eos>",
+            "YOU: do you see a large light grey dot with a small dark dot above and to the right of it <eos>",
+            "YOU: i have a large light grey dot with a small dark grey dot to the right of it <eos>",
+            "YOU: do you have a large light grey dot with a small dark grey dot above and to the right of it <eos>"
         ],
         "plan_mentions": [
             [
@@ -3230,22 +3230,22 @@
             -17.358745574951172
         ],
         "plan_beam_lm_bart": [
-            -0.6069051027297974,
-            -0.6093306541442871,
-            -0.616389274597168,
-            -0.6330841183662415,
-            -0.633979320526123,
-            -0.6363800168037415,
-            -0.6409078240394592,
-            -0.6434134840965271,
-            -0.6505909562110901,
-            -0.6627746820449829,
+            -0.6417596340179443,
+            -0.64772629737854,
+            -0.6547404527664185,
+            -0.6611071228981018,
             -0.6653531193733215,
             -0.6659197211265564,
             -0.6673709750175476,
-            -0.667483389377594,
-            -0.6743935942649841,
-            -0.6749474406242371
+            -0.6742159724235535,
+            -0.6749474406242371,
+            -0.6763877868652344,
+            -0.6795304417610168,
+            -0.6818718314170837,
+            -0.7056122422218323,
+            -0.7094042301177979,
+            -0.7123923897743225,
+            -6.931616306304932
         ],
         "plan_beam_ref_res": [
             -8.191634178161621,
@@ -3389,22 +3389,22 @@
             "yes , and there are a larger lighter one to the right <eos>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: i see three medium grey dots in a line sloping up and to the right",
-            "YOU: i have three medium grey dots in a line sloping up and to the right",
-            "YOU: i have three medium gray dots in a line sloping up and to the right",
-            "YOU: i see three medium grey dots in a line sloping up and to the left",
-            "YOU: i have three medium grey dots in a line sloping up and to the left",
-            "YOU: i see three medium grey dots in a line sloping up to the right.",
-            "YOU: i have three medium gray dots in a line sloping up and to the left",
-            "YOU: i have three medium grey dots in a line sloping up to the right.",
-            "YOU: i have three medium gray dots in a line sloping up to the right.",
-            "YOU: i see three medium grey dots in a line sloping up to the left.",
+            "YOU: i see three medium grey dots in a line sloping up and to the right <eos>",
+            "YOU: i have three medium grey dots in a line sloping up and to the right <eos>",
+            "YOU: i have three medium gray dots in a line sloping up and to the right <eos>",
+            "YOU: i see three medium grey dots in a line sloping up to the right. <eos>",
             "YOU: i see three medium grey dots in a line sloping up to the right <eos>",
             "YOU: no. do you see three medium grey dots that form a triangle? <eos>",
             "YOU: i have three medium grey dots in a line sloping up to the right <eos>",
-            "YOU: i have three medium grey dots in a line sloping up to the left.",
-            "YOU: i have three medium gray dots in a line sloping up to the left.",
-            "YOU: i have three medium gray dots in a line sloping up to the right <eos>"
+            "YOU: i see three medium grey dots in a line sloping up and to the left <eos>",
+            "YOU: i have three medium gray dots in a line sloping up to the right <eos>",
+            "YOU: i have three medium grey dots in a line sloping up to the right. <eos>",
+            "YOU: no. do you see a triangle of medium grey dots? <eos>",
+            "YOU: do you see a triangle of medium grey dots? <eos>",
+            "YOU: no. do you see 3 dots in a triangle shape? <eos>",
+            "YOU: no. do you see a triangle of medium gray dots? <eos>",
+            "YOU: no. do you have 3 dots in a triangle shape? <eos>",
+            ""
         ],
         "plan_mentions": [
             [
@@ -5167,14 +5167,14 @@
             -0.5672507286071777,
             -0.5836533308029175,
             -0.6040623784065247,
+            -0.6045979857444763,
+            -0.6101276874542236,
             -0.6278530359268188,
-            -0.6515781283378601,
-            -0.6516678333282471,
-            -0.6606307625770569,
-            -0.6638467311859131,
-            -0.6668969392776489,
-            -0.6718301773071289,
-            -0.6731901168823242
+            -0.6374419331550598,
+            -0.6390805840492249,
+            -0.6509988307952881,
+            -0.6534941792488098,
+            -0.6869567632675171
         ],
         "plan_beam_ref_res": [
             -6.998824596405029,
@@ -5326,14 +5326,14 @@
             "YOU: is there a larger, lighter one to the left of it? <eos>",
             "YOU: is there a large medium gray dot to the left and slightly above it? <eos>",
             "YOU: does it have a larger lighter one above it? <eos>",
+            "YOU: do you see a large medium gray dot with a small black dot to the right of it? <eos>",
+            "YOU: do you see a large medium gray dot with a small dark dot to the right of it? <eos>",
             "YOU: does it have a larger lighter dot above it? <eos>",
-            "YOU: do you see a large medium gray dot with a small dark dot above and to",
-            "YOU: i see a large medium gray dot with a small dark grey dot above and to",
-            "YOU: do you see a large medium gray dot with a small black dot above and to",
-            "YOU: i have a large medium gray dot with a small dark grey dot above and to",
-            "YOU: do you see a large medium gray dot with a small dark grey dot to the",
-            "YOU: do you see a large medium gray dot with a small dark grey dot above it",
-            "YOU: do you see a large medium gray dot with a small black dot to the right"
+            "YOU: do you see a large medium gray dot with a small dark dot above and to the left? <eos>",
+            "YOU: i see a large medium gray dot with a small dark grey dot to the right of it <eos>",
+            "YOU: do you see a large medium gray dot with a small dark dot above it? <eos>",
+            "YOU: do you see a large medium gray dot with a small dark grey dot above it? <eos>",
+            "YOU: i see a large medium gray dot with a small dark grey dot above it <eos>"
         ],
         "plan_mentions": [
             [
@@ -7082,10 +7082,10 @@
             -0.5544230937957764,
             -0.558728039264679,
             -0.5601618885993958,
+            -0.5642868280410767,
             -0.5659900307655334,
-            -0.5928403735160828,
-            -0.6095623970031738,
-            -0.6096992492675781
+            -0.5801857709884644,
+            -0.5883678197860718
         ],
         "plan_beam_ref_res": [
             -9.858973503112793,
@@ -7241,10 +7241,10 @@
             "YOU: does it have a larger lighter one above it and to the left? <eos>",
             "YOU: does it have a larger medium grey dot above it and to the right? <eos>",
             "YOU: does it have a larger medium gray dot above it and to the left? <eos>",
+            "YOU: does it form a triangle with a larger lighter dot and a medium grey dot? <eos>",
             "YOU: does it have a larger medium grey dot above it and to the left? <eos>",
-            "YOU: does it form a triangle with a larger lighter dot and a medium grey dot?",
-            "YOU: does it form a triangle with a larger lighter dot and a medium gray dot?",
-            "YOU: does it form a triangle with a larger lighter dot and a medium sized lighter dot"
+            "YOU: does it form a triangle with a larger lighter dot and a medium gray dot? <eos>",
+            "YOU: does it form a triangle with a larger lighter one and a medium grey one? <eos>"
         ],
         "plan_mentions": [
             [

@@ -3237,13 +3237,13 @@
             -0.5117518901824951,
             -0.5323941707611084,
             -0.5518069267272949,
+            -0.5694135427474976,
             -0.5710282921791077,
-            -0.5723020434379578,
-            -0.5776998996734619,
-            -0.5888718962669373,
-            -0.5903118252754211,
-            -0.5917454361915588,
-            -0.5949646830558777
+            -0.586540162563324,
+            -0.5949646830558777,
+            -0.6007534861564636,
+            -0.6676769256591797,
+            -0.6714169383049011
         ],
         "plan_beam_ref_res": [
             -0.44036513566970825,
@@ -3396,13 +3396,13 @@
             "YOU: let us select the large, light dot <selection>",
             "YOU: let us select the large light dot at its 10 oclock <eos>",
             "YOU: let us select the large, light dot at 10 oclock <eos>",
+            "YOU: i don't think i have that. do you have a medium sized light grey dot? <eos>",
             "YOU: let us select the large light dot at 10 oclock <eos>",
-            "YOU: i don't have that. i have a medium sized light grey dot at",
-            "YOU: i don't have that. i have a medium sized light gray dot at",
-            "YOU: i don't think i have that. i have a medium sized light grey",
-            "YOU: i don't think i have that. i have a large light gray dot",
-            "YOU: i don't think i have that. do you have a medium sized light",
-            "YOU: let us select the large light dot <eos>"
+            "YOU: i don't think i have that. do you have a medium sized light gray dot? <eos>",
+            "YOU: let us select the large light dot <eos>",
+            "YOU: let us select the large, light dot <eos>",
+            "YOU: i don't have that. i have a medium sized light grey dot at the top of my circle <eos>",
+            "YOU: i don't have that. i have a medium sized light gray dot at the top of my circle <eos>"
         ],
         "plan_mentions": [
             [

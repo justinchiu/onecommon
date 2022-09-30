@@ -5158,22 +5158,22 @@
             -7.825523376464844
         ],
         "plan_beam_lm_bart": [
-            -0.5175098180770874,
-            -0.5182449817657471,
-            -0.5262744426727295,
             -0.5285128355026245,
-            -0.5362598299980164,
-            -0.5364012122154236,
             -0.5377016067504883,
-            -0.5389041900634766,
-            -0.5433108806610107,
-            -0.5474925637245178,
             -0.549228310585022,
             -0.55536288022995,
             -0.5582346320152283,
             -0.5604069232940674,
-            -0.56343674659729,
-            -0.569295346736908
+            -0.5740107893943787,
+            -0.5810446739196777,
+            -0.5887918472290039,
+            -0.5890984535217285,
+            -0.5898413062095642,
+            -0.5918300747871399,
+            -0.6274336576461792,
+            -0.6390694975852966,
+            -0.7358719706535339,
+            -7.009615421295166
         ],
         "plan_beam_ref_res": [
             -3.6107680797576904,
@@ -5317,22 +5317,22 @@
             "yes , let 's pick the larger one <selection>"
         ],
         "plan_beam_sents_bart": [
-            "YOU: no. do you see a large medium gray dot at the top of the circle",
-            "YOU: no. do you see a large medium gray dot in the middle of the circle",
-            "YOU: no. do you see a large medium gray dot at the bottom of the circle",
             "YOU: no. do you have a large medium gray dot? <eos>",
-            "YOU: no. do you see a large medium grey dot at the top of the circle",
-            "YOU: no. do you see a large medium grey dot in the middle of the circle",
             "YOU: no. do you see a large medium gray dot? <eos>",
-            "YOU: no. do you see a large dark grey dot at the top of the circle",
-            "YOU: no. do you see a large medium grey dot at the bottom of the circle",
-            "YOU: no. do you see a large dark grey dot at the bottom of the circle",
             "YOU: no. do you have a large medium grey dot? <eos>",
             "YOU: no. do you see a large medium grey dot? <eos>",
             "YOU: no. do you see a large dark grey dot? <eos>",
             "YOU: yes! is the middle one the largest? <eos>",
-            "YOU: no. do you have a large medium gray dot at the top of the circle",
-            "YOU: no. do you have a large medium gray dot at the bottom of the circle"
+            "YOU: no. do you see a large medium gray dot in the middle of the circle <eos>",
+            "YOU: no. do you have a large medium gray dot at the top? <eos>",
+            "YOU: no. do you have a large medium gray dot at the bottom? <eos>",
+            "YOU: no. do you see a large medium gray dot at the top of the circle <eos>",
+            "YOU: no. do you see a large medium gray dot at the top? <eos>",
+            "YOU: no. do you see a large medium grey dot in the middle of the circle <eos>",
+            "YOU: yes. let's pick the largest one <eos>",
+            "YOU: yes, let's pick the largest one <eos>",
+            "YOU: yes it is <eos>",
+            ""
         ],
         "plan_mentions": [
             [

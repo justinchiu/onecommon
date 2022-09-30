@@ -9004,10 +9004,8 @@
             -0.4861045181751251,
             -0.5125380754470825,
             -0.5195761919021606,
-            -0.5251284837722778,
             -0.5416032671928406,
             -0.5424055457115173,
-            -0.5462153553962708,
             -0.5482205152511597,
             -0.5489168763160706,
             -0.5543688535690308,
@@ -9016,7 +9014,9 @@
             -0.5668530464172363,
             -0.5840649604797363,
             -0.5851451754570007,
-            -0.5860524773597717
+            -0.5860524773597717,
+            -0.5891934633255005,
+            -0.6155296564102173
         ],
         "plan_beam_ref_res": [
             -4.667724609375,
@@ -9163,10 +9163,8 @@
             "YOU: do you have a black dot? <eos>",
             "YOU: i don't have that. do you have a black dot? <eos>",
             "YOU: is the larger one black? <eos>",
-            "YOU: i don't have that. do you have a medium sized black dot?",
             "YOU: i don't have that. do you have a medium black dot? <eos>",
             "YOU: i don't have that, do you have a black dot? <eos>",
-            "YOU: i don't have that, do you have a medium sized black dot?",
             "YOU: i don't see that. do you have a black dot? <eos>",
             "YOU: is the one above black? <eos>",
             "YOU: do you have one black dot? <eos>",
@@ -9175,7 +9173,9 @@
             "YOU: i don't have that, do you have a medium black dot? <eos>",
             "YOU: i don't have that. do you have a black medium dot? <eos>",
             "YOU: i don't have that, i have a black dot in the middle <eos>",
-            "YOU: is the one above darker? <eos>"
+            "YOU: is the one above darker? <eos>",
+            "YOU: i don't have that. i have a black dot in the middle <eos>",
+            "YOU: do you have a black dot <eos>"
         ],
         "plan_mentions": [
             [
