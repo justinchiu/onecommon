@@ -249,7 +249,7 @@ splits = [
     "valid_1_absolute_or_collapsed_b5",
     "valid_1_absolute_cost_collapsed_b5",
     "valid_1_absolute_cost_egocentric_collapsed_b5",
-    "DELETE_valid_1_absolute_cost_collapsed_b5",
+    "MST_valid_1_absolute_cost_collapsed_b5",
 ]
 
 split = "train"
@@ -260,7 +260,7 @@ split = splits[1]
 split = splits[3]
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 analysis_paths = [Path("../../aaai2020/experiments/analysis_log") / split for split in splits]
-scenarios = [f.stem for f in analysis_path.iterdir() if f.is_file()]
+scenarios = list(sorted([f.stem for f in analysis_path.iterdir() if f.is_file()]))
 
 idx = st.number_input("Scenario number", 0, len(scenarios))
 #idx = 1
