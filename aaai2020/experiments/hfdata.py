@@ -33,10 +33,11 @@ use_unordered_pairwise = True
 #use_unordered_pairwise = False
 use_extrema_features = False
 use_unks = False
+use_distance = True
 
 # vary these only
-use_short_describe = False
-use_plan_specific_description = False
+use_short_describe = True
+use_plan_specific_description = True
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -467,6 +468,7 @@ if __name__ == "__main__":
             f"_sd{m[use_short_describe]}"
             f"_ps{m[use_plan_specific_description]}"
             f"_u{m[use_unks]}"
+            f"_d{m[use_distance]}"
         )
         dot_descs = (
             examples["plan_specific_dots"]
