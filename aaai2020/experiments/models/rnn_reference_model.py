@@ -2516,6 +2516,7 @@ class RnnReferenceModel(nn.Module):
         # prevent the beam from filling with identical copies of the same hypothesis, by breaking ties
         total_scores = torch.full((beam_size,), BIG_NEG).float().to(device)
         total_scores[0] = 0
+        # first beam is [(<s>, 0), duds]
 
         total_log_probs = torch.zeros((beam_size,)).float().to(device)
         lens = torch.zeros(beam_size).long().to(device)
@@ -2560,7 +2561,11 @@ class RnnReferenceModel(nn.Module):
                 word_logprobs_to_sample = word_logprobs
 
             # (this_beam_size * vocab)
-            if gumbel_noise_forgetful:
+            if gumbel_noise_forgetful and word_idx == 0:
+                # prevent repeats
+                # first beam is <s> repeated a ton of times with scores [0, -10k, ...]
+                candidate_scores = total_scores.unsqueeze(1) + Gumbel(word_logprobs_to_sample, scale=1.0).sample()
+            elif gumbel_noise_forgetful:
                 assert not gumbel_noise
                 candidate_scores = Gumbel(word_logprobs_to_sample, scale=1.0).sample()
             elif gumbel_noise:
