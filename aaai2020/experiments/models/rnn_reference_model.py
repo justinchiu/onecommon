@@ -2561,7 +2561,7 @@ class RnnReferenceModel(nn.Module):
                 word_logprobs_to_sample = word_logprobs
 
             # (this_beam_size * vocab)
-            if gumbel_noise_forgetful and word_idx == 0:
+            if gumbel_noise_forgetful and word_ix == 0:
                 # prevent repeats
                 # first beam is <s> repeated a ton of times with scores [0, -10k, ...]
                 candidate_scores = total_scores.unsqueeze(1) + Gumbel(word_logprobs_to_sample, scale=1.0).sample()
