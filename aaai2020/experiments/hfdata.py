@@ -3,6 +3,10 @@ from typing import NamedTuple
 from pathlib import Path
 import numpy as np
 from jinja2 import Template
+from rich.progress import track
+import json
+
+import torch
 
 from belief import process_ctx
 
@@ -15,9 +19,24 @@ from corpora.reference_sentence import ReferenceSentenceCorpus
 
 import template
 
-import hfutils
+from hfutils import (
+    HfDataOptions, Property,
+    construct_feature_string, get_bart_tokenizer,
+)
 
-tokenizer = hfutils.get_bart_tokenizer()
+fields = (
+    "dots",
+    "plan_specific_dots",
+    "text",
+    "plan",
+    "mentions",
+    "confirmation",
+    "selection_leaning",
+    "selection",
+    "outtext",
+)
+
+tokenizer = get_bart_tokenizer()
 unk_token = tokenizer.unk_token
 
 domain = get_domain("one_common")
@@ -26,6 +45,7 @@ fold_num = 1
 freq_cutoff = 10
 
 # OPTIONS
+"""
 use_properties = True
 use_pairwise_features = True
 #use_pairwise_features = False
@@ -34,10 +54,28 @@ use_unordered_pairwise = True
 use_extrema_features = False
 use_unks = False
 use_distance = True
+use_confirm = True
+use_select = True
 
 # vary these only
 use_short_describe = True
 use_plan_specific_description = True
+"""
+
+options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    unordered_rel = True,
+    short_describe = True,
+    plan_specific_description = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+)
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -168,7 +206,8 @@ def get_conversations(split):
             assert sents == sents_
 
             conversations.append(Conversation(
-                sents = sents if not use_unks else unk_sents(sents, word_dict),
+                #sents = sents if not use_unks else unk_sents(sents, word_dict),
+                sents = sents,
                 refs = all_refs,
                 partner_refs = all_partner_refs,
                 partner_refs_our_view = all_partner_refs_our_view,
@@ -287,8 +326,6 @@ def describe_dots(
         pairwise_str = ", ".join(pairwise_strs)
         description = f"{description} [SEP] {pairwise_str}"
 
-    if use_extrema_features:
-        pass
     return description
 
 
@@ -296,6 +333,7 @@ def describe_plan_specific_dots(
     dots,
     plan,
     use_unordered_pairwise = True,
+    close_dots = None,
 ):
     boolplan = plan.astype(bool)
     dots = np.array(dots, dtype=float).reshape(-1, 4)
@@ -328,6 +366,8 @@ def describe_plan_specific_dots(
         pairwise_strs.append(hor_str)
         pairwise_strs.append(size_str)
         pairwise_strs.append(col_str)
+        if close_dots is not None:
+            raise NotImplementedError("Need to implement distance")
 
     pairwise_str = " , ".join(pairwise_strs)
     description = f"{description} [SEP] {pairwise_str}"
@@ -382,14 +422,24 @@ def unk_sents(sents, word_dict):
         #import pdb; pdb.set_trace()
     return unked_sents
 
-def get_examples(conversations, describe_plan=describe_plan_sparse):
-    fields = ("dots", "plan_specific_dots", "text", "plan", "mentions", "outtext")
+def get_examples(
+    conversations,
+    describe_plan = describe_plan_sparse,
+    confirmation_tokenizer = None,
+    confirmation_predictor = None,
+):
     examples = {
         key: [] for key in fields
         #for key in Conversation._fields + fields
     }
-    for conversation in conversations:
+    for conversation in track(conversations):
         num_turns = len(conversation.sents)
+
+        dots = np.array(conversation.dots, dtype=float).reshape(-1, 4)
+        xy = dots[:,:2]
+        dists = ((xy[:,None] - xy[None]) ** 2).sum(-1)
+        # lower is better
+        dist_ranks = np.argsort(dists.flatten()).reshape(dists.shape)
         for turn in range(num_turns):
             # dont use Conversation as examples, want something that can be
             # directly fed to BART/RoBERTa
@@ -419,16 +469,18 @@ def get_examples(conversations, describe_plan=describe_plan_sparse):
                 # linearized dot representation
                 examples["dots"].append(describe_dots(
                     conversation.dots,
-                    use_short_describe,
-                    use_pairwise_features,
-                    use_unordered_pairwise,
+                    use_short_describe = options.short_describe,
+                    use_pairwise_features = True,
+                    use_unordered_pairwise = options.unordered_rel,
                 ))
 
                 # plan-specific dot representations
                 examples["plan_specific_dots"].append(
                     describe_plan_specific_dots(
-                        conversation.dots, raw_plan,
-                        use_unordered_pairwise,
+                        conversation.dots,
+                        raw_plan,
+                        options.unordered_rel,
+                        close_dots = None,
                     ),
                 )
 
@@ -436,7 +488,42 @@ def get_examples(conversations, describe_plan=describe_plan_sparse):
                 examples["text"].append(
                     " ".join([x for xs in conversation.sents[:turn] for x in xs])
                 )
-                examples["outtext"].append(" ".join(conversation.sents[turn]))
+
+                sent = " ".join(conversation.sents[turn])
+                examples["outtext"].append(sent)
+
+                # confirmation
+                tokenized_text = confirmation_tokenizer(sent)
+                response_struct = confirmation_predictor(
+                    torch.tensor(tokenized_text["input_ids"])[None],
+                )
+                #response_logits = response_struct.logits[0].log_softmax(-1)
+                #label = response_logits.argmax().item()
+                confirmation_prediction = response_struct.logits[0].argmax().item()
+                # 0: None, 1: Confirm, 2: Disconfirm
+                confirm_map = ["none", "yes", "no"]
+                examples["confirmation"].append(
+                    f"confirmation: {confirm_map[confirmation_prediction]}"
+                )
+
+                # selection-leaning
+                selection_like_words = set(["pick", "choose", "select"])
+                has_select = any([
+                    x in selection_like_words for x in conversation.sents[turn]
+                ])
+                examples["selection_leaning"].append(
+                    "should we select? yes"
+                    if has_select
+                    else "should we select? no"
+                )
+
+                # selection
+                examples["selection"].append(
+                    "<selection>"
+                    if turn == num_turns - 1
+                    else "selection: not yet"
+                )
+
 
     # Check number of examples for each field
     for key1 in fields:
@@ -445,31 +532,37 @@ def get_examples(conversations, describe_plan=describe_plan_sparse):
     return examples
 
 if __name__ == "__main__":
+    from transformers import (
+        AutoTokenizer, AutoModelForSequenceClassification,
+    )
+
     print(Conversation._fields)
+
+    response_pretrained_path = "models/save_pretrained"
+    confirmation_tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
+    confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
+        response_pretrained_path)
 
     for split in splits:
         conversations = get_conversations(split)
-        examples = get_examples(conversations)
+        examples = get_examples(
+            conversations,
+            confirmation_tokenizer = confirmation_tokenizer,
+            confirmation_predictor = confirmation_predictor,
+        )
 
         idx = 11
         print(f"Data example in {split}")
-        print("dots", examples["dots"][idx])
-        print("plan_specific_dots", examples["plan_specific_dots"][idx])
-        print("text", examples["text"][idx])
-        print("plan", examples["plan"][idx])
-        print("mentions", examples["mentions"][idx])
-        print("outtext", examples["outtext"][idx])
+        for field in examples.keys():
+            print(field, examples[field][idx])
 
-        m = {True: "y", False: "n"}
-        feature_string = (
-            f"p{m[use_properties]}_2p{m[use_pairwise_features]}"
-            f"_2pu{m[use_unordered_pairwise]}"
-            f"_e{m[use_extrema_features]}"
-            f"_sd{m[use_short_describe]}"
-            f"_ps{m[use_plan_specific_description]}"
-            f"_u{m[use_unks]}"
-            f"_d{m[use_distance]}"
-        )
+        feature_string = construct_feature_string(options)
+
+        # save json
+        json_path = f"hf_datasets/{split}_{feature_string}.json"
+        with open(json_path, "w") as f:
+            json.dump(examples, f)
+
         dot_descs = (
             examples["plan_specific_dots"]
             if use_plan_specific_description
@@ -485,7 +578,9 @@ if __name__ == "__main__":
         ]
         mention_examples["label"] = examples["mentions"]
         mention_dataset = Dataset.from_dict(mention_examples)
-        mention_dataset.save_to_disk(f"hf_datasets/{split}_mentions_given_text_plan_{feature_string}.hf")
+        mention_path = f"hf_datasets/{split}_mentions_given_text_plan_{feature_string}.hf"
+        print(f"Mention dataset path {mention_path}")
+        mention_dataset.save_to_disk(mention_path)
 
         # plan gen
         num_examples = len(examples["plan"])
@@ -505,7 +600,9 @@ if __name__ == "__main__":
         max_length_output = max([len(tokenizer.tokenize(x)) for x in plan_examples["label"]])
         print(f"Max length of plan output: {max_length_output}")
         plan_dataset = Dataset.from_dict(plan_examples)
-        plan_dataset.save_to_disk(f"hf_datasets/{split}_plan_given_text_{feature_string}.hf")
+        plan_path = f"hf_datasets/{split}_plan_given_text_{feature_string}.hf"
+        print(f"Plan dataset path {plan_path}")
+        plan_dataset.save_to_disk(plan_path)
 
         # text gen
         num_examples = len(examples["outtext"])
@@ -523,5 +620,7 @@ if __name__ == "__main__":
         max_length_output = max([len(tokenizer.tokenize(x)) for x in text_examples["label"]])
         print(f"Max length of text output: {max_length_output}")
         text_dataset = Dataset.from_dict(text_examples)
-        text_dataset.save_to_disk(f"hf_datasets/{split}_text_given_plan_{feature_string}.hf")
+        text_path = f"hf_datasets/{split}_text_given_plan_{feature_string}.hf"
+        print(f"Text dataset path {text_path}")
+        text_dataset.save_to_disk(text_path)
 
