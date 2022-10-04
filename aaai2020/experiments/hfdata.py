@@ -524,9 +524,9 @@ def get_examples(
                     else "selection: not yet"
                 )
 
-            for field in examples.keys():
-                print(field, examples[field][-1])
-            import pdb; pdb.set_trace()
+            #for field in examples.keys():
+                #print(field, examples[field][-1])
+            #import pdb; pdb.set_trace()
 
 
     # Check number of examples for each field
@@ -550,6 +550,8 @@ if __name__ == "__main__":
     for split in splits:
         conversations = get_conversations(split)
 
+        feature_string = construct_feature_string(options)
+
         # json path for saving examples
         json_path = Path(f"hf_datasets/{split}_{feature_string}.json")
         if not json_path.exists():
@@ -564,7 +566,7 @@ if __name__ == "__main__":
                 json.dump(examples, f)
         else:
             print(f"Loading examples from {str(json_path)}")
-            with json_path.open("w") as f:
+            with json_path.open("r") as f:
                 examples = json.load(f)
 
         idx = 11
@@ -574,11 +576,10 @@ if __name__ == "__main__":
 
 
 
-        feature_string = construct_feature_string(options)
 
         dot_descs = (
             examples["plan_specific_dots"]
-            if use_plan_specific_description
+            if options.plan_specific_description
             else examples["dots"]
         )
 
