@@ -257,6 +257,9 @@ if __name__ == "__main__":
             "text_given_plan_py_2py_2puy_en_sdn_psn_un",
             "text_given_plan_py_2py_2puy_en_sdy_psn_un",
             "text_given_plan_py_2py_2puy_en_sdy_psy_un",
+
+            # 10/4
+            "text_given_plan_SI_CO_RX_RY_RS_RC_ur_sd_ps_c_sl_s",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",

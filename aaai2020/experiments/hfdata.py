@@ -622,8 +622,22 @@ if __name__ == "__main__":
         num_examples = len(examples["outtext"])
         text_examples = {}
         text_examples["input"] = [
-            f"{dots} [MSEP] {text} [MSEP] {plan}"
-            for dots, text, plan in zip(dot_descs, examples["text"], examples["plan"])
+            f"{dots} [MSEP] {text} [MSEP] {confirmation} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
+            for (
+                dots,
+                text,
+                confirm,
+                selection_leaning,
+                selection,
+                plan,
+            ) in zip(
+                dot_descs,
+                examples["text"],
+                examples["confirmation"],
+                examples["selection_leaning"],
+                examples["selection"],
+                examples["plan"],
+            )
         ]
         input_lens = [len(tokenizer.tokenize(x)) for x in text_examples["input"]]
         max_length_input = max(input_lens)
