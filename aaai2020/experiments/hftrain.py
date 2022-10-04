@@ -110,6 +110,7 @@ def evaluate(args):
 
     # model
     output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-33000"
+    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-8500"
     model = BartForConditionalGeneration.from_pretrained(
         output_dir, forced_bos_token_id=0,
     )

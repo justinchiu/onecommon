@@ -622,7 +622,7 @@ if __name__ == "__main__":
         num_examples = len(examples["outtext"])
         text_examples = {}
         text_examples["input"] = [
-            f"{dots} [MSEP] {text} [MSEP] {confirmation} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
+            f"{dots} [MSEP] {text} [MSEP] {confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
             for (
                 dots,
                 text,
