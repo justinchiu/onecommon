@@ -524,6 +524,10 @@ def get_examples(
                     else "selection: not yet"
                 )
 
+            for field in examples.keys():
+                print(field, examples[field][-1])
+            import pdb; pdb.set_trace()
+
 
     # Check number of examples for each field
     for key1 in fields:
@@ -545,23 +549,32 @@ if __name__ == "__main__":
 
     for split in splits:
         conversations = get_conversations(split)
-        examples = get_examples(
-            conversations,
-            confirmation_tokenizer = confirmation_tokenizer,
-            confirmation_predictor = confirmation_predictor,
-        )
+
+        # json path for saving examples
+        json_path = Path(f"hf_datasets/{split}_{feature_string}.json")
+        if not json_path.exists():
+            print("Generating new examples")
+            examples = get_examples(
+                conversations,
+                confirmation_tokenizer = confirmation_tokenizer,
+                confirmation_predictor = confirmation_predictor,
+            )
+            print(f"Saving examples to {str(json_path)}")
+            with json_path.open("w") as f:
+                json.dump(examples, f)
+        else:
+            print(f"Loading examples from {str(json_path)}")
+            with json_path.open("w") as f:
+                examples = json.load(f)
 
         idx = 11
         print(f"Data example in {split}")
         for field in examples.keys():
             print(field, examples[field][idx])
 
-        feature_string = construct_feature_string(options)
 
-        # save json
-        json_path = f"hf_datasets/{split}_{feature_string}.json"
-        with open(json_path, "w") as f:
-            json.dump(examples, f)
+
+        feature_string = construct_feature_string(options)
 
         dot_descs = (
             examples["plan_specific_dots"]
