@@ -290,7 +290,15 @@ class BeliefAgent(RnnAgent):
             dot_description = describe_plan_specific_dots(self.context, plan)
             previous_text = " ".join(w for sent in self.text_history for w in sent)
             plan_description = describe_plan_sparse(plan)
-            generator_input = f"{dot_description} [MSEP] {previous_text} [MSEP] {plan_description}"
+            # HARD CODE no confirmation / selection
+            generator_input = (
+                f"{dot_description} "
+                f"[MSEP] {previous_text} "
+                "[MSEP] confirmation: none "
+                "[MSEP] should we select? no "
+                "[MSEP] selection: not yet "
+                f"[MSEP] {plan_description}"
+            )
             outputs = self.language_generator.generate(
                 self.generation_tokenizer(generator_input, return_tensors="pt")["input_ids"],
                 num_beams = 16,

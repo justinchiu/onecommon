@@ -197,7 +197,9 @@ def main():
         # language generator
         generation_tokenizer = hfutils.get_bart_tokenizer()
         # need to SCP this
-        bart_dir = "./hf-results-text_given_plan_py_2py_2puy_en_sdy_psy_un-l1e-05-b4/checkpoint-33000"
+        # old version without confirmation + selection
+        #bart_dir = "./hf-results-text_given_plan_py_2py_2puy_en_sdy_psy_un-l1e-05-b4/checkpoint-33000"
+        bart_dir = "./hf-results-text_given_plan_SI_CO_RX_RY_RS_RC_ur_sd_ps_c_sl_s-l1e-05-b4/checkpoint-25000"
         language_generator = BartForConditionalGeneration.from_pretrained(
             bart_dir, forced_bos_token_id=0,
         )
