@@ -250,14 +250,22 @@ splits = [
     "valid_1_absolute_cost_collapsed_b5",
     "valid_1_absolute_cost_egocentric_collapsed_b5",
     "MST_valid_1_absolute_cost_collapsed_b5",
+    "MST2_valid_1_absolute_cost_collapsed_b5",
 ]
+
+from argparse import ArgumentParser
+parser = ArgumentParser()
+parser.add_argument("--split", default=3, type=int)
+args = parser.parse_args()
 
 split = "train"
 split = "valid_1"
 #split = splits[0]
 split = splits[1]
 #split = splits[2]
-split = splits[3]
+split = splits[3] # MST
+split = splits[4] # MST2
+split = splits[args.split]
 analysis_path = Path("../../aaai2020/experiments/analysis_log") / split
 analysis_paths = [Path("../../aaai2020/experiments/analysis_log") / split for split in splits]
 scenarios = list(sorted([f.stem for f in analysis_path.iterdir() if f.is_file()]))
