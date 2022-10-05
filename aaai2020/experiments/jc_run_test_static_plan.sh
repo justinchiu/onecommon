@@ -80,10 +80,16 @@ S_MMCMJd56CCUER6gV "
 #rerank_args4="--must_contain S_pqC0O80Ojf5BKLyV"
 #rerank_args4="--must_contain S_RWYCZVdTDVyxpjWr"
 #rerank_args4="--must_contain S_a5VVGxsBgrYKSijz"
-rerank_args4=""
 #rerank_args4="--must_contain S_rfDQvM9yjii25RlV"
 #rerank_args4="--must_contain S_RUtTM6LOTtufBj20"
 #rerank_args4="--must_contain S_jlQrDFDT8leLRppp"
+rerank_args4="--must_contain \
+S_00O7gM7Rm9SJpVkM \
+S_0JRo3K0k6le07BIe \
+S_0Oq4CbDhgqrrwNWT \
+S_0QKuWZZo5P7Awqdn \
+S_0WJK0QNkP20y80pi "
+#rerank_args4=""
 
 
 split=train
