@@ -216,6 +216,7 @@ class BeliefAgent(RnnAgent):
         # call parent's read method
         super().read(inpt_words, *args, **kwargs)
 
+        # TODO: DOES INPT_WORDS HAVE THEM?
         # run confirmation prediction
         # inpt_words: [String] are partner's last utterance
         text = " ".join(inpt_words)

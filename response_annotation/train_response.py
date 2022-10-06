@@ -1,3 +1,5 @@
+# IMPORTANT: data looks like: 'Yes I have it'
+
 import torch
 import numpy as np
 import pandas as pd

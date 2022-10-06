@@ -261,6 +261,14 @@ if __name__ == "__main__":
 
             # 10/4
             "text_given_plan_SI_CO_RX_RY_RS_RC_ur_sd_ps_c_sl_s",
+
+            # 10/5
+            "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt_ur_sd_ps__c_sl_s_mps7_dh",
+            "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt_ur_sd_ps_sr_c_sl_s_mps5_dh",
+            "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt_ur_sd_ps_sr_c_sl_s_mps5_",
+            "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt__sd_ps_sr_c_sl_s_mps5_dh",
+            "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_c_sl_s_mps5_dh",
+            "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_dh",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",

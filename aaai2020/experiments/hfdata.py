@@ -20,7 +20,7 @@ from corpora.reference_sentence import ReferenceSentenceCorpus
 import template
 
 from hfutils import (
-    HfDataOptions, Property,
+    HfDataOptions, Property, DescriptionFormat,
     construct_feature_string, get_bart_tokenizer,
 )
 
@@ -61,21 +61,134 @@ use_select = True
 use_short_describe = True
 use_plan_specific_description = True
 """
-
-options = HfDataOptions(
+# basic
+basic_options = HfDataOptions(
     properties = [
         Property.SIZE, Property.COLOR,
         Property.RX, Property.RY,
         Property.RSIZE, Property.RCOLOR,
         #Property.RDIST,
     ],
+    format = DescriptionFormat.SrcRelTgt,
     unordered_rel = True,
     short_describe = True,
     plan_specific_description = True,
+    short_rel = False,
     confirmation = True,
     selection_leaning = True,
     selection = True,
+    max_plan_size = 7,
+    dialog_history = True,
 )
+
+# plan limit + short rel
+plan_limit_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelTgt,
+    unordered_rel = True,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = True,
+)
+
+# plan limit + remove dialog
+plan_limit_remove_dialog_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelTgt,
+    unordered_rel = True,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = False,
+)
+
+# plan limit + short_rel + ordered pairs
+plan_limit_short_rel_ordered_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = True,
+)
+
+# plan limit + ordered pairs + group relations
+plan_limit_ordered_group_rel_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = True,
+)
+
+# plan limit + group targets
+plan_limit_group_target_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelTgts,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = True,
+)
+
+options = [
+    basic_options,
+    plan_limit_options,
+    plan_limit_remove_dialog_options,
+    plan_limit_short_rel_ordered_options,
+    plan_limit_ordered_group_rel_options,
+    plan_limit_group_target_options,
+][5]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -240,7 +353,10 @@ def describe_dot(i, dot_strings, dots, size_color):
     size, color = size_color[i]
     return f"{dot_strings[i]} size {size_map[size]} and color {color_map[color]}"
 
-def describe_dot_pair(i, j, dot_strings, dots):
+def describe_dot_pair(
+    i, j, dot_strings, dots,
+    short=False, group_attributes=False,
+):
     # does not use quantized properties
     dot1 = dot_strings[i]
     dot2 = dot_strings[j]
@@ -253,12 +369,75 @@ def describe_dot_pair(i, j, dot_strings, dots):
     size_comp = "bigger" if s1 > s2 else "smaller"
     col_comp = "darker" if c1 > c2 else "lighter"
 
-    vert_str = f"{dot1} is {vert_comp} {dot2}"
-    hor_str = f"{dot1} is {hor_comp} of {dot2}"
-    size_str = f"{dot1} is {size_comp} than {dot2}"
-    col_str = f"{dot1} is {col_comp} than {dot2}"
+    if group_attributes:
+        return f"{dot1} {vert_comp} {hor_comp} {size_comp} {col_comp} {dot2}"
 
-    return vert_str, hor_str, size_str, col_str
+    if not short:
+        vert_str = f"{dot1} is {vert_comp} {dot2}"
+        hor_str = f"{dot1} is {hor_comp} of {dot2}"
+        size_str = f"{dot1} is {size_comp} than {dot2}"
+        col_str = f"{dot1} is {col_comp} than {dot2}"
+        return ", ".join([vert_str, hor_str, size_str, col_str])
+    else:
+        vert_str = f"{dot1} {vert_comp} {dot2}"
+        hor_str = f"{dot1} {hor_comp} {dot2}"
+        size_str = f"{dot1} {size_comp} {dot2}"
+        col_str = f"{dot1} {col_comp} {dot2}"
+        return ", ".join([vert_str, hor_str, size_str, col_str])
+
+def describe_dot_tgts(
+    i, js, dot_strings, dots,
+):
+    """
+    Describe dot1 {relation} dot2s
+    """
+    # do not use quantized properties
+    dot1 = dot_strings[i]
+    dot2s = [dot_strings[j] for j in js]
+
+    x1, y1, s1, c1 = dots[i]
+    x2s = dots[js, 0]
+    y2s = dots[js, 1]
+    s2s = dots[js, 2]
+    c2s = dots[js, 3]
+
+    # TODO: i think the y values are negated, so this needs to be flipped
+    aboves = y1 > y2s
+    belows = y1 < y2s
+    rights = x1 > x2s
+    lefts = x1 < x2s
+    biggers = s1 > s2s
+    smallers = s1 < s2s
+    darkers = c1 > c2s
+    lighters =  c1 < c2s
+
+    comps = []
+    if aboves.sum() > 0:
+        sdots = " ".join([x for i,x in enumerate(dot2s) if aboves[i]])
+        comps.append(f"{dot1} above {sdots}")
+    if belows.sum() > 0:
+        sdots = " ".join([x for i,x in enumerate(dot2s) if belows[i]])
+        comps.append(f"{dot1} below {sdots}")
+    if rights.sum() > 0:
+        sdots = " ".join([x for i,x in enumerate(dot2s) if rights[i]])
+        comps.append(f"{dot1} right {sdots}")
+    if lefts.sum() > 0:
+        sdots = " ".join([x for i,x in enumerate(dot2s) if lefts[i]])
+        comps.append(f"{dot1} left {sdots}")
+    if biggers.sum() > 0:
+        sdots = " ".join([x for i,x in enumerate(dot2s) if biggers[i]])
+        comps.append(f"{dot1} bigger {sdots}")
+    if smallers.sum() > 0:
+        sdots = " ".join([x for i,x in enumerate(dot2s) if smallers[i]])
+        comps.append(f"{dot1} smaller {sdots}")
+    if darkers.sum() > 0:
+        sdots = " ".join([x for i,x in enumerate(dot2s) if darkers[i]])
+        comps.append(f"{dot1} darker {sdots}")
+    if lighters.sum() > 0:
+        sdots = " ".join([x for i,x in enumerate(dot2s) if lighters[i]])
+        comps.append(f"{dot1} lighter {sdots}")
+
+    return ", ".join(comps)
 
 """
 Process conversations into examples.
@@ -275,6 +454,7 @@ def describe_dots(
     use_short_describe = True,
     use_pairwise_features = True,
     use_unordered_pairwise = True,
+    use_short_pairwise = True,
 ):
     dots = np.array(dots, dtype=float).reshape(-1, 4)
     dots[:,1] *= -1
@@ -317,11 +497,10 @@ def describe_dots(
 
         pairwise_strs = []
         for i,j in dot_pairs:
-            vert_str, hor_str, size_str, col_str = describe_dot_pair(i, j, dot_strings, dots)
-            pairwise_strs.append(vert_str)
-            pairwise_strs.append(hor_str)
-            pairwise_strs.append(size_str)
-            pairwise_strs.append(col_str)
+            pairwise_strs.append(describe_dot_pair(
+                i, j, dot_strings, dots,
+                short = use_short_pairwise,
+            ))
 
         pairwise_str = ", ".join(pairwise_strs)
         description = f"{description} [SEP] {pairwise_str}"
@@ -334,6 +513,8 @@ def describe_plan_specific_dots(
     plan,
     use_unordered_pairwise = True,
     close_dots = None,
+    use_short_pairwise = True,
+    format = DescriptionFormat.SrcRelTgt,
 ):
     boolplan = plan.astype(bool)
     dots = np.array(dots, dtype=float).reshape(-1, 4)
@@ -350,29 +531,45 @@ def describe_plan_specific_dots(
     ]
     description = " [SEP] ".join(descs)
 
-    # construct pairwise features for dot pairs in plan
-    dot_pairs = [
-        (i, j) for i in range(7) for j in range(7)
-        if i != j and boolplan[i] and boolplan[j]
-    ]
-    if use_unordered_pairwise:
-        # unordered pairs
-        dot_pairs = set([tuple(sorted(x)) for x in dot_pairs])
+    if format == DescriptionFormat.SrcRelTgt or format == DescriptionFormat.SrcRelsTgt:
+        # construct pairwise features for dot pairs in plan
+        dot_pairs = [
+            (i, j) for i in range(7) for j in range(7)
+            if i != j and boolplan[i] and boolplan[j]
+        ]
+        if use_unordered_pairwise:
+            # unordered pairs
+            dot_pairs = set([tuple(sorted(x)) for x in dot_pairs])
 
-    pairwise_strs = []
-    for i,j in dot_pairs:
-        vert_str, hor_str, size_str, col_str = describe_dot_pair(i, j, dot_strings, dots)
-        pairwise_strs.append(vert_str)
-        pairwise_strs.append(hor_str)
-        pairwise_strs.append(size_str)
-        pairwise_strs.append(col_str)
-        if close_dots is not None:
-            raise NotImplementedError("Need to implement distance")
+        pairwise_strs = []
+        for i,j in dot_pairs:
+            pairwise_strs.append(describe_dot_pair(
+                i, j,
+                dot_strings,
+                dots,
+                short = use_short_pairwise,
+                group_attributes = format == DescriptionFormat.SrcRelsTgt,
+            ))
+            if close_dots is not None:
+                raise NotImplementedError("Need to implement distance")
 
-    pairwise_str = " , ".join(pairwise_strs)
-    description = f"{description} [SEP] {pairwise_str}"
+        pairwise_str = " , ".join(pairwise_strs)
+        description = f"{description} [SEP] {pairwise_str}"
 
-    return description
+        return description
+    elif format == DescriptionFormat.SrcRelTgts:
+        ijs = [
+            (i, [j for j in range(7) if boolplan[j] if i != j])
+            for i in range(7) if boolplan[i]
+        ]
+        pairwise_strs = []
+        for i, js in ijs:
+            pairwise_strs.append(describe_dot_tgts(i, js, dot_strings, dots))
+        pairwise_str = " , ".join(pairwise_strs)
+        description = f"{description} [SEP] {pairwise_str}"
+        return description
+    else:
+        raise ValueError(f"Invalid format: {format.name}")
 
 def describe_plan_dense(plan):
     num_dots = len(plan)
@@ -422,17 +619,46 @@ def unk_sents(sents, word_dict):
         #import pdb; pdb.set_trace()
     return unked_sents
 
-def get_examples(
+def get_confirmations(
     conversations,
-    describe_plan = describe_plan_sparse,
     confirmation_tokenizer = None,
     confirmation_predictor = None,
+):
+    confirmations = {
+        conversation.scenario_id: {} for conversation in conversations
+    }
+    for conversation in track(conversations):
+    #for conversation in conversations:
+        # mapping from conversation -> turn -> confirmation
+        num_turns = len(conversation.sents)
+        for turn in range(num_turns):
+            is_you = conversation.sents[turn][0] == "YOU:"
+            if is_you:
+                # drop "YOU:" and "<eos>"
+                sent = " ".join(conversation.sents[turn][1:-1])
+                tokenized_text = confirmation_tokenizer(sent)
+                response_struct = confirmation_predictor(
+                    torch.tensor(tokenized_text["input_ids"])[None],
+                )
+                #response_logits = response_struct.logits[0].log_softmax(-1)
+                #label = response_logits.argmax().item()
+                confirmation_prediction = response_struct.logits[0].argmax().item()
+                confirmations[conversation.scenario_id][str(turn)] = confirmation_prediction
+                # need turn to be a str. after json deserialization keys turn into str.
+    return confirmations
+
+def get_examples(
+    conversations,
+    confirmations,
+    options,
+    describe_plan = describe_plan_sparse,
 ):
     examples = {
         key: [] for key in fields
         #for key in Conversation._fields + fields
     }
-    for conversation in track(conversations):
+    #for conversation in track(conversations):
+    for conversation in conversations:
         num_turns = len(conversation.sents)
 
         dots = np.array(conversation.dots, dtype=float).reshape(-1, 4)
@@ -453,14 +679,17 @@ def get_examples(
             for key in Conversation._fields:
                 examples[key].append(getattr(new_conversation, key))
             """
+            raw_mentions = np.array(conversation.refs[turn]).reshape((-1, 10))[:,3:]
+            raw_plan = raw_mentions.any(0).astype(int)
+
+            if options.max_plan_size > 0 and raw_plan.sum() > options.max_plan_size:
+                continue
 
             is_you = conversation.sents[turn][0] == "YOU:"
             if is_you:
                 # textify all dot properties
 
                 # mention = (start idx, end idx, utterance end idx, *binary ind for 7 dots)
-                raw_mentions = np.array(conversation.refs[turn]).reshape((-1, 10))[:,3:]
-                raw_plan = raw_mentions.any(0).astype(int)
                 examples["plan"].append(describe_plan(raw_plan))
                 examples["mentions"].append(
                     " [SEP] ".join([describe_plan(m) for m in raw_mentions])
@@ -472,6 +701,7 @@ def get_examples(
                     use_short_describe = options.short_describe,
                     use_pairwise_features = True,
                     use_unordered_pairwise = options.unordered_rel,
+                    use_short_pairwise = options.short_rel,
                 ))
 
                 # plan-specific dot representations
@@ -481,6 +711,8 @@ def get_examples(
                         raw_plan,
                         options.unordered_rel,
                         close_dots = None,
+                        use_short_pairwise = options.short_rel,
+                        format = options.format,
                     ),
                 )
 
@@ -493,13 +725,7 @@ def get_examples(
                 examples["outtext"].append(sent)
 
                 # confirmation
-                tokenized_text = confirmation_tokenizer(sent)
-                response_struct = confirmation_predictor(
-                    torch.tensor(tokenized_text["input_ids"])[None],
-                )
-                #response_logits = response_struct.logits[0].log_softmax(-1)
-                #label = response_logits.argmax().item()
-                confirmation_prediction = response_struct.logits[0].argmax().item()
+                confirmation_prediction = confirmations[conversation.scenario_id][str(turn)]
                 # 0: None, 1: Confirm, 2: Disconfirm
                 confirm_map = ["none", "yes", "no"]
                 examples["confirmation"].append(
@@ -552,14 +778,32 @@ if __name__ == "__main__":
 
         feature_string = construct_feature_string(options)
 
+        confirmation_path = Path(f"hf_datasets/{split}_confirmations.json")
+        confirmations = None
+        if not confirmation_path.exists():
+            print("Generating confirmations")
+            confirmations = get_confirmations(
+                conversations,
+                confirmation_tokenizer = confirmation_tokenizer,
+                confirmation_predictor = confirmation_predictor,
+            )
+            print(f"Saving confirmations to {str(confirmation_path)}")
+            with confirmation_path.open("w") as f:
+                json.dump(confirmations, f)
+        else:
+            print(f"Loading confirmations from {str(confirmation_path)}")
+            with confirmation_path.open("r") as f:
+                confirmations = json.load(f)
+
         # json path for saving examples
         json_path = Path(f"hf_datasets/{split}_{feature_string}.json")
+        examples = None
         if not json_path.exists():
             print("Generating new examples")
             examples = get_examples(
                 conversations,
-                confirmation_tokenizer = confirmation_tokenizer,
-                confirmation_predictor = confirmation_predictor,
+                confirmations,
+                options,
             )
             print(f"Saving examples to {str(json_path)}")
             with json_path.open("w") as f:
@@ -573,8 +817,6 @@ if __name__ == "__main__":
         print(f"Data example in {split}")
         for field in examples.keys():
             print(field, examples[field][idx])
-
-
 
 
         dot_descs = (
@@ -639,6 +881,25 @@ if __name__ == "__main__":
                 examples["plan"],
             )
         ]
+        if not options.dialog_history:
+            text_examples["input"] = [
+                f"{dots} [MSEP] {confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
+                for (
+                    dots,
+                    text,
+                    confirm,
+                    selection_leaning,
+                    selection,
+                    plan,
+                ) in zip(
+                    dot_descs,
+                    examples["text"],
+                    examples["confirmation"],
+                    examples["selection_leaning"],
+                    examples["selection"],
+                    examples["plan"],
+                )
+            ]
         input_lens = [len(tokenizer.tokenize(x)) for x in text_examples["input"]]
         max_length_input = max(input_lens)
         print(f"Max length of text input: {max_length_input}")
