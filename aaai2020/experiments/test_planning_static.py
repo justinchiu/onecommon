@@ -92,6 +92,12 @@ def make_parser():
     #                     help='temperature')
     # parser.add_argument('--pred_temperature', type=float, default=1.0,
     #                     help='temperature')
+    parser.add_argument(
+        '--language_generator_path',
+        type=str,
+        default="./hf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_dh/checkpoint-28000",
+        help='BART language generator path',
+    )
     parser.add_argument('--log_attention', action='store_true', default=False,
                         help='log attention')
     parser.add_argument('--verbose', action='store_true', default=False,

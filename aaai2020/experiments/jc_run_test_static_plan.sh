@@ -33,6 +33,9 @@ echo "bucket_size=$bucket_size"
 
 shared_ctx_count=4
 
+bart_dir=${4}
+echo "bart_dir=${bart_dir}"
+
 shift
 shift
 shift
@@ -101,12 +104,14 @@ context_file="${split}_context_${seed}"
 #logdir="analysis_log/${split}_${seed}_absolute_${belief}"
 #logdir="analysis_log/${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
 #logdir="analysis_log/MST_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
-logdir="analysis_log/MST2_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
+#logdir="analysis_log/MST2_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
+logdir="analysis_log/GEN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}_g${bart_dir}"
 #logdir="analysis_log/DELETE_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
 
 #name="STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
 #name="MST_STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
-name="MST2_STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
+#name="MST2_STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
+name="GEN_STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}_g${bart_dir}"
 #name="DELETE_STATIC_PLAN_${split}_${seed}_absolute_${belief}_${prediction_type}_b${bucket_size}"
 log_file="analysis_log/${name}.log"
 out_file="analysis_log/${name}.out"
@@ -116,6 +121,7 @@ mkdir -p ${logdir}
 python -u test_planning_static.py \
   --alice_model_file=${model_dir_a}/1_ep-12.th \
   --bob_model_file=${model_dir_b}/1_ep-12.th \
+  --language_generator_path=${bart_dir}/checkpoint-28000 \
   --belief ${belief} \
   --absolute_bucketing 1 \
   --num_size_buckets ${bucket_size} \
@@ -127,7 +133,7 @@ python -u test_planning_static.py \
   --DBG_PLAN analysis_log/${name}.json \
   --dialog_log_dir ${logdir} \
   ${rerank_args} ${rerank_args2} ${rerank_args3} ${rerank_args4} \
-  --log_file=${log_file} $@
+  --log_file=${log_file} #$@
 
 echo "LOGFILE ${log_file}"
 exit 0

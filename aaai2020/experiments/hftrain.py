@@ -83,7 +83,7 @@ def train(args):
         # supplied args
         learning_rate = args.learning_rate,
         #eval_steps = 5000,
-        eval_steps = 500,
+        eval_steps = 2000,
     )
 
     trainer = Trainer(
