@@ -251,6 +251,12 @@ splits = [
     "valid_1_absolute_cost_egocentric_collapsed_b5",
     "MST_valid_1_absolute_cost_collapsed_b5",
     "MST2_valid_1_absolute_cost_collapsed_b5",
+    # 10/5 experiments: 5-9
+    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt__sd_ps_sr_c_sl_s_mps5_dh",
+    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt_ur_sd_ps_sr_c_sl_s_mps5_",
+    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt_ur_sd_ps_sr_c_sl_s_mps5_dh",
+    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_dh",
+    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_c_sl_s_mps5_dh",
 ]
 
 from argparse import ArgumentParser
