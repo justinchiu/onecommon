@@ -181,6 +181,46 @@ plan_limit_group_target_options = HfDataOptions(
     dialog_history = True,
 )
 
+# plan limit + ordered pairs + group relations - dialog
+plan_limit_ordered_group_rel_nodial_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = False,
+)
+
+# plan limit + group targets - dialog
+plan_limit_group_target_nodial_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelTgts,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = False,
+)
+
 options = [
     basic_options,
     plan_limit_options,
@@ -188,7 +228,9 @@ options = [
     plan_limit_short_rel_ordered_options,
     plan_limit_ordered_group_rel_options,
     plan_limit_group_target_options,
-][5]
+    plan_limit_ordered_group_rel_nodial_options,
+    plan_limit_group_target_nodial_options,
+][7]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -657,6 +699,7 @@ def get_examples(
         key: [] for key in fields
         #for key in Conversation._fields + fields
     }
+    num_skipped = 0
     #for conversation in track(conversations):
     for conversation in conversations:
         num_turns = len(conversation.sents)
@@ -683,6 +726,9 @@ def get_examples(
             raw_plan = raw_mentions.any(0).astype(int)
 
             if options.max_plan_size > 0 and raw_plan.sum() > options.max_plan_size:
+                num_skipped += 1
+                #print(" ".join(conversation.sents[turn]))
+                #import pdb; pdb.set_trace()
                 continue
 
             is_you = conversation.sents[turn][0] == "YOU:"
@@ -759,6 +805,7 @@ def get_examples(
     for key1 in fields:
         for key2 in fields:
             assert len(examples[key1]) == len(examples[key2])
+    print(f"Number of examples skipped due to plan size: {num_skipped}")
     return examples
 
 if __name__ == "__main__":
@@ -912,4 +959,5 @@ if __name__ == "__main__":
         text_path = f"hf_datasets/{split}_text_given_plan_{feature_string}.hf"
         print(f"Text dataset path {text_path}")
         text_dataset.save_to_disk(text_path)
+        print(f"num text examples: {len(text_examples['input'])}")
 

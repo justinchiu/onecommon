@@ -30,7 +30,7 @@ def train(args):
     def convert_to_features(example_batch):
         input_encodings = tokenizer.batch_encode_plus(
             example_batch['input'],
-            max_length = 768,
+            max_length = args.max_length,
             padding="max_length",
             truncation=True,
             return_tensors="np",
@@ -273,6 +273,8 @@ if __name__ == "__main__":
             "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt__sd_ps_sr_c_sl_s_mps5_dh",
             "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_c_sl_s_mps5_dh",
             "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_dh",
+            "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_c_sl_s_mps5_",
+            "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",
