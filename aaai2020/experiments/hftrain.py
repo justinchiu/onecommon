@@ -82,8 +82,12 @@ def train(args):
 
         # supplied args
         learning_rate = args.learning_rate,
-        #eval_steps = 5000,
-        eval_steps = 2000,
+
+        # num steps for stuff
+        eval_steps = 500,
+        save_steps = 1000,
+        save_total_limit = 3,
+        metric_for_best_model = "eval_loss",
     )
 
     trainer = Trainer(
