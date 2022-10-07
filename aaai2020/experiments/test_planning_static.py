@@ -205,10 +205,12 @@ def main():
         # need to SCP this
         # old version without confirmation + selection
         #bart_dir = "./hf-results-text_given_plan_py_2py_2puy_en_sdy_psy_un-l1e-05-b4/checkpoint-33000"
-        bart_dir = "./hf-results-text_given_plan_SI_CO_RX_RY_RS_RC_ur_sd_ps_c_sl_s-l1e-05-b4/checkpoint-25000"
+        #bart_dir = "./hf-results-text_given_plan_SI_CO_RX_RY_RS_RC_ur_sd_ps_c_sl_s-l1e-05-b4/checkpoint-25000"
+        bart_dir = args.language_generator_path
         language_generator = BartForConditionalGeneration.from_pretrained(
             bart_dir, forced_bos_token_id=0,
         )
+        language_generator.generate_given_text = "_dh" in bart_dir
 
         # alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
         alice_model = utils.load_model(args.alice_model_file, prefix_dir=None, map_location='cpu')

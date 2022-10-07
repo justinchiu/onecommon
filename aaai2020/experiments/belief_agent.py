@@ -299,6 +299,12 @@ class BeliefAgent(RnnAgent):
                 "[MSEP] should we select? no "
                 "[MSEP] selection: not yet "
                 f"[MSEP] {plan_description}"
+            ) if self.language_generator.generate_given_text else (
+                f"{dot_description} "
+                "[MSEP] confirmation: none "
+                "[MSEP] should we select? no "
+                "[MSEP] selection: not yet "
+                f"[MSEP] {plan_description}"
             )
             outputs = self.language_generator.generate(
                 self.generation_tokenizer(generator_input, return_tensors="pt")["input_ids"],
