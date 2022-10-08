@@ -253,12 +253,16 @@ splits = [
     "MST2_valid_1_absolute_cost_collapsed_b5",
     # 10/5 experiments: 5-11
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt__sd_ps_sr_c_sl_s_mps5_dh-l1e-05-b4",
+    # 6
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt_ur_sd_ps_sr_c_sl_s_mps5_-l1e-05-b4",
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgt_ur_sd_ps_sr_c_sl_s_mps5_dh-l1e-05-b4",
-    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_dh-l1e-05-b4",
+    # 8
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_c_sl_s_mps5_dh-l1e-05-b4",
-    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_-l1e-05-b4",
+    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_dh-l1e-05-b4",
+    # 10
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_c_sl_s_mps5_-l1e-05-b4",
+    # 11
+    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_-l1e-05-b4",
 ]
 
 from argparse import ArgumentParser
