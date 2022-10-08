@@ -221,6 +221,46 @@ plan_limit_group_target_nodial_options = HfDataOptions(
     dialog_history = False,
 )
 
+# ordered pairs + group relations - dialog
+ordered_group_rel_nodial_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 7,
+    dialog_history = False,
+)
+
+# group targets - dialog
+group_target_nodial_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelTgts,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 7,
+    dialog_history = False,
+)
+
 options = [
     basic_options,
     plan_limit_options,
@@ -230,7 +270,9 @@ options = [
     plan_limit_group_target_options,
     plan_limit_ordered_group_rel_nodial_options,
     plan_limit_group_target_nodial_options,
-][7]
+    ordered_group_rel_nodial_options,
+    group_target_nodial_options,
+][9]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
