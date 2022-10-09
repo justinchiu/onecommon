@@ -262,17 +262,17 @@ group_target_nodial_options = HfDataOptions(
 )
 
 options = [
-    basic_options,
+    basic_options, # 0
     plan_limit_options,
-    plan_limit_remove_dialog_options,
+    plan_limit_remove_dialog_options, # 2
     plan_limit_short_rel_ordered_options,
-    plan_limit_ordered_group_rel_options,
+    plan_limit_ordered_group_rel_options, # 4
     plan_limit_group_target_options,
-    plan_limit_ordered_group_rel_nodial_options,
+    plan_limit_ordered_group_rel_nodial_options, # 6
     plan_limit_group_target_nodial_options,
-    ordered_group_rel_nodial_options,
+    ordered_group_rel_nodial_options, # 8
     group_target_nodial_options,
-][9]
+][8]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -1002,4 +1002,61 @@ if __name__ == "__main__":
         print(f"Text dataset path {text_path}")
         text_dataset.save_to_disk(text_path)
         print(f"num text examples: {len(text_examples['input'])}")
+
+        # text, mention gen
+        num_examples = len(examples["outtext"])
+        text_mention_examples = {}
+        text_mention_examples["input"] = [
+            f"{dots} [MSEP] {text} [MSEP] {confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
+            for (
+                dots,
+                text,
+                confirm,
+                selection_leaning,
+                selection,
+                plan,
+            ) in zip(
+                dot_descs,
+                examples["text"],
+                examples["confirmation"],
+                examples["selection_leaning"],
+                examples["selection"],
+                examples["plan"],
+            )
+        ]
+        if not options.dialog_history:
+            text_mention_examples["input"] = [
+                f"{dots} [MSEP] {confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
+                for (
+                    dots,
+                    text,
+                    confirm,
+                    selection_leaning,
+                    selection,
+                    plan,
+                ) in zip(
+                    dot_descs,
+                    examples["text"],
+                    examples["confirmation"],
+                    examples["selection_leaning"],
+                    examples["selection"],
+                    examples["plan"],
+                )
+            ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in text_mention_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of text,mention input: {max_length_input}")
+        print(text_mention_examples["input"][np.argmax(input_lens)])
+
+        text_mention_examples["label"] = [
+            f"{mentions} [MSEP] {outtext}"
+            for outtext, mentions in zip(examples["outtext"], examples["mentions"])
+        ]
+        max_length_output = max([len(tokenizer.tokenize(x)) for x in text_mention_examples["label"]])
+        print(f"Max length of text,mention output: {max_length_output}")
+        text_mention_dataset = Dataset.from_dict(text_mention_examples)
+        text_mention_path = f"hf_datasets/{split}_text_mention_given_plan_{feature_string}.hf"
+        print(f"Text,mention dataset path {text_mention_path}")
+        text_mention_dataset.save_to_disk(text_mention_path)
+        print(f"num text,mention examples: {len(text_examples['input'])}")
 

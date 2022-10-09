@@ -37,7 +37,7 @@ def train(args):
         )
         target_encodings = tokenizer.batch_encode_plus(
             example_batch['label'],
-            max_length = 128,
+            max_length = args.output_max_length,
             padding="max_length",
             truncation=True,
             return_tensors="np",
@@ -238,6 +238,10 @@ if __name__ == "__main__":
         help='input example max length',
     )
     parser.add_argument(
+        '--output_max_length', type=int, default=128,
+        help='output example max length',
+    )
+    parser.add_argument(
         '--batch_size', type=int, default=4,
         help='batch size',
     )
@@ -277,6 +281,10 @@ if __name__ == "__main__":
             "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps5_",
             "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_c_sl_s_mps7_",
             "text_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps7_",
+
+            # 10/9
+            "text_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_c_sl_s_mps7_",
+            "text_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_c_sl_s_mps7_",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",
