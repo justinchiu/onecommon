@@ -3252,11 +3252,11 @@
             -0.5280002355575562,
             -0.5302962064743042,
             -0.5314499139785767,
-            -0.5314508676528931,
-            -0.5343557596206665,
             -0.5349233746528625,
             -0.5392101407051086,
-            -0.5406716465950012
+            -0.5406716465950012,
+            -0.5454210638999939,
+            -0.5697745680809021
         ],
         "plan_beam_ref_res": [
             -3.8362691402435303,
@@ -3411,11 +3411,11 @@
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large dark dot in the middle of them? <eos>",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large black dot, a small light grey dot and a small medium grey dot? <eos>",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a medium grey dot? <eos>",
-            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a small medium grey dot?",
-            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a small medium gray dot?",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large black dot in the middle of two smaller grey dots? <eos>",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large dark grey dot in the middle of two smaller lighter dots? <eos>",
-            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large black dot in the middle of two smaller lighter ones? <eos>"
+            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large black dot in the middle of two smaller lighter ones? <eos>",
+            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large dark grey dot in the middle of the triangle? <eos>",
+            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a medium grey dot <eos>"
         ],
         "plan_mentions": [
             [
@@ -5185,17 +5185,17 @@
             -0.45118391513824463,
             -0.4532158672809601,
             -0.47752371430397034,
-            -0.5859807133674622,
-            -0.5878759026527405,
-            -0.5977060794830322,
-            -0.5992545485496521,
-            -0.6002858281135559,
-            -0.604830265045166,
-            -0.6058663129806519,
-            -0.608216404914856,
-            -0.6083246469497681,
-            -0.6084112524986267,
-            -0.6084363460540771
+            -0.5728089809417725,
+            -0.5733752846717834,
+            -0.5770347714424133,
+            -0.5845358371734619,
+            -0.5876867771148682,
+            -0.5931246280670166,
+            -0.5958057641983032,
+            -0.5993798971176147,
+            -0.599381685256958,
+            -0.5999526381492615,
+            -0.602817952632904
         ],
         "plan_beam_ref_res": [
             -11.79230785369873,
@@ -5344,17 +5344,17 @@
             "dot3, dot4, dot5 [MSEP] YOU: do you have 3 dots in a triangle shape? <eos>",
             "dot3, dot4, dot5 [MSEP] YOU: do you see three dots in a triangle shape? <eos>",
             "dot3, dot4, dot5 [MSEP] YOU: do you see a triangle of dots? <eos>",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a larger dark grey dot to the right",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large dark grey dot to the right",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a larger dark grey dot to the left",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle, a larger dark grey dot to the right",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large dark grey dot to the left",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large black dot to the right of",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have three dots in a line going up and to the right. the middle one is the smallest and lightest",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have three dots in a line going up and to the right. the middle one is small and light grey,",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle, a larger dark grey dot to the left",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large black dot to the right and",
-            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have three dots in a line going up and to the right. the middle one is the largest and darkest."
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a larger dark grey dot to the right of it? <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large dark grey dot to the right of it? <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large black dot to the right of it? <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a larger dark grey dot to the right and above it? <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large dark grey dot to the right and above it? <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a larger dark grey dot to the right and below it? <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large dark grey dot to the right and below it? <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a larger dark grey dot to the left and above it? <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large dark grey dot to the right of it <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a larger dark grey dot to the right of it <eos>",
+            "dot3, dot4, dot5 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: do you see a triangle with a small light grey dot in the middle and a large dark grey dot to the left and above it? <eos>"
         ],
         "plan_mentions": [
             [
@@ -9066,14 +9066,14 @@
             -0.5137767195701599,
             -0.5190911889076233,
             -0.5227776765823364,
-            -0.5254066586494446,
-            -0.5383205413818359,
-            -0.5413499474525452,
-            -0.5464869141578674,
             -0.550982654094696,
-            -0.551876425743103,
             -0.5540328621864319,
-            -0.5565601587295532
+            -0.559184730052948,
+            -0.559306800365448,
+            -0.5598816871643066,
+            -0.562092125415802,
+            -0.5624482035636902,
+            -0.5650510787963867
         ],
         "plan_beam_ref_res": [
             -9.95029067993164,
@@ -9225,14 +9225,14 @@
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light gray dot in the middle of 3 smaller dots <eos>",
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light gray dot in the middle of three smaller dots <eos>",
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of 3 smaller ones <eos>",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey dot, a small medium gray dot, and",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey dot, a smaller medium gray dot, and",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light gray dot, a small medium grey dot, and",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey dot, a small light gray dot, and",
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of 3 dots <eos>",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small dark grey, and a small",
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of 4 dots <eos>",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small medium gray, and a medium"
+            "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of three dots <eos>",
+            "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of 3 smaller dots <eos>",
+            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small dark grey, and a small medium grey <eos>",
+            "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of three smaller dots <eos>",
+            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small dark grey, and a small medium gray <eos>",
+            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small medium gray, and a medium dark gray <eos>"
         ],
         "plan_mentions": [
             [
@@ -11010,11 +11010,11 @@
             -0.5280002355575562,
             -0.5302962064743042,
             -0.5314499139785767,
-            -0.5314508676528931,
-            -0.5343557596206665,
             -0.5349233746528625,
             -0.5392101407051086,
-            -0.5406716465950012
+            -0.5406716465950012,
+            -0.5454210638999939,
+            -0.5697745680809021
         ],
         "plan_beam_ref_res": [
             -0.7682209014892578,
@@ -11169,11 +11169,11 @@
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large dark dot in the middle of them? <eos>",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large black dot, a small light grey dot and a small medium grey dot? <eos>",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a medium grey dot? <eos>",
-            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a small medium grey dot?",
-            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a small medium gray dot?",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large black dot in the middle of two smaller grey dots? <eos>",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large dark grey dot in the middle of two smaller lighter dots? <eos>",
-            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large black dot in the middle of two smaller lighter ones? <eos>"
+            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large black dot in the middle of two smaller lighter ones? <eos>",
+            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large dark grey dot in the middle of the triangle? <eos>",
+            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a medium grey dot <eos>"
         ],
         "plan_mentions": [
             [
@@ -12946,14 +12946,14 @@
             -0.5137767195701599,
             -0.5190911889076233,
             -0.5227776765823364,
-            -0.5254066586494446,
-            -0.5383205413818359,
-            -0.5413499474525452,
-            -0.5464869141578674,
             -0.550982654094696,
-            -0.551876425743103,
             -0.5540328621864319,
-            -0.5565601587295532
+            -0.559184730052948,
+            -0.559306800365448,
+            -0.5598816871643066,
+            -0.562092125415802,
+            -0.5624482035636902,
+            -0.5650510787963867
         ],
         "plan_beam_ref_res": [
             -12.66480541229248,
@@ -13105,14 +13105,14 @@
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light gray dot in the middle of 3 smaller dots <eos>",
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light gray dot in the middle of three smaller dots <eos>",
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of 3 smaller ones <eos>",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey dot, a small medium gray dot, and",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey dot, a smaller medium gray dot, and",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light gray dot, a small medium grey dot, and",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey dot, a small light gray dot, and",
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of 3 dots <eos>",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small dark grey, and a small",
             "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of 4 dots <eos>",
-            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small medium gray, and a medium"
+            "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of three dots <eos>",
+            "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of 3 smaller dots <eos>",
+            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small dark grey, and a small medium grey <eos>",
+            "dot7 [SEP] dot3, dot4, dot5, dot7 [MSEP] YOU: i have a large light grey dot in the middle of a cluster of three smaller dots <eos>",
+            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small dark grey, and a small medium gray <eos>",
+            "dot3, dot4, dot5, dot7 [SEP] dot7 [SEP] dot5 [SEP] dot3 [SEP] dot4 [MSEP] YOU: i have a cluster of 4 dots. a large light grey, a small medium gray, and a medium dark gray <eos>"
         ],
         "plan_mentions": [
             [
@@ -14879,11 +14879,11 @@
             -0.5280002355575562,
             -0.5302962064743042,
             -0.5314499139785767,
-            -0.5314508676528931,
-            -0.5343557596206665,
             -0.5349233746528625,
             -0.5392101407051086,
-            -0.5406716465950012
+            -0.5406716465950012,
+            -0.5454210638999939,
+            -0.5697745680809021
         ],
         "plan_beam_ref_res": [
             -2.412201166152954,
@@ -15038,11 +15038,11 @@
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large dark dot in the middle of them? <eos>",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large black dot, a small light grey dot and a small medium grey dot? <eos>",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a medium grey dot? <eos>",
-            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a small medium grey dot?",
-            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a small medium gray dot?",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large black dot in the middle of two smaller grey dots? <eos>",
             "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large dark grey dot in the middle of two smaller lighter dots? <eos>",
-            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large black dot in the middle of two smaller lighter ones? <eos>"
+            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large black dot in the middle of two smaller lighter ones? <eos>",
+            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3, dot6 [MSEP] YOU: do you see a triangle of dots with a large dark grey dot in the middle of the triangle? <eos>",
+            "dot3, dot4, dot6 [SEP] dot4 [SEP] dot3 [SEP] dot6 [MSEP] YOU: do you see a triangle with a large dark grey dot, a small light grey dot and a medium grey dot <eos>"
         ],
         "plan_mentions": [
             [

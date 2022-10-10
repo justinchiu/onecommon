@@ -5165,12 +5165,12 @@
             -0.4832613468170166,
             -0.49788862466812134,
             -0.5018115639686584,
-            -0.5121791362762451,
-            -0.5166727900505066,
-            -0.5184704065322876,
-            -0.5220586657524109,
-            -0.5226320028305054,
-            -0.5588884353637695
+            -0.5364646911621094,
+            -0.5419734716415405,
+            -0.5453182458877563,
+            -0.5457836985588074,
+            -0.5460577011108398,
+            -0.5513113737106323
         ],
         "plan_beam_ref_res": [
             -1.0503573417663574,
@@ -5324,12 +5324,12 @@
             "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you see a large black dot with a small light grey dot above and to the right of it <eos>",
             "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you see a large black dot with a small light grey dot to the right and a small medium grey dot below and to the left <eos>",
             "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you have a large black dot with a small light grey dot to the right and a small medium grey dot below and to the left <eos>",
-            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you see a large black dot with a small light grey dot above and to the right and a small medium grey dot below and slightly to the left",
-            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you have a large black dot with a small light grey dot above and to the right and a small medium grey dot below and slightly to the left",
-            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you see a large black dot with a small light grey dot above and to the left and a small medium grey dot below and slightly to the right",
-            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you see a large black dot with a small light grey dot above and to the right and a small medium gray dot below and slightly to the left",
-            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you have a large black dot with a small light grey dot above and to the left and a small medium grey dot below and slightly to the right",
-            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you have a large black dot with a small light grey dot to the right and a small medium grey dot below and to the left of it?"
+            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you see a large black dot with a small light grey dot above and to the right and a small medium grey dot below and slightly to the left <eos>",
+            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you see a large black dot with a small light grey dot above and to the left and a small medium grey dot below and slightly to the right <eos>",
+            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you have a large black dot with a small light grey dot to the right and a small medium grey dot below and to the left of it? <eos>",
+            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you have a large black dot with a small light grey dot above and to the right and a small medium grey dot below and slightly to the left <eos>",
+            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you see a large black dot with a small light grey dot above and to the right and a small medium gray dot below and slightly to the left <eos>",
+            "dot3 [SEP] dot1 [SEP] dot2 [MSEP] YOU: do you see a large black dot with a small light grey dot to the right and a small medium grey dot below and to the left of it? <eos>"
         ],
         "plan_mentions": [
             [

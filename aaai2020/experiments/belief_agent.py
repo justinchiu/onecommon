@@ -312,7 +312,7 @@ class BeliefAgent(RnnAgent):
                 num_return_sequences = 16,
                 output_scores = True,
                 return_dict_in_generate = True,
-                max_new_tokens = 40,
+                max_new_tokens = 80,
             )
             sentence_candidates = self.generation_tokenizer.batch_decode(
                 outputs.sequences, skip_special_tokens=True)
