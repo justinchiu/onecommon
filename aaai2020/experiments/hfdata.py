@@ -295,7 +295,7 @@ options = [
     ordered_group_rel_nodial_options, # 8
     group_target_nodial_options,
     plan_limit_remove_dialog_unordered_options, # 10
-][8]
+][7]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
