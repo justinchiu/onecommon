@@ -295,7 +295,7 @@ options = [
     ordered_group_rel_nodial_options, # 8
     group_target_nodial_options,
     plan_limit_remove_dialog_unordered_options, # 10
-][10]
+][8]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -915,6 +915,7 @@ def get_examples(
     return examples
 
 if __name__ == "__main__":
+    redo_examples = True
     from transformers import (
         AutoTokenizer, AutoModelForSequenceClassification,
     )
@@ -951,7 +952,7 @@ if __name__ == "__main__":
         # json path for saving examples
         json_path = Path(f"hf_datasets/{split}_{feature_string}.json")
         examples = None
-        if not json_path.exists():
+        if not json_path.exists() or redo_examples:
             print("Generating new examples")
             examples = get_examples(
                 conversations,
@@ -1176,7 +1177,7 @@ if __name__ == "__main__":
         output_lens = [len(tokenizer.tokenize(x)) for x in textmention_mention_examples["label"]]
         max_length_output = max(output_lens)
         print(f"Max length of textmention,mention output: {max_length_output}")
-        print(textmention_mention_examples["input"][np.argmax(output_lens)])
+        print(textmention_mention_examples["label"][np.argmax(output_lens)])
         textmention_mention_dataset = Dataset.from_dict(textmention_mention_examples)
         textmention_mention_path = f"hf_datasets/{split}_textmention_mention_given_plan_{feature_string}.hf"
         print(f"Textmention,mention dataset path {textmention_mention_path}")
