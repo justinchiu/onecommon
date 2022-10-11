@@ -71,7 +71,7 @@ def get_bart_tokenizer():
     tokenizer.add_tokens(["[SEP]", "[MSEP]", "<eos>"])
     tokenizer.add_tokens(["size:", "color:", "x:", "y:", "YOU:", "THEM:"])
     #tokenizer.add_tokens(["[NONE]"])
-    tokenizer.add_tokens(["<selection>"])
+    tokenizer.add_tokens(["<selection>", "<bom>", "<eom>"])
     return tokenizer
 
 if __name__ == "__main__":

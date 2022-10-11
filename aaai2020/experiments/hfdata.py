@@ -34,6 +34,8 @@ fields = (
     "selection_leaning",
     "selection",
     "outtext",
+    "text_mentions",
+    "outtext_mentions",
 )
 
 tokenizer = get_bart_tokenizer()
@@ -261,6 +263,26 @@ group_target_nodial_options = HfDataOptions(
     dialog_history = False,
 )
 
+# plan limit + remove dialog
+plan_limit_remove_dialog_unordered_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = False,
+)
+
 options = [
     basic_options, # 0
     plan_limit_options,
@@ -272,7 +294,8 @@ options = [
     plan_limit_group_target_nodial_options,
     ordered_group_rel_nodial_options, # 8
     group_target_nodial_options,
-][8]
+    plan_limit_remove_dialog_unordered_options, # 10
+][10]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -306,6 +329,19 @@ splits = paths.keys()
 
 word_dict = Dictionary.from_file(str(train_path), freq_cutoff = freq_cutoff)
 
+def splice_sentence_mentions(sent, refs):
+    refs = np.array(refs).reshape(-1, 10)
+    sent = [x for x in sent]
+    for idx, ref in reversed(list(zip(refs[:,0], refs[:,3:]))):
+        sent.insert(idx, "<bom>")
+        num_added = 1
+        for i, val in enumerate(ref):
+            if val:
+                sent.insert(idx + num_added, f"dot{i+1}")
+                num_added += 1
+        sent.insert(idx+num_added, "<eom>")
+    return sent
+
 """
 REFERENT LAYOUT: [
     beginning idx,
@@ -316,6 +352,7 @@ REFERENT LAYOUT: [
 """
 def _split_referents(words, referent_idxs):
     stops = ["YOU:", "THEM:"]
+    sents_mentions = []
     sents, current = [], []
     all_refs, current_refs = [], []
     split_ref_indices = []
@@ -335,6 +372,7 @@ def _split_referents(words, referent_idxs):
             if len(current) > 0:
                 sents.append(current)
                 all_refs.append(current_refs)
+                sents_mentions.append(splice_sentence_mentions(current, current_refs))
             current = []
             current_refs = []
         current.append(w)
@@ -344,10 +382,11 @@ def _split_referents(words, referent_idxs):
             ref_ix += 1
         sents.append(current)
         all_refs.append(current_refs)
+        sents_mentions.append(splice_sentence_mentions(current, current_refs))
     assert ref_ix == len(split_ref_indices)
     assert sum(len(refs) for refs in all_refs) == len(referent_idxs)
     assert len(all_refs) == len(sents)
-    return sents, all_refs
+    return sents, all_refs, sents_mentions
 
 class Conversation(NamedTuple):
     dots: list[float]
@@ -361,6 +400,12 @@ class Conversation(NamedTuple):
 
     real_ids: list[str]
     partner_real_ids: list[str]
+
+    # added, splices in mentions into sentences
+    sentrefs: list[list[str]]
+    partner_sentrefs: list[list[str]]
+    partner_sentrefs_our_view: list[list[str]]
+    all_sentrefs: list[list[str]]
 
 
 def get_conversations(split):
@@ -396,11 +441,17 @@ def get_conversations(split):
             ref_disagreement = list(map(int, get_tag(tokens, 'referent_disagreements')))
             partner_ref_disagreement = list(map(int, get_tag(tokens, 'partner_referent_disagreements')))
 
-            sents, all_refs = _split_referents(words, referent_idxs)
-            sents_, all_partner_refs = _split_referents(words, partner_referent_idxs)
+            sents, all_refs, sentrefs = _split_referents(words, referent_idxs)
+            sents_, all_partner_refs, partner_sentrefs = _split_referents(words, partner_referent_idxs)
             assert sents == sents_
-            sents_, all_partner_refs_our_view = _split_referents(words, partner_referent_our_view_idxs)
+            sents_, all_partner_refs_our_view, partner_sentrefs_our_view = _split_referents(words, partner_referent_our_view_idxs)
             assert sents == sents_
+
+            # merge YOU: and THEM:, all in our view
+            all_sentrefs = [
+                x if x[0] == "YOU:" else y
+                for x,y in zip(sentrefs, partner_sentrefs_our_view)
+            ]
 
             conversations.append(Conversation(
                 #sents = sents if not use_unks else unk_sents(sents, word_dict),
@@ -416,6 +467,11 @@ def get_conversations(split):
 
                 real_ids = real_ids,
                 partner_real_ids = partner_real_ids,
+
+                sentrefs = sentrefs,
+                partner_sentrefs = partner_sentrefs,
+                partner_sentrefs_our_view = partner_sentrefs_our_view,
+                all_sentrefs = all_sentrefs,
             ))
         return conversations
 
@@ -838,6 +894,14 @@ def get_examples(
                     else "selection: not yet"
                 )
 
+                # sentrefs
+                examples["outtext_mentions"].append(
+                    " ".join(conversation.sentrefs[turn])
+                )
+                examples["text_mentions"].append(
+                    " ".join([x for xs in conversation.all_sentrefs[:turn] for x in xs])
+                )
+
             #for field in examples.keys():
                 #print(field, examples[field][-1])
             #import pdb; pdb.set_trace()
@@ -1059,4 +1123,63 @@ if __name__ == "__main__":
         print(f"Text,mention dataset path {text_mention_path}")
         text_mention_dataset.save_to_disk(text_mention_path)
         print(f"num text,mention examples: {len(text_examples['input'])}")
+
+        # textmention, mention gen
+        num_examples = len(examples["outtext_mentions"])
+        textmention_mention_examples = {}
+        textmention_mention_examples["input"] = [
+            f"{dots} [MSEP] {text} [MSEP] {confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
+            for (
+                dots,
+                text,
+                confirm,
+                selection_leaning,
+                selection,
+                plan,
+            ) in zip(
+                dot_descs,
+                examples["text_mentions"],
+                examples["confirmation"],
+                examples["selection_leaning"],
+                examples["selection"],
+                examples["plan"],
+            )
+        ]
+        if not options.dialog_history:
+            textmention_mention_examples["input"] = [
+                f"{dots} [MSEP] {confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
+                for (
+                    dots,
+                    text,
+                    confirm,
+                    selection_leaning,
+                    selection,
+                    plan,
+                ) in zip(
+                    dot_descs,
+                    examples["text_mentions"],
+                    examples["confirmation"],
+                    examples["selection_leaning"],
+                    examples["selection"],
+                    examples["plan"],
+                )
+            ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in textmention_mention_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of textmention,mention input: {max_length_input}")
+        print(textmention_mention_examples["input"][np.argmax(input_lens)])
+
+        textmention_mention_examples["label"] = [
+            f"{mentions} [MSEP] {outtext}"
+            for outtext, mentions in zip(examples["outtext_mentions"], examples["mentions"])
+        ]
+        output_lens = [len(tokenizer.tokenize(x)) for x in textmention_mention_examples["label"]]
+        max_length_output = max(output_lens)
+        print(f"Max length of textmention,mention output: {max_length_output}")
+        print(textmention_mention_examples["input"][np.argmax(output_lens)])
+        textmention_mention_dataset = Dataset.from_dict(textmention_mention_examples)
+        textmention_mention_path = f"hf_datasets/{split}_textmention_mention_given_plan_{feature_string}.hf"
+        print(f"Textmention,mention dataset path {textmention_mention_path}")
+        textmention_mention_dataset.save_to_disk(textmention_mention_path)
+        print(f"num textmention,mention examples: {len(textmention_mention_examples['input'])}")
 
