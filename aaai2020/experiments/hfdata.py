@@ -877,7 +877,7 @@ def get_examples(
                 )
 
                 # selection-leaning
-                selection_like_words = set(["pick", "choose", "select"])
+                selection_like_words = set(["pick", "choose", "select", "click"])
                 has_select = any([
                     x in selection_like_words for x in conversation.sents[turn]
                 ])
