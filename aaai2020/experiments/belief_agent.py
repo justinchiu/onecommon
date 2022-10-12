@@ -318,6 +318,7 @@ class BeliefAgent(RnnAgent):
                 outputs.sequences, skip_special_tokens=True)
             lm_scores = outputs.sequences_scores
             # SAVE FOR LOGGING ONLY
+            self.bart_input = generator_input
             self.bart_sentence_candidates = sentence_candidates
             self.bart_lm_scores = lm_scores
 
