@@ -5,6 +5,8 @@ import numpy as np
 from jinja2 import Template
 from rich.progress import track
 import json
+import itertools
+import math
 
 import torch
 
@@ -18,6 +20,8 @@ from corpora.data import Dictionary, get_tag
 from corpora.reference_sentence import ReferenceSentenceCorpus
 
 import template
+
+from belief_utils import is_contiguous
 
 from hfutils import (
     HfDataOptions, Property, DescriptionFormat,
@@ -283,6 +287,27 @@ plan_limit_remove_dialog_unordered_options = HfDataOptions(
     dialog_history = False,
 )
 
+plan_limit_ordered_group_rel_nodial_config_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = False,
+)
+
+
 options = [
     basic_options, # 0
     plan_limit_options,
@@ -295,7 +320,8 @@ options = [
     ordered_group_rel_nodial_options, # 8
     group_target_nodial_options,
     plan_limit_remove_dialog_unordered_options, # 10
-][7]
+    plan_limit_ordered_group_rel_nodial_config_options, # 11
+][11]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -579,15 +605,29 @@ def describe_dot_tgts(
 
     return ", ".join(comps)
 
-"""
-Process conversations into examples.
-Each conversation will be turned into num_turns examples (or num_turns / 2).
-Each example will look like:
-    * All previous turns: each turn is a list of tokens (strings)
-    * All previous refs, partner refs, partner_refs_our_view
-    * scenario, chat, and ids
-Eg conversation prefixes
-"""
+
+def unit_vector(vector, axis=None):
+    """ Returns the unit vector of the vector.  """
+    return vector / np.linalg.norm(vector, axis=axis, keepdims=True)
+
+def angle_between(v1, v2):
+    """ Returns the angle in radians between vectors 'v1' and 'v2'::
+
+            >>> angle_between((1, 0, 0), (0, 1, 0))
+            1.5707963267948966
+            >>> angle_between((1, 0, 0), (1, 0, 0))
+            0.0
+            >>> angle_between((1, 0, 0), (-1, 0, 0))
+            3.141592653589793
+    """
+    v1_u = unit_vector(v1)
+    v2_u = unit_vector(v2)
+    return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
+
+def get_angles(xys):
+    xys = unit_vector(xys, 1)
+    return np.arccos(np.clip((xys[:,None] * xys).sum(-1), -1., 1,))
+
 
 def describe_dots(
     dots,
@@ -595,6 +635,7 @@ def describe_dots(
     use_pairwise_features = True,
     use_unordered_pairwise = True,
     use_short_pairwise = True,
+    use_config = True,
 ):
     dots = np.array(dots, dtype=float).reshape(-1, 4)
     dots[:,1] *= -1
@@ -645,6 +686,9 @@ def describe_dots(
         pairwise_str = ", ".join(pairwise_strs)
         description = f"{description} [SEP] {pairwise_str}"
 
+    if use_config:
+        pass
+
     return description
 
 
@@ -654,6 +698,7 @@ def describe_plan_specific_dots(
     use_unordered_pairwise = True,
     close_dots = None,
     use_short_pairwise = True,
+    use_config = True,
     format = DescriptionFormat.SrcRelTgt,
 ):
     boolplan = plan.astype(bool)
@@ -670,6 +715,49 @@ def describe_plan_specific_dots(
         if boolplan[i]
     ]
     description = " [SEP] ".join(descs)
+
+    if use_config:
+        # only run this in plan-specific, since it can get really slow
+        num_dots = dots.shape[0]
+        config_sizes = [2,3]
+        #config_sizes = [3]
+        config_descs = []
+        for size in config_sizes:
+            plan_dots = plan.nonzero()[0]
+            combinations = list(itertools.combinations(plan_dots, size))
+            for idxs in combinations:
+                # dots: (x,y,size,color)
+                config = dots[idxs,:]
+                xy = config[:,:2]
+                pairwise_dists = ((xy[:,None] - xy) ** 2).sum(-1)
+
+                # describe_config(config, size)
+                if size == 2:
+                    # TODO: fold this into pairwise
+                    dist = pairwise_dists[0,1]
+                    # hard-coded threshold
+                    if dist < 0.1:
+                        config_descs.append(f"dot{str(idxs[0]+1)} close dot{str(idxs[1]+1)}")
+                elif size == 3:
+                    multihot = np.zeros(7, dtype=bool)
+                    multihot[list(idxs)] = True
+                    contig = is_contiguous(multihot, dots[:,:2], 7)
+                    angles = get_angles(xy)
+                    max_angle = angles.max() * 180 / math.pi
+                    # hard-coded threshold
+                    if max_angle > 170 and contig:
+                        config_descs.append(
+                            f"dot{str(idxs[0]+1)} dot{str(idxs[1]+1)} dot{str(idxs[2]+1)} "
+                            "line"
+                        )
+                    elif max_angle <= 170 and contig:
+                        config_descs.append(
+                            f"dot{str(idxs[0]+1)} dot{str(idxs[1]+1)} dot{str(idxs[2]+1)} "
+                            "triangle"
+                        )
+        if len(config_descs) > 0:
+            config_descriptions = " [SEP] ".join(config_descs)
+            description = f"{description} [SEP] {config_descriptions}"
 
     if format == DescriptionFormat.SrcRelTgt or format == DescriptionFormat.SrcRelsTgt:
         # construct pairwise features for dot pairs in plan
@@ -787,6 +875,15 @@ def get_confirmations(
                 # need turn to be a str. after json deserialization keys turn into str.
     return confirmations
 
+"""
+Process conversations into examples.
+Each conversation will be turned into num_turns examples (or num_turns / 2).
+Each example will look like:
+    * All previous turns: each turn is a list of tokens (strings)
+    * All previous refs, partner refs, partner_refs_our_view
+    * scenario, chat, and ids
+Eg conversation prefixes
+"""
 def get_examples(
     conversations,
     confirmations,
@@ -846,6 +943,7 @@ def get_examples(
                     use_pairwise_features = True,
                     use_unordered_pairwise = options.unordered_rel,
                     use_short_pairwise = options.short_rel,
+                    use_config = options.config_describe,
                 ))
 
                 # plan-specific dot representations
@@ -856,6 +954,7 @@ def get_examples(
                         options.unordered_rel,
                         close_dots = None,
                         use_short_pairwise = options.short_rel,
+                        use_config = options.config_describe,
                         format = options.format,
                     ),
                 )

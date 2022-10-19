@@ -33,6 +33,7 @@ class HfDataOptions:
     short_describe: bool = True
     plan_specific_description: bool = True
     short_rel: bool = False
+    config_describe: bool = False
     
     # generation options
     confirmation: bool = True
@@ -54,6 +55,7 @@ def construct_feature_string(options):
     feats.append("sd" if options.short_describe else "")
     feats.append("ps" if options.plan_specific_description else "")
     feats.append("sr" if options.short_rel else "")
+    feats.append("cd" if options.config_describe else "")
     # other generation options
     feats.append("c" if options.confirmation else "")
     feats.append("sl" if options.selection_leaning else "")
