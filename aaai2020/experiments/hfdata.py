@@ -26,6 +26,7 @@ from belief_utils import is_contiguous
 from hfutils import (
     HfDataOptions, Property, DescriptionFormat,
     construct_feature_string, get_bart_tokenizer,
+    GenerationExtras,
 )
 
 fields = (
@@ -625,8 +626,24 @@ def angle_between(v1, v2):
     return np.arccos(np.clip(np.dot(v1_u, v2_u), -1.0, 1.0))
 
 def get_angles(xys):
-    xys = unit_vector(xys, 1)
-    return np.arccos(np.clip((xys[:,None] * xys).sum(-1), -1., 1,))
+    num_dots = xys.shape[0]
+    pairs = [
+        [tgt for tgt in range(num_dots) if src != tgt]
+        for src in range(num_dots)
+    ]
+    xy_pairs = xys[np.array(pairs)]
+    diffs = xys[:,None] - xy_pairs
+    diffs = unit_vector(diffs, 1)
+    return np.arccos(np.clip(
+        (diffs[:,0] * diffs[:,1]).sum(-1),
+        -1, 1
+    ))
+
+    # buggy?
+    flat_diffs = diffs.reshape(-1, 2)
+    return np.arccos(np.clip((
+        flat_diffs[:,None] * flat_diffs
+    ).sum(-1), -1., 1,))
 
 
 def describe_dots(
@@ -701,6 +718,8 @@ def describe_plan_specific_dots(
     use_config = True,
     format = DescriptionFormat.SrcRelTgt,
 ):
+    extras = None
+
     boolplan = plan.astype(bool)
     dots = np.array(dots, dtype=float).reshape(-1, 4)
     rounded_dots = (dots.round(2) * 100).astype(int)
@@ -722,6 +741,8 @@ def describe_plan_specific_dots(
         config_sizes = [2,3]
         #config_sizes = [3]
         config_descs = []
+        triangle_configs = []
+        line_configs = []
         for size in config_sizes:
             plan_dots = plan.nonzero()[0]
             combinations = list(itertools.combinations(plan_dots, size))
@@ -745,19 +766,26 @@ def describe_plan_specific_dots(
                     angles = get_angles(xy)
                     max_angle = angles.max() * 180 / math.pi
                     # hard-coded threshold
-                    if max_angle > 170 and contig:
+                    #if max_angle > 170 and contig:
+                    if max_angle > 135:
                         config_descs.append(
                             f"dot{str(idxs[0]+1)} dot{str(idxs[1]+1)} dot{str(idxs[2]+1)} "
                             "line"
                         )
-                    elif max_angle <= 170 and contig:
+                        line_configs.append(idxs)
+                    elif max_angle <= 135 and contig:
                         config_descs.append(
                             f"dot{str(idxs[0]+1)} dot{str(idxs[1]+1)} dot{str(idxs[2]+1)} "
                             "triangle"
                         )
+                        triangle_configs.append(idxs)
         if len(config_descs) > 0:
             config_descriptions = " [SEP] ".join(config_descs)
             description = f"{description} [SEP] {config_descriptions}"
+            extras = GenerationExtras(
+                triangle_configs = triangle_configs,
+                line_configs = line_configs,
+            )
 
     if format == DescriptionFormat.SrcRelTgt or format == DescriptionFormat.SrcRelsTgt:
         # construct pairwise features for dot pairs in plan
@@ -784,7 +812,7 @@ def describe_plan_specific_dots(
         pairwise_str = " , ".join(pairwise_strs)
         description = f"{description} [SEP] {pairwise_str}"
 
-        return description
+        return description, extras
     elif format == DescriptionFormat.SrcRelTgts:
         ijs = [
             (i, [j for j in range(7) if boolplan[j] if i != j])
@@ -795,7 +823,7 @@ def describe_plan_specific_dots(
             pairwise_strs.append(describe_dot_tgts(i, js, dot_strings, dots))
         pairwise_str = " , ".join(pairwise_strs)
         description = f"{description} [SEP] {pairwise_str}"
-        return description
+        return description, extras
     else:
         raise ValueError(f"Invalid format: {format.name}")
 
@@ -895,6 +923,23 @@ def get_examples(
         #for key in Conversation._fields + fields
     }
     num_skipped = 0
+    num_examples = 0
+
+    # triangle counting
+    num_input_triangles = 0
+    num_output_triangles = 0
+    num_both_triangles = 0
+
+    # line counting
+    num_input_lines = 0
+    num_output_lines = 0
+    num_both_lines = 0
+
+    num_input_triangle_output_line = 0 
+    num_input_line_output_triangle = 0
+
+    extra_counter = 0
+
     #for conversation in track(conversations):
     for conversation in conversations:
         num_turns = len(conversation.sents)
@@ -947,17 +992,16 @@ def get_examples(
                 ))
 
                 # plan-specific dot representations
-                examples["plan_specific_dots"].append(
-                    describe_plan_specific_dots(
-                        conversation.dots,
-                        raw_plan,
-                        options.unordered_rel,
-                        close_dots = None,
-                        use_short_pairwise = options.short_rel,
-                        use_config = options.config_describe,
-                        format = options.format,
-                    ),
+                description, generation_extras = describe_plan_specific_dots(
+                    conversation.dots,
+                    raw_plan,
+                    options.unordered_rel,
+                    close_dots = None,
+                    use_short_pairwise = options.short_rel,
+                    use_config = options.config_describe,
+                    format = options.format,
                 )
+                examples["plan_specific_dots"].append(description)
 
                 # concatenate all text
                 examples["text"].append(
@@ -1001,6 +1045,43 @@ def get_examples(
                     " ".join([x for xs in conversation.all_sentrefs[:turn] for x in xs])
                 )
 
+                triangle_in_input = "triangle" in examples["plan_specific_dots"][-1]
+                triangle_in_output = "triangle" in examples["outtext"][-1]
+
+                line_in_input = "line" in examples["plan_specific_dots"][-1]
+                line_in_output = "line" in examples["outtext"][-1]
+
+                num_input_triangles +=  triangle_in_input
+                num_output_triangles += triangle_in_output
+                num_both_triangles += triangle_in_input & triangle_in_output
+
+                num_input_lines +=  line_in_input
+                num_output_lines += line_in_output
+                num_both_lines += line_in_input & line_in_output
+
+                num_input_triangle_output_line += triangle_in_input & line_in_output
+                num_input_line_output_triangle += line_in_input & triangle_in_output
+
+                num_examples += 1
+
+                if False:
+                #if triangle_in_input & (not triangle_in_output):
+                #if line_in_input & (not line_in_output):
+                #if line_in_input & line_in_output:
+                #if (not line_in_input) & line_in_output:
+                    boolplan = raw_plan.astype(bool)
+                    extra_counter += 1
+                    print(f"num examples: {extra_counter}")
+                    print(generation_extras)
+                    print(conversation.scenario_id)
+                    print(conversation.real_ids)
+                    print(examples["outtext_mentions"][-1])
+
+                    dots = np.array(conversation.dots, dtype=float).reshape(-1, 4)
+                    xys = dots[boolplan, :2]
+                    angles = get_angles(xys) * 180 / math.pi
+                    angle = angles.max()
+                    vectors = xys[:,None] - xys
             #for field in examples.keys():
                 #print(field, examples[field][-1])
             #import pdb; pdb.set_trace()
@@ -1010,7 +1091,13 @@ def get_examples(
     for key1 in fields:
         for key2 in fields:
             assert len(examples[key1]) == len(examples[key2])
+    print(f"num examples {num_examples}")
     print(f"Number of examples skipped due to plan size: {num_skipped}")
+    print(f"Input triangles: {num_input_triangles} || output triangles: {num_output_triangles} || both triangles: {num_both_triangles}")
+    print(f"Input lines: {num_input_lines} || output lines: {num_output_lines} || both lines: {num_both_lines}")
+    print(f"triangle but line {num_input_triangle_output_line}")
+    print(f"line but triangle {num_input_line_output_triangle}")
+    #import pdb; pdb.set_trace()
     return examples
 
 if __name__ == "__main__":
@@ -1277,6 +1364,7 @@ if __name__ == "__main__":
         max_length_output = max(output_lens)
         print(f"Max length of textmention,mention output: {max_length_output}")
         print(textmention_mention_examples["label"][np.argmax(output_lens)])
+        import pdb; pdb.set_trace()
         textmention_mention_dataset = Dataset.from_dict(textmention_mention_examples)
         textmention_mention_path = f"hf_datasets/{split}_textmention_mention_given_plan_{feature_string}.hf"
         print(f"Textmention,mention dataset path {textmention_mention_path}")

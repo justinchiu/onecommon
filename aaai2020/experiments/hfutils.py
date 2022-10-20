@@ -1,6 +1,7 @@
 
 from dataclasses import dataclass
 from enum import Enum, auto
+from typing import List, Tuple
 
 from transformers import BartTokenizer
 
@@ -75,6 +76,12 @@ def get_bart_tokenizer():
     #tokenizer.add_tokens(["[NONE]"])
     tokenizer.add_tokens(["<selection>", "<bom>", "<eom>"])
     return tokenizer
+
+@dataclass
+class GenerationExtras:
+    triangle_configs: List[Tuple[int]]
+    line_configs: List[Tuple[int]]
+
 
 if __name__ == "__main__":
     options = HfDataOptions(
