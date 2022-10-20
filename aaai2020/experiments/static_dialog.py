@@ -138,6 +138,7 @@ class StaticDialogLogger:
         # BART GENERATION,
         plan_beam_sents_bart = None,
         plan_beam_lm_bart = None,
+        plan_beam_input_bart = None,
         # PLAN FEATURE LABEL,
         plan_prior = None,
         writer_configs_prior = None,
@@ -174,6 +175,7 @@ class StaticDialogLogger:
         # BART BEAM SEARCH
         self.turn["plan_beam_sents_bart"] = plan_beam_sents_bart
         self.turn["plan_beam_lm_bart"] = plan_beam_lm_bart
+        self.turn["plan_beam_input_bart"] = plan_beam_input_bart
         # PLAN FEATURE LABEL
         self.turn["plan_prior"] = plan_prior
         self.turn["writer_configs_prior"] = writer_configs_prior
@@ -555,6 +557,7 @@ class StaticHierarchicalDialog(HierarchicalDialog):
                     # BART
                     plan_beam_sents_bart = writer.bart_sentence_candidates,
                     plan_beam_lm_bart = writer.bart_lm_scores.tolist(),
+                    plan_beam_input_bart = writer.bart_input,
                     # PLAN FEATURE EVALUATION
                     plan_prior = plan_prior.tolist(),
                     writer_configs_prior = writer_configs_prior.tolist(),
