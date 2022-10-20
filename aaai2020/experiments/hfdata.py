@@ -308,6 +308,27 @@ plan_limit_ordered_group_rel_nodial_config_options = HfDataOptions(
     dialog_history = False,
 )
 
+plan_limit_ordered_group_rel_nodial_config_agree_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = False,
+    must_agree_config = True,
+)
+
 
 options = [
     basic_options, # 0
@@ -322,7 +343,8 @@ options = [
     group_target_nodial_options,
     plan_limit_remove_dialog_unordered_options, # 10
     plan_limit_ordered_group_rel_nodial_config_options, # 11
-][11]
+    plan_limit_ordered_group_rel_nodial_config_agree_options, # 12
+][12]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -924,6 +946,7 @@ def get_examples(
     }
     num_skipped = 0
     num_examples = 0
+    num_skipped_agree_config = 0
 
     # triangle counting
     num_input_triangles = 0
@@ -973,6 +996,67 @@ def get_examples(
 
             is_you = conversation.sents[turn][0] == "YOU:"
             if is_you:
+                num_examples += 1
+
+                # plan-specific dot representations
+                dot_description, generation_extras = describe_plan_specific_dots(
+                    conversation.dots,
+                    raw_plan,
+                    options.unordered_rel,
+                    close_dots = None,
+                    use_short_pairwise = options.short_rel,
+                    use_config = options.config_describe,
+                    format = options.format,
+                )
+                # output sentence
+                sent = " ".join(conversation.sents[turn])
+
+                # check if heuristics all agree
+                triangle_in_input = "triangle" in dot_description
+                triangle_in_output = "triangle" in sent
+
+                line_in_input = "line" in dot_description
+                line_in_output = "line" in sent
+
+                num_input_triangles += triangle_in_input
+                num_output_triangles += triangle_in_output
+                num_both_triangles += triangle_in_input & triangle_in_output
+
+                num_input_lines +=  line_in_input
+                num_output_lines += line_in_output
+                num_both_lines += line_in_input & line_in_output
+
+                num_input_triangle_output_line += triangle_in_input & line_in_output
+                num_input_line_output_triangle += line_in_input & triangle_in_output
+
+                if options.must_agree_config:
+                    # output should be explained by something
+                    triangle_not_explained = (not triangle_in_input) & triangle_in_output
+                    line_not_explained = (not line_in_input) & line_in_output
+                    if triangle_not_explained or line_not_explained:
+                        # skip this example
+                        num_skipped_agree_config += 1
+                        continue
+
+                if False:
+                #if triangle_in_input & (not triangle_in_output):
+                #if line_in_input & (not line_in_output):
+                #if line_in_input & line_in_output:
+                #if (not line_in_input) & line_in_output:
+                    boolplan = raw_plan.astype(bool)
+                    extra_counter += 1
+                    print(f"num examples: {extra_counter}")
+                    print(generation_extras)
+                    print(conversation.scenario_id)
+                    print(conversation.real_ids)
+                    print(examples["outtext_mentions"][-1])
+
+                    dots = np.array(conversation.dots, dtype=float).reshape(-1, 4)
+                    xys = dots[boolplan, :2]
+                    angles = get_angles(xys) * 180 / math.pi
+                    angle = angles.max()
+                    vectors = xys[:,None] - xys
+                # 
                 # textify all dot properties
 
                 # mention = (start idx, end idx, utterance end idx, *binary ind for 7 dots)
@@ -991,24 +1075,13 @@ def get_examples(
                     use_config = options.config_describe,
                 ))
 
-                # plan-specific dot representations
-                description, generation_extras = describe_plan_specific_dots(
-                    conversation.dots,
-                    raw_plan,
-                    options.unordered_rel,
-                    close_dots = None,
-                    use_short_pairwise = options.short_rel,
-                    use_config = options.config_describe,
-                    format = options.format,
-                )
-                examples["plan_specific_dots"].append(description)
+                examples["plan_specific_dots"].append(dot_description)
 
                 # concatenate all text
                 examples["text"].append(
                     " ".join([x for xs in conversation.sents[:turn] for x in xs])
                 )
 
-                sent = " ".join(conversation.sents[turn])
                 examples["outtext"].append(sent)
 
                 # confirmation
@@ -1045,43 +1118,6 @@ def get_examples(
                     " ".join([x for xs in conversation.all_sentrefs[:turn] for x in xs])
                 )
 
-                triangle_in_input = "triangle" in examples["plan_specific_dots"][-1]
-                triangle_in_output = "triangle" in examples["outtext"][-1]
-
-                line_in_input = "line" in examples["plan_specific_dots"][-1]
-                line_in_output = "line" in examples["outtext"][-1]
-
-                num_input_triangles +=  triangle_in_input
-                num_output_triangles += triangle_in_output
-                num_both_triangles += triangle_in_input & triangle_in_output
-
-                num_input_lines +=  line_in_input
-                num_output_lines += line_in_output
-                num_both_lines += line_in_input & line_in_output
-
-                num_input_triangle_output_line += triangle_in_input & line_in_output
-                num_input_line_output_triangle += line_in_input & triangle_in_output
-
-                num_examples += 1
-
-                if False:
-                #if triangle_in_input & (not triangle_in_output):
-                #if line_in_input & (not line_in_output):
-                #if line_in_input & line_in_output:
-                #if (not line_in_input) & line_in_output:
-                    boolplan = raw_plan.astype(bool)
-                    extra_counter += 1
-                    print(f"num examples: {extra_counter}")
-                    print(generation_extras)
-                    print(conversation.scenario_id)
-                    print(conversation.real_ids)
-                    print(examples["outtext_mentions"][-1])
-
-                    dots = np.array(conversation.dots, dtype=float).reshape(-1, 4)
-                    xys = dots[boolplan, :2]
-                    angles = get_angles(xys) * 180 / math.pi
-                    angle = angles.max()
-                    vectors = xys[:,None] - xys
             #for field in examples.keys():
                 #print(field, examples[field][-1])
             #import pdb; pdb.set_trace()
@@ -1097,7 +1133,7 @@ def get_examples(
     print(f"Input lines: {num_input_lines} || output lines: {num_output_lines} || both lines: {num_both_lines}")
     print(f"triangle but line {num_input_triangle_output_line}")
     print(f"line but triangle {num_input_line_output_triangle}")
-    #import pdb; pdb.set_trace()
+    print(f"number of examples skipped due to unexplained config: {num_skipped_agree_config}")
     return examples
 
 if __name__ == "__main__":
