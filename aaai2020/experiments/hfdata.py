@@ -1364,7 +1364,7 @@ if __name__ == "__main__":
         max_length_output = max(output_lens)
         print(f"Max length of textmention,mention output: {max_length_output}")
         print(textmention_mention_examples["label"][np.argmax(output_lens)])
-        import pdb; pdb.set_trace()
+
         textmention_mention_dataset = Dataset.from_dict(textmention_mention_examples)
         textmention_mention_path = f"hf_datasets/{split}_textmention_mention_given_plan_{feature_string}.hf"
         print(f"Textmention,mention dataset path {textmention_mention_path}")
