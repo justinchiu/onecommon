@@ -293,7 +293,8 @@ class BeliefAgent(RnnAgent):
                 self.context,
                 plan,
                 # URGENT TODO: NEED TO CHANGE THIS DYNAMICALLY
-                format = DescriptionFormat.SrcRelsTgt,
+                #format = DescriptionFormat.SrcRelsTgt,
+                format = DescriptionFormat.SrcRelTgts,
             )
             previous_text = " ".join(w for sent in self.text_history for w in sent)
             plan_description = describe_plan_sparse(plan)
