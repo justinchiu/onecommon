@@ -121,7 +121,7 @@ mkdir -p ${logdir}
 python -u test_planning_static.py \
   --alice_model_file=${model_dir_a}/1_ep-12.th \
   --bob_model_file=${model_dir_b}/1_ep-12.th \
-  --language_generator_path=./${bart_dir}/checkpoint-23000 \
+  --language_generator_path=./${bart_dir}/checkpoint-32000 \
   --belief ${belief} \
   --absolute_bucketing 1 \
   --num_size_buckets ${bucket_size} \
