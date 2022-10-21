@@ -293,6 +293,7 @@ class BeliefAgent(RnnAgent):
                 self.context,
                 plan,
                 # URGENT TODO: NEED TO CHANGE THIS DYNAMICALLY
+                use_unordered_pairwise = False,
                 #format = DescriptionFormat.SrcRelsTgt,
                 format = DescriptionFormat.SrcRelTgts,
             )
