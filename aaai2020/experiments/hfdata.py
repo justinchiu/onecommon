@@ -352,6 +352,28 @@ plan_limit_ordered_group_rel_nodial_config_agree_balance_options = HfDataOptions
     balance = True,
 )
 
+plan_limit_ordered_group_tgt_nodial_config_agree_balance_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelTgts,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = False,
+    must_agree_config = True,
+    balance = True,
+)
+
 
 options = [
     basic_options, # 0
@@ -368,7 +390,8 @@ options = [
     plan_limit_ordered_group_rel_nodial_config_options, # 11
     plan_limit_ordered_group_rel_nodial_config_agree_options, # 12
     plan_limit_ordered_group_rel_nodial_config_agree_balance_options, # 13
-][13]
+    plan_limit_ordered_group_tgt_nodial_config_agree_balance_options, # 14
+][14]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"

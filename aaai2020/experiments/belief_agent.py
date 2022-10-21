@@ -16,7 +16,7 @@ from cog_belief import CostBelief, EgoCostBelief
 
 from template_rec import render, render_select
 
-# RUNS WHOLE FILE. FACTOR OUT CODE
+from hfutils import DescriptionFormat
 from hfdata import describe_plan_specific_dots, describe_plan_sparse
 
 NO_RESPONSE = 0
