@@ -294,8 +294,8 @@ class BeliefAgent(RnnAgent):
                 plan,
                 # URGENT TODO: NEED TO CHANGE THIS DYNAMICALLY
                 use_unordered_pairwise = False,
-                #format = DescriptionFormat.SrcRelsTgt,
-                format = DescriptionFormat.SrcRelTgts,
+                format = DescriptionFormat.SrcRelsTgt,
+                #format = DescriptionFormat.SrcRelTgts,
             )
             previous_text = " ".join(w for sent in self.text_history for w in sent)
             plan_description = describe_plan_sparse(plan)

@@ -14,7 +14,7 @@ Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle
 --------------------------------------------------------------------------------
 Agreement!
 --------------------------------------------------------------------------------
-dialog_len=8.00 sent_len=21.38 agree=100.00% moving_agree=50.00% advantage=0.00 moving_advantage=0.00 time=59.117s comb_rew=2.00 agree_comb_rew=2.00 alice_rew=1.00 alice_moving_rew=0.50 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=4 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=1.00 bob_moving_rew=0.50 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=4 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+dialog_len=8.00 sent_len=21.38 agree=100.00% moving_agree=50.00% advantage=0.00 moving_advantage=0.00 time=56.949s comb_rew=2.00 agree_comb_rew=2.00 alice_rew=1.00 alice_moving_rew=0.50 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=4 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=1.00 bob_moving_rew=0.50 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=4 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
 --------------------------------------------------------------------------------
 ================================================================================
 
@@ -30,7 +30,7 @@ Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle
 --------------------------------------------------------------------------------
 Disagreement?!
 --------------------------------------------------------------------------------
-dialog_len=6.00 sent_len=17.67 agree=50.00% moving_agree=33.33% advantage=0.00 moving_advantage=0.00 time=43.946s comb_rew=1.00 agree_comb_rew=2.00 alice_rew=0.50 alice_moving_rew=0.33 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=6 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.50 bob_moving_rew=0.33 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=6 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+dialog_len=6.00 sent_len=17.67 agree=50.00% moving_agree=33.33% advantage=0.00 moving_advantage=0.00 time=42.590s comb_rew=1.00 agree_comb_rew=2.00 alice_rew=0.50 alice_moving_rew=0.33 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=6 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.50 bob_moving_rew=0.33 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=6 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
 --------------------------------------------------------------------------------
 ================================================================================
 
@@ -46,7 +46,7 @@ Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle
 --------------------------------------------------------------------------------
 Disagreement?!
 --------------------------------------------------------------------------------
-dialog_len=5.33 sent_len=16.12 agree=33.33% moving_agree=25.00% advantage=0.00 moving_advantage=0.00 time=38.857s comb_rew=0.67 agree_comb_rew=2.00 alice_rew=0.33 alice_moving_rew=0.25 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=8 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.33 bob_moving_rew=0.25 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=8 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+dialog_len=5.33 sent_len=16.12 agree=33.33% moving_agree=25.00% advantage=0.00 moving_advantage=0.00 time=37.799s comb_rew=0.67 agree_comb_rew=2.00 alice_rew=0.33 alice_moving_rew=0.25 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=8 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.33 bob_moving_rew=0.25 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=8 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
 --------------------------------------------------------------------------------
 ================================================================================
 
@@ -62,7 +62,7 @@ Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle
 --------------------------------------------------------------------------------
 Disagreement?!
 --------------------------------------------------------------------------------
-dialog_len=5.00 sent_len=14.55 agree=25.00% moving_agree=20.00% advantage=0.00 moving_advantage=0.00 time=36.265s comb_rew=0.50 agree_comb_rew=2.00 alice_rew=0.25 alice_moving_rew=0.20 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=10 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.25 bob_moving_rew=0.20 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=10 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+dialog_len=5.00 sent_len=14.55 agree=25.00% moving_agree=20.00% advantage=0.00 moving_advantage=0.00 time=35.615s comb_rew=0.50 agree_comb_rew=2.00 alice_rew=0.25 alice_moving_rew=0.20 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=10 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.25 bob_moving_rew=0.20 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=10 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
 --------------------------------------------------------------------------------
 ================================================================================
 
@@ -78,7 +78,7 @@ Bob   : <svg viewbox='0 0 430 430' width="430" height="430" id="agent_1"><circle
 --------------------------------------------------------------------------------
 Disagreement?!
 --------------------------------------------------------------------------------
-dialog_len=4.80 sent_len=13.83 agree=20.00% moving_agree=16.67% advantage=0.00 moving_advantage=0.00 time=34.635s comb_rew=0.40 agree_comb_rew=2.00 alice_rew=0.20 alice_moving_rew=0.17 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=12 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.20 bob_moving_rew=0.17 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=12 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
+dialog_len=4.80 sent_len=13.83 agree=20.00% moving_agree=16.67% advantage=0.00 moving_advantage=0.00 time=34.399s comb_rew=0.40 agree_comb_rew=2.00 alice_rew=0.20 alice_moving_rew=0.17 agree_alice_rew=1.00 alice_make_sel=0.00% alice_unique=12 alice_ref_resolution_score=0.00 alice_language_model_score=0.00 alice_joint_score=0.00 bob_rew=0.20 bob_moving_rew=0.17 agree_bob_rew=1.00 bob_make_sel=0.00% bob_unique=12 bob_ref_resolution_score=0.00 bob_language_model_score=0.00 bob_joint_score=0.00
 --------------------------------------------------------------------------------
 ================================================================================
 
