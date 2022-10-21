@@ -1,4 +1,5 @@
 from typing import NamedTuple
+from collections import defaultdict
 
 from pathlib import Path
 import numpy as np
@@ -329,6 +330,28 @@ plan_limit_ordered_group_rel_nodial_config_agree_options = HfDataOptions(
     must_agree_config = True,
 )
 
+plan_limit_ordered_group_rel_nodial_config_agree_balance_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    max_plan_size = 5,
+    dialog_history = False,
+    must_agree_config = True,
+    balance = True,
+)
+
 
 options = [
     basic_options, # 0
@@ -344,7 +367,8 @@ options = [
     plan_limit_remove_dialog_unordered_options, # 10
     plan_limit_ordered_group_rel_nodial_config_options, # 11
     plan_limit_ordered_group_rel_nodial_config_agree_options, # 12
-][12]
+    plan_limit_ordered_group_rel_nodial_config_agree_balance_options, # 13
+][13]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -963,6 +987,15 @@ def get_examples(
 
     extra_counter = 0
 
+    # plans of size 4+ are in the last bucket
+    plan_sizes = [2,3,4]
+    num_examples_by_plan_size = defaultdict(int)
+    examples_by_plan_size = {
+        size: {
+            key: [] for key in fields
+        } for size in plan_sizes
+    }
+
     #for conversation in track(conversations):
     for conversation in conversations:
         num_turns = len(conversation.sents)
@@ -996,8 +1029,6 @@ def get_examples(
 
             is_you = conversation.sents[turn][0] == "YOU:"
             if is_you:
-                num_examples += 1
-
                 # plan-specific dot representations
                 dot_description, generation_extras = describe_plan_specific_dots(
                     conversation.dots,
@@ -1118,15 +1149,23 @@ def get_examples(
                     " ".join([x for xs in conversation.all_sentrefs[:turn] for x in xs])
                 )
 
+                num_examples += 1
+
+                # copy to examples by plan size
+                plan_size = int(raw_plan.sum())
+                if plan_size > 4:
+                    # round down to 4
+                    plan_size = 4
+                num_examples_by_plan_size[plan_size] += 1
+                if plan_size in examples_by_plan_size:
+                    for field in examples.keys():
+                        examples_by_plan_size[plan_size][field].append(examples[field][-1])
+
             #for field in examples.keys():
                 #print(field, examples[field][-1])
             #import pdb; pdb.set_trace()
 
 
-    # Check number of examples for each field
-    for key1 in fields:
-        for key2 in fields:
-            assert len(examples[key1]) == len(examples[key2])
     print(f"num examples {num_examples}")
     print(f"Number of examples skipped due to plan size: {num_skipped}")
     print(f"Input triangles: {num_input_triangles} || output triangles: {num_output_triangles} || both triangles: {num_both_triangles}")
@@ -1134,6 +1173,51 @@ def get_examples(
     print(f"triangle but line {num_input_triangle_output_line}")
     print(f"line but triangle {num_input_line_output_triangle}")
     print(f"number of examples skipped due to unexplained config: {num_skipped_agree_config}")
+    print(num_examples_by_plan_size)
+
+    if options.balance:
+        # rebalance examples by plan size
+        num_exs = [num_examples_by_plan_size[size] for size in plan_sizes]
+        largest = max(num_exs)
+        multipliers = largest // np.array(num_exs)
+        new_examples = {}
+        for field in examples.keys():
+            new_examples[field] = [
+                example
+                for size, multiplier in zip(plan_sizes, multipliers)
+                for example in examples_by_plan_size[size][field] * multiplier
+            ]
+
+        """
+        # test on training only?
+        for size, mult in zip(plan_sizes, multipliers):
+            idx = 136
+            field = "outtext"
+            extext = examples_by_plan_size[size][field][idx]
+            # check that number of examples matches multiplier
+            num_app = 0
+            for ex in new_examples[field]:
+                if ex == extext:
+                    num_app += 1
+            assert mult == num_app
+
+        # check that the fields are correctly paired
+        idxs = [129, 513, 1039, 5000, 10000]
+        for idx in idxs:
+            extext = new_examples["outtext"][idx]
+            for exidx in range(len(examples["outtext"])):
+                if examples["outtext"][exidx] == extext:
+                    for field in fields:
+                        assert new_examples[field][idx] == examples[field][exidx]
+        """
+
+        examples = new_examples
+
+    # Check number of examples for each field
+    for key1 in fields:
+        for key2 in fields:
+            assert len(examples[key1]) == len(examples[key2])
+
     return examples
 
 if __name__ == "__main__":

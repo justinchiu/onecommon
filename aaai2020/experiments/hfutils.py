@@ -45,7 +45,7 @@ class HfDataOptions:
     max_plan_size: int = 5
     dialog_history: bool = True
     must_agree_config: bool = False
-
+    balance: bool = False
 
 
 def construct_feature_string(options):
@@ -66,6 +66,7 @@ def construct_feature_string(options):
     feats.append(f"mps{options.max_plan_size}")
     feats.append("dh" if options.dialog_history else "")
     feats.append("ma" if options.must_agree_config else "")
+    feats.append("b" if options.balance else "")
 
     return "_".join(feats)
 
