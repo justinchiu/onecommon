@@ -275,8 +275,12 @@ splits = [
     # textmention,mention | config names
     # 16
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_c_sl_s_mps5_-l1e-05-b4",
+    # must agree
     # 17
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_c_sl_s_mps5__ma-l1e-05-b4",
+    # balanced
+    # 18
+    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_c_sl_s_mps5__ma_b-l1e-05-b4",
 ]
 
 from argparse import ArgumentParser
