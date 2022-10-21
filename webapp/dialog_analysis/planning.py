@@ -245,6 +245,9 @@ def process_dialogue(scenario_id, dialogue):
         for s,l in sorted(zip(sents, lm), reverse=True, key=lambda x: x[1]):
             st.write(f"{s} (LM {l:.2f})")
 
+        st.write("### bart input")
+        st.write(turn['plan_beam_input_bart'])
+
 splits = [
     "valid_1_absolute_or_collapsed_b5",
     "valid_1_absolute_cost_collapsed_b5",
@@ -281,6 +284,8 @@ splits = [
     # balanced
     # 18
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_c_sl_s_mps5__ma_b-l1e-05-b4",
+    # 19
+    "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_cd_c_sl_s_mps5__ma_b-l1e-05-b4",
 ]
 
 from argparse import ArgumentParser
