@@ -288,7 +288,13 @@ class BeliefAgent(RnnAgent):
             # dots_mentioned_per_ref_to_force: num_mentions x bsz=1 x num_dots=7
             dots_mentioned_per_ref_to_force = dots_mentioned.transpose(0,1)
 
-            dot_description, _ = describe_plan_specific_dots(self.context, plan)
+            # TODO: fix dot description generation, load correct args
+            dot_description, _ = describe_plan_specific_dots(
+                self.context,
+                plan,
+                # URGENT TODO: NEED TO CHANGE THIS DYNAMICALLY
+                format = DescriptionFormat.SrcRelsTgt,
+            )
             previous_text = " ".join(w for sent in self.text_history for w in sent)
             plan_description = describe_plan_sparse(plan)
             # HARD CODE no confirmation / selection
