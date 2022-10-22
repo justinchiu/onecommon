@@ -257,12 +257,13 @@ def evaluate(args):
 
             if args.num_batches > 0 and (batch_idx+1) % args.num_batches == 0:
                 with generation_path.open("w") as f:
-                    json.dump(inputs_labels_outputs, f)
+                    json.dump(ids_inputs_labels_outputs, f)
 
 
     print(f"Exact match: {exact_match} / {num_examples}")
-    with generation_path.open("w") as f:
-        json.dump(inputs_labels_outputs, f)
+    if IS_TEXT:
+        with generation_path.open("w") as f:
+            json.dump(ids_inputs_labels_outputs, f)
 
 
 
