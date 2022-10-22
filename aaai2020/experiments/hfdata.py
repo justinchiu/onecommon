@@ -1048,8 +1048,10 @@ def get_examples(
 
             if options.max_plan_size > 0 and raw_plan.sum() > options.max_plan_size:
                 num_skipped += 1
-                #print(" ".join(conversation.sents[turn]))
-                #import pdb; pdb.set_trace()
+                continue
+
+            if options.min_plan_size > 0 and raw_plan.sum() < options.min_plan_size:
+                num_skipped += 1
                 continue
 
             is_you = conversation.sents[turn][0] == "YOU:"

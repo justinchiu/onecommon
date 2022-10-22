@@ -1,6 +1,7 @@
 from argparse import ArgumentParser
 from rich.progress import track
 import json
+from pathlib import Path
 
 from itertools import zip_longest
 
@@ -117,13 +118,17 @@ def evaluate(args):
     tokenizer = hfutils.get_bart_tokenizer()
 
     # model
-    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-33000"
-    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-11500"
-    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-23000"
+    checkpoint_string = f"checkpoint-{args.checkpoint}"
+
+    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/{checkpoint_string}"
     model = BartForConditionalGeneration.from_pretrained(
         output_dir, forced_bos_token_id=0,
     )
     model.resize_token_embeddings(len(tokenizer))
+    generation_path = Path(
+        f"./hf-generations-{args.dataset}-l{args.learning_rate}-"
+        f"b{args.batch_size}/{checkpoint_string}.gen.json"
+    )
 
     def convert_to_features(example_batch):
         scenario_ids = example_batch["scenario_id"]
@@ -178,9 +183,11 @@ def evaluate(args):
 
     IS_TEXT = args.dataset[:4] == "text"
 
+    inputs_labels_outputs = []
+
     exact_match = 0
     num_examples = 0
-    bsz = 32
+    bsz = 16
     max_examples = len(tokenized_valid)
     #for batch_idx in track(range(max_examples // bsz)):
     for batch_idx in range(max_examples // bsz):
@@ -189,8 +196,8 @@ def evaluate(args):
         model_input = batch["input_ids"]
         output = model.generate(
             model_input,
-            num_beams = 16 if IS_TEXT else None,
-            num_return_sequences = 16 if IS_TEXT else None,
+            num_beams = args.beam_size if IS_TEXT else None,
+            num_return_sequences = args.beam_size if IS_TEXT else None,
             output_scores = True,
             return_dict_in_generate = True,
             max_new_tokens = 40,
@@ -235,9 +242,19 @@ def evaluate(args):
             inputs = tokenizer.batch_decode(model_input, skip_special_tokens=True)
             outputs = output_dots # flattened bsz * num_return_sequences
             scores = output.sequences_scores # or output.scores?
-            import pdb; pdb.set_trace()
+            for i in range(len(inputs)):
+                input_str = inputs[i]
+                output_strs = outputs[i*args.beam_size:(i+1)*args.beam_size]
+                label = labels[i][labels[i] != -100]
+                label_str = tokenizer.decode(label, skip_special_tokens=True)
+                inputs_labels_outputs.append(
+                    (input_str, label_str, output_strs)
+                )
 
     print(f"Exact match: {exact_match} / {num_examples}")
+    with generation_path.open("w") as f:
+        json.dump(inputs_labels_outputs, f)
+
 
 
 if __name__ == "__main__":
@@ -318,6 +335,14 @@ if __name__ == "__main__":
     parser.add_argument(
         '--eval', action = "store_true",
         help="Perform model evaluation on latest checkpoint",
+    )
+    parser.add_argument(
+        '--checkpoint', type = str, default = "32000",
+        help="Checkpoint iteration number for eval model loading",
+    )
+    parser.add_argument(
+        '--beam_size', type = int, default = 4,
+        help="Beam size for generation eval",
     )
 
     args = parser.parse_args()
