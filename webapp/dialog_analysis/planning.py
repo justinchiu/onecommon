@@ -286,6 +286,7 @@ splits = [
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_c_sl_s_mps5__ma_b-l1e-05-b4",
     # 19
     "GEN_valid_1_absolute_cost_collapsed_b5_ghf-results-textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_cd_c_sl_s_mps5__ma_b-l1e-05-b4",
+    # mention-specific
 ]
 
 from argparse import ArgumentParser
