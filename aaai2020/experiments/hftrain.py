@@ -59,6 +59,7 @@ def train(args):
             'labels': labels,
             "scenario_ids": example_batch["scenario_id"],
             "chat_ids": example_batch["chat_id"],
+            "agents": example_batch["agent"],
         }
 
         return encodings
@@ -164,6 +165,7 @@ def evaluate(args):
             'labels': labels,
             "scenario_ids": example_batch["scenario_id"],
             "chat_ids": example_batch["chat_id"],
+            "agents": example_batch["agent"],
         }
 
         return encodings
@@ -247,12 +249,13 @@ def evaluate(args):
             for i in range(bsz):
                 chat_id = batch["chat_ids"][i]
                 scenario_id = batch["scenario_ids"][i]
+                agent = batch["agents"][i]
                 input_str = inputs[i]
                 output_strs = outputs[i*args.beam_size:(i+1)*args.beam_size]
                 label = labels[i][labels[i] != -100]
                 label_str = tokenizer.decode(label, skip_special_tokens=True)
                 ids_inputs_labels_outputs.append(
-                    (chat_id, scenario_id, input_str, label_str, output_strs)
+                    (chat_id, scenario_id, agent, input_str, label_str, output_strs)
                 )
 
             if args.num_batches > 0 and (batch_idx+1) % args.num_batches == 0:

@@ -33,6 +33,7 @@ from hfutils import (
 fields = (
     "chat_id",
     "scenario_id",
+    "agent",
     "dots",
     "plan_specific_dots",
     "text",
@@ -495,6 +496,7 @@ class Conversation(NamedTuple):
 
     scenario_id: str
     chat_id: str
+    agent: int
 
     real_ids: list[str]
     partner_real_ids: list[str]
@@ -562,6 +564,7 @@ def get_conversations(split):
 
                 scenario_id = scenario_id,
                 chat_id = chat_id,
+                agent = agent,
 
                 real_ids = real_ids,
                 partner_real_ids = partner_real_ids,
@@ -1118,6 +1121,7 @@ def get_examples(
                 # conversation metadata
                 examples["chat_id"].append(conversation.chat_id)
                 examples["scenario_id"].append(conversation.scenario_id)
+                examples["agent"].append(conversation.agent)
 
                 # textify all dot properties
 
@@ -1519,6 +1523,7 @@ if __name__ == "__main__":
         # add metadata
         textmention_mention_examples["chat_id"] = examples["chat_id"]
         textmention_mention_examples["scenario_id"] = examples["scenario_id"]
+        textmention_mention_examples["agent"] = examples["agent"]
 
         textmention_mention_dataset = Dataset.from_dict(textmention_mention_examples)
         textmention_mention_path = f"hf_datasets/{split}_textmention_mention_given_plan_{feature_string}.hf"
@@ -1589,6 +1594,7 @@ if __name__ == "__main__":
         # add metadata
         textmention_examples["chat_id"] = examples["chat_id"]
         textmention_examples["scenario_id"] = examples["scenario_id"]
+        textmention_examples["agent"] = examples["agent"]
 
         textmention_dataset = Dataset.from_dict(textmention_examples)
         textmention_path = f"hf_datasets/{split}_textmention_given_mention_{feature_string}.hf"
