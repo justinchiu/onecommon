@@ -129,6 +129,8 @@ def evaluate(args):
         f"./hf-generations-{args.dataset}-l{args.learning_rate}-"
         f"b{args.batch_size}/{checkpoint_string}.gen.json"
     )
+    print(f"Saving generations to {str(generation_path)}")
+    generation_path.parent.mkdir(parents=True,exist_ok=True)
 
     def convert_to_features(example_batch):
         scenario_ids = example_batch["scenario_id"]
@@ -183,14 +185,14 @@ def evaluate(args):
 
     IS_TEXT = args.dataset[:4] == "text"
 
-    inputs_labels_outputs = []
+    ids_inputs_labels_outputs = []
 
     exact_match = 0
     num_examples = 0
-    bsz = 16
+    bsz = args.batch_size
     max_examples = len(tokenized_valid)
-    #for batch_idx in track(range(max_examples // bsz)):
-    for batch_idx in range(max_examples // bsz):
+    for batch_idx in track(range(max_examples // bsz)):
+    #for batch_idx in range(max_examples // bsz):
         batch = tokenized_valid[batch_idx * bsz: (batch_idx+1) * bsz]
         # one at a time
         model_input = batch["input_ids"]
@@ -242,14 +244,21 @@ def evaluate(args):
             inputs = tokenizer.batch_decode(model_input, skip_special_tokens=True)
             outputs = output_dots # flattened bsz * num_return_sequences
             scores = output.sequences_scores # or output.scores?
-            for i in range(len(inputs)):
+            for i in range(bsz):
+                chat_id = batch["chat_ids"][i]
+                scenario_id = batch["scenario_ids"][i]
                 input_str = inputs[i]
                 output_strs = outputs[i*args.beam_size:(i+1)*args.beam_size]
                 label = labels[i][labels[i] != -100]
                 label_str = tokenizer.decode(label, skip_special_tokens=True)
-                inputs_labels_outputs.append(
-                    (input_str, label_str, output_strs)
+                ids_inputs_labels_outputs.append(
+                    (chat_id, scenario_id, input_str, label_str, output_strs)
                 )
+
+            if args.num_batches > 0 and (batch_idx+1) % args.num_batches == 0:
+                with generation_path.open("w") as f:
+                    json.dump(inputs_labels_outputs, f)
+
 
     print(f"Exact match: {exact_match} / {num_examples}")
     with generation_path.open("w") as f:
@@ -343,6 +352,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--beam_size', type = int, default = 4,
         help="Beam size for generation eval",
+    )
+    parser.add_argument(
+        '--num_batches', type = int, default = 5,
+        help="Save every num_batches in generation eval",
     )
 
     args = parser.parse_args()
