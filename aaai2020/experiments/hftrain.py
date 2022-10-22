@@ -56,6 +56,8 @@ def train(args):
             'attention_mask': input_encodings['attention_mask'],
             'decoder_input_ids': decoder_input_ids,
             'labels': labels,
+            "scenario_ids": example_batch["scenario_id"],
+            "chat_ids": example_batch["chat_id"],
         }
 
         return encodings
@@ -88,6 +90,7 @@ def train(args):
         save_steps = 1000,
         save_total_limit = 3,
         metric_for_best_model = "eval_loss",
+        load_best_model_at_end = True,
     )
 
     trainer = Trainer(
@@ -102,6 +105,7 @@ def train(args):
     tokenizer.save_pretrained(savedir)
     model.save_pretrained(savedir)
 
+@torch.inference_mode()
 def evaluate(args):
     # data
     dataset = args.dataset
@@ -115,22 +119,24 @@ def evaluate(args):
     # model
     output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-33000"
     output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-11500"
+    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/checkpoint-23000"
     model = BartForConditionalGeneration.from_pretrained(
         output_dir, forced_bos_token_id=0,
     )
     model.resize_token_embeddings(len(tokenizer))
 
     def convert_to_features(example_batch):
+        scenario_ids = example_batch["scenario_id"]
         input_encodings = tokenizer.batch_encode_plus(
             example_batch['input'],
-            max_length = 768,
+            max_length = args.max_length,
             padding="max_length",
             truncation=True,
             return_tensors="np",
         )
         target_encodings = tokenizer.batch_encode_plus(
             example_batch['label'],
-            max_length = 128,
+            max_length = args.output_max_length,
             padding="max_length",
             truncation=True,
             return_tensors="np",
@@ -149,14 +155,21 @@ def evaluate(args):
             'attention_mask': input_encodings['attention_mask'],
             'decoder_input_ids': decoder_input_ids,
             'labels': labels,
+            "scenario_ids": example_batch["scenario_id"],
+            "chat_ids": example_batch["chat_id"],
         }
 
         return encodings
 
     def process_dataset(dataset):
         dataset = dataset.map(convert_to_features, batched=True)
-        columns = ['input_ids', 'labels', 'decoder_input_ids','attention_mask',] 
-        dataset.set_format(type='torch', columns=columns)
+        columns = [
+            'input_ids',
+            'labels',
+            'decoder_input_ids',
+            'attention_mask',
+        ]
+        dataset.set_format(type='torch', columns=columns, output_all_columns=True)
         return dataset
 
     tokenized_train = process_dataset(train)
@@ -167,7 +180,7 @@ def evaluate(args):
 
     exact_match = 0
     num_examples = 0
-    bsz = 4
+    bsz = 32
     max_examples = len(tokenized_valid)
     #for batch_idx in track(range(max_examples // bsz)):
     for batch_idx in range(max_examples // bsz):
@@ -220,7 +233,7 @@ def evaluate(args):
         else:
             # text generation
             inputs = tokenizer.batch_decode(model_input, skip_special_tokens=True)
-            outputs = output_dots
+            outputs = output_dots # flattened bsz * num_return_sequences
             scores = output.sequences_scores # or output.scores?
             import pdb; pdb.set_trace()
 
@@ -296,6 +309,8 @@ if __name__ == "__main__":
             "textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_c_sl_s_mps5__ma_",
             "textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_c_sl_s_mps5__ma_b",
             "textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_cd_c_sl_s_mps5__ma_b",
+            # 10/19 new
+            "textmention_given_mention_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd__c_sl_s_mps25__ma_",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",

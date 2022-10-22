@@ -31,6 +31,8 @@ from hfutils import (
 )
 
 fields = (
+    "chat_id",
+    "scenario_id",
     "dots",
     "plan_specific_dots",
     "text",
@@ -391,7 +393,7 @@ options = [
     plan_limit_ordered_group_rel_nodial_config_agree_options, # 12
     plan_limit_ordered_group_rel_nodial_config_agree_balance_options, # 13
     plan_limit_ordered_group_tgt_nodial_config_agree_balance_options, # 14
-][14]
+][12]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -1110,7 +1112,11 @@ def get_examples(
                     angles = get_angles(xys) * 180 / math.pi
                     angle = angles.max()
                     vectors = xys[:,None] - xys
-                # 
+
+                # conversation metadata
+                examples["chat_id"].append(conversation.chat_id)
+                examples["scenario_id"].append(conversation.scenario_id)
+
                 # textify all dot properties
 
                 # mention = (start idx, end idx, utterance end idx, *binary ind for 7 dots)
@@ -1508,9 +1514,83 @@ if __name__ == "__main__":
         print(f"Max length of textmention,mention output: {max_length_output}")
         print(textmention_mention_examples["label"][np.argmax(output_lens)])
 
+        # add metadata
+        textmention_mention_examples["chat_id"] = examples["chat_id"]
+        textmention_mention_examples["scenario_id"] = examples["scenario_id"]
+
         textmention_mention_dataset = Dataset.from_dict(textmention_mention_examples)
         textmention_mention_path = f"hf_datasets/{split}_textmention_mention_given_plan_{feature_string}.hf"
         print(f"Textmention,mention dataset path {textmention_mention_path}")
         textmention_mention_dataset.save_to_disk(textmention_mention_path)
         print(f"num textmention,mention examples: {len(textmention_mention_examples['input'])}")
+
+        # textmention | mention, context
+        # use ground truth mentions
+        num_examples = len(examples["outtext_mentions"])
+        textmention_examples = {}
+        textmention_examples["input"] = [
+            f"{dots} [MSEP] {text} [MSEP] {confirm} [MSEP] "
+            f"{selection_leaning} [MSEP] {selection} [MSEP] "
+            f"{mentions}"
+            for (
+                dots,
+                text,
+                confirm,
+                selection_leaning,
+                selection,
+                plan,
+                mentions,
+            ) in zip(
+                dot_descs,
+                examples["text_mentions"],
+                examples["confirmation"],
+                examples["selection_leaning"],
+                examples["selection"],
+                examples["plan"],
+                examples["mentions"],
+            )
+        ]
+        if not options.dialog_history:
+            textmention_examples["input"] = [
+                f"{dots} [MSEP] {confirm} [MSEP] "
+                f"{selection_leaning} [MSEP] {selection} [MSEP] "
+                f"{mentions}"
+                for (
+                    dots,
+                    text,
+                    confirm,
+                    selection_leaning,
+                    selection,
+                    plan,
+                    mentions,
+                ) in zip(
+                    dot_descs,
+                    examples["text_mentions"],
+                    examples["confirmation"],
+                    examples["selection_leaning"],
+                    examples["selection"],
+                    examples["plan"],
+                    examples["mentions"],
+                )
+            ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in textmention_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of textmention input: {max_length_input}")
+        print(textmention_examples["input"][np.argmax(input_lens)])
+
+        textmention_examples["label"] = examples["outtext_mentions"]
+        output_lens = [len(tokenizer.tokenize(x)) for x in textmention_examples["label"]]
+        max_length_output = max(output_lens)
+        print(f"Max length of textmention output: {max_length_output}")
+        print(textmention_examples["label"][np.argmax(output_lens)])
+
+        # add metadata
+        textmention_examples["chat_id"] = examples["chat_id"]
+        textmention_examples["scenario_id"] = examples["scenario_id"]
+
+        textmention_dataset = Dataset.from_dict(textmention_examples)
+        textmention_path = f"hf_datasets/{split}_textmention_given_mention_{feature_string}.hf"
+        print(f"Textmention dataset path {textmention_path}")
+        textmention_dataset.save_to_disk(textmention_path)
+        print(f"num textmention examples: {len(textmention_examples['input'])}")
 

@@ -35,6 +35,8 @@ class HfDataOptions:
     plan_specific_description: bool = True
     short_rel: bool = False
     config_describe: bool = False
+    # OVERRIDES PLAN SPECIFIC FOR TEXT GEN
+    mention_specific_description: bool = False
     
     # generation options
     confirmation: bool = True
@@ -42,6 +44,7 @@ class HfDataOptions:
     selection: bool = True
 
     # data options
+    min_plan_size: int = 2
     max_plan_size: int = 5
     dialog_history: bool = True
     must_agree_config: bool = False
@@ -58,12 +61,13 @@ def construct_feature_string(options):
     feats.append("ps" if options.plan_specific_description else "")
     feats.append("sr" if options.short_rel else "")
     feats.append("cd" if options.config_describe else "")
+    feats.append("ms" if options.mention_specific_description else "")
     # other generation options
     feats.append("c" if options.confirmation else "")
     feats.append("sl" if options.selection_leaning else "")
     feats.append("s" if options.selection else "")
     # data options
-    feats.append(f"mps{options.max_plan_size}")
+    feats.append(f"mps{options.min_plan_size}{options.max_plan_size}")
     feats.append("dh" if options.dialog_history else "")
     feats.append("ma" if options.must_agree_config else "")
     feats.append("b" if options.balance else "")
