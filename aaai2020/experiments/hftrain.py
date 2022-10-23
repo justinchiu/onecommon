@@ -191,7 +191,7 @@ def evaluate(args):
 
     exact_match = 0
     num_examples = 0
-    bsz = args.batch_size
+    bsz = args.eval_batch_size
     max_examples = len(tokenized_valid)
     for batch_idx in track(range(max_examples // bsz)):
     #for batch_idx in range(max_examples // bsz):
@@ -361,6 +361,10 @@ if __name__ == "__main__":
     parser.add_argument(
         '--num_batches', type = int, default = 5,
         help="Save every num_batches in generation eval",
+    )
+    parser.add_argument(
+        '--eval_batch_size', type=int, default=16,
+        help='Evaluation batch size',
     )
 
     args = parser.parse_args()
