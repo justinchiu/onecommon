@@ -1,6 +1,7 @@
 import sys
 
 from pathlib import Path
+from collections import defaultdict
 
 import streamlit as st
 import streamlit.components.v1 as components
@@ -143,15 +144,36 @@ generation_files = [
         "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd__c_sl_s_mps25__ma_-l1e-05-b4/"
         "checkpoint-14000.gen.json",
     # mention-specific
+    "hf-generations-textmention_given_mention"
+        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_mps25__ma_-l1e-05-b4/"
+        "checkpoint-14000.gen.json",
 ]
 
 from argparse import ArgumentParser
 parser = ArgumentParser()
+parser.add_argument("--file", type=int, default=0)
 args = parser.parse_args()
 
-generation_file = Path("../../aaai2020/experiments") / generation_files[0]
+generation_file = Path("../../aaai2020/experiments") / generation_files[args.file]
+print(generation_file)
 
 with generation_file.open("r") as f:
     ids_inputs_labels_gens = json.load(f)
-    idx = st.number_input("Scenario number", 0, len(ids_inputs_labels_gens))
-    process_dialogue(ids_inputs_labels_gens[idx])
+    size_to_examples = defaultdict(list)
+    for x in ids_inputs_labels_gens:
+        input = x[3]
+        raw_mentions = input.split("[MSEP]")[-1].split("[SEP]")
+        dots = set([
+            int(d.strip()[-1])-1
+            for m in raw_mentions
+            for d in m.split(",")
+            if "dot" in d
+        ])
+        size_to_examples[len(dots)].append(x)
+
+    plan_size = st.number_input("Plan size", 2, 5)
+
+    examples = size_to_examples[plan_size]
+
+    idx = st.number_input("Scenario number", 0, len(examples))
+    process_dialogue(examples[idx])
