@@ -420,7 +420,7 @@ options = [
     plan_limit_ordered_group_rel_nodial_config_agree_balance_options, # 13
     plan_limit_ordered_group_tgt_nodial_config_agree_balance_options, # 14
     mentiononly_planlimit_nodial_options, # 15
-][12]
+][15]
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"

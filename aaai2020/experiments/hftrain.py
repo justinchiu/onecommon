@@ -204,7 +204,7 @@ def evaluate(args):
             num_return_sequences = args.beam_size if IS_TEXT else None,
             output_scores = True,
             return_dict_in_generate = True,
-            max_new_tokens = 40,
+            max_new_tokens = 80,
         )
         output_dots = tokenizer.batch_decode(output.sequences, skip_special_tokens=True)
 
@@ -257,6 +257,7 @@ def evaluate(args):
                 ids_inputs_labels_outputs.append(
                     (chat_id, scenario_id, agent, input_str, label_str, output_strs)
                 )
+                import pdb; pdb.set_trace()
 
             if args.num_batches > 0 and (batch_idx+1) % args.num_batches == 0:
                 with generation_path.open("w") as f:
