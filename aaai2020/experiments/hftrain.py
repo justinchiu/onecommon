@@ -257,7 +257,6 @@ def evaluate(args):
                 ids_inputs_labels_outputs.append(
                     (chat_id, scenario_id, agent, input_str, label_str, output_strs)
                 )
-                import pdb; pdb.set_trace()
 
             if args.num_batches > 0 and (batch_idx+1) % args.num_batches == 0:
                 with generation_path.open("w") as f:
