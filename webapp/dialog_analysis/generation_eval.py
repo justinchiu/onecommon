@@ -6,13 +6,9 @@ from collections import defaultdict
 import streamlit as st
 import streamlit.components.v1 as components
 
-from functools import partial
-
 import random
 import json
-from functools import partial
 import numpy as np
-from scipy.special import logsumexp as lse
 
 from dot import Dot
 
@@ -20,9 +16,6 @@ import os
 sys.path.append(str((Path.cwd() / "../../aaai2020/experiments").resolve()))
 
 from utils import ContextGenerator
-import template
-import template_rec as tr
-import belief
 
 #random.seed(1234)
 #np.random.seed(1234)
@@ -87,14 +80,6 @@ def visualize_board(
     </svg>
     """
     components.html(html, height=430, width=860)
-
-def visualize_dialogue(dialogue):
-    st.table(dialogue)
-
-def visualize_beliefs(dots, configs, belief):
-    st.write("Configs (Belief)")
-    for row, b in zip(configs, belief):
-        st.write(f'{" ".join([str(x.id) for on, x in zip(row, dots) if on])} ({b:.4f})')
 
 def process_dialogue(ids_inputs_labels_gens):
     # i know input is a special function in python. it should not be.
