@@ -135,6 +135,7 @@ expts/
 serialized_models/
 wandb/
 hf-results*
+hf-save*
 hf_datasets/
 analysis_log/
 hfresults/
