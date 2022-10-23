@@ -22,6 +22,7 @@ class DescriptionFormat(Enum):
     SrcRelTgt= auto()
     SrcRelsTgt = auto()
     SrcRelTgts = auto()
+    SrcsRelsTgts = auto()
 
 
 @dataclass

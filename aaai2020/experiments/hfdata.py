@@ -36,6 +36,7 @@ fields = (
     "agent",
     "dots",
     "plan_specific_dots",
+    "mention_specific_dots",
     "text",
     "plan",
     "mentions",
@@ -377,6 +378,30 @@ plan_limit_ordered_group_tgt_nodial_config_agree_balance_options = HfDataOptions
     balance = True,
 )
 
+mentiononly_planlimit_nodial_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    min_plan_size = 2,
+    max_plan_size = 5,
+    dialog_history = False,
+    must_agree_config = True,
+    balance = False,
+    mention_specific_description = True,
+)
+
 
 options = [
     basic_options, # 0
@@ -394,6 +419,7 @@ options = [
     plan_limit_ordered_group_rel_nodial_config_agree_options, # 12
     plan_limit_ordered_group_rel_nodial_config_agree_balance_options, # 13
     plan_limit_ordered_group_tgt_nodial_config_agree_balance_options, # 14
+    mentiononly_planlimit_nodial_options, # 15
 ][12]
 
 dot_desc_template = Template(
@@ -605,10 +631,12 @@ def describe_dot_pair(
     x2, y2, s2, c2 = dots[j]
 
     # TODO: i think the y values are negated, so this needs to be flipped
-    vert_comp = "above" if y1 > y2 else "below"
+    #vert_comp = "above" if y1 > y2 else "below"
+    vert_comp = "above" if y1 < y2 else "below"
     hor_comp = "right" if x1 > x2 else "left"
     size_comp = "bigger" if s1 > s2 else "smaller"
-    col_comp = "darker" if c1 > c2 else "lighter"
+    #col_comp = "darker" if c1 > c2 else "lighter"
+    col_comp = "darker" if c1 < c2 else "lighter"
 
     if group_attributes:
         return f"{dot1} {vert_comp} {hor_comp} {size_comp} {col_comp} {dot2}"
@@ -625,6 +653,45 @@ def describe_dot_pair(
         size_str = f"{dot1} {size_comp} {dot2}"
         col_str = f"{dot1} {col_comp} {dot2}"
         return ", ".join([vert_str, hor_str, size_str, col_str])
+
+def get_relations(
+    i, j, dots, eps=0.05,
+):
+    # does not use quantized properties
+    x1, y1, s1, c1 = dots[i]
+    x2, y2, s2, c2 = dots[j]
+
+    # return binary vector with relations
+    # [above, below, left, right, bigger, smaller, darker, lighter]
+    #above = y1 > y2 + eps # flipped
+    #below = y1 < y2 - eps # flipped
+    below = y1 > y2 + eps
+    above = y1 < y2 - eps
+    left  = x1 < x2 - eps
+    right = x1 > x2 + eps
+    bigger = s1 > s2 + eps
+    smaller = s1 < s2 - eps
+    #darker = c1 > c2 + eps # flipped?
+    #lighter = c1 < c2 - eps # flipped?
+    lighter = c1 > c2 + eps
+    darker = c1 < c2 - eps
+
+    return np.array([
+        above, below,
+        left, right,
+        bigger, smaller,
+        darker, lighter,
+    ], dtype=bool)
+
+def describe_relations(relation_vector):
+    strings = [
+        "above", "below",
+        "left", "right",
+        "bigger", "smaller",
+        "darker", "lighter",
+    ]
+    assert len(strings) == len(relation_vector)
+    return " ".join([s for s,b in zip(strings, relation_vector) if b])
 
 def describe_dot_tgts(
     i, js, dot_strings, dots,
@@ -901,6 +968,117 @@ def describe_plan_specific_dots(
     else:
         raise ValueError(f"Invalid format: {format.name}")
 
+def describe_mention(idxs, dots):
+    size = len(idxs)
+    config = dots[idxs,:]
+    xy = config[:,:2]
+    pairwise_dists = ((xy[:,None] - xy) ** 2).sum(-1)
+
+    # describe all shared properties?
+
+    # describe_config(config, size)
+    if size == 2:
+        # TODO: fold this into pairwise
+        dist = pairwise_dists[0,1]
+        # hard-coded threshold
+        if dist < 0.1:
+            return f"dot{str(idxs[0]+1)} close dot{str(idxs[1]+1)}"
+        else:
+            return describe_set(idxs)
+    elif size == 3:
+        multihot = np.zeros(7, dtype=bool)
+        multihot[list(idxs)] = True
+        contig = is_contiguous(multihot, dots[:,:2], 7)
+        angles = get_angles(xy)
+        max_angle = angles.max() * 180 / math.pi
+        # hard-coded threshold
+        #if max_angle > 170 and contig:
+        if max_angle > 135:
+            return (
+                f"dot{str(idxs[0]+1)} dot{str(idxs[1]+1)} dot{str(idxs[2]+1)} "
+                "line"
+            )
+            line_configs.append(idxs)
+        elif max_angle <= 135 and contig:
+            return (
+                f"dot{str(idxs[0]+1)} dot{str(idxs[1]+1)} dot{str(idxs[2]+1)} "
+                "triangle"
+            )
+        else:
+            return describe_set(idxs)
+    else:
+        return describe_set(idxs)
+
+def describe_set(dots):
+    return " ".join(f"dot{d+1}" for d in dots)
+
+def describe_mention_specific_dots(
+    dots,
+    plan,
+    mentions,
+    use_short_pairwise = True,
+    use_config = True,
+    format = DescriptionFormat.SrcRelTgt,
+):
+    extras = None
+
+    boolplan = plan.astype(bool)
+    boolmentions = mentions.astype(bool)
+    dots = np.array(dots, dtype=float).reshape(-1, 4)
+    rounded_dots = (dots.round(2) * 100).astype(int)
+
+    num_dots = dots.shape[0]
+    dot_strings = [f"dot{i}" for i in range(1, num_dots+1)]
+
+    ctx = process_ctx(dots)
+    # unary
+    descs = [
+        describe_dot(i, dot_strings, dots, ctx)
+        for i in range(num_dots)
+        if boolplan[i]
+    ]
+    description = " [SEP] ".join(descs)
+
+    # TODO: replace unary dot descriptions for mention descriptions
+    mentionsets = [set(m.nonzero()[0]) for m in mentions]
+
+    mention_descriptions = [
+        describe_mention(tuple(mentionsets[0]), dots)
+    ]
+
+    for src_mention, tgt_mention in zip(mentionsets, mentionsets[1:]):
+        src_str = describe_set(src_mention)
+        tgt_str = describe_set(tgt_mention)
+
+        src_diff = src_mention.difference(tgt_mention)
+
+        # get relations from src_diff dots to tgt
+        relation_intersection = None
+        for src in src_diff:
+            for tgt in tgt_mention:
+                relation_set = get_relations(src, tgt, dots)
+                relation_intersection = (
+                    relation_set
+                    if relation_intersection is None
+                    else relation_intersection & relation_set
+                )
+        if relation_intersection is None:
+            #mention_descriptions.append(f"{src_str} none {tgt_str}")
+            mention_descriptions.append(f"none")
+        else:
+            relation_string = describe_relations(relation_intersection)
+            mention_descriptions.append(relation_string)
+            #mention_descriptions.append(
+                #f"{src_str} {relation_string} {tgt_str}"
+            #)
+        mention_descriptions.append(describe_mention(tuple(tgt_mention), dots))
+
+    mention_description = " [SEP] ".join(mention_descriptions)
+
+    return f"{description} [MSEP] {mention_description}"
+
+
+
 def describe_plan_dense(plan):
     num_dots = len(plan)
     dot_desc_template = Template("dot{{id}}: {{include}}")
@@ -1059,6 +1237,15 @@ def get_examples(
 
             is_you = conversation.sents[turn][0] == "YOU:"
             if is_you:
+                # mention-specific dot-representations
+                mention_description = describe_mention_specific_dots(
+                    conversation.dots,
+                    raw_plan,
+                    raw_mentions,
+                    use_short_pairwise = options.short_rel,
+                    use_config = options.config_describe,
+                    format = options.format,
+                )
                 # plan-specific dot representations
                 dot_description, generation_extras = describe_plan_specific_dots(
                     conversation.dots,
@@ -1141,6 +1328,7 @@ def get_examples(
                     use_config = options.config_describe,
                 ))
 
+                examples["mention_specific_dots"].append(mention_description)
                 examples["plan_specific_dots"].append(dot_description)
 
                 # concatenate all text
@@ -1314,11 +1502,11 @@ if __name__ == "__main__":
             print(field, examples[field][idx])
 
 
-        dot_descs = (
-            examples["plan_specific_dots"]
-            if options.plan_specific_description
-            else examples["dots"]
-        )
+        dot_descs = examples["dots"]
+        if options.plan_specific_description:
+            dot_descs = examples["plan_specific_dots"]
+        if options.mention_specific_description:
+            dot_descs = examples["mention_specific_dots"]
 
         # mention gen
         num_examples = len(examples["mentions"])

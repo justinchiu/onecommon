@@ -3,9 +3,12 @@ from jinja2 import Template
 RADIUS = .2
 size_map3 = ["small", "medium", "large"]
 color_map3 = ["dark", "grey", "light"]
+#color_map3 = ["light", "grey", "dark"]
 
 size_map5 = ["very small", "small", "medium", "large", "very large"]
+# flipped?
 color_map5 = ["very dark", "dark", "grey", "light", "very light"]
+#color_map5 = ["very light", "light", "grey", "dark", "very dark"]
 
 utterance_template = Template("{{ confirm }} {{ mention }}")
 
