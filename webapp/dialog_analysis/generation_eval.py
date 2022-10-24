@@ -80,6 +80,8 @@ def visualize_board(
     </svg>
     """
     components.html(html, height=430, width=860)
+    #components.html(html, height=64, width=128)
+
 
 def process_dialogue(ids_inputs_labels_gens):
     # i know input is a special function in python. it should not be.
@@ -140,7 +142,6 @@ parser.add_argument("--file", type=int, default=0)
 args = parser.parse_args()
 
 generation_file = Path("../../aaai2020/experiments") / generation_files[args.file]
-print(generation_file)
 
 with generation_file.open("r") as f:
     ids_inputs_labels_gens = json.load(f)
