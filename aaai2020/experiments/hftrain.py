@@ -127,7 +127,7 @@ def evaluate(args):
     )
     model.resize_token_embeddings(len(tokenizer))
     generation_path = Path(
-        f"./hf-generations-{args.dataset}-l{args.learning_rate}-"
+        f"./hf-generations-{args.eval_dataset}-l{args.learning_rate}-"
         f"b{args.batch_size}/{checkpoint_string}.gen.json"
     )
     print(f"Saving generations to {str(generation_path)}")
@@ -339,13 +339,24 @@ if __name__ == "__main__":
             "textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_c_sl_s_mps5__ma_",
             "textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_c_sl_s_mps5__ma_b",
             "textmention_mention_given_plan_SI_CO_RX_RY_RS_RC_SrcRelTgts__sd_ps_sr_cd_c_sl_s_mps5__ma_b",
-            # 10/19 new
+            # 10/19 
             "textmention_given_mention_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd__c_sl_s_mps25__ma_",
             "textmention_given_mention_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_mps25__ma_",
+            # 10/24 coref
+            "textmention_given_mention_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd__c_sl_s_co_mps25__ma_",
+            "textmention_given_mention_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25__ma_"
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",
     )
+
+    parser.add_argument(
+        "--eval_dataset",
+        default = None,
+        help = "Evaluation dataset. In particular, one with metadata"
+        "interventions. If None, defaults to args.dataset.",
+    )
+
     parser.add_argument(
         '--eval', action = "store_true",
         help="Perform model evaluation on latest checkpoint",
@@ -368,6 +379,9 @@ if __name__ == "__main__":
     )
 
     args = parser.parse_args()
+
+    if args.eval_dataset is None:
+        args.eval_dataset = args.dataset
 
     if not args.eval:
         train(args)

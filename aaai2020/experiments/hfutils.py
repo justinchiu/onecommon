@@ -43,6 +43,7 @@ class HfDataOptions:
     confirmation: bool = True
     selection_leaning: bool = True
     selection: bool = True
+    coref: bool = False
 
     # data options
     min_plan_size: int = 2
@@ -67,6 +68,7 @@ def construct_feature_string(options):
     feats.append("c" if options.confirmation else "")
     feats.append("sl" if options.selection_leaning else "")
     feats.append("s" if options.selection else "")
+    feats.append("co" if options else "")
     # data options
     feats.append(f"mps{options.min_plan_size}{options.max_plan_size}")
     feats.append("dh" if options.dialog_history else "")

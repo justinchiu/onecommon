@@ -43,6 +43,7 @@ fields = (
     "confirmation",
     "selection_leaning",
     "selection",
+    "coref",
     "outtext",
     "text_mentions",
     "outtext_mentions",
@@ -402,6 +403,55 @@ mentiononly_planlimit_nodial_options = HfDataOptions(
     mention_specific_description = True,
 )
 
+# 16
+plan_limit_ordered_group_rel_nodial_config_agree_coref_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    coref = True,
+    max_plan_size = 5,
+    dialog_history = False,
+    must_agree_config = True,
+)
+
+# 17
+mentiononly_planlimit_nodial_coref_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    coref = True,
+    min_plan_size = 2,
+    max_plan_size = 5,
+    dialog_history = False,
+    must_agree_config = True,
+    balance = False,
+    mention_specific_description = True,
+)
+
 
 options = [
     basic_options, # 0
@@ -420,7 +470,10 @@ options = [
     plan_limit_ordered_group_rel_nodial_config_agree_balance_options, # 13
     plan_limit_ordered_group_tgt_nodial_config_agree_balance_options, # 14
     mentiononly_planlimit_nodial_options, # 15
-][15]
+    plan_limit_ordered_group_rel_nodial_config_agree_coref_options, # 16
+    mentiononly_planlimit_nodial_coref_options, # 17
+][17]
+# run 16 and 17
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -1352,17 +1405,31 @@ def get_examples(
                     x in selection_like_words for x in conversation.sents[turn]
                 ])
                 examples["selection_leaning"].append(
-                    "should we select? yes"
+                    "pick"
                     if has_select
-                    else "should we select? no"
+                    else "no pick"
                 )
 
                 # selection
                 examples["selection"].append(
                     "<selection>"
                     if turn == num_turns - 1
-                    else "selection: not yet"
+                    else "no select"
                 )
+
+                # pronoun
+                pronoun_words = set(["it", "them", "that", "those", "your"])
+                has_pronoun = any([
+                    x in pronoun_words for x in conversation.sents[turn]
+                ])
+                if options.coref:
+                    examples["coref"].append(
+                        "coref"
+                        if has_pronoun
+                        else "no coref"
+                    )
+                else:
+                    examples["coref"].append("none")
 
                 # sentrefs
                 examples["outtext_mentions"].append(
@@ -1726,6 +1793,7 @@ if __name__ == "__main__":
         textmention_examples["input"] = [
             f"{dots} [MSEP] {text} [MSEP] {confirm} [MSEP] "
             f"{selection_leaning} [MSEP] {selection} [MSEP] "
+            f"{coref} [MSEP] "
             f"{mentions}"
             for (
                 dots,
@@ -1733,6 +1801,7 @@ if __name__ == "__main__":
                 confirm,
                 selection_leaning,
                 selection,
+                coref,
                 plan,
                 mentions,
             ) in zip(
@@ -1741,6 +1810,7 @@ if __name__ == "__main__":
                 examples["confirmation"],
                 examples["selection_leaning"],
                 examples["selection"],
+                examples["coref"],
                 examples["plan"],
                 examples["mentions"],
             )
@@ -1749,6 +1819,7 @@ if __name__ == "__main__":
             textmention_examples["input"] = [
                 f"{dots} [MSEP] {confirm} [MSEP] "
                 f"{selection_leaning} [MSEP] {selection} [MSEP] "
+                f"{coref} [MSEP] "
                 f"{mentions}"
                 for (
                     dots,
@@ -1756,6 +1827,7 @@ if __name__ == "__main__":
                     confirm,
                     selection_leaning,
                     selection,
+                    coref,
                     plan,
                     mentions,
                 ) in zip(
@@ -1764,6 +1836,7 @@ if __name__ == "__main__":
                     examples["confirmation"],
                     examples["selection_leaning"],
                     examples["selection"],
+                    examples["coref"],
                     examples["plan"],
                     examples["mentions"],
                 )
