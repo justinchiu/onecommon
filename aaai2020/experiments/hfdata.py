@@ -452,6 +452,32 @@ mentiononly_planlimit_nodial_coref_options = HfDataOptions(
     mention_specific_description = True,
 )
 
+# 18
+mentiononly_planlimit_nodial_coref_balance_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    coref = True,
+    min_plan_size = 2,
+    max_plan_size = 5,
+    dialog_history = False,
+    must_agree_config = True,
+    balance = True,
+    mention_specific_description = True,
+)
+
 
 options = [
     basic_options, # 0
@@ -472,7 +498,8 @@ options = [
     mentiononly_planlimit_nodial_options, # 15
     plan_limit_ordered_group_rel_nodial_config_agree_coref_options, # 16
     mentiononly_planlimit_nodial_coref_options, # 17
-][17]
+    mentiononly_planlimit_nodial_coref_balance_options, # 18
+][18]
 # run 16 and 17
 
 dot_desc_template = Template(
@@ -1051,12 +1078,27 @@ def describe_mention(idxs, dots):
                 f"dot{str(idxs[0]+1)} dot{str(idxs[1]+1)} dot{str(idxs[2]+1)} "
                 "line"
             )
-            line_configs.append(idxs)
         elif max_angle <= 135 and contig:
             return (
                 f"dot{str(idxs[0]+1)} dot{str(idxs[1]+1)} dot{str(idxs[2]+1)} "
                 "triangle"
             )
+        else:
+            return describe_set(idxs)
+    elif size == 4:
+        multihot = np.zeros(7, dtype=bool)
+        multihot[list(idxs)] = True
+        contig = is_contiguous(multihot, dots[:,:2], 7)
+        angles = get_angles(xy)
+        max_angle = angles.max() * 180 / math.pi
+        # hard-coded threshold
+        #if max_angle > 170 and contig:
+        if max_angle > 135:
+            return (
+                f"dot{str(idxs[0]+1)} dot{str(idxs[1]+1)} dot{str(idxs[2]+1)} "
+                "line"
+            )
+            # TODO: add more configs later
         else:
             return describe_set(idxs)
     else:
