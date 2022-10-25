@@ -134,11 +134,24 @@ generation_files = [
     "hf-generations-textmention_given_mention"
         "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_mps25__ma_-l1e-05-b4/"
         "checkpoint-14000.gen.json",
+    # plan-specific coref
+    "hf-generations-textmention_given_mention"
+        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd__c_sl_s_co_mps25__ma_-l1e-05-b4/"
+        "checkpoint-14000.gen.json",
+    # mention-specific coref
+    "hf-generations-textmention_given_mention"
+        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25__ma_-l1e-05-b4/"
+        "checkpoint-14000.gen.json",
+    # mention-specific coref balance
+    "hf-generations-textmention_given_mention"
+        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25__ma_b-l1e-05-b4/"
+        "checkpoint-23000.gen.json",
 ]
 
 from argparse import ArgumentParser
 parser = ArgumentParser()
 parser.add_argument("--file", type=int, default=0)
+parser.add_argument("--filter_coref", action="store_true")
 args = parser.parse_args()
 
 generation_file = Path("../../aaai2020/experiments") / generation_files[args.file]
@@ -155,7 +168,11 @@ with generation_file.open("r") as f:
             for d in m.split(",")
             if "dot" in d
         ])
-        size_to_examples[len(dots)].append(x)
+        good_input = "confirmation: none [MSEP] no pick [MSEP] no select [MSEP] no coref" in input
+        if args.filter_coref and not good_input:
+            continue
+        else:
+            size_to_examples[len(dots)].append(x)
 
     plan_size = st.number_input("Plan size", 2, 5)
 
