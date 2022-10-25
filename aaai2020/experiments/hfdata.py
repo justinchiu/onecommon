@@ -500,7 +500,7 @@ options = [
     mentiononly_planlimit_nodial_coref_options, # 17
     mentiononly_planlimit_nodial_coref_balance_options, # 18
 ][18]
-# run 16 and 17
+# run 16 and 17 (+18)
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -1460,7 +1460,7 @@ def get_examples(
                 )
 
                 # pronoun
-                pronoun_words = set(["it", "them", "that", "those", "your"])
+                pronoun_words = set(["it", "them", "that", "those", "your", "they"])
                 has_pronoun = any([
                     x in pronoun_words for x in conversation.sents[turn]
                 ])
