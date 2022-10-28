@@ -47,6 +47,8 @@ fields = (
     "outtext",
     "text_mentions",
     "outtext_mentions",
+    "lasttext",
+    "lasttext_mentions",
 )
 
 tokenizer = get_bart_tokenizer()
@@ -478,6 +480,60 @@ mentiononly_planlimit_nodial_coref_balance_options = HfDataOptions(
     mention_specific_description = True,
 )
 
+# 19
+mentiononly_planlimit_lastturn_coref_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    coref = True,
+    min_plan_size = 2,
+    max_plan_size = 5,
+    dialog_history = True,
+    last_turn = True,
+    must_agree_config = True,
+    balance = False,
+    mention_specific_description = True,
+)
+
+# 20
+mentiononly_planlimit_coref_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    coref = True,
+    min_plan_size = 2,
+    max_plan_size = 5,
+    dialog_history = True,
+    last_turn = False,
+    must_agree_config = True,
+    balance = False,
+    mention_specific_description = True,
+)
+
 
 options = [
     basic_options, # 0
@@ -499,8 +555,11 @@ options = [
     plan_limit_ordered_group_rel_nodial_config_agree_coref_options, # 16
     mentiononly_planlimit_nodial_coref_options, # 17
     mentiononly_planlimit_nodial_coref_balance_options, # 18
-][18]
-# run 16 and 17 (+18)
+    mentiononly_planlimit_lastturn_coref_options, # 19
+    mentiononly_planlimit_coref_options, # 20
+][19]
+# for textgen: run 16 and 17 (+18)
+# for mention gen: 19, 20
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -1433,6 +1492,12 @@ def get_examples(
 
                 examples["outtext"].append(sent)
 
+                examples["lasttext"].append(
+                    " ".join(conversation.sents[turn-1])
+                    if turn > 0
+                    else "first"
+                )
+
                 # confirmation
                 confirmation_prediction = confirmations[conversation.scenario_id][str(turn)]
                 # 0: None, 1: Confirm, 2: Disconfirm
@@ -1476,6 +1541,11 @@ def get_examples(
                 # sentrefs
                 examples["outtext_mentions"].append(
                     " ".join(conversation.sentrefs[turn])
+                )
+                examples["lasttext_mentions"].append(
+                    " ".join(conversation.all_sentrefs[turn-1])
+                    if turn > 0
+                    else "first"
                 )
                 examples["text_mentions"].append(
                     " ".join([x for xs in conversation.all_sentrefs[:turn] for x in xs])
@@ -1617,18 +1687,148 @@ if __name__ == "__main__":
         if options.mention_specific_description:
             dot_descs = examples["mention_specific_dots"]
 
-        # mention gen
+        # mention | plan, text gen
         num_examples = len(examples["mentions"])
-        mention_examples = {}
-        mention_examples["input"] = [
+        mention_given_text_plan_examples = {}
+        mention_given_text_plan_examples["input"] = [
             f"{dots} [MSEP] {text} [MSEP] {plan}"
-            for dots, text, plan in zip(dot_descs, examples["text"], examples["plan"])
+            for dots, text, plan in zip(
+                examples["plan_specific_dots"],
+                examples["text"] if not options.last_turn else examples["lasttext"],
+                examples["plan"],
+            )
         ]
-        mention_examples["label"] = examples["mentions"]
-        mention_dataset = Dataset.from_dict(mention_examples)
-        mention_path = f"hf_datasets/{split}_mentions_given_text_plan_{feature_string}.hf"
-        print(f"Mention dataset path {mention_path}")
-        mention_dataset.save_to_disk(mention_path)
+
+        # add metadata
+        mention_given_text_plan_examples["chat_id"] = examples["chat_id"]
+        mention_given_text_plan_examples["scenario_id"] = examples["scenario_id"]
+        mention_given_text_plan_examples["agent"] = examples["agent"]
+
+        mention_given_text_plan_examples["label"] = examples["mentions"]
+        mention_given_text_plan_dataset = Dataset.from_dict(mention_given_text_plan_examples)
+        mention_given_text_plan_path = f"hf_datasets/{split}_mentions_given_text_plan_{feature_string}.hf"
+        print(f"Mention dataset path {mention_given_text_plan_path}")
+        mention_given_text_plan_dataset.save_to_disk(mention_given_text_plan_path)
+
+        input_lens = [len(tokenizer.tokenize(x)) for x in mention_given_text_plan_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of mention|text input: {max_length_input}")
+        print(mention_given_text_plan_examples["input"][np.argmax(input_lens)])
+
+        output_lens = [len(tokenizer.tokenize(x)) for x in mention_given_text_plan_examples["label"]]
+        max_length_output = max(output_lens)
+        print(f"Max length of mention|text output: {max_length_output}")
+        print(mention_given_text_plan_examples["label"][np.argmax(output_lens)])
+
+        # mention | plan, textmention gen
+        num_examples = len(examples["mentions"])
+        mention_given_textmention_plan_examples = {}
+        mention_given_textmention_plan_examples["input"] = [
+            f"{dots} [MSEP] {text} [MSEP] {plan}"
+            for dots, text, plan in zip(
+                examples["plan_specific_dots"],
+                examples["text_mentions"] if not options.last_turn else examples["lasttext_mentions"],
+                examples["plan"],
+            )
+        ]
+
+        # add metadata
+        mention_given_textmention_plan_examples["chat_id"] = examples["chat_id"]
+        mention_given_textmention_plan_examples["scenario_id"] = examples["scenario_id"]
+        mention_given_textmention_plan_examples["agent"] = examples["agent"]
+
+        mention_given_textmention_plan_examples["label"] = examples["mentions"]
+        mention_given_textmention_plan_dataset = Dataset.from_dict(mention_given_textmention_plan_examples)
+        mention_given_textmention_plan_path = f"hf_datasets/{split}_mentions_given_textmention_plan_{feature_string}.hf"
+        print(f"Mention|textmention,plan dataset path {mention_given_textmention_plan_path}")
+        mention_given_textmention_plan_dataset.save_to_disk(mention_given_textmention_plan_path)
+
+        input_lens = [len(tokenizer.tokenize(x)) for x in mention_given_textmention_plan_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of mention|textmention input: {max_length_input}")
+        print(mention_given_textmention_plan_examples["input"][np.argmax(input_lens)])
+
+        output_lens = [len(tokenizer.tokenize(x)) for x in mention_given_textmention_plan_examples["label"]]
+        max_length_output = max(output_lens)
+        print(f"Max length of mention|textmention output: {max_length_output}")
+        print(mention_given_textmention_plan_examples["label"][np.argmax(output_lens)])
+
+        # mention | plan, text, consel gen
+        num_examples = len(examples["mentions"])
+        mention_given_text_plan_consel_examples = {}
+        mention_given_text_plan_consel_examples["input"] = [
+            f"{confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {coref} "
+            f"[MSEP] {dots} [MSEP] {text} [MSEP] {plan}"
+            for confirm, selection_leaning, selection, coref, dots, text, plan in zip(
+                examples["confirmation"],
+                examples["selection_leaning"],
+                examples["selection"],
+                examples["coref"],
+                examples["plan_specific_dots"],
+                examples["text"] if not options.last_turn else examples["lasttext"],
+                examples["plan"],
+            )
+        ]
+
+        # add metadata
+        mention_given_text_plan_consel_examples["chat_id"] = examples["chat_id"]
+        mention_given_text_plan_consel_examples["scenario_id"] = examples["scenario_id"]
+        mention_given_text_plan_consel_examples["agent"] = examples["agent"]
+
+        mention_given_text_plan_consel_examples["label"] = examples["mentions"]
+        mention_given_text_plan_consel_dataset = Dataset.from_dict(mention_given_text_plan_consel_examples)
+        mention_given_text_plan_consel_path = f"hf_datasets/{split}_mentions_given_text_plan_consel_{feature_string}.hf"
+        print(f"Mention|text,plan,x dataset path {mention_given_text_plan_consel_path}")
+        mention_given_text_plan_consel_dataset.save_to_disk(mention_given_text_plan_consel_path)
+
+        input_lens = [len(tokenizer.tokenize(x)) for x in mention_given_text_plan_consel_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of mention|text,X input: {max_length_input}")
+        print(mention_given_text_plan_consel_examples["input"][np.argmax(input_lens)])
+
+        output_lens = [len(tokenizer.tokenize(x)) for x in mention_given_text_plan_examples["label"]]
+        max_length_output = max(output_lens)
+        print(f"Max length of mention|text,X output: {max_length_output}")
+        print(mention_given_text_plan_consel_examples["label"][np.argmax(output_lens)])
+
+
+        # mention | plan, textmention, consel gen
+        num_examples = len(examples["mentions"])
+        mention_given_textmention_plan_consel_examples = {}
+        mention_given_textmention_plan_consel_examples["input"] = [
+            f"{confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {coref} "
+            f"[MSEP] {dots} [MSEP] {text} [MSEP] {plan}"
+            for confirm, selection_leaning, selection, coref, dots, text, plan in zip(
+                examples["confirmation"],
+                examples["selection_leaning"],
+                examples["selection"],
+                examples["coref"],
+                examples["plan_specific_dots"],
+                examples["text_mentions"] if not options.last_turn else examples["lasttext_mentions"],
+                examples["plan"],
+            )
+        ]
+
+        # add metadata
+        mention_given_textmention_plan_consel_examples["chat_id"] = examples["chat_id"]
+        mention_given_textmention_plan_consel_examples["scenario_id"] = examples["scenario_id"]
+        mention_given_textmention_plan_consel_examples["agent"] = examples["agent"]
+
+        mention_given_textmention_plan_consel_examples["label"] = examples["mentions"]
+        mention_given_textmention_plan_consel_dataset = Dataset.from_dict(mention_given_textmention_plan_consel_examples)
+        mention_given_textmention_plan_consel_path = f"hf_datasets/{split}_mentions_given_textmention_plan_consel_{feature_string}.hf"
+        print(f"Mention|textmention,plan,x dataset path {mention_given_textmention_plan_consel_path}")
+        mention_given_textmention_plan_consel_dataset.save_to_disk(mention_given_textmention_plan_consel_path)
+
+        input_lens = [len(tokenizer.tokenize(x)) for x in mention_given_textmention_plan_consel_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of mention|textmention,X input: {max_length_input}")
+        print(mention_given_textmention_plan_consel_examples["input"][np.argmax(input_lens)])
+
+        output_lens = [len(tokenizer.tokenize(x)) for x in mention_given_textmention_plan_examples["label"]]
+        max_length_output = max(output_lens)
+        print(f"Max length of mention|textmention,X output: {max_length_output}")
+        print(mention_given_textmention_plan_consel_examples["label"][np.argmax(output_lens)])
 
         # plan gen
         num_examples = len(examples["plan"])
@@ -1636,7 +1836,10 @@ if __name__ == "__main__":
         #plan_examples["input"] = examples["text"]
         plan_examples["input"] = [
             f"{dots} [MSEP] {text}"
-            for dots, text in zip(examples["dots"], examples["text"])
+            for dots, text in zip(
+                examples["dots"],
+                examples["text"],
+            )
         ]
         # not allowed to use plan-specific dot descriptions
         input_lens = [len(tokenizer.tokenize(x)) for x in plan_examples["input"]]

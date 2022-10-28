@@ -209,7 +209,7 @@ def evaluate(args):
         output_dots = tokenizer.batch_decode(output.sequences, skip_special_tokens=True)
 
         labels = batch["labels"]
-        if args.dataset == "plan_given_text":
+        if "plan_given" in args.dataset:
             for i, output_dot in enumerate(output_dots):
                 label = labels[i][labels[i] != -100]
                 label_dots = tokenizer.decode(label, skip_special_tokens=True)
@@ -220,7 +220,7 @@ def evaluate(args):
                 if output_set == label_set:
                     exact_match += 1
                 num_examples += 1
-        elif args.dataset == "mentions_given_text_plan":
+        elif "mentions_given" in args.dataset:
             for i, output_dot in enumerate(output_dots):
                 label = labels[i][labels[i] != -100]
                 label_dots = tokenizer.decode(label, skip_special_tokens=True)
@@ -346,6 +346,16 @@ if __name__ == "__main__":
             "textmention_given_mention_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd__c_sl_s_co_mps25__ma_",
             "textmention_given_mention_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25__ma_",
             "textmention_given_mention_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25__ma_b",
+
+            # 10/27 mention prediction
+            "mentions_given_text_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh_lt_ma_",
+            "mentions_given_textmention_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh_lt_ma_",
+            "mentions_given_text_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma_",
+            "mentions_given_textmention_plan_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma_",
+            "mentions_given_text_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh_lt_ma_",
+            "mentions_given_textmention_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh_lt_ma_",
+            "mentions_given_text_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma_",
+            "mentions_given_textmention_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma_",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",
