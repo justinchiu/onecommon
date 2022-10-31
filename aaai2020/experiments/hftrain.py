@@ -5,14 +5,19 @@ from pathlib import Path
 
 from itertools import zip_longest
 
+import torch
+import torch.nn as nn
+import numpy as np
+
 from datasets import Dataset, load_dataset
 from transformers import BartForConditionalGeneration, BartTokenizer
 from transformers import TrainingArguments, Trainer
 from transformers.models.bart.modeling_bart import shift_tokens_right
 
+from models.dotbart import DotBartForConditionalGeneration
+
 import hfutils
 
-import torch
 
 def train(args):
     # data
@@ -27,6 +32,17 @@ def train(args):
         "facebook/bart-large", forced_bos_token_id=0,
     )
     model.resize_token_embeddings(len(tokenizer))
+
+    # process raw dots
+    use_raw_dots = "rd" in dataset
+    if use_raw_dots:
+        # raw dots are 7 dots x 4 dims (x, y, size, color)
+        dot_encoder = nn.Linear(4, model.get_input_embeddings().embedding_dim)
+        model2 = DotBartForConditionalGeneration(model.config, dot_encoder)
+        model2.lm_head = model.lm_head
+        model2.final_logits_bias = model.final_logits_bias
+        # replace original model
+        model = model2
 
     def convert_to_features(example_batch):
         input_encodings = tokenizer.batch_encode_plus(
@@ -51,22 +67,37 @@ def train(args):
             model.config.eos_token_id,
         ).numpy()
         labels[labels[:, :] == model.config.pad_token_id] = -100
-        
+
+        attention_mask = input_encodings['attention_mask']
+        if use_raw_dots:
+            bsz, time = attention_mask.shape
+            attention_mask = np.concatenate((
+                np.ones((bsz, 7), dtype=attention_mask.dtype),
+                attention_mask,
+            ), 1)
+
         encodings = {
             'input_ids': input_encodings['input_ids'],
-            'attention_mask': input_encodings['attention_mask'],
+            'attention_mask': attention_mask,
             'decoder_input_ids': decoder_input_ids,
             'labels': labels,
             "scenario_ids": example_batch["scenario_id"],
             "chat_ids": example_batch["chat_id"],
             "agents": example_batch["agent"],
+            "dots": np.array(example_batch["dots"]),#.reshape(-1, 7, 4),
         }
 
         return encodings
 
     def process_dataset(dataset):
         dataset = dataset.map(convert_to_features, batched=True)
-        columns = ['input_ids', 'labels', 'decoder_input_ids','attention_mask',] 
+        columns = [
+            'input_ids',
+            'labels',
+            'decoder_input_ids',
+            'attention_mask',
+            "dots",
+        ] 
         dataset.set_format(type='torch', columns=columns)
         return dataset
 
@@ -356,6 +387,12 @@ if __name__ == "__main__":
             "mentions_given_textmention_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh_lt_ma_",
             "mentions_given_text_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma_",
             "mentions_given_textmention_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma_",
+
+            # 10/31 mention prediction
+            "mentions_given_text_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh_lt_ma__rd",
+            "mentions_given_textmention_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh_lt_ma__rd",
+            "mentions_given_text_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma__rd",
+            "mentions_given_textmention_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma__rd",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",

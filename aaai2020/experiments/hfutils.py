@@ -52,6 +52,7 @@ class HfDataOptions:
     last_turn: bool = False
     must_agree_config: bool = False
     balance: bool = False
+    raw_dots: bool = False
 
 
 def construct_feature_string(options):
@@ -76,6 +77,7 @@ def construct_feature_string(options):
     feats.append("lt" if options.last_turn else "")
     feats.append("ma" if options.must_agree_config else "")
     feats.append("b" if options.balance else "")
+    feats.append("rd" if options.raw_dots else "")
 
     return "_".join(feats)
 

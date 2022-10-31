@@ -34,6 +34,7 @@ fields = (
     "chat_id",
     "scenario_id",
     "agent",
+    "raw_dots",
     "dots",
     "plan_specific_dots",
     "mention_specific_dots",
@@ -534,6 +535,62 @@ mentiononly_planlimit_coref_options = HfDataOptions(
     mention_specific_description = True,
 )
 
+# 21
+dot_lastturn_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    coref = True,
+    min_plan_size = 2,
+    max_plan_size = 5,
+    dialog_history = True,
+    last_turn = True,
+    must_agree_config = True,
+    balance = False,
+    mention_specific_description = True,
+    raw_dots = True,
+)
+
+# 22
+dot_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    coref = True,
+    min_plan_size = 2,
+    max_plan_size = 5,
+    dialog_history = True,
+    last_turn = False,
+    must_agree_config = True,
+    balance = False,
+    mention_specific_description = True,
+    raw_dots = True,
+)
+
 
 options = [
     basic_options, # 0
@@ -557,9 +614,12 @@ options = [
     mentiononly_planlimit_nodial_coref_balance_options, # 18
     mentiononly_planlimit_lastturn_coref_options, # 19
     mentiononly_planlimit_coref_options, # 20
-][19]
+    dot_lastturn_options, # 21
+    dot_options, # 21
+][22]
 # for textgen: run 16 and 17 (+18)
 # for mention gen: 19, 20
+# for raw dots: 21
 
 dot_desc_template = Template(
     #"dot{{id}}: [x: {{x}}, y: {{y}}, size: {{size}}, color: {{color}}]"
@@ -1277,8 +1337,6 @@ def unk_sents(sents, word_dict):
         [word if word in word_dict.word2idx else unk_token for word in sent]
         for sent in sents
     ]
-    #if any([word not in word_dict.word2idx for sent in sents for word in sent]):
-        #import pdb; pdb.set_trace()
     return unked_sents
 
 def get_confirmations(
@@ -1463,6 +1521,9 @@ def get_examples(
                 examples["chat_id"].append(conversation.chat_id)
                 examples["scenario_id"].append(conversation.scenario_id)
                 examples["agent"].append(conversation.agent)
+
+                # dots
+                examples["raw_dots"].append(conversation.dots)
 
                 # textify all dot properties
 
@@ -1756,19 +1817,35 @@ if __name__ == "__main__":
         # mention | plan, text, consel gen
         num_examples = len(examples["mentions"])
         mention_given_text_plan_consel_examples = {}
-        mention_given_text_plan_consel_examples["input"] = [
-            f"{confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {coref} "
-            f"[MSEP] {dots} [MSEP] {text} [MSEP] {plan}"
-            for confirm, selection_leaning, selection, coref, dots, text, plan in zip(
-                examples["confirmation"],
-                examples["selection_leaning"],
-                examples["selection"],
-                examples["coref"],
-                examples["plan_specific_dots"],
-                examples["text"] if not options.last_turn else examples["lasttext"],
-                examples["plan"],
-            )
-        ]
+        mention_given_text_plan_consel_examples["dots"] = examples["raw_dots"]
+        if options.raw_dots:
+            mention_given_text_plan_consel_examples["input"] = [
+                f"{confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {coref} "
+                f"[MSEP] {text} [MSEP] {plan}"
+                for confirm, selection_leaning, selection, coref, dots, text, plan in zip(
+                    examples["confirmation"],
+                    examples["selection_leaning"],
+                    examples["selection"],
+                    examples["coref"],
+                    examples["plan_specific_dots"],
+                    examples["text"] if not options.last_turn else examples["lasttext"],
+                    examples["plan"],
+                )
+            ]
+        else:
+            mention_given_text_plan_consel_examples["input"] = [
+                f"{confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {coref} "
+                f"[MSEP] {dots} [MSEP] {text} [MSEP] {plan}"
+                for confirm, selection_leaning, selection, coref, dots, text, plan in zip(
+                    examples["confirmation"],
+                    examples["selection_leaning"],
+                    examples["selection"],
+                    examples["coref"],
+                    examples["plan_specific_dots"],
+                    examples["text"] if not options.last_turn else examples["lasttext"],
+                    examples["plan"],
+                )
+            ]
 
         # add metadata
         mention_given_text_plan_consel_examples["chat_id"] = examples["chat_id"]
@@ -1795,19 +1872,35 @@ if __name__ == "__main__":
         # mention | plan, textmention, consel gen
         num_examples = len(examples["mentions"])
         mention_given_textmention_plan_consel_examples = {}
-        mention_given_textmention_plan_consel_examples["input"] = [
-            f"{confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {coref} "
-            f"[MSEP] {dots} [MSEP] {text} [MSEP] {plan}"
-            for confirm, selection_leaning, selection, coref, dots, text, plan in zip(
-                examples["confirmation"],
-                examples["selection_leaning"],
-                examples["selection"],
-                examples["coref"],
-                examples["plan_specific_dots"],
-                examples["text_mentions"] if not options.last_turn else examples["lasttext_mentions"],
-                examples["plan"],
-            )
-        ]
+        mention_given_textmention_plan_consel_examples["dots"] = examples["raw_dots"]
+        if options.raw_dots:
+            mention_given_textmention_plan_consel_examples["input"] = [
+                f"{confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {coref} "
+                f"[MSEP] {text} [MSEP] {plan}"
+                for confirm, selection_leaning, selection, coref, dots, text, plan in zip(
+                    examples["confirmation"],
+                    examples["selection_leaning"],
+                    examples["selection"],
+                    examples["coref"],
+                    examples["plan_specific_dots"],
+                    examples["text_mentions"] if not options.last_turn else examples["lasttext_mentions"],
+                    examples["plan"],
+                )
+            ]
+        else:
+            mention_given_textmention_plan_consel_examples["input"] = [
+                f"{confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {coref} "
+                f"[MSEP] {dots} [MSEP] {text} [MSEP] {plan}"
+                for confirm, selection_leaning, selection, coref, dots, text, plan in zip(
+                    examples["confirmation"],
+                    examples["selection_leaning"],
+                    examples["selection"],
+                    examples["coref"],
+                    examples["plan_specific_dots"],
+                    examples["text_mentions"] if not options.last_turn else examples["lasttext_mentions"],
+                    examples["plan"],
+                )
+            ]
 
         # add metadata
         mention_given_textmention_plan_consel_examples["chat_id"] = examples["chat_id"]
@@ -1912,25 +2005,26 @@ if __name__ == "__main__":
         # text, mention gen
         num_examples = len(examples["outtext"])
         text_mention_examples = {}
-        text_mention_examples["input"] = [
-            f"{dots} [MSEP] {text} [MSEP] {confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
-            for (
-                dots,
-                text,
-                confirm,
-                selection_leaning,
-                selection,
-                plan,
-            ) in zip(
-                dot_descs,
-                examples["text"],
-                examples["confirmation"],
-                examples["selection_leaning"],
-                examples["selection"],
-                examples["plan"],
-            )
-        ]
-        if not options.dialog_history:
+        if options.dialog_history:
+            text_mention_examples["input"] = [
+                f"{dots} [MSEP] {text} [MSEP] {confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
+                for (
+                    dots,
+                    text,
+                    confirm,
+                    selection_leaning,
+                    selection,
+                    plan,
+                ) in zip(
+                    dot_descs,
+                    examples["text"],
+                    examples["confirmation"],
+                    examples["selection_leaning"],
+                    examples["selection"],
+                    examples["plan"],
+                )
+            ]
+        elif not options.dialog_history:
             text_mention_examples["input"] = [
                 f"{dots} [MSEP] {confirm} [MSEP] {selection_leaning} [MSEP] {selection} [MSEP] {plan}"
                 for (
