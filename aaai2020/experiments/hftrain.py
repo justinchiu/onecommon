@@ -152,6 +152,7 @@ def train(args):
 def evaluate(args):
     dataset = args.dataset
     use_raw_dots = "rd" in dataset
+    IS_TEXT = args.dataset[:4] == "text"
 
     # forgot to save tokenizer and model, rerun training and fix this
     tokenizer = hfutils.get_bart_tokenizer()
@@ -184,10 +185,6 @@ def evaluate(args):
     # data
     tokenized_train, tokenized_valid, tokenized_test = get_datasets(
         args, dataset, model, tokenizer, do_eval=True)
-
-    use_raw_dots = "rd" in dataset
-
-    IS_TEXT = args.dataset[:4] == "text"
 
     ids_inputs_labels_outputs = []
 
@@ -242,9 +239,9 @@ def evaluate(args):
             for i, output_dot in enumerate(output_dots):
                 label = labels[i][labels[i] != -100]
                 label_dots = tokenizer.decode(label, skip_special_tokens=True)
-                print(output_dots)
-                print(label_dots)
-                import pdb; pdb.set_trace()
+                #print(output_dots)
+                #print(label_dots)
+                #import pdb; pdb.set_trace()
 
                 # each turn is a sequence of mentions,
                 # so we want to evaluate each mention as a set
