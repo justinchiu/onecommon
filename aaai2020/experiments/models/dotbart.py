@@ -31,8 +31,6 @@ class DotBartForConditionalGeneration(BartForConditionalGeneration):
         output_hidden_states: Optional[bool] = None,
         return_dict: Optional[bool] = None,
     ) -> Union[Tuple, Seq2SeqLMOutput]:
-        bsz, _ = dots.shape
-        dots = dots.view(bsz, 7, 4)
 
         # generation: short circuit if encoder_outputs is already computed.
         if encoder_outputs is not None:
@@ -57,14 +55,16 @@ class DotBartForConditionalGeneration(BartForConditionalGeneration):
 
         # inputs_embeds short-circuits input_ids
         if inputs_embeds is None:
+            bsz, _ = dots.shape
+            dots = dots.view(bsz, 7, 4)
+
             emb = self.get_input_embeddings()
+            enc = self.get_encoder()
             embedding_dim = emb.embedding_dim
 
             dots_input = self.dot_encoder(dots)
-            tokens_input = emb(input_ids)
-
+            tokens_input = emb(input_ids) * enc.embed_scale
             inputs_embeds = torch.cat([dots_input, tokens_input], 1)
-            self.inputs_embeds = inputs_embeds
 
         output = super().forward(
             inputs_embeds = inputs_embeds,

@@ -18,31 +18,12 @@ from models.dotbart import DotBartForConditionalGeneration
 
 import hfutils
 
-
-def train(args):
-    # data
-    dataset = args.dataset
+def get_datasets(args, dataset, model, tokenizer, do_eval=False):
     train = Dataset.load_from_disk(f"hf_datasets/train_{dataset}.hf")
     valid = Dataset.load_from_disk(f"hf_datasets/valid_{dataset}.hf")
     test = Dataset.load_from_disk(f"hf_datasets/test_{dataset}.hf")
 
-    tokenizer = hfutils.get_bart_tokenizer()
-    # model
-    model = BartForConditionalGeneration.from_pretrained(
-        "facebook/bart-large", forced_bos_token_id=0,
-    )
-    model.resize_token_embeddings(len(tokenizer))
-
-    # process raw dots
     use_raw_dots = "rd" in dataset
-    if use_raw_dots:
-        # raw dots are 7 dots x 4 dims (x, y, size, color)
-        dot_encoder = nn.Linear(4, model.get_input_embeddings().embedding_dim)
-        model2 = DotBartForConditionalGeneration(model.config, dot_encoder)
-        model2.lm_head = model.lm_head
-        model2.final_logits_bias = model.final_logits_bias
-        # replace original model
-        model = model2
 
     def convert_to_features(example_batch):
         input_encodings = tokenizer.batch_encode_plus(
@@ -98,12 +79,41 @@ def train(args):
             'attention_mask',
             "dots",
         ] 
-        dataset.set_format(type='torch', columns=columns)
+        dataset.set_format(type='torch', columns=columns, output_all_columns=do_eval)
         return dataset
 
     tokenized_train = process_dataset(train)
     tokenized_valid = process_dataset(valid)
     tokenized_test = process_dataset(test)
+
+    return (tokenized_train, tokenized_valid, tokenized_test)
+
+
+def train(args):
+    dataset = args.dataset
+    tokenizer = hfutils.get_bart_tokenizer()
+
+    # model
+    model = BartForConditionalGeneration.from_pretrained(
+        "facebook/bart-large", forced_bos_token_id=0,
+    )
+    model.resize_token_embeddings(len(tokenizer))
+
+    # data
+    tokenized_train, tokenized_valid, tokenized_test = get_datasets(
+        args, dataset, model, tokenizer, do_eval=False)
+
+    # process raw dots
+    use_raw_dots = "rd" in dataset
+    if use_raw_dots:
+        # raw dots are 7 dots x 4 dims (x, y, size, color)
+        dot_encoder = nn.Linear(4, model.get_input_embeddings().embedding_dim)
+        model2 = DotBartForConditionalGeneration(model.config, dot_encoder)
+        model2.model = model.model
+        model2.lm_head = model.lm_head
+        model2.final_logits_bias = model.final_logits_bias
+        # replace original model
+        model = model2
 
     training_args = TrainingArguments(
         output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}",
@@ -140,11 +150,8 @@ def train(args):
 
 @torch.inference_mode()
 def evaluate(args):
-    # data
     dataset = args.dataset
-    train = Dataset.load_from_disk(f"hf_datasets/train_{dataset}.hf")
-    valid = Dataset.load_from_disk(f"hf_datasets/valid_{dataset}.hf")
-    test = Dataset.load_from_disk(f"hf_datasets/test_{dataset}.hf")
+    use_raw_dots = "rd" in dataset
 
     # forgot to save tokenizer and model, rerun training and fix this
     tokenizer = hfutils.get_bart_tokenizer()
@@ -153,10 +160,20 @@ def evaluate(args):
     checkpoint_string = f"checkpoint-{args.checkpoint}"
 
     output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/{checkpoint_string}"
-    model = BartForConditionalGeneration.from_pretrained(
-        output_dir, forced_bos_token_id=0,
-    )
+    model_class = (DotBartForConditionalGeneration
+        if use_raw_dots else BartForConditionalGeneration)
+    # TODO: initialize dot_encoder inside model to make loading easier
+    dot_encoder = nn.Linear(4, 1024)
+    if use_raw_dots:
+        model = model_class.from_pretrained(
+            output_dir, dot_encoder = dot_encoder, forced_bos_token_id=0,
+        )
+    else:
+        model = model_class.from_pretrained(
+            output_dir, forced_bos_token_id=0,
+        )
     model.resize_token_embeddings(len(tokenizer))
+    
     generation_path = Path(
         f"./hf-generations-{args.eval_dataset}-l{args.learning_rate}-"
         f"b{args.batch_size}/{checkpoint_string}.gen.json"
@@ -164,57 +181,11 @@ def evaluate(args):
     print(f"Saving generations to {str(generation_path)}")
     generation_path.parent.mkdir(parents=True,exist_ok=True)
 
-    def convert_to_features(example_batch):
-        scenario_ids = example_batch["scenario_id"]
-        input_encodings = tokenizer.batch_encode_plus(
-            example_batch['input'],
-            max_length = args.max_length,
-            padding="max_length",
-            truncation=True,
-            return_tensors="np",
-        )
-        target_encodings = tokenizer.batch_encode_plus(
-            example_batch['label'],
-            max_length = args.output_max_length,
-            padding="max_length",
-            truncation=True,
-            return_tensors="np",
-        )
-        
-        labels = target_encodings['input_ids']
-        decoder_input_ids = shift_tokens_right(
-            torch.tensor(labels),
-            model.config.pad_token_id,
-            model.config.eos_token_id,
-        ).numpy()
-        labels[labels[:, :] == model.config.pad_token_id] = -100
-        
-        encodings = {
-            'input_ids': input_encodings['input_ids'],
-            'attention_mask': input_encodings['attention_mask'],
-            'decoder_input_ids': decoder_input_ids,
-            'labels': labels,
-            "scenario_ids": example_batch["scenario_id"],
-            "chat_ids": example_batch["chat_id"],
-            "agents": example_batch["agent"],
-        }
+    # data
+    tokenized_train, tokenized_valid, tokenized_test = get_datasets(
+        args, dataset, model, tokenizer, do_eval=True)
 
-        return encodings
-
-    def process_dataset(dataset):
-        dataset = dataset.map(convert_to_features, batched=True)
-        columns = [
-            'input_ids',
-            'labels',
-            'decoder_input_ids',
-            'attention_mask',
-        ]
-        dataset.set_format(type='torch', columns=columns, output_all_columns=True)
-        return dataset
-
-    tokenized_train = process_dataset(train)
-    tokenized_valid = process_dataset(valid)
-    tokenized_test = process_dataset(test)
+    use_raw_dots = "rd" in dataset
 
     IS_TEXT = args.dataset[:4] == "text"
 
@@ -224,13 +195,29 @@ def evaluate(args):
     num_examples = 0
     bsz = args.eval_batch_size
     max_examples = len(tokenized_valid)
-    for batch_idx in track(range(max_examples // bsz)):
-    #for batch_idx in range(max_examples // bsz):
+    #for batch_idx in track(range(max_examples // bsz)):
+    for batch_idx in range(max_examples // bsz):
         batch = tokenized_valid[batch_idx * bsz: (batch_idx+1) * bsz]
         # one at a time
-        model_input = batch["input_ids"]
+        # prepare model input
+        input_ids = batch["input_ids"]
+        dots = batch["dots"].view(-1, 7 ,4)
+
+        emb = model.get_input_embeddings()
+        enc = model.get_encoder()
+
+        token_embs = emb(input_ids) * enc.embed_scale
+        inputs_embeds = token_embs
+        if use_raw_dots:
+            dot_embs = model.dot_encoder(dots)
+            inputs_embeds = torch.cat([dot_embs, token_embs], 1)
+            encoder_outputs = enc(inputs_embeds = inputs_embeds)
+
         output = model.generate(
-            model_input,
+            encoder_outputs = encoder_outputs,
+            #inputs_embeds = inputs_embeds,
+            #input_ids = input_ids,
+            #dots = dots,
             num_beams = args.beam_size if IS_TEXT else None,
             num_return_sequences = args.beam_size if IS_TEXT else None,
             output_scores = True,
@@ -255,6 +242,9 @@ def evaluate(args):
             for i, output_dot in enumerate(output_dots):
                 label = labels[i][labels[i] != -100]
                 label_dots = tokenizer.decode(label, skip_special_tokens=True)
+                print(output_dots)
+                print(label_dots)
+                import pdb; pdb.set_trace()
 
                 # each turn is a sequence of mentions,
                 # so we want to evaluate each mention as a set
