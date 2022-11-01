@@ -38,7 +38,7 @@ fields = (
     "dots",
     "plan_specific_dots",
     "mention_specific_dots",
-    "text",
+    "text", # all prev turns
     "plan",
     "mentions",
     "confirmation",
@@ -46,11 +46,11 @@ fields = (
     "selection",
     "coref",
     "outtext",
-    "text_mentions",
+    "text_mentions", # all prev turns + mentions
     "outtext_mentions",
     "lasttext",
-    "lasttext_mentions",
-    "prev_text_mentions",
+    "lasttext_mentions", # last partner turn + mentions
+    "prev_text_mentions", # everything up to your prev turn + mentions
 )
 
 tokenizer = get_bart_tokenizer()

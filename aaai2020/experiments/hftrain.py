@@ -25,7 +25,8 @@ def get_prefix(args):
     prefix = (
         f"{args.dataset}-l{args.learning_rate}-b{args.batch_size}-"
         f"e{args.dot_encoder}-p{properties}-"
-        f"r{relations}"
+        f"r{relations}-"
+        f"ee{'y' if args.encode_relative_to_extremes else 'n'}"
     )
     return prefix
 
@@ -174,7 +175,7 @@ def evaluate(args):
     checkpoint_string = f"checkpoint-{args.checkpoint}"
 
     use_raw_dots = "rd" in dataset
-    IS_TEXT = args.dataset[:4] == "text"
+    IS_TEXT = args.dataset[:4] == "text" or args.dataset[:8] == "lasttext"
 
     # forgot to save tokenizer and model, rerun training and fix this
     tokenizer = hfutils.get_bart_tokenizer()
@@ -285,11 +286,11 @@ def evaluate(args):
                             exact_match += 1
                     num_examples += 1
 
-        if args.dataset[:4] != "text":
+        if not IS_TEXT:
             print(f"Exact match @ batch {batch_idx}: {exact_match} / {num_examples}")
         else:
             # text generation
-            inputs = tokenizer.batch_decode(model_input, skip_special_tokens=True)
+            inputs = tokenizer.batch_decode(input_ids, skip_special_tokens=True)
             outputs = output_dots # flattened bsz * num_return_sequences
             scores = output.sequences_scores # or output.scores?
             for i in range(bsz):
