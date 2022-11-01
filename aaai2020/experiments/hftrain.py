@@ -15,8 +15,19 @@ from transformers import TrainingArguments, Trainer
 from transformers.models.bart.modeling_bart import shift_tokens_right
 
 from models.dotbart import DotBartForConditionalGeneration
+from models.context_encoder import RelationalContextEncoder
 
 import hfutils
+
+def get_prefix(args):
+    properties = "".join([x[0] for x in args.properties_include])
+    relations = "".join([x[:3] for x in args.relation_include])
+    prefix = (
+        f"{args.dataset}-l{args.learning_rate}-b{args.batch_size}-"
+        f"e{args.dot_encoder}-p{properties}-"
+        f"r{relations}"
+    )
+    return prefix
 
 def get_datasets(args, dataset, model, tokenizer, do_eval=False):
     train = Dataset.load_from_disk(f"hf_datasets/train_{dataset}.hf")
@@ -95,6 +106,8 @@ def train(args):
     dataset = args.dataset
     tokenizer = hfutils.get_bart_tokenizer()
 
+    prefix = get_prefix(args)
+
     # model
     model = BartForConditionalGeneration.from_pretrained(
         "facebook/bart-large", forced_bos_token_id=0,
@@ -109,7 +122,11 @@ def train(args):
     use_raw_dots = "rd" in dataset
     if use_raw_dots:
         # raw dots are 7 dots x 4 dims (x, y, size, color)
-        dot_encoder = nn.Linear(4, model.get_input_embeddings().embedding_dim)
+        dot_encoder = None
+        if args.dot_encoder == "linear":
+            dot_encoder = nn.Linear(4, model.get_input_embeddings().embedding_dim)
+        elif args.dot_encoder == "relation":
+            dot_encoder = RelationalContextEncoder(args)
         model2 = DotBartForConditionalGeneration(model.config, dot_encoder)
         model2.model = model.model
         model2.lm_head = model.lm_head
@@ -118,14 +135,14 @@ def train(args):
         model = model2
 
     training_args = TrainingArguments(
-        output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}",
+        output_dir=f"./hf-results-{prefix}",
         num_train_epochs=args.epochs,
         per_device_train_batch_size=args.batch_size,
         per_device_eval_batch_size=16,
         warmup_steps=500,
         weight_decay=0.01,
         evaluation_strategy = "steps",
-        logging_dir=f"./hf-log-{args.dataset}-l{args.learning_rate}-b{args.batch_size}",
+        logging_dir=f"./hf-log-{prefix}",
 
         # supplied args
         learning_rate = args.learning_rate,
@@ -146,13 +163,16 @@ def train(args):
     )
     trainer.train()
 
-    savedir = f"./hf-save-{args.dataset}-l{args.learning_rate}-b{args.batch_size}"
+    savedir = f"./hf-save-{prefix}"
     tokenizer.save_pretrained(savedir)
     model.save_pretrained(savedir)
 
 @torch.inference_mode()
 def evaluate(args):
+    prefix = get_prefix(args)
     dataset = args.dataset
+    checkpoint_string = f"checkpoint-{args.checkpoint}"
+
     use_raw_dots = "rd" in dataset
     IS_TEXT = args.dataset[:4] == "text"
 
@@ -160,13 +180,16 @@ def evaluate(args):
     tokenizer = hfutils.get_bart_tokenizer()
 
     # model
-    checkpoint_string = f"checkpoint-{args.checkpoint}"
 
-    output_dir=f"./hf-results-{args.dataset}-l{args.learning_rate}-b{args.batch_size}/{checkpoint_string}"
+    output_dir = f"./hf-results-{prefix}/{checkpoint_string}"
     model_class = (DotBartForConditionalGeneration
         if use_raw_dots else BartForConditionalGeneration)
     # TODO: initialize dot_encoder inside model to make loading easier
-    dot_encoder = nn.Linear(4, 1024)
+    dot_encoder = None
+    if args.dot_encoder == "linear":
+        dot_encoder = nn.Linear(4, model.get_input_embeddings().embedding_dim)
+    elif args.dot_encoder == "relation":
+        dot_encoder = RelationalContextEncoder(args)
     if use_raw_dots:
         model = model_class.from_pretrained(
             output_dir, dot_encoder = dot_encoder, forced_bos_token_id=0,
@@ -178,8 +201,7 @@ def evaluate(args):
     model.resize_token_embeddings(len(tokenizer))
     
     generation_path = Path(
-        f"./hf-generations-{args.eval_dataset}-l{args.learning_rate}-"
-        f"b{args.batch_size}/{checkpoint_string}.gen.json"
+        f"./hf-generations-{prefix}/{checkpoint_string}.gen.json"
     )
     print(f"Saving generations to {str(generation_path)}")
     generation_path.parent.mkdir(parents=True,exist_ok=True)
@@ -386,9 +408,20 @@ if __name__ == "__main__":
             "mentions_given_textmention_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh_lt_ma__rd",
             "mentions_given_text_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma__rd",
             "mentions_given_textmention_plan_consel_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25_dh__ma__rd",
+
+            # 11/1 reference prediction
+            "lasttext_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__ma__rd",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",
+    )
+    parser.add_argument(
+        "--dot_encoder",
+        choices = [
+            "linear",
+            "relation",
+        ],
+        default = "linear",
     )
 
     parser.add_argument(
@@ -418,6 +451,8 @@ if __name__ == "__main__":
         '--eval_batch_size', type=int, default=16,
         help='Evaluation batch size',
     )
+
+    RelationalContextEncoder.add_args(parser)
 
     args = parser.parse_args()
 

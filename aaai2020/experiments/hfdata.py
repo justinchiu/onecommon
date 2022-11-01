@@ -50,6 +50,7 @@ fields = (
     "outtext_mentions",
     "lasttext",
     "lasttext_mentions",
+    "prev_text_mentions",
 )
 
 tokenizer = get_bart_tokenizer()
@@ -591,6 +592,34 @@ dot_options = HfDataOptions(
     raw_dots = True,
 )
 
+# 23
+large_dot_options = HfDataOptions(
+    properties = [
+        Property.SIZE, Property.COLOR,
+        Property.RX, Property.RY,
+        Property.RSIZE, Property.RCOLOR,
+        #Property.RDIST,
+    ],
+    format = DescriptionFormat.SrcRelsTgt,
+    unordered_rel = False,
+    short_describe = True,
+    plan_specific_description = True,
+    short_rel = True,
+    config_describe = True,
+    confirmation = True,
+    selection_leaning = True,
+    selection = True,
+    coref = True,
+    min_plan_size = 0,
+    max_plan_size = 5,
+    dialog_history = True,
+    last_turn = False,
+    must_agree_config = True,
+    balance = False,
+    mention_specific_description = True,
+    raw_dots = True,
+)
+
 
 options = [
     basic_options, # 0
@@ -615,8 +644,9 @@ options = [
     mentiononly_planlimit_lastturn_coref_options, # 19
     mentiononly_planlimit_coref_options, # 20
     dot_lastturn_options, # 21
-    dot_options, # 21
-][22]
+    dot_options, # 22
+    large_dot_options, # 23
+][23]
 # for textgen: run 16 and 17 (+18)
 # for mention gen: 19, 20
 # for raw dots: 21
@@ -1255,6 +1285,9 @@ def describe_mention_specific_dots(
 
     # TODO: replace unary dot descriptions for mention descriptions
     mentionsets = [set(m.nonzero()[0]) for m in mentions]
+    if len(mentionsets) == 0:
+        # no mentions to describe
+        return "none"
 
     mention_descriptions = [
         describe_mention(tuple(mentionsets[0]), dots)
@@ -1610,6 +1643,12 @@ def get_examples(
                 )
                 examples["text_mentions"].append(
                     " ".join([x for xs in conversation.all_sentrefs[:turn] for x in xs])
+                    if turn > 0 else "none"
+                )
+                examples["prev_text_mentions"].append(
+                    " ".join([x for xs in conversation.all_sentrefs[:turn-1] for x in xs])
+                    if turn > 1
+                    else "none"
                 )
 
                 num_examples += 1
@@ -2201,4 +2240,41 @@ if __name__ == "__main__":
         print(f"Textmention dataset path {textmention_path}")
         textmention_dataset.save_to_disk(textmention_path)
         print(f"num textmention examples: {len(textmention_examples['input'])}")
+
+        # partner textmention | partner text, textmention history, dots
+        # use ground truth mentions
+        num_examples = len(examples["lasttext_mentions"])
+        lasttext_mentions_examples = {}
+        lasttext_mentions_examples["input"] = [
+            f"{text} [MSEP] {lasttext}"
+            for (
+                text,
+                lasttext,
+            ) in zip(
+                examples["prev_text_mentions"],
+                examples["lasttext"],
+            )
+        ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in lasttext_mentions_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of lasttext_mentions input: {max_length_input}")
+        print(lasttext_mentions_examples["input"][np.argmax(input_lens)])
+
+        lasttext_mentions_examples["label"] = examples["lasttext_mentions"]
+        output_lens = [len(tokenizer.tokenize(x)) for x in lasttext_mentions_examples["label"]]
+        max_length_output = max(output_lens)
+        print(f"Max length of lasttext_mentions output: {max_length_output}")
+        print(lasttext_mentions_examples["label"][np.argmax(output_lens)])
+
+        # add metadata
+        lasttext_mentions_examples["chat_id"] = examples["chat_id"]
+        lasttext_mentions_examples["scenario_id"] = examples["scenario_id"]
+        lasttext_mentions_examples["agent"] = examples["agent"]
+        lasttext_mentions_examples["dots"] = examples["raw_dots"]
+
+        lasttext_mentions_dataset = Dataset.from_dict(lasttext_mentions_examples)
+        lasttext_mentions_path = f"hf_datasets/{split}_lasttext_mentions_{feature_string}.hf"
+        print(f"lasttext_mentions dataset path {lasttext_mentions_path}")
+        lasttext_mentions_dataset.save_to_disk(lasttext_mentions_path)
+        print(f"num lasttext_mentions examples: {len(lasttext_mentions_examples['input'])}")
 
