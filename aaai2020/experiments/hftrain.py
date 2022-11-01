@@ -65,8 +65,9 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
             "scenario_ids": example_batch["scenario_id"],
             "chat_ids": example_batch["chat_id"],
             "agents": example_batch["agent"],
-            "dots": np.array(example_batch["dots"]),#.reshape(-1, 7, 4),
         }
+        if "dots" in example_batch:
+            encodings["dots"] = np.array(example_batch["dots"])
 
         return encodings
 
@@ -77,8 +78,9 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
             'labels',
             'decoder_input_ids',
             'attention_mask',
-            "dots",
-        ] 
+        ]
+        if use_raw_dots:
+            columns.append("dots")
         dataset.set_format(type='torch', columns=columns, output_all_columns=do_eval)
         return dataset
 
@@ -198,21 +200,24 @@ def evaluate(args):
         # one at a time
         # prepare model input
         input_ids = batch["input_ids"]
-        dots = batch["dots"].view(-1, 7 ,4)
+        dots = None
+        if "dots" in batch:
+            dots = batch["dots"].view(-1, 7 ,4)
 
         emb = model.get_input_embeddings()
         enc = model.get_encoder()
 
-        token_embs = emb(input_ids) * enc.embed_scale
+        token_embs = emb(input_ids)
         inputs_embeds = token_embs
         if use_raw_dots:
             dot_embs = model.dot_encoder(dots)
             inputs_embeds = torch.cat([dot_embs, token_embs], 1)
-            encoder_outputs = enc(inputs_embeds = inputs_embeds)
+            #encoder_outputs = enc(inputs_embeds = inputs_embeds)
+        inputs_embeds = inputs_embeds * enc.embed_scale
 
         output = model.generate(
-            encoder_outputs = encoder_outputs,
-            #inputs_embeds = inputs_embeds,
+            #encoder_outputs = encoder_outputs,
+            inputs_embeds = inputs_embeds,
             #input_ids = input_ids,
             #dots = dots,
             num_beams = args.beam_size if IS_TEXT else None,
@@ -237,24 +242,25 @@ def evaluate(args):
                 num_examples += 1
         elif "mentions_given" in args.dataset:
             for i, output_dot in enumerate(output_dots):
+                # iterate over batches
                 label = labels[i][labels[i] != -100]
                 label_dots = tokenizer.decode(label, skip_special_tokens=True)
-                #print(output_dots)
+                #print(output_dot)
                 #print(label_dots)
-                #import pdb; pdb.set_trace()
 
-                # each turn is a sequence of mentions,
-                # so we want to evaluate each mention as a set
-                for output_mention, label_mention in zip_longest(
-                    output_dot.split(" [SEP] "),
-                    label_dots.split(" [SEP] "),
-                    fillvalue="",
-                ):
-                    output_set = set(output_mention.replace(",", "").split())
-                    label_set = set(label_mention.replace(",", "").split())
+                split_output_dots = output_dot.split(" [SEP] ")
+                split_label_dots = label_dots.split(" [SEP] ")
+                for j, label_mention in enumerate(split_label_dots):
+                    if j < len(split_output_dots):
+                        output_mention = split_output_dots[j]
 
-                    if output_set == label_set:
-                        exact_match += 1
+                        # each turn is a sequence of mentions,
+                        # so we want to evaluate each mention as a set
+                        output_set = set(output_mention.replace(",", "").split())
+                        label_set = set(label_mention.replace(",", "").split())
+
+                        if output_set == label_set:
+                            exact_match += 1
                     num_examples += 1
 
         if args.dataset[:4] != "text":

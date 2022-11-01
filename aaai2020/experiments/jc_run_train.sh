@@ -432,3 +432,17 @@ do
     --train_response_model binary_dots
 done
 }
+
+# debugging
+function dbg () {
+this_name=debug
+mkdir -p ${out_dir}/${this_name} 2>/dev/null
+${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $dot_recurrence_args \
+    --fold_nums 1 \
+    --train_response_model binary_dots
+}

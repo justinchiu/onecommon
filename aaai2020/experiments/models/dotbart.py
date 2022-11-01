@@ -63,8 +63,9 @@ class DotBartForConditionalGeneration(BartForConditionalGeneration):
             embedding_dim = emb.embedding_dim
 
             dots_input = self.dot_encoder(dots)
-            tokens_input = emb(input_ids) * enc.embed_scale
+            tokens_input = emb(input_ids)
             inputs_embeds = torch.cat([dots_input, tokens_input], 1)
+            inputs_embeds = inputs_embeds * enc.embed_scale
 
         output = super().forward(
             inputs_embeds = inputs_embeds,
