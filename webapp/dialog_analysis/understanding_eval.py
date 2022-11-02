@@ -20,6 +20,24 @@ from utils import ContextGenerator
 #random.seed(1234)
 #np.random.seed(1234)
 
+def extract_mentions(text):
+    tokens = text.split()
+    idx = 0
+    mentions = [] # List[starting idx, dots, ...]
+    while idx < len(tokens):
+        # check for bom
+        if tokens[idx] == "<bom>":
+            dots = [idx]
+            idx += 1
+            for end_idx in range(idx, len(tokens)):
+                if tokens[end_idx] == "<eom>":
+                    idx = end_idx
+                    break
+                dots.append(tokens[end_idx])
+            mentions.append(dots)
+        idx += 1
+    return mentions
+
 # Testing streamlit
 st.title("OneCommon Planning Visualization")
 
@@ -100,14 +118,14 @@ def process_dialogue(ids_inputs_labels_gens):
 
     b = b0 if agent == 0 else b1
 
-    raw_mentions = input.split("[MSEP]")[-1].split("[SEP]")
-    dots = set([
-        int(d.strip()[-1])-1
-        for m in raw_mentions
-        for d in m.split(",")
-        if "dot" in d
-    ])
-    mentions = [b[d] for d in dots]
+    label_mentions = extract_mentions(label)
+    label_dots = set([x for xs in label_mentions for x in xs[1:]])
+
+    gen_mentions = extract_mentions(gens[0])
+    gen_dots = set([x for xs in gen_mentions for x in xs[1:]])
+
+    #mentions = [b[d] for d in dots]
+    mentions = [b[int(d[-1]) - 1] for d in label_dots]
     m0 = mentions if agent == 0 else None
     m1 = None     if agent == 0 else mentions
 
@@ -126,27 +144,7 @@ def process_dialogue(ids_inputs_labels_gens):
 
 
 generation_files = [
-    # 0: plan-specific
-    "hf-generations-textmention_given_mention"
-        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd__c_sl_s_mps25__ma_-l1e-05-b4/"
-        "checkpoint-14000.gen.json",
-    # 1: mention-specific
-    "hf-generations-textmention_given_mention"
-        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_mps25__ma_-l1e-05-b4/"
-        "checkpoint-14000.gen.json",
-    # 2: plan-specific coref
-    "hf-generations-textmention_given_mention"
-        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd__c_sl_s_co_mps25__ma_-l1e-05-b4/"
-        "checkpoint-14000.gen.json",
-    # 3: mention-specific coref
-    "hf-generations-textmention_given_mention"
-        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25__ma_-l1e-05-b4/"
-        "checkpoint-14000.gen.json",
-    # 4: mention-specific coref balance
-    "hf-generations-textmention_given_mention"
-        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps25__ma_b-l1e-05-b4/"
-        "checkpoint-23000.gen.json",
-    # 5: reference resolution
+    # 0: reference resolution
     "hf-generations-lasttext_mentions"
         "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__ma__rd-l1e-05-b4"
         "-erelation-pa-ri_pi_aj_pj_a-een/"
@@ -155,9 +153,7 @@ generation_files = [
 
 from argparse import ArgumentParser
 parser = ArgumentParser()
-#parser.add_argument("--file", type=int, default=0)
-parser.add_argument("--file", type=int, default=5)
-parser.add_argument("--filter_coref", action="store_true")
+parser.add_argument("--file", type=int, default=0)
 args = parser.parse_args()
 
 generation_file = Path("../../aaai2020/experiments") / generation_files[args.file]
@@ -165,20 +161,14 @@ generation_file = Path("../../aaai2020/experiments") / generation_files[args.fil
 with generation_file.open("r") as f:
     ids_inputs_labels_gens = json.load(f)
     size_to_examples = defaultdict(list)
-    for x in ids_inputs_labels_gens:
-        input = x[3]
-        raw_mentions = input.split("[MSEP]")[-1].split("[SEP]")
-        dots = set([
-            int(d.strip()[-1])-1
-            for m in raw_mentions
-            for d in m.split(",")
-            if "dot" in d
-        ])
-        good_input = "confirmation: none [MSEP] no pick [MSEP] no select [MSEP] no coref" in input
-        if args.filter_coref and not good_input:
-            continue
-        else:
-            size_to_examples[len(dots)].append(x)
+    for i, (cid, sid, agent, input, label, gens) in enumerate(ids_inputs_labels_gens):
+        label_mentions = extract_mentions(label)
+        gen_mentions = extract_mentions(gens[0])
+        dots = set([x for xs in label_mentions for x in xs[1:]])
+        #print(dots)
+        #print(label_mentions)
+        #import pdb; pdb.set_trace()
+        size_to_examples[len(dots)].append(ids_inputs_labels_gens[i])
 
     plan_size = st.number_input("Plan size", 2, 5)
 
