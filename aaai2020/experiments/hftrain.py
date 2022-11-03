@@ -412,6 +412,9 @@ if __name__ == "__main__":
 
             # 11/1 reference prediction
             "lasttext_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__ma__rd",
+            # 11/2 2 stage ref res
+            "partner_tags_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd",
+            "partner_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",

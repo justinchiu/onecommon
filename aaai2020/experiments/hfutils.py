@@ -50,6 +50,7 @@ class HfDataOptions:
     max_plan_size: int = 5
     dialog_history: bool = True
     last_turn: bool = False
+    last_last_turn: bool = False
     must_agree_config: bool = False
     balance: bool = False
     raw_dots: bool = False
@@ -75,6 +76,7 @@ def construct_feature_string(options):
     feats.append(f"mps{options.min_plan_size}{options.max_plan_size}")
     feats.append("dh" if options.dialog_history else "")
     feats.append("lt" if options.last_turn else "")
+    feats.append("llt" if options.last_turn else "")
     feats.append("ma" if options.must_agree_config else "")
     feats.append("b" if options.balance else "")
     feats.append("rd" if options.raw_dots else "")
