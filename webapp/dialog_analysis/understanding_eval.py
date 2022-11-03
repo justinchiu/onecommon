@@ -157,14 +157,63 @@ generation_files = [
         "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__ma__rd-l1e-05-b4"
         "-erelation-pa-ri_pi_aj_pj_a-eey/"
         "checkpoint-31000.gen.json",
+    # 3: ref marker
+    "hf-generations-partner_tags"
+        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd-l1e-05-b4"
+        "-erelation-pa-ri_aj_a-een/"
+        "checkpoint-31000.gen.json",
+    # 4: ref mention
+    "hf-generations-partner_mentions"
+        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd-l1e-05-b4"
+        "-erelation-pa-ri_pi_aj_pj_a-een/"
+        "checkpoint-31000.gen.json",
 ]
 
 from argparse import ArgumentParser
 parser = ArgumentParser()
-parser.add_argument("--file", type=int, default=0)
+#parser.add_argument("--file", type=int, default=0)
+parser.add_argument("--file", type=int, default=4)
 args = parser.parse_args()
 
-generation_file = Path("../../aaai2020/experiments") / generation_files[args.file]
+genfile = generation_files[args.file]
+generation_file = Path("../../aaai2020/experiments") / genfile
+
+AR_MENTIONS = genfile.split("-")[2][:16] == "partner_mentions"
+
+def split_mentions(xs):
+    if xs == "none":
+        return []
+
+    split_xs = xs.split("[SEP]")
+    mentions = [x.strip().split() for x in split_xs]
+    return [[m for m in ms if m != "none"] for ms in mentions]
+
+def evaluate_index_mentions(label_mentions, gen_mentions):
+    num_correct, num_examples = 0, 0
+    for i, iys in enumerate(label_mentions):
+        if len(iys) > 0:
+            num_examples += 1
+            mention_idx = iys[0]
+            ys = set(iys[1:])
+            if i < len(gen_mentions):
+                xs = set(gen_mentions[i][1:])
+                if xs == ys:
+                    num_correct += 1
+    return num_correct, num_examples
+
+def evaluate_mentions(label_mentions, gen_mentions):
+    num_correct, num_examples = 0, 0
+    for i, ys in enumerate(label_mentions):
+        num_examples += 1
+        ys = set(ys)
+        if i < len(gen_mentions):
+            xs = set(gen_mentions[i])
+            if xs == ys:
+                num_correct += 1
+    return num_correct, num_examples
+
+extract_mentions = extract_mentions if not AR_MENTIONS else split_mentions
+evaluate_mentions = evaluate_index_mentions if not AR_MENTIONS else evaluate_mentions
 
 with generation_file.open("r") as f:
     ids_inputs_labels_gens = json.load(f)
@@ -173,18 +222,25 @@ with generation_file.open("r") as f:
     for i, (cid, sid, agent, input, label, gens) in enumerate(ids_inputs_labels_gens):
         label_mentions = extract_mentions(label)
         gen_mentions = extract_mentions(gens[0])
-        dots = set([x for xs in label_mentions for x in xs[1:]])
+        dots = (
+            set([x for xs in label_mentions for x in xs[1:]])
+            if not AR_MENTIONS
+            else dots = set([x for xs in label_mentions for x in xs])
+        )
         #print(dots)
         #print(label_mentions)
-        for i, iys in enumerate(label_mentions):
-            if len(iys) > 0:
-                num_examples += 1
-                mention_idx = iys[0]
-                ys = set(iys[1:])
-                if i < len(gen_mentions):
-                    xs = set(gen_mentions[i][1:])
-                    if xs == ys:
-                        num_correct += 1
+        nc, ne = evaluate_mentions(label_mentions, gen_mentions)
+        num_correct += nc
+        num_examples += ne
+
+        """
+        print(input)
+        print(label)
+        print(label_mentions)
+        print(gens[0])
+        print(gen_mentions)
+        print(nc, ne)
+        """
 
         size_to_examples[len(dots)].append(ids_inputs_labels_gens[i])
     print(f"{num_correct} / {num_examples}")
