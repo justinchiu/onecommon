@@ -147,7 +147,15 @@ generation_files = [
     # 0: reference resolution
     "hf-generations-lasttext_mentions"
         "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__ma__rd-l1e-05-b4"
+        "-erelation-pa-ri_aj_a-een/"
+        "checkpoint-31000.gen.json",
+    "hf-generations-lasttext_mentions"
+        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__ma__rd-l1e-05-b4"
         "-erelation-pa-ri_pi_aj_pj_a-een/"
+        "checkpoint-31000.gen.json",
+    "hf-generations-lasttext_mentions"
+        "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__ma__rd-l1e-05-b4"
+        "-erelation-pa-ri_pi_aj_pj_a-eey/"
         "checkpoint-31000.gen.json",
 ]
 
@@ -161,14 +169,25 @@ generation_file = Path("../../aaai2020/experiments") / generation_files[args.fil
 with generation_file.open("r") as f:
     ids_inputs_labels_gens = json.load(f)
     size_to_examples = defaultdict(list)
+    num_correct, num_examples = 0, 0
     for i, (cid, sid, agent, input, label, gens) in enumerate(ids_inputs_labels_gens):
         label_mentions = extract_mentions(label)
         gen_mentions = extract_mentions(gens[0])
         dots = set([x for xs in label_mentions for x in xs[1:]])
         #print(dots)
         #print(label_mentions)
-        #import pdb; pdb.set_trace()
+        for i, iys in enumerate(label_mentions):
+            if len(iys) > 0:
+                num_examples += 1
+                mention_idx = iys[0]
+                ys = set(iys[1:])
+                if i < len(gen_mentions):
+                    xs = set(gen_mentions[i][1:])
+                    if xs == ys:
+                        num_correct += 1
+
         size_to_examples[len(dots)].append(ids_inputs_labels_gens[i])
+    print(f"{num_correct} / {num_examples}")
 
     plan_size = st.number_input("Plan size", 2, 5)
 
