@@ -175,7 +175,12 @@ def evaluate(args):
     checkpoint_string = f"checkpoint-{args.checkpoint}"
 
     use_raw_dots = "rd" in dataset
-    IS_TEXT = args.dataset[:4] == "text" or args.dataset[:8] == "lasttext"
+    IS_TEXT = (
+        args.dataset[:4] == "text"
+        or args.dataset[:8] == "lasttext"
+        or args.dataset[:16] == "partner_mentions"
+        or args.dataset[:12] == "partner_tags"
+    )
 
     # forgot to save tokenizer and model, rerun training and fix this
     tokenizer = hfutils.get_bart_tokenizer()
