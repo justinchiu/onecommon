@@ -53,8 +53,10 @@ fields = (
     "lasttext_mentions", # last partner turn + mentions
     "lastlasttext_mentions", # last agent turn + mentions
     "prev_text_mentions", # everything up to your prev turn + mentions
-    "partner_markers", # begining of mention spliced with words
+    "partner_markers", # beginning of mention spliced with words
+    "partner_amarkers", # beginning of numbered mention spliced with words
     "partner_tags", # bools for whether word is start of mention
+    "partner_amentions",
 )
 
 tokenizer = get_bart_tokenizer()
@@ -725,7 +727,7 @@ def splice_sentence_mentions(sent, refs):
     tags = [False for x in sent]
     for idx, ref in reversed(list(zip(refs[:,0], refs[:,3:]))):
         sent.insert(idx, "<bom>")
-        sent_markers.insert(idx, "<bom>")
+        sent_markers.insert(idx, "<mention>")
         tags[idx] = True
         num_added = 1
         for i, val in enumerate(ref):
@@ -733,7 +735,18 @@ def splice_sentence_mentions(sent, refs):
                 sent.insert(idx + num_added, f"dot{i+1}")
                 num_added += 1
         sent.insert(idx+num_added, "<eom>")
-    return sent, sent_markers, tags
+
+    sent_amarkers = []
+    # start count at 1
+    count = 1
+    for x in sent_markers:
+        if x == "<mention>":
+            sent_amarkers.append(f"<mention{count}>")
+            count += 1
+        else:
+            sent_amarkers.append(x)
+
+    return sent, sent_markers, tags, sent_amarkers
 
 """
 REFERENT LAYOUT: [
@@ -748,6 +761,7 @@ def _split_referents(words, referent_idxs):
     sents_mentions = []
     sents_markers = []
     tagss = []
+    sents_amarkers = []
 
     sents, current = [], []
     all_refs, current_refs = [], []
@@ -768,9 +782,11 @@ def _split_referents(words, referent_idxs):
             if len(current) > 0:
                 sents.append(current)
                 all_refs.append(current_refs)
-                sentref, sent_marker, tags = splice_sentence_mentions(current, current_refs)
+                sentref, sent_marker, tags, sent_amarker = splice_sentence_mentions(
+                    current, current_refs)
                 sents_mentions.append(sentref)
                 sents_markers.append(sent_marker)
+                sents_amarkers.append(sent_amarker)
                 tagss.append(tags)
             current = []
             current_refs = []
@@ -781,14 +797,16 @@ def _split_referents(words, referent_idxs):
             ref_ix += 1
         sents.append(current)
         all_refs.append(current_refs)
-        sentref, sent_marker, tags = splice_sentence_mentions(current, current_refs)
+        sentref, sent_marker, tags, sent_amarker = splice_sentence_mentions(
+            current, current_refs)
         sents_mentions.append(sentref)
         sents_markers.append(sent_marker)
+        sents_amarkers.append(sent_amarker)
         tagss.append(tags)
     assert ref_ix == len(split_ref_indices)
     assert sum(len(refs) for refs in all_refs) == len(referent_idxs)
     assert len(all_refs) == len(sents)
-    return sents, all_refs, sents_mentions, sents_markers, tagss
+    return sents, all_refs, sents_mentions, sents_markers, tagss, sents_amarkers
 
 class Conversation(NamedTuple):
     dots: list[float]
@@ -814,6 +832,7 @@ class Conversation(NamedTuple):
     sentmarkers: list[list[str]]
     partner_sentmarkers: list[list[str]]
     all_sentmarkers: list[list[str]]
+    all_sentamarkers: list[list[str]]
 
     # whether a word is the start of a mention
     tags: list[list[bool]]
@@ -851,15 +870,18 @@ def get_conversations(split):
             ref_disagreement = list(map(int, get_tag(tokens, 'referent_disagreements')))
             partner_ref_disagreement = list(map(int, get_tag(tokens, 'partner_referent_disagreements')))
 
-            sents, all_refs, sentrefs, sentmarkers, tags = _split_referents(words, referent_idxs)
+            (
+                sents, all_refs,
+                sentrefs, sentmarkers, tags, sentamarkers,
+            ) = _split_referents(words, referent_idxs)
             (
                 sents_, all_partner_refs, partner_sentrefs,
-                _, _,
+                _, _, _,
             ) = _split_referents(words, partner_referent_idxs)
             assert sents == sents_
             (
                 sents_, all_partner_refs_our_view, partner_sentrefs_our_view,
-                partner_sentmarkers, partner_tags,
+                partner_sentmarkers, partner_tags, partner_sentamarkers,
             ) = _split_referents(words, partner_referent_our_view_idxs)
             assert sents == sents_
 
@@ -875,6 +897,10 @@ def get_conversations(split):
             all_tags = [
                 x if sents[i][0] == "YOU:" else y
                 for i, (x,y) in enumerate(zip(tags, partner_tags))
+            ]
+            all_sentamarkers = [
+                x if x[0] == "YOU:" else y
+                for x,y in zip(sentamarkers, partner_sentamarkers)
             ]
 
             conversations.append(Conversation(
@@ -905,6 +931,7 @@ def get_conversations(split):
                 all_sentmarkers = all_sentmarkers,
 
                 tags = all_tags,
+                all_sentamarkers = all_sentamarkers,
             ))
         return conversations
 
@@ -1654,6 +1681,14 @@ def get_examples(
                     if raw_partner_mentions is not None
                     else "none"
                 )
+                examples["partner_amentions"].append(
+                    " [SEP] ".join([
+                        f"<mention{i+1}> {describe_plan(m)}"
+                        for i, m in enumerate(raw_partner_mentions)
+                    ])
+                    if raw_partner_mentions is not None
+                    else "none"
+                )
 
                 # linearized dot representation
                 examples["dots"].append(describe_dots(
@@ -1748,6 +1783,10 @@ def get_examples(
 
                 examples["partner_markers"].append(
                     " ".join(conversation.all_sentmarkers[turn-1])
+                    if turn > 0 else "none"
+                )
+                examples["partner_amarkers"].append(
+                    " ".join(conversation.all_sentamarkers[turn-1])
                     if turn > 0 else "none"
                 )
                 examples["partner_tags"].append(
@@ -2453,3 +2492,41 @@ if __name__ == "__main__":
         partner_tags_dataset.save_to_disk(partner_tags_path)
         print(f"num partner_tags examples: {len(partner_tags_examples['input'])}")
 
+        # partner mention | partner aligned markers, textmention history, dots
+        # use ground truth mentions
+        num_examples = len(examples["partner_amentions"])
+        partner_amentions_examples = {}
+        partner_amentions_examples["input"] = [
+            f"{text} [MSEP] {lasttext}"
+            for (
+                text,
+                lasttext,
+            ) in zip(
+                examples["prev_text_mentions"]
+                    if not options.last_last_turn
+                    else examples["lastlasttext_mentions"],
+                examples["partner_amarkers"],
+            )
+        ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in partner_amentions_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of partner_amentions input: {max_length_input}")
+        print(partner_amentions_examples["input"][np.argmax(input_lens)])
+
+        partner_amentions_examples["label"] = examples["partner_amentions"]
+        output_lens = [len(tokenizer.tokenize(x)) for x in partner_amentions_examples["label"]]
+        max_length_output = max(output_lens)
+        print(f"Max length of partner_amentions output: {max_length_output}")
+        print(partner_amentions_examples["label"][np.argmax(output_lens)])
+
+        # add metadata
+        partner_amentions_examples["chat_id"] = examples["chat_id"]
+        partner_amentions_examples["scenario_id"] = examples["scenario_id"]
+        partner_amentions_examples["agent"] = examples["agent"]
+        partner_amentions_examples["dots"] = examples["raw_dots"]
+
+        partner_amentions_dataset = Dataset.from_dict(partner_amentions_examples)
+        partner_amentions_path = f"hf_datasets/{split}_partner_amentions_{feature_string}.hf"
+        print(f"partner_amentions dataset path {partner_amentions_path}")
+        partner_amentions_dataset.save_to_disk(partner_amentions_path)
+        print(f"num partner_amentions examples: {len(partner_amentions_examples['input'])}")

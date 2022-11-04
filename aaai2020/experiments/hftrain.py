@@ -179,6 +179,7 @@ def evaluate(args):
         args.dataset[:4] == "text"
         or args.dataset[:8] == "lasttext"
         or args.dataset[:16] == "partner_mentions"
+        or args.dataset[:17] == "partner_amentions"
         or args.dataset[:12] == "partner_tags"
     )
 
@@ -420,6 +421,7 @@ if __name__ == "__main__":
             # 11/2 2 stage ref res
             "partner_tags_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd",
             "partner_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd",
+            "partner_amentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",

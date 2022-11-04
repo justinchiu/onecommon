@@ -91,7 +91,8 @@ def get_bart_tokenizer():
     tokenizer.add_tokens(["[SEP]", "[MSEP]", "<eos>"])
     tokenizer.add_tokens(["size:", "color:", "x:", "y:", "YOU:", "THEM:"])
     #tokenizer.add_tokens(["[NONE]"])
-    tokenizer.add_tokens(["<selection>", "<bom>", "<eom>"])
+    tokenizer.add_tokens(["<selection>", "<bom>", "<eom>", "<mention>"])
+    tokenizer.add_tokens([f"<mention{i}>" for i in range(8)])
     return tokenizer
 
 @dataclass
