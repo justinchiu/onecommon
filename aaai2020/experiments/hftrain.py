@@ -16,6 +16,7 @@ from transformers.models.bart.modeling_bart import shift_tokens_right
 
 from models.dotbart import DotBartForConditionalGeneration
 from models.context_encoder import RelationalContextEncoder
+from models.encoderbart import ClassifierBartEncoder
 
 import hfutils
 
@@ -36,6 +37,7 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
     test = Dataset.load_from_disk(f"hf_datasets/test_{dataset}.hf")
 
     use_raw_dots = "rd" in dataset
+    use_raw_labels = "raw_partner_mentions" in dataset
 
     def convert_to_features(example_batch):
         input_encodings = tokenizer.batch_encode_plus(
@@ -45,22 +47,6 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
             truncation=True,
             return_tensors="np",
         )
-        target_encodings = tokenizer.batch_encode_plus(
-            example_batch['label'],
-            max_length = args.output_max_length,
-            padding="max_length",
-            truncation=True,
-            return_tensors="np",
-        )
-        
-        labels = target_encodings['input_ids']
-        decoder_input_ids = shift_tokens_right(
-            torch.tensor(labels),
-            model.config.pad_token_id,
-            model.config.eos_token_id,
-        ).numpy()
-        labels[labels[:, :] == model.config.pad_token_id] = -100
-
         attention_mask = input_encodings['attention_mask']
         if use_raw_dots:
             bsz, time = attention_mask.shape
@@ -69,15 +55,53 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
                 attention_mask,
             ), 1)
 
-        encodings = {
-            'input_ids': input_encodings['input_ids'],
-            'attention_mask': attention_mask,
-            'decoder_input_ids': decoder_input_ids,
-            'labels': labels,
-            "scenario_ids": example_batch["scenario_id"],
-            "chat_ids": example_batch["chat_id"],
-            "agents": example_batch["agent"],
-        }
+        if use_raw_labels:
+            labels = example_batch["label"]
+            # need to pad the labels to longest
+            maxlen = args.max_length
+            newlabels = np.full((len(labels), maxlen*7), -100, dtype=float)
+            labels_mask = np.zeros((len(labels), maxlen), dtype=bool)
+            for i, label in enumerate(labels):
+                thislen = len(label)
+                if thislen > 0:
+                    newlabels[i,:thislen*7] = [x for xs in label for x in xs]
+                    labels_mask[i,:thislen] = 1
+            encodings = {
+                'input_ids': input_encodings['input_ids'],
+                'attention_mask': attention_mask,
+                'labels': newlabels,
+                "labels_mask": labels_mask,
+                "scenario_ids": example_batch["scenario_id"],
+                "chat_ids": example_batch["chat_id"],
+                "agents": example_batch["agent"],
+            }
+        else:
+            target_encodings = tokenizer.batch_encode_plus(
+                example_batch['label'],
+                max_length = args.output_max_length,
+                padding="max_length",
+                truncation=True,
+                return_tensors="np",
+            )
+           
+            labels = target_encodings['input_ids']
+            decoder_input_ids = shift_tokens_right(
+                torch.tensor(labels),
+                model.config.pad_token_id,
+                model.config.eos_token_id,
+            ).numpy()
+            labels[labels[:, :] == model.config.pad_token_id] = -100
+
+            encodings = {
+                'input_ids': input_encodings['input_ids'],
+                'attention_mask': attention_mask,
+                'decoder_input_ids': decoder_input_ids,
+                'labels': labels,
+                "scenario_ids": example_batch["scenario_id"],
+                "chat_ids": example_batch["chat_id"],
+                "agents": example_batch["agent"],
+            }
+
         if "dots" in example_batch:
             encodings["dots"] = np.array(example_batch["dots"])
 
@@ -88,9 +112,12 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
         columns = [
             'input_ids',
             'labels',
-            'decoder_input_ids',
             'attention_mask',
         ]
+        if not use_raw_labels:
+            columns.append("decoder_input_ids")
+        if use_raw_labels:
+            columns.append("labels_mask")
         if use_raw_dots:
             columns.append("dots")
         dataset.set_format(type='torch', columns=columns, output_all_columns=do_eval)
@@ -129,6 +156,11 @@ def train(args):
         elif args.dot_encoder == "relation":
             dot_encoder = RelationalContextEncoder(args)
         model2 = DotBartForConditionalGeneration(model.config, dot_encoder)
+        if "raw_partner_mentions" in dataset:
+            model2 = ClassifierBartEncoder(
+                model.config, dot_encoder,
+                mention_idx=tokenizer.convert_tokens_to_ids("<mention>"),
+            )
         model2.model = model.model
         model2.lm_head = model.lm_head
         model2.final_logits_bias = model.final_logits_bias
@@ -422,6 +454,8 @@ if __name__ == "__main__":
             "partner_tags_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd",
             "partner_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd",
             "partner_amentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd",
+            # 11/4 partner mention
+            "raw_partner_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__llt_ma__rd",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",

@@ -76,7 +76,7 @@ def construct_feature_string(options):
     feats.append(f"mps{options.min_plan_size}{options.max_plan_size}")
     feats.append("dh" if options.dialog_history else "")
     feats.append("lt" if options.last_turn else "")
-    feats.append("llt" if options.last_turn else "")
+    feats.append("llt" if options.last_last_turn else "")
     feats.append("ma" if options.must_agree_config else "")
     feats.append("b" if options.balance else "")
     feats.append("rd" if options.raw_dots else "")

@@ -42,6 +42,7 @@ fields = (
     "plan",
     "mentions",
     "partner_mentions", # for ref res
+    "raw_partner_mentions", # for ref res
     "confirmation",
     "selection_leaning",
     "selection",
@@ -1592,6 +1593,15 @@ def get_examples(
                 continue
 
             is_you = conversation.sents[turn][0] == "YOU:"
+
+            # compare partner_markers to raw_partner_mentions
+            ltext = conversation.all_sentmarkers[turn-1] if turn > 0 else "none"
+            num_men = sum([1 for w in ltext if w == "<mention>"])
+            lenmen = len(raw_partner_mentions) if raw_partner_mentions is not None else 0
+            if is_you and num_men != lenmen:
+                num_skipped += 1
+                continue
+
             if is_you:
                 # mention-specific dot-representations
                 mention_description = describe_mention_specific_dots(
@@ -1680,6 +1690,11 @@ def get_examples(
                     " [SEP] ".join([describe_plan(m) for m in raw_partner_mentions])
                     if raw_partner_mentions is not None
                     else "none"
+                )
+                examples["raw_partner_mentions"].append(
+                    raw_partner_mentions.tolist()
+                    if raw_partner_mentions is not None
+                    else []
                 )
                 examples["partner_amentions"].append(
                     " [SEP] ".join([
@@ -1795,6 +1810,7 @@ def get_examples(
                 )
 
                 num_examples += 1
+
 
                 # copy to examples by plan size
                 plan_size = int(raw_plan.sum())
@@ -2459,6 +2475,41 @@ if __name__ == "__main__":
         print(f"partner_mentions dataset path {partner_mentions_path}")
         partner_mentions_dataset.save_to_disk(partner_mentions_path)
         print(f"num partner_mentions examples: {len(partner_mentions_examples['input'])}")
+
+        # partner mention ind | partner markers, textmention history, dots
+        # use ground truth mentions
+        num_examples = len(examples["raw_partner_mentions"])
+        raw_partner_mentions_examples = {}
+        raw_partner_mentions_examples["input"] = [
+            f"{text} [MSEP] {lasttext}"
+            for (
+                text,
+                lasttext,
+            ) in zip(
+                examples["prev_text_mentions"]
+                    if not options.last_last_turn
+                    else examples["lastlasttext_mentions"],
+                examples["partner_markers"],
+            )
+        ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in raw_partner_mentions_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of raw_partner_mentions input: {max_length_input}")
+        print(raw_partner_mentions_examples["input"][np.argmax(input_lens)])
+
+        raw_partner_mentions_examples["label"] = examples["raw_partner_mentions"]
+
+        # add metadata
+        raw_partner_mentions_examples["chat_id"] = examples["chat_id"]
+        raw_partner_mentions_examples["scenario_id"] = examples["scenario_id"]
+        raw_partner_mentions_examples["agent"] = examples["agent"]
+        raw_partner_mentions_examples["dots"] = examples["raw_dots"]
+
+        raw_partner_mentions_dataset = Dataset.from_dict(raw_partner_mentions_examples)
+        raw_partner_mentions_path = f"hf_datasets/{split}_raw_partner_mentions_{feature_string}.hf"
+        print(f"raw_partner_mentions dataset path {raw_partner_mentions_path}")
+        raw_partner_mentions_dataset.save_to_disk(raw_partner_mentions_path)
+        print(f"num raw_partner_mentions examples: {len(raw_partner_mentions_examples['input'])}")
 
         # partner markers | partner text
         # use ground truth mentions
