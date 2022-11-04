@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 from torch.nn import BCEWithLogitsLoss
 
-from transformers import BartPretrainedModel
+from transformers import BartModel, BartPretrainedModel
 from transformers.utils import ModelOutput
 
 @dataclass
@@ -27,7 +27,7 @@ class IndAssum(Enum):
     JOINT = auto()
 
 
-class ClassifierBartEncoder(BartPretrainedModel):
+class ClassifierBartEncoder(BartModel):
     def __init__(
         self, config,
         dot_encoder,
@@ -50,6 +50,7 @@ class ClassifierBartEncoder(BartPretrainedModel):
         # inputs to the model
         input_ids: torch.LongTensor = None,
         dots: torch.FloatTensor = None,
+        inputs_embeds: Optional[torch.FloatTensor] = None,
         encoder_outputs: Optional[List[torch.FloatTensor]] = None,
         labels: Optional[torch.LongTensor] = None,
         attention_mask: Optional[torch.Tensor] = None,
@@ -62,7 +63,6 @@ class ClassifierBartEncoder(BartPretrainedModel):
         decoder_head_mask: Optional[torch.Tensor] = None,
         cross_attn_head_mask: Optional[torch.Tensor] = None,
         past_key_values: Optional[List[torch.FloatTensor]] = None,
-        inputs_embeds: Optional[torch.FloatTensor] = None,
         decoder_inputs_embeds: Optional[torch.FloatTensor] = None,
         use_cache: Optional[bool] = None,
         output_attentions: Optional[bool] = None,
@@ -74,10 +74,11 @@ class ClassifierBartEncoder(BartPretrainedModel):
         dots = dots.view(bsz, 7, 4)
         dots_input = self.dot_encoder(dots)
 
+        emb = self.get_input_embeddings()
+        enc = self.get_encoder()
+
         # inputs_embeds short-circuits input_ids
         if inputs_embeds is None:
-            emb = self.get_input_embeddings()
-            enc = self.model.get_encoder()
             embedding_dim = emb.embedding_dim
 
             tokens_input = emb(input_ids)
@@ -85,7 +86,7 @@ class ClassifierBartEncoder(BartPretrainedModel):
             inputs_embeds = inputs_embeds * enc.embed_scale
 
         if encoder_outputs is None:
-            encoder_outputs = self.model.encoder(
+            encoder_outputs = enc(
                 input_ids=None,
                 attention_mask=attention_mask,
                 head_mask=head_mask,
@@ -106,7 +107,11 @@ class ClassifierBartEncoder(BartPretrainedModel):
         mask = input_ids == self.mention_idx
         hidden_states = encoder_outputs.last_hidden_state[:,dots.shape[1]:]
         logits = torch.einsum("bdh,bth->btd", dots_input, hidden_states)
-        loss = self.loss_fn(logits[mask], labels.view(bsz, -1, 7)[labels_mask])
+        loss = (
+            self.loss_fn(logits[mask], labels.view(bsz, -1, 7)[labels_mask])
+            if labels is not None
+            else None
+        )
 
         return MentionClassifierOutput(
             loss=loss,

@@ -58,7 +58,7 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
         if use_raw_labels:
             labels = example_batch["label"]
             # need to pad the labels to longest
-            maxlen = args.max_length
+            maxlen = args.output_max_length
             newlabels = np.full((len(labels), maxlen*7), -100, dtype=float)
             labels_mask = np.zeros((len(labels), maxlen), dtype=bool)
             for i, label in enumerate(labels):
@@ -207,6 +207,7 @@ def evaluate(args):
     checkpoint_string = f"checkpoint-{args.checkpoint}"
 
     use_raw_dots = "rd" in dataset
+    use_raw_labels = "raw_partner_mentions" in dataset
     IS_TEXT = (
         args.dataset[:4] == "text"
         or args.dataset[:8] == "lasttext"
@@ -221,20 +222,27 @@ def evaluate(args):
     # model
 
     output_dir = f"./hf-results-{prefix}/{checkpoint_string}"
-    model_class = (DotBartForConditionalGeneration
-        if use_raw_dots else BartForConditionalGeneration)
+
     # TODO: initialize dot_encoder inside model to make loading easier
     dot_encoder = None
     if args.dot_encoder == "linear":
         dot_encoder = nn.Linear(4, model.get_input_embeddings().embedding_dim)
     elif args.dot_encoder == "relation":
         dot_encoder = RelationalContextEncoder(args)
-    if use_raw_dots:
-        model = model_class.from_pretrained(
+
+    if use_raw_labels:
+        model = ClassifierBartEncoder.from_pretrained(
+            output_dir,
+            dot_encoder = dot_encoder,
+            mention_idx = tokenizer.convert_tokens_to_ids("<mention>"),
+            forced_bos_token_id=0,
+        )
+    elif use_raw_dots:
+        model = DotBartForConditionalGeneration.from_pretrained(
             output_dir, dot_encoder = dot_encoder, forced_bos_token_id=0,
         )
     else:
-        model = model_class.from_pretrained(
+        model = BartForConditionalGeneration.from_pretrained(
             output_dir, forced_bos_token_id=0,
         )
     model.resize_token_embeddings(len(tokenizer))
@@ -276,18 +284,36 @@ def evaluate(args):
             #encoder_outputs = enc(inputs_embeds = inputs_embeds)
         inputs_embeds = inputs_embeds * enc.embed_scale
 
-        output = model.generate(
-            #encoder_outputs = encoder_outputs,
-            inputs_embeds = inputs_embeds,
-            #input_ids = input_ids,
-            #dots = dots,
-            num_beams = args.beam_size if IS_TEXT else None,
-            num_return_sequences = args.beam_size if IS_TEXT else None,
-            output_scores = True,
-            return_dict_in_generate = True,
-            max_new_tokens = 80,
-        )
-        output_dots = tokenizer.batch_decode(output.sequences, skip_special_tokens=True)
+        output, output_dots = None, None
+        if "raw_partner_mentions" in dataset:
+            output = model(**{
+                k:v for k,v in batch.items()
+                if k in ["input_ids", "dots", "attention_mask"]
+            })
+            mask = output.mask
+            labels = batch["labels"].view(bsz, -1, 7)
+            labels_mask = batch["labels_mask"]
+
+            probs = output.logits.sigmoid()
+            preds = probs > 0.5
+            correct = preds[mask] == labels[labels_mask]
+            num_correct = correct.all(-1).sum()
+            exact_match += num_correct
+            num_examples += labels_mask.sum()
+        else:
+            output = model.generate(
+                #encoder_outputs = encoder_outputs,
+                inputs_embeds = inputs_embeds,
+                attention_mask = batch["attention_mask"],
+                #input_ids = input_ids,
+                #dots = dots,
+                num_beams = args.beam_size if IS_TEXT else None,
+                num_return_sequences = args.beam_size if IS_TEXT else None,
+                output_scores = True,
+                return_dict_in_generate = True,
+                max_new_tokens = 80,
+            )
+            output_dots = tokenizer.batch_decode(output.sequences, skip_special_tokens=True)
 
         labels = batch["labels"]
         if "plan_given" in args.dataset:
