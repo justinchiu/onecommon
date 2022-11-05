@@ -27,7 +27,8 @@ class IndAssum(Enum):
     JOINT = auto()
 
 
-class ClassifierBartEncoder(BartModel):
+class ClassifierBartEncoder(BartPretrainedModel):
+    base_model_prefix = "model"
     def __init__(
         self, config,
         dot_encoder,
@@ -35,7 +36,15 @@ class ClassifierBartEncoder(BartModel):
         independence_assumption=IndAssum.IND,
     ):
         super().__init__(config)
+
+        self.model = BartModel(config)
+
         self.dot_encoder = dot_encoder
+
+        for k, v in self.dot_encoder.named_parameters():
+            if "weight" in k:
+                self.model._init_weights(v)
+
         self.mention_idx = mention_idx
         self.independence_assumption = independence_assumption
         if independence_assumption == IndAssum.IND:
@@ -44,6 +53,12 @@ class ClassifierBartEncoder(BartModel):
             raise NotImplementedError
         else:
             raise ValueError
+
+    def get_encoder(self):
+        return self.model.get_encoder()
+
+    def get_decoder(self):
+        return self.model.get_decoder()
 
     def forward(
         self,
@@ -71,23 +86,12 @@ class ClassifierBartEncoder(BartModel):
     ) -> Union[Tuple, ModelOutput]:
         bsz, _ = dots.shape
 
-        dots = dots.view(bsz, 7, 4)
-        dots_input = self.dot_encoder(dots)
 
-        emb = self.get_input_embeddings()
-        enc = self.get_encoder()
-
-        # inputs_embeds short-circuits input_ids
-        if inputs_embeds is None:
-            embedding_dim = emb.embedding_dim
-
-            tokens_input = emb(input_ids)
-            inputs_embeds = torch.cat([dots_input, tokens_input], 1)
-            inputs_embeds = inputs_embeds * enc.embed_scale
+        enc = self.model.get_encoder()
 
         if encoder_outputs is None:
             encoder_outputs = enc(
-                input_ids=None,
+                input_ids=input_ids,
                 attention_mask=attention_mask,
                 head_mask=head_mask,
                 inputs_embeds=inputs_embeds,
@@ -105,8 +109,11 @@ class ClassifierBartEncoder(BartModel):
 
         # get indices of <mention>
         mask = input_ids == self.mention_idx
-        hidden_states = encoder_outputs.last_hidden_state[:,dots.shape[1]:]
-        logits = torch.einsum("bdh,bth->btd", dots_input, hidden_states)
+        hidden_states = encoder_outputs.last_hidden_state
+
+        dots = dots.view(bsz, 7, 4)
+        dot_reps  = self.dot_encoder(dots)
+        logits = torch.einsum("bdh,bth->btd", dot_reps, hidden_states)
         loss = (
             self.loss_fn(logits[mask], labels.view(bsz, -1, 7)[labels_mask])
             if labels is not None

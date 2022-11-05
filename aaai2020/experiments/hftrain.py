@@ -48,7 +48,7 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
             return_tensors="np",
         )
         attention_mask = input_encodings['attention_mask']
-        if use_raw_dots:
+        if use_raw_dots and not use_raw_labels:
             bsz, time = attention_mask.shape
             attention_mask = np.concatenate((
                 np.ones((bsz, 7), dtype=attention_mask.dtype),
