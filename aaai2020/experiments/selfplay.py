@@ -22,6 +22,13 @@ from dialog import Dialog, DialogLogger, HierarchicalDialog
 from models.rnn_reference_model import RnnReferenceModel
 import domain
 
+from transformers import BartForConditionalGeneration, BartTokenizer
+from transformers.models.bart.modeling_bart import shift_tokens_right
+from models.dotbart import DotBartForConditionalGeneration
+from models.context_encoder import RelationalContextEncoder
+from models.encoderbart import ClassifierBartEncoder, Task, IndAssum
+import hfutils
+
 from belief_agent import BeliefAgent
 from symbolic_dialog import SymbolicDialog
 
@@ -203,9 +210,10 @@ def main():
         generation_tokenizer = hfutils.get_bart_tokenizer()
         # need to SCP this
         bart_dir = "./hf-results-text_given_plan_py_2py_2puy_en_sdy_psy_un-l1e-05-b4/checkpoint-33000"
-        language_generator = BartForConditionalGeneration.from_pretrained(
-            bart_dir, forced_bos_token_id=0,
-        )
+        language_generator = None
+        #language_generator = BartForConditionalGeneration.from_pretrained(
+            #bart_dir, forced_bos_token_id=0,
+        #)
 
         # alice_model = utils.load_model(args.alice_model_file + '_' + str(seed) + '.th')
         alice_model = utils.load_model(args.alice_model_file, prefix_dir=None, map_location='cpu')

@@ -8,16 +8,24 @@ shared_ctx_count=4
 num_contexts=1000
 #num_contexts=200
 
-# belief entropy threshold
+num_buckets=5
+num_buckets=3
+
+# belief entropy threshold (deprecated)
 #threshold=3
 #threshold=2.75
-threshold=2.5
 #threshold=2
 #threshold=1.5
 #threshold=1
 
-belief="or"
-#belief="egocentric"
+# max dot probability belief threshold
+threshold=0.8
+
+#belief="or"
+#belief="or_egocentric"
+belief="cost"
+belief="cost_egocentric"
+
 
 #absolute_bucketing=0
 absolute_bucketing=1
@@ -27,7 +35,8 @@ select_config_size=3
 #select_config_size=4
 
 # best
-length_coef=0.05
+#length_coef=0.05
+length_coef=0
 # finished
 #length_coef=0.075
 #length_coef=0.1
@@ -40,7 +49,7 @@ diam_coef=0
 # want to run
 #diam_coef=4
 # running
-diam_coef=0.2
+#diam_coef=0.2
 #diam_coef=0.5
 # ran, too small
 #diam_coef=0.025
@@ -55,7 +64,7 @@ contig_coef=0
 #contig_coef=1
 
 name="SS_N${num_contexts}_T${threshold}_B${belief}_AB${absolute_bucketing}_L${length_coef}_S${select_config_size}_D${diam_coef}_C${contig_coef}"
-#name="DBG_RM"
+name="DBG_RM"
 
 shift
 shift
@@ -90,9 +99,11 @@ python -u selfplay.py \
   --context_file=shared_4 \
   --belief_alice --belief_bob \
   --belief ${belief} \
-  --belief_entropy_threshold ${threshold} \
+  --belief_threshold ${threshold} \
   --symbolic \
   --absolute_bucketing ${absolute_bucketing} \
+  --num_size_buckets ${num_buckets} \
+  --num_color_buckets ${num_buckets} \
   --length_coef ${length_coef} \
   --diameter_coef ${diam_coef} \
   --contiguity_coef ${contig_coef} \

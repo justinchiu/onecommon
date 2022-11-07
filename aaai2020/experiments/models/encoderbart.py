@@ -26,6 +26,10 @@ class IndAssum(Enum):
     IND = auto()
     JOINT = auto()
 
+class Task(Enum):
+    TAG = auto()
+    RESOLVE = auto()
+
 
 class ClassifierBartEncoder(BartPretrainedModel):
     base_model_prefix = "model"
@@ -34,6 +38,7 @@ class ClassifierBartEncoder(BartPretrainedModel):
         dot_encoder,
         mention_idx=50285,
         independence_assumption=IndAssum.IND,
+        task=Task.TAG,
     ):
         super().__init__(config)
 
@@ -44,6 +49,12 @@ class ClassifierBartEncoder(BartPretrainedModel):
         for k, v in self.dot_encoder.named_parameters():
             if "weight" in k:
                 self.model._init_weights(v)
+
+        self.task = task
+        if task == Task.TAG:
+            self.out_proj = nn.Linear(config.d_model, 1)
+            self.model._init_weights(self.out_proj)
+            self.loss_fn = BCEWithLogitsLoss()
 
         self.mention_idx = mention_idx
         self.independence_assumption = independence_assumption
@@ -107,27 +118,49 @@ class ClassifierBartEncoder(BartPretrainedModel):
                 attentions=encoder_outputs[2] if len(encoder_outputs) > 2 else None,
             )
 
-        # get indices of <mention>
-        mask = input_ids == self.mention_idx
         hidden_states = encoder_outputs.last_hidden_state
 
-        dots = dots.view(bsz, 7, 4)
-        dot_reps  = self.dot_encoder(dots)
-        logits = torch.einsum("bdh,bth->btd", dot_reps, hidden_states)
-        loss = (
-            self.loss_fn(logits[mask], labels.view(bsz, -1, 7)[labels_mask])
-            if labels is not None
-            else None
-        )
+        if self.task == Task.RESOLVE:
+            dots = dots.view(bsz, 7, 4)
+            dot_reps  = self.dot_encoder(dots)
+            logits = torch.einsum("bdh,bth->btd", dot_reps, hidden_states)
 
-        return MentionClassifierOutput(
-            loss=loss,
-            logits=logits,
-            mask=mask,
-            encoder_last_hidden_state=encoder_outputs.last_hidden_state,
-            encoder_hidden_states=encoder_outputs.hidden_states,
-            encoder_attentions=encoder_outputs.attentions,
-        )
+            # get indices of <mention>
+            mask = input_ids == self.mention_idx
+
+            loss = (
+                self.loss_fn(logits[mask], labels.view(bsz, -1, 7)[labels_mask])
+                if labels is not None
+                else None
+            )
+
+            return MentionClassifierOutput(
+                loss=loss,
+                logits=logits,
+                mask=mask,
+                encoder_last_hidden_state=encoder_outputs.last_hidden_state,
+                encoder_hidden_states=encoder_outputs.hidden_states,
+                encoder_attentions=encoder_outputs.attentions,
+            )
+        elif self.task == Task.TAG:
+            logits = self.out_proj(hidden_states)[...,0]
+            loss = (
+                self.loss_fn(logits[labels_mask], labels[labels_mask])
+                if labels is not None
+                else None
+            )
+
+            return MentionClassifierOutput(
+                loss=loss,
+                logits=logits,
+                mask=labels_mask,
+                encoder_last_hidden_state=encoder_outputs.last_hidden_state,
+                encoder_hidden_states=encoder_outputs.hidden_states,
+                encoder_attentions=encoder_outputs.attentions,
+            )
+        else:
+            raise ValueError
+
 
 if __name__ == "__main__":
     import sys

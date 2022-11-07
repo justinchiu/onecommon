@@ -725,11 +725,11 @@ def splice_sentence_mentions(sent, refs):
     refs = np.array(refs).reshape(-1, 10)
     sent = [x for x in sent]
     sent_markers = [x for x in sent]
-    tags = [False for x in sent]
+    tags = [0 for x in sent]
     for idx, ref in reversed(list(zip(refs[:,0], refs[:,3:]))):
         sent.insert(idx, "<bom>")
         sent_markers.insert(idx, "<mention>")
-        tags[idx] = True
+        tags[idx] = 1
         num_added = 1
         for i, val in enumerate(ref):
             if val:
@@ -1811,7 +1811,6 @@ def get_examples(
 
                 num_examples += 1
 
-
                 # copy to examples by plan size
                 plan_size = int(raw_plan.sum())
                 if plan_size > 4:
@@ -2513,6 +2512,38 @@ if __name__ == "__main__":
 
         # partner markers | partner text
         # use ground truth mentions
+        num_examples = len(examples["partner_markers"])
+        partner_markers_examples = {}
+        partner_markers_examples["input"] = examples["lasttext"]
+        input_lens = [len(tokenizer.tokenize(x)) for x in partner_markers_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of partner_markers input: {max_length_input}")
+        print(partner_markers_examples["input"][np.argmax(input_lens)])
+
+        partner_markers_examples["label"] = examples["partner_markers"]
+        #partner_markers_examples["label"] = [
+            #" ".join([str(1) if x else str(0) for x in markers])
+            #for markers in examples["partner_markers"]
+        #]
+        output_lens = [len(tokenizer.tokenize(x)) for x in partner_markers_examples["label"]]
+        max_length_output = max(output_lens)
+        print(f"Max length of partner_markers output: {max_length_output}")
+        print(partner_markers_examples["label"][np.argmax(output_lens)])
+
+        # add metadata
+        partner_markers_examples["chat_id"] = examples["chat_id"]
+        partner_markers_examples["scenario_id"] = examples["scenario_id"]
+        partner_markers_examples["agent"] = examples["agent"]
+        partner_markers_examples["dots"] = examples["raw_dots"]
+
+        partner_markers_dataset = Dataset.from_dict(partner_markers_examples)
+        partner_markers_path = f"hf_datasets/{split}_partner_markers_{feature_string}.hf"
+        print(f"partner_markers dataset path {partner_markers_path}")
+        partner_markers_dataset.save_to_disk(partner_markers_path)
+        print(f"num partner_markers examples: {len(partner_markers_examples['input'])}")
+
+        # partner tags | partner text
+        # use ground truth mentions
         num_examples = len(examples["partner_tags"])
         partner_tags_examples = {}
         partner_tags_examples["input"] = examples["lasttext"]
@@ -2521,15 +2552,7 @@ if __name__ == "__main__":
         print(f"Max length of partner_tags input: {max_length_input}")
         print(partner_tags_examples["input"][np.argmax(input_lens)])
 
-        partner_tags_examples["label"] = examples["partner_markers"]
-        #partner_tags_examples["label"] = [
-            #" ".join([str(1) if x else str(0) for x in tags])
-            #for tags in examples["partner_tags"]
-        #]
-        output_lens = [len(tokenizer.tokenize(x)) for x in partner_tags_examples["label"]]
-        max_length_output = max(output_lens)
-        print(f"Max length of partner_tags output: {max_length_output}")
-        print(partner_tags_examples["label"][np.argmax(output_lens)])
+        partner_tags_examples["label"] = examples["partner_tags"]
 
         # add metadata
         partner_tags_examples["chat_id"] = examples["chat_id"]
@@ -2538,10 +2561,10 @@ if __name__ == "__main__":
         partner_tags_examples["dots"] = examples["raw_dots"]
 
         partner_tags_dataset = Dataset.from_dict(partner_tags_examples)
-        partner_tags_path = f"hf_datasets/{split}_partner_tags_{feature_string}.hf"
-        print(f"partner_tags dataset path {partner_tags_path}")
+        partner_tags_path = f"hf_datasets/{split}_raw_partner_tags_{feature_string}.hf"
+        print(f"raw_partner_tags dataset path {partner_tags_path}")
         partner_tags_dataset.save_to_disk(partner_tags_path)
-        print(f"num partner_tags examples: {len(partner_tags_examples['input'])}")
+        print(f"num raw_partner_tags examples: {len(partner_tags_examples['input'])}")
 
         # partner mention | partner aligned markers, textmention history, dots
         # use ground truth mentions

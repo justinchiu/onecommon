@@ -45,6 +45,12 @@ class BeliefAgent(RnnAgent):
             help = "Belief entropy threshold for selection heuristic",
         )
         parser.add_argument(
+            "--belief_threshold",
+            type = float,
+            default = 0.8,
+            help = "Belief probability hreshold for selection",
+        )
+        parser.add_argument(
             "--absolute_bucketing",
             choices = [0,1],
             default = 1,
@@ -99,8 +105,9 @@ class BeliefAgent(RnnAgent):
         assert self.confirmation_tokenizer is not None
         assert self.confirmation_predictor is not None
 
-        # for selection heuristic based on entropy
+        # for selection heuristic based on entropy (DEPRECATED)
         self.entropy_threshold = self.args.belief_entropy_threshold
+        self.belief_threshold = self.args.belief_threshold
 
         # utility coefficients
         self.length_coef = self.args.length_coef
@@ -184,8 +191,10 @@ class BeliefAgent(RnnAgent):
         # uniform entropy over 128 is 4.85
         #print(np.round(self.belief.marginals(self.prior), 2))
         #print(entropy(self.prior))
-        H = entropy(self.prior)
-        select = H < self.entropy_threshold
+        max_belief = self.belief.marginals(self.prior).max()
+        select = max_belief > self.belief_threshold
+        #H = entropy(self.prior)
+        #select = H < self.entropy_threshold
         return select
 
     def select_dot(self):

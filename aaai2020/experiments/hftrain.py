@@ -16,7 +16,7 @@ from transformers.models.bart.modeling_bart import shift_tokens_right
 
 from models.dotbart import DotBartForConditionalGeneration
 from models.context_encoder import RelationalContextEncoder
-from models.encoderbart import ClassifierBartEncoder
+from models.encoderbart import ClassifierBartEncoder, Task, IndAssum
 
 import hfutils
 
@@ -37,7 +37,9 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
     test = Dataset.load_from_disk(f"hf_datasets/test_{dataset}.hf")
 
     use_raw_dots = "rd" in dataset
-    use_raw_labels = "raw_partner_mentions" in dataset
+    use_raw_mentions = "raw_partner_mentions" in dataset
+    use_raw_tags = "raw_partner_tags" in dataset
+    is_tagging = use_raw_mentions or use_raw_tags
 
     def convert_to_features(example_batch):
         input_encodings = tokenizer.batch_encode_plus(
@@ -48,14 +50,14 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
             return_tensors="np",
         )
         attention_mask = input_encodings['attention_mask']
-        if use_raw_dots and not use_raw_labels:
+        if use_raw_dots and not is_tagging:
             bsz, time = attention_mask.shape
             attention_mask = np.concatenate((
                 np.ones((bsz, 7), dtype=attention_mask.dtype),
                 attention_mask,
             ), 1)
 
-        if use_raw_labels:
+        if use_raw_mentions:
             labels = example_batch["label"]
             # need to pad the labels to longest
             maxlen = args.output_max_length
@@ -65,6 +67,26 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
                 thislen = len(label)
                 if thislen > 0:
                     newlabels[i,:thislen*7] = [x for xs in label for x in xs]
+                    labels_mask[i,:thislen] = 1
+            encodings = {
+                'input_ids': input_encodings['input_ids'],
+                'attention_mask': attention_mask,
+                'labels': newlabels,
+                "labels_mask": labels_mask,
+                "scenario_ids": example_batch["scenario_id"],
+                "chat_ids": example_batch["chat_id"],
+                "agents": example_batch["agent"],
+            }
+        elif use_raw_tags:
+            labels = example_batch["label"]
+            # need to pad the labels to longest
+            maxlen = args.output_max_length
+            newlabels = np.full((len(labels), maxlen), -100, dtype=float)
+            labels_mask = np.zeros((len(labels), maxlen), dtype=bool)
+            for i, label in enumerate(labels):
+                thislen = len(label)
+                if thislen > 0:
+                    newlabels[i,:thislen] = label
                     labels_mask[i,:thislen] = 1
             encodings = {
                 'input_ids': input_encodings['input_ids'],
@@ -114,9 +136,9 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
             'labels',
             'attention_mask',
         ]
-        if not use_raw_labels:
+        if not is_tagging:
             columns.append("decoder_input_ids")
-        if use_raw_labels:
+        if is_tagging:
             columns.append("labels_mask")
         if use_raw_dots:
             columns.append("dots")
@@ -160,6 +182,13 @@ def train(args):
             model2 = ClassifierBartEncoder(
                 model.config, dot_encoder,
                 mention_idx=tokenizer.convert_tokens_to_ids("<mention>"),
+                task = Task.RESOLVE,
+            )
+        if "raw_partner_tags" in dataset:
+            model2 = ClassifierBartEncoder(
+                model.config, dot_encoder,
+                mention_idx=tokenizer.convert_tokens_to_ids("<mention>"),
+                task = Task.TAG,
             )
         model2.model = model.model
         model2.lm_head = model.lm_head
@@ -207,7 +236,10 @@ def evaluate(args):
     checkpoint_string = f"checkpoint-{args.checkpoint}"
 
     use_raw_dots = "rd" in dataset
-    use_raw_labels = "raw_partner_mentions" in dataset
+    use_raw_mentions = "raw_partner_mentions" in dataset
+    use_raw_tags = "raw_partner_tags" in dataset
+    is_tagging = use_raw_mentions or use_raw_tags
+
     IS_TEXT = (
         args.dataset[:4] == "text"
         or args.dataset[:8] == "lasttext"
@@ -230,12 +262,21 @@ def evaluate(args):
     elif args.dot_encoder == "relation":
         dot_encoder = RelationalContextEncoder(args)
 
-    if use_raw_labels:
+    if use_raw_mentions:
         model = ClassifierBartEncoder.from_pretrained(
             output_dir,
             dot_encoder = dot_encoder,
             mention_idx = tokenizer.convert_tokens_to_ids("<mention>"),
             forced_bos_token_id=0,
+            task = Task.RESOLVE,
+        )
+    elif use_raw_tags:
+        model = ClassifierBartEncoder.from_pretrained(
+            output_dir,
+            dot_encoder = dot_encoder,
+            mention_idx = tokenizer.convert_tokens_to_ids("<mention>"),
+            forced_bos_token_id=0,
+            task = Task.TAG,
         )
     elif use_raw_dots:
         model = DotBartForConditionalGeneration.from_pretrained(
@@ -258,6 +299,9 @@ def evaluate(args):
         args, dataset, model, tokenizer, do_eval=True)
 
     ids_inputs_labels_outputs = []
+
+    # for binary classification
+    tp, fp, num_pred, num_pos = 0, 0, 0, 0
 
     exact_match = 0
     num_examples = 0
@@ -299,6 +343,25 @@ def evaluate(args):
             correct = preds[mask] == labels[labels_mask]
             num_correct = correct.all(-1).sum()
             exact_match += num_correct
+            num_examples += labels_mask.sum()
+        elif "raw_partner_tags" in dataset:
+            output = model(**{
+                k:v for k,v in batch.items()
+                if k in ["input_ids", "dots", "attention_mask"]
+            })
+            mask = output.mask
+            labels = batch["labels"]
+            labels_mask = batch["labels_mask"]
+            probs = output.logits.sigmoid()
+            preds = probs > 0.5
+
+            pos_mask = labels == 1
+            neg_mask = labels == 0
+            tp += (preds[pos_mask] == labels[pos_mask]).sum()
+            fp += (preds[neg_mask] != labels[neg_mask]).sum()
+            exact_match += (preds[labels_mask] == labels[labels_mask]).sum()
+            num_pred = preds[labels_mask].sum()
+            num_pos = labels[labels_mask].sum()
             num_examples += labels_mask.sum()
         else:
             output = model.generate(
@@ -378,6 +441,10 @@ def evaluate(args):
     if IS_TEXT:
         with generation_path.open("w") as f:
             json.dump(ids_inputs_labels_outputs, f)
+    elif use_raw_tags:
+        prec = tp / num_pred
+        rec = tp / num_pos
+        print(f"p: {prec:.2f} | r: {rec:.2f}")
 
 
 
@@ -482,6 +549,8 @@ if __name__ == "__main__":
             "partner_amentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd",
             # 11/4 partner mention
             "raw_partner_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__llt_ma__rd",
+            "raw_partner_tags_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__llt_ma__rd",
+            "partner_markers_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__llt_ma__rd",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",
