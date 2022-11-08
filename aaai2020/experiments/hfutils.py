@@ -4,6 +4,7 @@ from enum import Enum, auto
 from typing import List, Tuple
 
 from transformers import BartTokenizer
+from tokenizers import AddedToken
 
 
 class Property(Enum):
@@ -87,12 +88,24 @@ def construct_feature_string(options):
 # hf tokenizer stuff
 def get_bart_tokenizer():
     tokenizer = BartTokenizer.from_pretrained("facebook/bart-large")
-    tokenizer.add_tokens([f"dot{i}" for i in range(8)])
-    tokenizer.add_tokens(["[SEP]", "[MSEP]", "<eos>"])
-    tokenizer.add_tokens(["size:", "color:", "x:", "y:", "YOU:", "THEM:"])
-    #tokenizer.add_tokens(["[NONE]"])
-    tokenizer.add_tokens(["<selection>", "<bom>", "<eom>", "<mention>"])
-    tokenizer.add_tokens([f"<mention{i}>" for i in range(8)])
+
+    # normal tokens
+    #tokenizer.add_tokens([f"dot{i}" for i in range(8)])
+    #tokenizer.add_tokens(["[SEP]", "[MSEP]", "<eos>"])
+    #tokenizer.add_tokens(["size:", "color:", "x:", "y:", "YOU:", "THEM:"])
+    #tokenizer.add_tokens(["<selection>", "<bom>", "<eom>", "<mention>"])
+    #tokenizer.add_tokens([f"<mention{i}>" for i in range(8)])
+
+    # special tokens to preserve whitespace
+    special_tokens = ([f"dot{i}" for i in range(8)]
+        + ["[SEP]", "[MSEP]", "<eos>"]
+        + ["size:", "color:", "x:", "y:", "YOU:", "THEM:"]
+        + ["<selection>", "<bom>", "<eom>", "<mention>"]
+        + [f"<mention{i}>" for i in range(8)])
+    special_tokens_dict = {"additional_special_tokens": [
+        AddedToken(x, lstrip=True) for x in special_tokens
+    ]}
+    tokenizer.add_special_tokens(special_tokens_dict)
     return tokenizer
 
 @dataclass

@@ -14,6 +14,7 @@ import torch.nn.functional as F
 
 from domain import get_domain
 from models.utils import *
+from bitutils import get_configs, config_to_int
 
 def single_difference(
     ent_i, ent_j,
@@ -280,3 +281,43 @@ class RelationalContextEncoder(nn.Module):
             out = to_cat[0]
         return out
 
+
+class JointDotEncoder(RelationalContextEncoder):
+    def __init__(self, args):
+        super().__init__(args)
+        configs = get_configs(128)
+        self.register_buffer("configs", torch.tensor(configs, dtype=np.bool))
+        #import pdb; pdb.set_trace()
+        encoder_layer = nn.TransformerEncoderLayer(d_model=1024, nhead=4, batch_first=True)
+        self.enc = nn.TransformerEncoder(encoder_layer, num_layers=2)
+        #self.mha = nn.MultiheadAttention(1024, 4, batch_first=True)
+        self.zero_emb = nn.Parameter(torch.randn(1024) * .01)
+
+
+    def forward(
+        self, ctx, relational_dot_mask=None,
+        mask_ctx=False,
+    ):
+        bsz, ndots, _ = ctx.shape
+        # bsz x dots=7 x hid=1024
+        dots_h = super().forward(
+            ctx, relational_dot_mask=relational_dot_mask,
+            mask_ctx=mask_ctx,
+        )
+        # need to go from 7 independent encodings to 128 config encodings.
+        # zero out unused dots
+        # self.configs: configs=128 x dots=7
+        config_dot_h = dots_h[:,None] * self.configs[:,:,None]
+        # bsz x configs x dots x h
+        #  ignore padding for now
+        enc_out = self.enc(
+            config_dot_h.view(bsz*128, ndots, 1024)
+        ).view(bsz, 128, ndots, 1024)
+        sum_out = (enc_out * self.configs[:,:,None]).sum(2)
+        mean_out = sum_out / (self.configs.sum(-1, keepdims=True))
+        # replace 0 config with embedding
+        out = torch.cat([
+            self.zero_emb[None,None].expand(bsz,1,1024),
+            mean_out[:,1:],
+        ], 1)
+        return out

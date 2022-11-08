@@ -43,6 +43,7 @@ fields = (
     "mentions",
     "partner_mentions", # for ref res
     "raw_partner_mentions", # for ref res
+    "joint_partner_mentions", # for ref res
     "confirmation",
     "selection_leaning",
     "selection",
@@ -721,15 +722,14 @@ splits = paths.keys()
 
 word_dict = Dictionary.from_file(str(train_path), freq_cutoff = freq_cutoff)
 
-def splice_sentence_mentions(sent, refs):
+def splice_sentence_mentions(sent, refs, tokenizer):
     refs = np.array(refs).reshape(-1, 10)
     sent = [x for x in sent]
+    original_sent = [x for x in sent]
     sent_markers = [x for x in sent]
-    tags = [0 for x in sent]
     for idx, ref in reversed(list(zip(refs[:,0], refs[:,3:]))):
         sent.insert(idx, "<bom>")
         sent_markers.insert(idx, "<mention>")
-        tags[idx] = 1
         num_added = 1
         for i, val in enumerate(ref):
             if val:
@@ -747,7 +747,23 @@ def splice_sentence_mentions(sent, refs):
         else:
             sent_amarkers.append(x)
 
-    return sent, sent_markers, tags, sent_amarkers
+    # tags
+    tokenized_sent = tokenizer.tokenize(" ".join(original_sent))
+    tokenized_markers = tokenizer.tokenize(" ".join(sent_markers))
+    tags = np.zeros(len(tokenized_sent), dtype=bool)
+    if len(refs) > 0:
+        # need to do an index search for each mention
+        raw_mention_idxs = np.array([idx for idx, x in enumerate(tokenized_markers) if x == "<mention>"])
+        mention_idxs = raw_mention_idxs - np.arange(len(raw_mention_idxs))
+        #if mention_idxs.max() >= len(tokenized_sent):
+            #import pdb; pdb.set_trace()
+        tags[mention_idxs] = 1
+
+        # dbg
+        #print(" ".join(sent_markers))
+        #print(np.array(tokenized_sent)[tags])
+
+    return sent, sent_markers, tags.tolist(), sent_amarkers
 
 """
 REFERENT LAYOUT: [
@@ -757,7 +773,7 @@ REFERENT LAYOUT: [
     *binary indicators for occurrence, eg 7 dots 0 1 1 0 0 0 0 => dots 1 and 2
 ]
 """
-def _split_referents(words, referent_idxs):
+def _split_referents(words, referent_idxs, tokenizer):
     stops = ["YOU:", "THEM:"]
     sents_mentions = []
     sents_markers = []
@@ -784,7 +800,7 @@ def _split_referents(words, referent_idxs):
                 sents.append(current)
                 all_refs.append(current_refs)
                 sentref, sent_marker, tags, sent_amarker = splice_sentence_mentions(
-                    current, current_refs)
+                    current, current_refs, tokenizer)
                 sents_mentions.append(sentref)
                 sents_markers.append(sent_marker)
                 sents_amarkers.append(sent_amarker)
@@ -799,7 +815,7 @@ def _split_referents(words, referent_idxs):
         sents.append(current)
         all_refs.append(current_refs)
         sentref, sent_marker, tags, sent_amarker = splice_sentence_mentions(
-            current, current_refs)
+            current, current_refs, tokenizer)
         sents_mentions.append(sentref)
         sents_markers.append(sent_marker)
         sents_amarkers.append(sent_amarker)
@@ -838,7 +854,7 @@ class Conversation(NamedTuple):
     # whether a word is the start of a mention
     tags: list[list[bool]]
 
-def get_conversations(split):
+def get_conversations(split, tokenizer):
     conversations = []
     path = paths[split]
     with path.open() as f:
@@ -874,16 +890,16 @@ def get_conversations(split):
             (
                 sents, all_refs,
                 sentrefs, sentmarkers, tags, sentamarkers,
-            ) = _split_referents(words, referent_idxs)
+            ) = _split_referents(words, referent_idxs, tokenizer)
             (
                 sents_, all_partner_refs, partner_sentrefs,
                 _, _, _,
-            ) = _split_referents(words, partner_referent_idxs)
+            ) = _split_referents(words, partner_referent_idxs, tokenizer)
             assert sents == sents_
             (
                 sents_, all_partner_refs_our_view, partner_sentrefs_our_view,
                 partner_sentmarkers, partner_tags, partner_sentamarkers,
-            ) = _split_referents(words, partner_referent_our_view_idxs)
+            ) = _split_referents(words, partner_referent_our_view_idxs, tokenizer)
             assert sents == sents_
 
             # merge YOU: and THEM:, all in our view
@@ -1696,6 +1712,15 @@ def get_examples(
                     if raw_partner_mentions is not None
                     else []
                 )
+                examples["joint_partner_mentions"].append(
+                    np.packbits(
+                        np.flip(raw_partner_mentions, -1),
+                        axis = -1,
+                        bitorder = "little",
+                    )[:,0].tolist()
+                    if raw_partner_mentions is not None
+                    else []
+                )
                 examples["partner_amentions"].append(
                     " [SEP] ".join([
                         f"<mention{i+1}> {describe_plan(m)}"
@@ -1885,6 +1910,7 @@ if __name__ == "__main__":
     from transformers import (
         AutoTokenizer, AutoModelForSequenceClassification,
     )
+    import hfutils
 
     print(Conversation._fields)
 
@@ -1892,9 +1918,10 @@ if __name__ == "__main__":
     confirmation_tokenizer = AutoTokenizer.from_pretrained(response_pretrained_path)
     confirmation_predictor = AutoModelForSequenceClassification.from_pretrained(
         response_pretrained_path)
+    tokenizer = hfutils.get_bart_tokenizer()
 
     for split in splits:
-        conversations = get_conversations(split)
+        conversations = get_conversations(split, tokenizer)
 
         feature_string = construct_feature_string(options)
 
@@ -2509,6 +2536,43 @@ if __name__ == "__main__":
         print(f"raw_partner_mentions dataset path {raw_partner_mentions_path}")
         raw_partner_mentions_dataset.save_to_disk(raw_partner_mentions_path)
         print(f"num raw_partner_mentions examples: {len(raw_partner_mentions_examples['input'])}")
+
+        # partner mention joint | partner markers, textmention history, dots
+        # use ground truth mentions
+        num_examples = len(examples["joint_partner_mentions"])
+        joint_partner_mentions_examples = {}
+        joint_partner_mentions_examples["input"] = [
+            f"{text} [MSEP] {lasttext}"
+            for (
+                text,
+                lasttext,
+            ) in zip(
+                examples["prev_text_mentions"]
+                    if not options.last_last_turn
+                    else examples["lastlasttext_mentions"],
+                examples["partner_markers"],
+            )
+        ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in joint_partner_mentions_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of joint_partner_mentions input: {max_length_input}")
+        print(joint_partner_mentions_examples["input"][np.argmax(input_lens)])
+
+        joint_partner_mentions_examples["label"] = examples["joint_partner_mentions"]
+        max_length_output = max([len(x) for x in examples["joint_partner_mentions"]])
+        print(f"Max length of joint_partner_mentions output: {max_length_output}")
+
+        # add metadata
+        joint_partner_mentions_examples["chat_id"] = examples["chat_id"]
+        joint_partner_mentions_examples["scenario_id"] = examples["scenario_id"]
+        joint_partner_mentions_examples["agent"] = examples["agent"]
+        joint_partner_mentions_examples["dots"] = examples["raw_dots"]
+
+        joint_partner_mentions_dataset = Dataset.from_dict(joint_partner_mentions_examples)
+        joint_partner_mentions_path = f"hf_datasets/{split}_joint_partner_mentions_{feature_string}.hf"
+        print(f"joint_partner_mentions dataset path {joint_partner_mentions_path}")
+        joint_partner_mentions_dataset.save_to_disk(joint_partner_mentions_path)
+        print(f"num joint_partner_mentions examples: {len(joint_partner_mentions_examples['input'])}")
 
         # partner markers | partner text
         # use ground truth mentions

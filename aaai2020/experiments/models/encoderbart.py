@@ -5,7 +5,6 @@ from enum import Enum, auto
 
 import torch
 import torch.nn as nn
-from torch.nn import BCEWithLogitsLoss
 
 from transformers import BartModel, BartPretrainedModel
 from transformers.utils import ModelOutput
@@ -54,14 +53,14 @@ class ClassifierBartEncoder(BartPretrainedModel):
         if task == Task.TAG:
             self.out_proj = nn.Linear(config.d_model, 1)
             self.model._init_weights(self.out_proj)
-            self.loss_fn = BCEWithLogitsLoss()
+            self.loss_fn = nn.BCEWithLogitsLoss()
 
         self.mention_idx = mention_idx
         self.independence_assumption = independence_assumption
         if independence_assumption == IndAssum.IND:
-            self.loss_fn = BCEWithLogitsLoss() 
-        elif indepence_assumption == IndAssum.JOINT:
-            raise NotImplementedError
+            self.loss_fn = nn.BCEWithLogitsLoss() 
+        elif independence_assumption == IndAssum.JOINT:
+            self.loss_fn = nn.CrossEntropyLoss()
         else:
             raise ValueError
 
@@ -128,11 +127,18 @@ class ClassifierBartEncoder(BartPretrainedModel):
             # get indices of <mention>
             mask = input_ids == self.mention_idx
 
-            loss = (
-                self.loss_fn(logits[mask], labels.view(bsz, -1, 7)[labels_mask])
-                if labels is not None
-                else None
-            )
+            if self.independence_assumption == IndAssum.IND:
+                loss = (
+                    self.loss_fn(logits[mask], labels.view(bsz, -1, 7)[labels_mask])
+                    if labels is not None
+                    else None
+                )
+            else:
+                loss = (
+                    self.loss_fn(logits[mask], labels[labels_mask])
+                    if labels is not None
+                    else None
+                )
 
             return MentionClassifierOutput(
                 loss=loss,
@@ -249,3 +255,4 @@ if __name__ == "__main__":
     print(model2.dot_encoder.weight.grad)
 
     import pdb; pdb.set_trace()
+
