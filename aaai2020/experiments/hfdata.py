@@ -24,6 +24,7 @@ import template
 
 from belief_utils import is_contiguous
 
+import bitutils
 from hfutils import (
     HfDataOptions, Property, DescriptionFormat,
     construct_feature_string, get_bart_tokenizer,
@@ -41,6 +42,11 @@ fields = (
     "text", # all prev turns
     "plan",
     "mentions",
+    "raw_mentions",
+    "joint_mentions",
+    "markers",
+    "amarkers",
+    "tags",
     "partner_mentions", # for ref res
     "raw_partner_mentions", # for ref res
     "joint_partner_mentions", # for ref res
@@ -1702,6 +1708,14 @@ def get_examples(
                 examples["mentions"].append(
                     " [SEP] ".join([describe_plan(m) for m in raw_mentions])
                 )
+                examples["raw_mentions"].append(
+                    raw_mentions.tolist()
+                    if raw_mentions is not None
+                    else []
+                )
+                examples["joint_mentions"].append(
+                    bitutils.config_to_int(raw_mentions.astype(bool)).tolist()
+                )
                 examples["partner_mentions"].append(
                     " [SEP] ".join([describe_plan(m) for m in raw_partner_mentions])
                     if raw_partner_mentions is not None
@@ -1819,6 +1833,16 @@ def get_examples(
                     " ".join([x for xs in conversation.all_sentrefs[:turn-1] for x in xs])
                     if turn > 1
                     else "none"
+                )
+
+                examples["markers"].append(
+                    " ".join(conversation.all_sentmarkers[turn])
+                )
+                examples["amarkers"].append(
+                    " ".join(conversation.all_sentamarkers[turn])
+                )
+                examples["tags"].append(
+                    conversation.tags[turn]
                 )
 
                 examples["partner_markers"].append(
@@ -2668,3 +2692,98 @@ if __name__ == "__main__":
         print(f"partner_amentions dataset path {partner_amentions_path}")
         partner_amentions_dataset.save_to_disk(partner_amentions_path)
         print(f"num partner_amentions examples: {len(partner_amentions_examples['input'])}")
+
+        # agent mention joint | agent markers, last partner textmentions, dots
+        # use ground truth mentions
+        num_examples = len(examples["joint_mentions"])
+        joint_mentions_examples = {}
+        joint_mentions_examples["input"] = [
+            f"{lasttext_mention} [MSEP] {markers}"
+            for (
+                lasttext_mention,
+                markers,
+            ) in zip(
+                examples["lasttext_mentions"],
+                examples["markers"],
+            )
+        ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in joint_mentions_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of joint_mentions input: {max_length_input}")
+        print(joint_mentions_examples["input"][np.argmax(input_lens)])
+
+        joint_mentions_examples["label"] = examples["joint_mentions"]
+        max_length_output = max([len(x) for x in examples["joint_mentions"]])
+        print(f"Max length of joint_mentions output: {max_length_output}")
+
+        # add metadata
+        joint_mentions_examples["chat_id"] = examples["chat_id"]
+        joint_mentions_examples["scenario_id"] = examples["scenario_id"]
+        joint_mentions_examples["agent"] = examples["agent"]
+        joint_mentions_examples["dots"] = examples["raw_dots"]
+
+        joint_mentions_dataset = Dataset.from_dict(joint_mentions_examples)
+        joint_mentions_path = f"hf_datasets/{split}_joint_mentions_{feature_string}.hf"
+        print(f"joint_mentions dataset path {joint_mentions_path}")
+        joint_mentions_dataset.save_to_disk(joint_mentions_path)
+        print(f"num joint_mentions examples: {len(joint_mentions_examples['input'])}")
+
+
+        # agent tags | agent text
+        # use ground truth mentions
+        num_examples = len(examples["tags"])
+        tags_examples = {}
+        tags_examples["input"] = examples["outtext"]
+        input_lens = [len(tokenizer.tokenize(x)) for x in tags_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of tags input: {max_length_input}")
+        print(tags_examples["input"][np.argmax(input_lens)])
+
+        tags_examples["label"] = examples["tags"]
+
+        # add metadata
+        tags_examples["chat_id"] = examples["chat_id"]
+        tags_examples["scenario_id"] = examples["scenario_id"]
+        tags_examples["agent"] = examples["agent"]
+        tags_examples["dots"] = examples["raw_dots"]
+
+        tags_dataset = Dataset.from_dict(tags_examples)
+        tags_path = f"hf_datasets/{split}_raw_tags_{feature_string}.hf"
+        print(f"raw_tags dataset path {tags_path}")
+        tags_dataset.save_to_disk(tags_path)
+        print(f"num raw_tags examples: {len(tags_examples['input'])}")
+
+        # mention ind | markers, lasttextmention history, dots
+        # use ground truth mentions
+        num_examples = len(examples["raw_mentions"])
+        raw_mentions_examples = {}
+        raw_mentions_examples["input"] = [
+            f"{lasttext_mention} [MSEP] {markers}"
+            for (
+                lasttext_mention,
+                markers,
+            ) in zip(
+                examples["lasttext_mentions"],
+                examples["markers"],
+            )
+        ]
+        input_lens = [len(tokenizer.tokenize(x)) for x in raw_mentions_examples["input"]]
+        max_length_input = max(input_lens)
+        print(f"Max length of raw_mentions input: {max_length_input}")
+        print(raw_mentions_examples["input"][np.argmax(input_lens)])
+
+        raw_mentions_examples["label"] = examples["raw_mentions"]
+        max_length_output = max([len(x) for x in examples["raw_mentions"]])
+        print(f"Max length of raw_mentions output: {max_length_output}")
+
+        # add metadata
+        raw_mentions_examples["chat_id"] = examples["chat_id"]
+        raw_mentions_examples["scenario_id"] = examples["scenario_id"]
+        raw_mentions_examples["agent"] = examples["agent"]
+        raw_mentions_examples["dots"] = examples["raw_dots"]
+
+        raw_mentions_dataset = Dataset.from_dict(raw_mentions_examples)
+        raw_mentions_path = f"hf_datasets/{split}_raw_mentions_{feature_string}.hf"
+        print(f"raw_mentions dataset path {raw_mentions_path}")
+        raw_mentions_dataset.save_to_disk(raw_mentions_path)
+        print(f"num raw_mentions examples: {len(raw_mentions_examples['input'])}")

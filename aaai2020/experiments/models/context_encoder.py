@@ -4,6 +4,8 @@ Set of context encoders.
 from itertools import combinations
 import pdb
 
+import math
+
 import numpy as np
 import torch
 import torch.nn as nn
@@ -288,10 +290,24 @@ class JointDotEncoder(RelationalContextEncoder):
         configs = get_configs(128)
         self.register_buffer("configs", torch.tensor(configs, dtype=np.bool))
         #import pdb; pdb.set_trace()
-        encoder_layer = nn.TransformerEncoderLayer(d_model=1024, nhead=4, batch_first=True)
-        self.enc = nn.TransformerEncoder(encoder_layer, num_layers=2)
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=1024,
+            dim_feedforward=512,
+            nhead=4,
+            batch_first=True,
+        )
+        self.enc = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=2,
+            #norm=nn.LayerNorm(1024),
+        )
         #self.mha = nn.MultiheadAttention(1024, 4, batch_first=True)
         self.zero_emb = nn.Parameter(torch.randn(1024) * .01)
+        self.pos_emb = nn.Parameter(torch.randn(7, 1024))
+
+        for parameter in self.parameters():
+            if parameter.dim() > 1:
+                nn.init.xavier_uniform_(parameter)
 
 
     def forward(
@@ -303,21 +319,80 @@ class JointDotEncoder(RelationalContextEncoder):
         dots_h = super().forward(
             ctx, relational_dot_mask=relational_dot_mask,
             mask_ctx=mask_ctx,
-        )
+        ) + self.pos_emb
         # need to go from 7 independent encodings to 128 config encodings.
         # zero out unused dots
         # self.configs: configs=128 x dots=7
-        config_dot_h = dots_h[:,None] * self.configs[:,:,None]
+        config_dot_h = dots_h[:,None] * self.configs[1:,:,None] * math.sqrt(1024)
         # bsz x configs x dots x h
         #  ignore padding for now
         enc_out = self.enc(
-            config_dot_h.view(bsz*128, ndots, 1024)
-        ).view(bsz, 128, ndots, 1024)
-        sum_out = (enc_out * self.configs[:,:,None]).sum(2)
-        mean_out = sum_out / (self.configs.sum(-1, keepdims=True))
+            config_dot_h.view(bsz*127, ndots, 1024)
+        ).view(bsz, 127, ndots, 1024)
+        sum_out = (enc_out * self.configs[1:,:,None]).sum(2)
+        #mean_out = sum_out / (self.configs.sum(-1, keepdims=True))
         # replace 0 config with embedding
         out = torch.cat([
             self.zero_emb[None,None].expand(bsz,1,1024),
-            mean_out[:,1:],
+           sum_out,
+        ], 1)
+        return out
+
+
+# TODO later
+class MlpDotEncoder(RelationalContextEncoder):
+    def __init__(self, args):
+        raise NotImplementedError
+        super().__init__(args)
+        configs = get_configs(128)
+        self.register_buffer("configs", torch.tensor(configs, dtype=np.bool))
+        #import pdb; pdb.set_trace()
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=1024,
+            dim_feedforward=512,
+            nhead=4,
+            batch_first=True,
+        )
+        self.enc = nn.TransformerEncoder(
+            encoder_layer,
+            num_layers=2,
+            #norm=nn.LayerNorm(1024),
+        )
+        #self.mha = nn.MultiheadAttention(1024, 4, batch_first=True)
+        self.zero_emb = nn.Parameter(torch.randn(1024) * .01)
+        self.pos_emb = nn.Parameter(torch.randn(7, 1024))
+
+        for parameter in self.parameters():
+            if parameter.dim() > 1:
+                nn.init.xavier_uniform_(parameter)
+
+
+    def forward(
+        self, ctx, relational_dot_mask=None,
+        mask_ctx=False,
+    ):
+        bsz, ndots, _ = ctx.shape
+        # bsz x dots=7 x hid=1024
+        dots_h = super().forward(
+            ctx, relational_dot_mask=relational_dot_mask,
+            mask_ctx=mask_ctx,
+        ) + self.pos_emb
+        # need to go from 7 independent encodings to 128 config encodings.
+        # zero out unused dots
+        # self.configs: configs=128 x dots=7
+        config_dot_h = dots_h[:,None] * self.configs[1:,:,None] * math.sqrt(1024)
+        # bsz x configs x dots x h
+        #  ignore padding for now
+        enc_out = self.enc(
+            config_dot_h.view(bsz*127, ndots, 1024)
+        ).view(bsz, 127, ndots, 1024)
+        sum_out = (enc_out * self.configs[1:,:,None]).sum(2)
+
+        # dont do mean. leads to nans and also want output to be count-aware.
+        #mean_out = sum_out / (self.configs.sum(-1, keepdims=True))
+        # replace 0 config with unresolvable embedding
+        out = torch.cat([
+            self.zero_emb[None,None].expand(bsz,1,1024),
+           sum_out,
         ], 1)
         return out

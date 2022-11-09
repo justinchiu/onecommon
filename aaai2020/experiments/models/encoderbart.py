@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from copy import deepcopy
 from enum import Enum, auto
 
+import math
+
 import torch
 import torch.nn as nn
 
@@ -64,6 +66,8 @@ class ClassifierBartEncoder(BartPretrainedModel):
         else:
             raise ValueError
 
+        self.pos_embs = nn.Parameter(torch.randn(7,1024) * .01)
+
     def get_encoder(self):
         return self.model.get_encoder()
 
@@ -121,7 +125,7 @@ class ClassifierBartEncoder(BartPretrainedModel):
 
         if self.task == Task.RESOLVE:
             dots = dots.view(bsz, 7, 4)
-            dot_reps  = self.dot_encoder(dots)
+            dot_reps = self.dot_encoder(dots)
             logits = torch.einsum("bdh,bth->btd", dot_reps, hidden_states)
 
             # get indices of <mention>

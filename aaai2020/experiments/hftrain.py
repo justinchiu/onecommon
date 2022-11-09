@@ -16,6 +16,8 @@ from transformers.models.bart.modeling_bart import shift_tokens_right
 
 from models.dotbart import DotBartForConditionalGeneration
 from models.context_encoder import RelationalContextEncoder, JointDotEncoder
+#from models.struct_encoder import StructuredDotEncoder
+
 from models.encoderbart import ClassifierBartEncoder, Task, IndAssum
 
 import hfutils
@@ -37,9 +39,18 @@ def get_datasets(args, dataset, model, tokenizer, do_eval=False):
     test = Dataset.load_from_disk(f"hf_datasets/test_{dataset}.hf")
 
     use_raw_dots = "rd" in dataset
-    use_raw_mentions = "raw_partner_mentions" in dataset
-    use_joint_mentions = "joint_partner_mentions" in dataset
-    use_raw_tags = "raw_partner_tags" in dataset
+    use_raw_mentions = (
+        "raw_partner_mentions" in dataset
+        or "raw_mentions" in dataset
+    )
+    use_joint_mentions = (
+        "joint_partner_mentions" in dataset
+        or "joint_mentions" in dataset
+    )
+    use_raw_tags = (
+        "raw_partner_tags" in dataset
+        or "raw_tags" in dataset
+    )
     is_tagging = use_raw_mentions or use_joint_mentions or use_raw_tags
 
     def convert_to_features(example_batch):
@@ -200,22 +211,26 @@ def train(args):
             dot_encoder = RelationalContextEncoder(args)
         elif args.dot_encoder == "joint":
             dot_encoder = JointDotEncoder(args)
+        elif args.dot_encoder == "mlp":
+            dot_encoder = JointDotEncoder(args)
+        elif args.dot_encoder == "struct":
+            dot_encoder = StructDotEncoder(args)
 
         model2 = DotBartForConditionalGeneration(model.config, dot_encoder)
-        if "raw_partner_mentions" in dataset:
+        if "raw_partner_mentions" in dataset or "raw_mentions" in dataset:
             model2 = ClassifierBartEncoder(
                 model.config, dot_encoder,
                 mention_idx=tokenizer.convert_tokens_to_ids("<mention>"),
                 task = Task.RESOLVE,
             )
-        if "joint_partner_mentions" in dataset:
+        if "joint_partner_mentions" in dataset or "joint_mentions" in dataset:
             model2 = ClassifierBartEncoder(
                 model.config, dot_encoder,
                 mention_idx=tokenizer.convert_tokens_to_ids("<mention>"),
                 task = Task.RESOLVE,
                 independence_assumption = IndAssum.JOINT,
             )
-        if "raw_partner_tags" in dataset:
+        if "raw_partner_tags" in dataset or "raw_tags" in dataset:
             model2 = ClassifierBartEncoder(
                 model.config, dot_encoder,
                 mention_idx=tokenizer.convert_tokens_to_ids("<mention>"),
@@ -267,10 +282,20 @@ def evaluate(args):
     checkpoint_string = f"checkpoint-{args.checkpoint}"
 
     use_raw_dots = "rd" in dataset
-    use_raw_mentions = "raw_partner_mentions" in dataset
-    use_joint_mentions = "joint_partner_mentions" in dataset
-    use_raw_tags = "raw_partner_tags" in dataset
+    use_raw_mentions = (
+        "raw_partner_mentions" in dataset
+        or "raw_mentions" in dataset
+    )
+    use_joint_mentions = (
+        "joint_partner_mentions" in dataset
+        or "joint_mentions" in dataset
+    )
+    use_raw_tags = (
+        "raw_partner_tags" in dataset
+        or "raw_tags" in dataset
+    )
     is_tagging = use_raw_mentions or use_joint_mentions or use_raw_tags
+
 
     IS_TEXT = (
         args.dataset[:4] == "text"
@@ -295,6 +320,8 @@ def evaluate(args):
         dot_encoder = RelationalContextEncoder(args)
     elif args.dot_encoder == "joint":
         dot_encoder = JointDotEncoder(args)
+    elif args.dot_encoder == "struct":
+        dot_encoder = StructuredDotEncoder(args)
 
     if use_raw_mentions:
         model = ClassifierBartEncoder.from_pretrained(
@@ -331,6 +358,7 @@ def evaluate(args):
             output_dir, forced_bos_token_id=0,
         )
     model.resize_token_embeddings(len(tokenizer))
+    model.cuda()
     
     generation_path = Path(
         f"./hf-generations-{prefix}/{checkpoint_string}.gen.json"
@@ -361,6 +389,9 @@ def evaluate(args):
         if "dots" in batch:
             dots = batch["dots"].view(-1, 7 ,4)
 
+        input_ids = input_ids.cuda()
+        dots = dots.cuda()
+
         emb = model.get_input_embeddings()
         enc = model.get_encoder()
 
@@ -373,46 +404,45 @@ def evaluate(args):
         inputs_embeds = inputs_embeds * enc.embed_scale
 
         output, output_dots = None, None
-        if "raw_partner_mentions" in dataset:
+        if "raw_partner_mentions" in dataset or "raw_mentions" in dataset:
             output = model(**{
-                k:v for k,v in batch.items()
+                k:v.cuda() for k,v in batch.items()
                 if k in ["input_ids", "dots", "attention_mask"]
             })
             mask = output.mask
-            labels = batch["labels"].view(bsz, -1, 7)
-            labels_mask = batch["labels_mask"]
+            labels = batch["labels"].view(bsz, -1, 7).cuda()
+            labels_mask = batch["labels_mask"].cuda()
 
             probs = output.logits.sigmoid()
-            preds = probs > 0.5
+            preds = probs > 0.6
             correct = preds[mask] == labels[labels_mask]
             num_correct = correct.all(-1).sum()
             exact_match += num_correct
             num_examples += labels_mask.sum()
-        elif "joint_partner_mentions" in dataset:
+        elif "joint_partner_mentions" in dataset or "joint_mentions" in dataset:
             output = model(**{
-                k:v for k,v in batch.items()
+                k:v.cuda() for k,v in batch.items()
                 if k in ["input_ids", "dots", "attention_mask"]
             })
             mask = output.mask
-            labels = batch["labels"].view(bsz, -1, 7)
-            labels_mask = batch["labels_mask"]
+            labels = batch["labels"].cuda()
+            labels_mask = batch["labels_mask"].cuda()
 
-            import pdb; pdb.set_trace()
 
-            probs = output.logits.sigmoid()
-            preds = probs > 0.5
+            probs = output.logits
+            preds = probs.max(-1).indices
             correct = preds[mask] == labels[labels_mask]
-            num_correct = correct.all(-1).sum()
+            num_correct = correct.sum()
             exact_match += num_correct
             num_examples += labels_mask.sum()
-        elif "raw_partner_tags" in dataset:
+        elif "raw_partner_tags" in dataset or "raw_tags" in dataset:
             output = model(**{
-                k:v for k,v in batch.items()
+                k:v.cuda() for k,v in batch.items()
                 if k in ["input_ids", "dots", "attention_mask"]
             })
             mask = output.mask
-            labels = batch["labels"]
-            labels_mask = batch["labels_mask"]
+            labels = batch["labels"].cuda()
+            labels_mask = batch["labels_mask"].cuda()
             probs = output.logits.sigmoid()
             preds = probs > 0.5
 
@@ -428,7 +458,7 @@ def evaluate(args):
             output = model.generate(
                 #encoder_outputs = encoder_outputs,
                 inputs_embeds = inputs_embeds,
-                attention_mask = batch["attention_mask"],
+                attention_mask = batch["attention_mask"].cuda(),
                 #input_ids = input_ids,
                 #dots = dots,
                 num_beams = args.beam_size if IS_TEXT else None,
@@ -439,7 +469,7 @@ def evaluate(args):
             )
             output_dots = tokenizer.batch_decode(output.sequences, skip_special_tokens=True)
 
-        labels = batch["labels"]
+        labels = batch["labels"].cuda()
         if "plan_given" in args.dataset:
             for i, output_dot in enumerate(output_dots):
                 label = labels[i][labels[i] != -100]
@@ -614,6 +644,10 @@ if __name__ == "__main__":
             "partner_markers_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__llt_ma__rd",
             # 11/8 structured
             "joint_partner_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__llt_ma__rd",
+            # 11/8 agent
+            "joint_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__llt_ma__rd",
+            "raw_mentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__llt_ma__rd",
+            "raw_tags_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh__llt_ma__rd",
         ],
         default = "plan_given_text_planspecific",
         help="Dataset",
