@@ -167,18 +167,27 @@ generation_files = [
         "_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c_sl_s_co_mps05_dh___ma__rd-l1e-05-b4"
         "-erelation-pa-ri_pi_aj_pj_a-een/"
         "checkpoint-31000.gen.json",
+    # 5: aligned ref mention
+    "hf-generations-partner_amentions_SI_CO_RX_RY_RS_RC_SrcRelsTgt__sd_ps_sr_cd_ms_c"
+        "_sl_s_co_mps05_dh___ma__rd-l1e-05-b4-erelation-pa-ri_aj_a-een/"
+        "checkpoint-31000.gen.json",
+
 ]
 
 from argparse import ArgumentParser
 parser = ArgumentParser()
 #parser.add_argument("--file", type=int, default=0)
-parser.add_argument("--file", type=int, default=4)
+parser.add_argument("--file", type=int, default=5)
 args = parser.parse_args()
 
 genfile = generation_files[args.file]
 generation_file = Path("../../aaai2020/experiments") / genfile
 
-AR_MENTIONS = genfile.split("-")[2][:16] == "partner_mentions"
+AR_MENTIONS = (
+    genfile.split("-")[2][:16] == "partner_mentions"
+    or genfile.split("-")[2][:17] == "partner_amentions"
+)
+ALIGNED_AR_MENTIONS = genfile.split("-")[2][:17] == "partner_amentions"
 
 def split_mentions(xs):
     if xs == "none":
@@ -222,10 +231,14 @@ with generation_file.open("r") as f:
     for i, (cid, sid, agent, input, label, gens) in enumerate(ids_inputs_labels_gens):
         label_mentions = extract_mentions(label)
         gen_mentions = extract_mentions(gens[0])
+        if ALIGNED_AR_MENTIONS:
+            # extra "<mention1>" token in each mention
+            label_mentions = [x[1:] for x in label_mentions]
+            gen_mentions = [x[1:] for x in gen_mentions]
         dots = (
             set([x for xs in label_mentions for x in xs[1:]])
             if not AR_MENTIONS
-            else dots = set([x for xs in label_mentions for x in xs])
+            else set([x for xs in label_mentions for x in xs])
         )
         #print(dots)
         #print(label_mentions)
