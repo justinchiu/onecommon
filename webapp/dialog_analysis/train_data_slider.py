@@ -111,6 +111,8 @@ def process_dialogue(dialogue_dict):
     mentions0 = list(filter(lambda x: x.id == select_id0, b0))
     mentions1 = list(filter(lambda x: x.id == select_id1, b1))
 
+    st.write(f'Agent {dialogue_dict["events"][0]["agent"]} is first')
+
     #turn = st.radio("Turn number", np.arange(len(dialogue)))
     #turn = st.number_input("Turn number", 0, len(dialogue)-1)
 
