@@ -96,7 +96,6 @@ def process_dialogue(dialogue_dict):
     agent_types = dialogue_dict["agents"]
 
     st.write(f"Chat scenario id: {scenario_id}")
-    st.write(f"Chat id: {id}")
 
     b0 = [Dot(x) for x in board["kbs"][0]]
     b1 = [Dot(x) for x in board["kbs"][1]]
