@@ -158,9 +158,9 @@ with scenario_path.open() as f:
 # access any dialogue
 #dialogue_id = st.text_input("Dialogue uuid", value="C_492a4d5a0195493b8f8ee4f0fbe5ab8d")
 #process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]])
-#dialogue_id = st.text_input("Dialogue uuid", value="C_5e57c484d8d24b788d3e13577b8617ef")
-#process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]])
+dialogue_id = st.text_input("Dialogue uuid", value="C_5e57c484d8d24b788d3e13577b8617ef")
+process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]])
 
 # inspect train / valid partner models
-idx = st.number_input("Train dialogue number", 0, len(scenarios))
-process_dialogue(my_dialogues[scenarios[idx]])
+#idx = st.number_input("Train dialogue number", 0, len(scenarios))
+#process_dialogue(my_dialogues[scenarios[idx]])
