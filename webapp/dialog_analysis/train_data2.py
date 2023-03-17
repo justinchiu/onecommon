@@ -97,11 +97,13 @@ def process_dialogue(dialogue_dict):
 
     st.write(f"Chat scenario id: {scenario_id}")
     st.write(f"Chat id: {id}")
+    st.write(f'Agent {dialogue_dict["events"][0]["agent"]} is first')
 
     b0 = [Dot(x) for x in board["kbs"][0]]
     b1 = [Dot(x) for x in board["kbs"][1]]
     intersect0 = [x for x in b0 for y in b1 if x.id == y.id]
     intersect1 = [x for x in b1 for y in b0 if x.id == y.id]
+
 
     reward = dialogue_dict["outcome"]["reward"]
     event0 = [x for x in dialogue_dict["events"] if x["agent"] == 0 and x["action"] == "select"][-1]
