@@ -105,6 +105,11 @@ def process_dialogue(scenario_id, dialogue):
     intersect0 = [x for x in b0 for y in b1 if x.id == y.id]
     intersect1 = [x for x in b1 for y in b0 if x.id == y.id]
 
+    st.write("board for agent 0")
+    st.write(b0)
+    st.write("board for agent 1")
+    st.write(b1)
+
     #turn = st.radio("Turn number", np.arange(len(dialogue)))
     
     turn = st.number_input("Turn number", 0, len(dialogue)-1)

@@ -96,14 +96,11 @@ def process_dialogue(dialogue_dict):
     agent_types = dialogue_dict["agents"]
 
     st.write(f"Chat scenario id: {scenario_id}")
-    st.write(f"Chat id: {id}")
-    st.write(f'Agent {dialogue_dict["events"][0]["agent"]} is first')
 
     b0 = [Dot(x) for x in board["kbs"][0]]
     b1 = [Dot(x) for x in board["kbs"][1]]
     intersect0 = [x for x in b0 for y in b1 if x.id == y.id]
     intersect1 = [x for x in b1 for y in b0 if x.id == y.id]
-
 
     reward = dialogue_dict["outcome"]["reward"]
     event0 = [x for x in dialogue_dict["events"] if x["agent"] == 0 and x["action"] == "select"][-1]
@@ -113,6 +110,8 @@ def process_dialogue(dialogue_dict):
     # set mentions = [selections]
     mentions0 = list(filter(lambda x: x.id == select_id0, b0))
     mentions1 = list(filter(lambda x: x.id == select_id1, b1))
+
+    st.write(f'Agent {dialogue_dict["events"][0]["agent"]} is first')
 
     #turn = st.radio("Turn number", np.arange(len(dialogue)))
     #turn = st.number_input("Turn number", 0, len(dialogue)-1)
@@ -160,9 +159,9 @@ with scenario_path.open() as f:
 # access any dialogue
 #dialogue_id = st.text_input("Dialogue uuid", value="C_492a4d5a0195493b8f8ee4f0fbe5ab8d")
 #process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]])
-dialogue_id = st.text_input("Dialogue uuid", value="C_5e57c484d8d24b788d3e13577b8617ef")
-process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]])
+#dialogue_id = st.text_input("Dialogue uuid", value="C_5e57c484d8d24b788d3e13577b8617ef")
+#process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]])
 
 # inspect train / valid partner models
-#idx = st.number_input("Train dialogue number", 0, len(scenarios))
-#process_dialogue(my_dialogues[scenarios[idx]])
+idx = st.number_input("Train dialogue number", 0, len(scenarios))
+process_dialogue(my_dialogues[scenarios[idx]])

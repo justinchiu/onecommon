@@ -195,13 +195,16 @@ id2dialogueidx = {
 
 # access any dialogue
 #dialogue_id = st.text_input("Dialogue uuid", value="C_492a4d5a0195493b8f8ee4f0fbe5ab8d")
-#process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]])
+dialogue_id = st.text_input("Dialogue uuid", value="C_5e57c484d8d24b788d3e13577b8617ef")
+process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]])
 
 # inspect train / valid partner models
 
+"""
 with open("../../aaai2020/experiments/analysis/train_partner_model_stats.json", "r") as f:
     train_stats = json.load(f)
 idx = st.select_slider("Train dialogue number", options=list(range(len(train_stats))))
 stats = train_stats[idx]
 dialogue_id = stats["chat_id"]
 process_dialogue(finished_dialogues[id2dialogueidx[dialogue_id]], stats=stats)
+"""
