@@ -2,7 +2,7 @@
 script=""
 #script="bash"
 
-overall_name="jc-partner"
+overall_name="jc-baseline"
 
 out_dir="expts/rel3_tsel_ref_dial_model_separate/${overall_name}"
 mkdir -p $out_dir 2>/dev/null
