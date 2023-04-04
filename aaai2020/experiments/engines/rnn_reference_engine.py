@@ -498,6 +498,8 @@ class RnnReferenceEngine(EngineBase):
         metrics["dot_ref_turn_gold_positive"] = metrics["partner_ref_turn_gold_positive"] + metrics["ref_turn_gold_positive"]
         metrics["dot_ref_turn_pred_positive"] = metrics["partner_ref_turn_pred_positive"] + metrics["ref_turn_pred_positive"]
         metrics["dot_ref_turn_true_positive"] = metrics["partner_ref_turn_true_positive"] + metrics["ref_turn_true_positive"]
+        metrics["dot_ref_turn_exact_match_num"] = metrics["partner_ref_turn_exact_match_num"] + metrics["ref_turn_exact_match_num"]
+        metrics["dot_ref_turn_exact_match_denom"] = metrics["partner_ref_turn_exact_match_denom"] + metrics["ref_turn_exact_match_denom"]
         add_metrics(metrics, aggregate_metrics, "dot_ref_turn")
         # / TURN LEVEL REF
         return aggregate_metrics
