@@ -19,9 +19,11 @@ def main():
     parser.add_argument('--max_mentions_per_utterance', type=int)
     parser.add_argument('--crosstalk_split', choices=[0, 1], default=None, type=int)
 
-
+    parser.add_argument('--eval_only', action='store_true', default=False,
+        help='only perform evaluation')
     parser.add_argument('--old_model_file', type=str, default=None,
         help='load model parameters from old file')
+
     parser.add_argument('--model_type', type=str, default='rnn_reference_model',
         help='type of model to use', choices=models.get_model_names())
     parser.add_argument('--ctx_encoder_type', type=str, default='mlp_encoder',
@@ -111,14 +113,23 @@ def main():
             spatial_data_augmentation_on_train=args.spatial_data_augmentation,
         )
 
-        model = model_ty(corpus.word_dict, args)
         if args.old_model_file is not None:
-            old_model = utils.load_model(args.old_model_file, prefix_dir=None, map_location='cpu')
-            # SET MODEL PARAMS HERE.
+            #old_model = utils.load_model(args.old_model_file, prefix_dir=None, map_location='cpu')
+            model = utils.load_model(args.old_model_file, prefix_dir=None, map_location='cpu')
+        else:
+            model = model_ty(corpus.word_dict, args)
         if args.cuda:
             model.cuda()
 
+
         engine = model_ty.engine_ty(model, args, verbose=True)
+        if args.eval_only:
+            validdata = corpus.valid_dataset(args.bsz)
+            validset, validset_stats = validdata
+            valid_metrics = engine.valid_pass(validset, validset_stats, 0, corpus)
+            for k,v in valid_metrics.items():
+                print(f"{k}: {v}")
+            sys.exit()
         if args.optimizer == 'adam':
             best_valid_loss, best_model = engine.train(corpus, model_filename_fn)
         elif args.optimizer == 'rmsprop':

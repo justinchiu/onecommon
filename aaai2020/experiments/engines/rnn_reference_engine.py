@@ -965,6 +965,8 @@ class HierarchicalRnnReferenceEngine(RnnReferenceEngine):
                 if _partner_ref_loss is not None:
                     partner_ref_losses.append(_partner_ref_loss)
 
+                import pdb; pdb.set_trace()
+
                 if self.args.relation_swap_augmentation:
                     this_has_relation_swap = has_relation_swap[sentence_ix]
                     if this_has_relation_swap.any():

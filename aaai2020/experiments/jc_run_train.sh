@@ -235,6 +235,25 @@ do
 done
 }
 
+function baselineeval () {
+for fold in $@
+do
+  echo "RUNNING BASELINE EVAL on split ${fold}"
+  this_name=baseline
+  mkdir -p ${out_dir}/${this_name} 2>/dev/null
+  ${script} ./train_rel3_tsel_ref_dial_model_separate.sh \
+    ${overall_name}/${this_name}/$fold \
+    $base_args \
+    $hierarchical_args \
+    $structured_attention_args \
+    $dot_recurrence_args \
+    --old_model_file ${out_dir}/${this_name}/${fold}/1_ep-5.th \
+    --eval_only \
+    --fold_nums $fold \
+    --train_response_model binary_dots
+done
+}
+
 # train next partner reference without any true state info
 function blind () {
 for fold in $@
