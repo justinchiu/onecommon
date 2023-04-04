@@ -124,7 +124,12 @@ def main():
 
         engine = model_ty.engine_ty(model, args, verbose=True)
         if args.eval_only:
-            validdata = corpus.valid_dataset(args.bsz)
+            from pathlib import Path
+            chat_ids = []
+            with Path("eval_chat_ids.txt").open("r") as f:
+                for line in f:
+                    chat_ids.append(line.strip())
+            validdata = corpus.valid_dataset(args.bsz, chat_ids=chat_ids)
             validset, validset_stats = validdata
             valid_metrics = engine.valid_pass(validset, validset_stats, 0, corpus)
             for k,v in valid_metrics.items():

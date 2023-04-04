@@ -204,8 +204,13 @@ class ReferenceCorpus(object):
     def train_dataset(self, bsz, shuffle=True):
         return self._split_into_batches(copy.copy(self.train), bsz, shuffle=shuffle, name="train")
 
-    def valid_dataset(self, bsz, shuffle=True, device=None):
-        return self._split_into_batches(copy.copy(self.valid), bsz, shuffle=shuffle, name="valid")
+    def valid_dataset(self, bsz, shuffle=True, device=None, chat_ids=None):
+        valid = copy.copy(self.valid)
+        if chat_ids is not None:
+            valid_filtered = [x for x in valid if x.chat_id in chat_ids]
+            valid = valid_filtered
+
+        return self._split_into_batches(valid, bsz, shuffle=shuffle, name="valid")
 
     def test_dataset(self, bsz, shuffle=True, device=None):
         return self._split_into_batches(copy.copy(self.test), bsz, shuffle=shuffle, name="test")

@@ -488,6 +488,18 @@ class RnnReferenceEngine(EngineBase):
             add_metrics(metrics, aggregate_metrics, "next_mention_expanded")
         add_metrics(metrics, aggregate_metrics, "is_selection", compute_em=False, compute_baseline=True)
         # pprint.pprint(metrics)
+        # TURN LEVEL REF
+        numerator = metrics["ref_turn_exact_match_num"] + metrics["partner_ref_turn_exact_match_num"]
+        denominator = metrics["ref_turn_exact_match_denom"] + metrics["partner_ref_turn_exact_match_denom"]
+        aggregate_metrics["ref_turn_exact_match"] = numerator / denominator
+        # aggregate over ref and partner ref => ref
+        metrics["dot_ref_turn_correct"] = metrics["partner_ref_turn_correct"] + metrics["ref_turn_correct"]
+        metrics["dot_ref_turn_num_dots"] = metrics["partner_ref_turn_num_dots"] + metrics["ref_turn_num_dots"]
+        metrics["dot_ref_turn_gold_positive"] = metrics["partner_ref_turn_gold_positive"] + metrics["ref_turn_gold_positive"]
+        metrics["dot_ref_turn_pred_positive"] = metrics["partner_ref_turn_pred_positive"] + metrics["ref_turn_pred_positive"]
+        metrics["dot_ref_turn_true_positive"] = metrics["partner_ref_turn_true_positive"] + metrics["ref_turn_true_positive"]
+        add_metrics(metrics, aggregate_metrics, "dot_ref_turn")
+        # / TURN LEVEL REF
         return aggregate_metrics
 
     def _pass(self, dataset, batch_fn, split_name, use_tqdm, epoch, corpus):

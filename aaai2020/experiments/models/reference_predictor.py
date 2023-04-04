@@ -48,6 +48,16 @@ class ReferencePredictor(object):
         # N x bsz
         ref_exact_matches = ((ref_tgt_ix == ref_pred_ix) & ref_mask_instance_level.bool())
 
+        # TURN LEVEL
+        turn_ref_pred = ref_pred.any(0)
+        turn_ref_tgt = ref_tgt.any(0)
+        turn_ref_mask = ref_mask.any(0)
+
+        turn_ref_exact_matches = (turn_ref_pred == turn_ref_tgt).all(-1)
+        turn_ref_denominator = ref_mask_instance_level.any(0)
+
+        # / TURN LEVEL
+
         stats = {
             'correct': ((ref_pred == ref_tgt.long()) * ref_mask.byte()),
             'num_dots': ref_mask,
@@ -56,6 +66,15 @@ class ReferencePredictor(object):
             'true_positive': (ref_pred & ref_tgt.bool()),
             'exact_match_num': ref_exact_matches.float(),
             'exact_match_denom': ref_mask_instance_level.float(),
+            # TURN LEVEL
+            'turn_correct': ((turn_ref_pred == turn_ref_tgt.long()) * turn_ref_mask.byte()),
+            'turn_num_dots': turn_ref_mask,
+            'turn_gold_positive': turn_ref_tgt,
+            'turn_pred_positive': (turn_ref_pred * turn_ref_mask.byte()),
+            'turn_true_positive': (turn_ref_pred & turn_ref_tgt.bool()),
+            'turn_exact_match_num': turn_ref_exact_matches.float(),
+            'turn_exact_match_denom': turn_ref_denominator.float(),
+            # / TURN LEVEL
         }
 
         if sum:
