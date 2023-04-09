@@ -182,8 +182,8 @@ class ReferencePredictor(object):
         bsz, N, *_ = ref_tgt_ix_transpose.size()
 
         ref_loss = 0
-        ref_pred = torch.zeros(N, bsz, num_dots).long()
-        ref_pred_ix = torch.zeros(N, bsz).long()
+        ref_pred = torch.zeros(N, bsz, num_dots, dtype=torch.long, device=ref_tgt.device)
+        ref_pred_ix = torch.zeros(N, bsz, dtype=torch.long, device=ref_tgt.device)
 
         has_multiple = num_markables > 1
 
@@ -202,6 +202,8 @@ class ReferencePredictor(object):
         #ref_pred_ix_transpose_multi, exp_num_dots = LinearChainNoScanCRF.struct.from_parts(temporal_dist.argmax)
         ref_pred_ix_transpose_multi, exp_num_dots = LinearChainCRF.struct.from_parts(temporal_dist.argmax)
         assert exp_num_dots == 2**num_dots
+        # ??!!!
+        ref_pred_ix_transpose_multi = ref_pred_ix_transpose_multi.to(ref_tgt.device)
 
         # aggregate with single timestep info
         # N x bsz

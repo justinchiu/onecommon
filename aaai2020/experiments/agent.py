@@ -148,7 +148,7 @@ class RnnAgent(Agent):
         # print("language_rerank: {}".format(self.args.language_rerank))
 
     def _encode(self, inpt, dictionary):
-        encoded = torch.Tensor(dictionary.w2i(inpt)).long().unsqueeze(1)
+        encoded = torch.tensor(dictionary.w2i(inpt), dtype=torch.long, device=self.device).unsqueeze(1)
         return encoded
 
     def _decode(self, out, dictionary):
@@ -165,7 +165,10 @@ class RnnAgent(Agent):
         # self.words_beam_best = []
         self.decoded_beam_best = []
         self.context = context
-        ctx = torch.Tensor([float(x) for x in context]).float().unsqueeze(0) # add batch size of 1
+        ctx = torch.tensor(
+            [float(x) for x in context],
+            device = self.device,
+        ).float().unsqueeze(0) # add batch size of 1
         self.state: State = self.model.initialize_state(ctx, belief_constructor)
         self.timesteps = 0
 
@@ -274,7 +277,7 @@ class RnnAgent(Agent):
         )
         self.partner_ref_outs.append(partner_ref_out)
 
-        dummy_targets = torch.zeros((1, partner_num_markables.item(), 7)).long()
+        dummy_targets = torch.zeros((1, partner_num_markables.item(), 7), device=self.device, dtype=torch.long)
         _, ref_preds, ref_stats = self.reference_predictor.forward(
             partner_ref_inpt, dummy_targets, partner_ref_out, partner_num_markables
         )
@@ -302,7 +305,7 @@ class RnnAgent(Agent):
             utterance_words = [YOU_TOKEN] + utterance_words
         markables = []
         ref_boundaries = []
-        for markable, ref_boundary in self.markable_detector.detect_markables(utterance_words):
+        for markable, ref_boundary in self.markable_detector.detect_markables(utterance_words, device=self.device):
             if remove_pronouns:
                 if PRONOUNS & set(markable['text'].split()):
                     continue
@@ -329,7 +332,7 @@ class RnnAgent(Agent):
              ):
 
         if can_confirm is None:
-            is_self = torch.zeros(1).bool()
+            is_self = torch.zeros(1, device=self.device).bool()
             can_confirm = self.make_can_confirm(is_self, vars(self.model.args).get("confirmations_resolution_strategy", "any"))
 
         self.sents.append(Variable(self._encode([start_token] + inpt_words, self.model.word_dict)))
@@ -359,7 +362,7 @@ class RnnAgent(Agent):
                 self._decode(inpt, self.model.word_dict), remove_pronouns=False
             )
             partner_ref_inpt, partner_num_markables = self.markables_to_tensor(ref_boundaries)
-            partner_ref_tgt = torch.zeros((1, partner_num_markables.item(), 7)).long()
+            partner_ref_tgt = torch.zeros((1, partner_num_markables.item(), 7), device=self.device, dtype=torch.long)
 
             self.ref_inpts.append(None)
             self.markables.append([])

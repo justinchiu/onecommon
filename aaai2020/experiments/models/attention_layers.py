@@ -291,7 +291,7 @@ class StructuredAttentionLayer(nn.Module):
             joint_factors.append(joint_factor)
 
         if vars(self.args).get('structured_attention_configuration_features', []):
-            ix = torch.arange(2**self.num_ent)
+            ix = torch.arange(2**self.num_ent, device=input.device)
             # 2**num_ents x num_ents
             bits = int_to_bit_array(ix, num_bits=self.num_ent)
             config_feats = self.configuration_features(
@@ -508,6 +508,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
             assert ix == rel_encoded.size(2)
         else:
             raise NotImplementedError(self.args.structured_temporal_attention_transitions)
+        transition_params = transition_params.to(ctx.device)
 
         # get a symmetric edge potential matrix
         # [a, b, c] -> [[a, b], [b, c]]
@@ -553,7 +554,7 @@ class StructuredTemporalAttentionLayer(StructuredAttentionLayer):
                 subbatch_mask = torch.zeros(batch_size).bool().to(ctx.device)
                 subbatch_mask[subbatch_start:subbatch_end] = True
                 config_features = []
-                ix = torch.arange(2**self.num_ent)
+                ix = torch.arange(2**self.num_ent, device=ctx.device)
                 # 2**num_ents x num_ents
                 bits = int_to_bit_array(ix, num_bits=self.num_ent)
                 config_mask = bits.sum(-1) <= vars(self.args).get('structured_attention_configuration_transition_max_size', self.num_ent)

@@ -27,7 +27,7 @@ def log_sum_exp(vec):
 class BiLSTM_CRF(nn.Module):
     corpus_ty = corpora.markable.MarkableCorpus
 
-    def __init__(self, word_dict, tag_to_ix, embedding_dim, hidden_dim):
+    def __init__(self, word_dict, tag_to_ix, embedding_dim, hidden_dim, device="cuda"):
         super(BiLSTM_CRF, self).__init__()
         self.embedding_dim = embedding_dim
         vocab_size = len(word_dict)
@@ -36,6 +36,7 @@ class BiLSTM_CRF(nn.Module):
         self.word_dict = word_dict
         self.tag_to_ix = tag_to_ix
         self.tagset_size = len(tag_to_ix)
+        self.device = device
 
         self.word_embeds = nn.Embedding(vocab_size, embedding_dim)
         self.lstm = nn.LSTM(embedding_dim, hidden_dim // 2,
@@ -57,8 +58,10 @@ class BiLSTM_CRF(nn.Module):
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
-        return (torch.randn(2, 1, self.hidden_dim // 2),
-                torch.randn(2, 1, self.hidden_dim // 2))
+        return (
+            torch.randn(2, 1, self.hidden_dim // 2, device=self.device),
+            torch.randn(2, 1, self.hidden_dim // 2, device=self.device),
+        )
 
     def _forward_alg(self, feats):
         # Do the forward algorithm to compute the partition function
@@ -113,7 +116,7 @@ class BiLSTM_CRF(nn.Module):
         backpointers = []
 
         # Initialize the viterbi variables in log space
-        init_vvars = torch.full((1, self.tagset_size), -10000.)
+        init_vvars = torch.full((1, self.tagset_size), -10000., device=self.device)
         init_vvars[0][self.tag_to_ix[START_TAG]] = 0
 
         # forward_var at step i holds the viterbi variables for step i-1
@@ -169,9 +172,7 @@ class BiLSTM_CRF(nn.Module):
 
     def detect_markables(self, dialog_tokens, dialog_text=None, device=None):
         word_indices = self.word_dict.w2i(dialog_tokens)
-        word_indices = torch.Tensor(word_indices).long()
-        if device is not None:
-            word_indices = word_indices.to(device)
+        word_indices = torch.tensor(word_indices, device=device, dtype=torch.long)
 
         score, tag_seq = self(word_indices)
         current_text = ""

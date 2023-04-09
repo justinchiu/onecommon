@@ -319,6 +319,8 @@ class RnnReferenceModel(nn.Module):
     def __init__(self, word_dict, args):
         super(RnnReferenceModel, self).__init__()
 
+        self.device = "cuda" if args.cuda else "cpu"
+
         domain = get_domain(args.domain)
 
         self.word_dict = word_dict
@@ -2299,11 +2301,11 @@ class RnnReferenceModel(nn.Module):
         return reader_and_writer_lang_hs, state
 
     def word2var(self, word):
-        x = torch.Tensor(1).fill_(self.word_dict.get_idx(word)).long()
+        x = torch.empty(1, device=self.device, dtype=torch.long).fill_(self.word_dict.get_idx(word))
         return Variable(x)
 
     def words2var(self, words):
-        return torch.Tensor([self.word_dict.get_idx(word) for word in words]).long()
+        return torch.tensor([self.word_dict.get_idx(word) for word in words], dtype=torch.long, device=self.device)
 
     def write(self, state: State, max_words, temperature,
               start_token='YOU:', stop_tokens=data.STOP_TOKENS, force_words=None,
