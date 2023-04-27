@@ -382,14 +382,6 @@ class HierarchicalDialog(Dialog):
 
         max_sentences = self.args.max_sentences
 
-        """
-        for agent in self.agents:
-            assert [] == agent.model.args.ref_beliefs \
-                   == agent.model.args.partner_ref_beliefs \
-                   == agent.model.args.generation_beliefs \
-                   == agent.model.args.selection_beliefs \
-                   == agent.model.args.mention_beliefs
-        """
         belief_constructor = BlankBeliefConstructor()
 
         for agent, agent_id, ctx, real_ids in zip(self.agents, [0, 1], ctxs[1], ctxs[2]):
@@ -406,14 +398,8 @@ class HierarchicalDialog(Dialog):
         else:
             reader, writer = self.agents
 
-        try:
-            is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
-        except:
-            is_selection_prediction = False
-        try:
-            is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
-        except:
-            is_selection_prediction_ = False
+        is_selection_prediction = False
+        is_selection_prediction_ = False
 
         if is_selection_prediction != is_selection_prediction_:
             raise NotImplementedError("both models must use --is_selection_prediction or not")
@@ -429,9 +415,6 @@ class HierarchicalDialog(Dialog):
         sentence_ix = 0
 
         while sentence_ix < max_sentences:
-            #assert writer.state.turn == sentence_ix
-            #assert reader.state.turn == sentence_ix
-
             if is_selection_prediction:
                 is_selection_prob = writer.is_selection_outs[-1].sigmoid()
                 this_is_selection = torch.distributions.Bernoulli(is_selection_prob).sample().bool().view((1,))
@@ -443,27 +426,10 @@ class HierarchicalDialog(Dialog):
             # WRITER
             this_partner_num_markables = torch.LongTensor([0])
 
-            out_words = writer.write(
-                max_words=words_left,
-                detect_markables=True,
-                start_token='YOU:',
-                is_selection=this_is_selection,
-                inference=self.args.language_inference,
-                beam_size=self.args.language_beam_size,
-                sample_temperature_override=self.args.language_sample_temperature,
-                min_num_mentions=min_num_mentions,
-                max_num_mentions=max_num_mentions,
-            )
+            out_words = writer.write()
 
             # READER
-            reader.read(
-                out_words,
-                dots_mentioned=None,
-                dots_mentioned_per_ref=None,
-                dots_mentioned_num_markables=this_partner_num_markables,
-                detect_markables=True,
-                is_selection=this_is_selection,
-            )
+            reader.read(out_words)
 
             words_left -= len(out_words)
             length += len(out_words)
