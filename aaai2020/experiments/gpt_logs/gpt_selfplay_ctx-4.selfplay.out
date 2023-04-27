@@ -1,72 +1,129 @@
-c9b8f41948b97d02832e404aa39cc51528fedc23
-diff --git a/aaai2020/experiments/dialog.py b/aaai2020/experiments/dialog.py
-index c1a0f40b..f98d9aa1 100644
---- a/aaai2020/experiments/dialog.py
-+++ b/aaai2020/experiments/dialog.py
-@@ -382,12 +382,14 @@ class HierarchicalDialog(Dialog):
- 
-         max_sentences = self.args.max_sentences
- 
-+        """
-         for agent in self.agents:
-             assert [] == agent.model.args.ref_beliefs \
-                    == agent.model.args.partner_ref_beliefs \
-                    == agent.model.args.generation_beliefs \
-                    == agent.model.args.selection_beliefs \
-                    == agent.model.args.mention_beliefs
-+        """
-         belief_constructor = BlankBeliefConstructor()
- 
-         for agent, agent_id, ctx, real_ids in zip(self.agents, [0, 1], ctxs[1], ctxs[2]):
-@@ -395,7 +397,8 @@ class HierarchicalDialog(Dialog):
-             agent.real_ids = real_ids
-             agent.agent_id = agent_id
- 
--        device = self.agents[0].state.ctx_h.device
-+        #device = self.agents[0].state.ctx_h.device
-+        device = "cpu"
- 
-         # Choose who goes first by random
-         if np.random.rand() < 0.5:
-@@ -403,8 +406,15 @@ class HierarchicalDialog(Dialog):
-         else:
-             reader, writer = self.agents
- 
--        is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
--        is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
-+        try:
-+            is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
-+        except:
-+            is_selection_prediction = False
-+        try:
-+            is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
-+        except:
-+            is_selection_prediction_ = False
-+
-         if is_selection_prediction != is_selection_prediction_:
-             raise NotImplementedError("both models must use --is_selection_prediction or not")
- 
-@@ -419,8 +429,8 @@ class HierarchicalDialog(Dialog):
-         sentence_ix = 0
- 
-         while sentence_ix < max_sentences:
--            assert writer.state.turn == sentence_ix
--            assert reader.state.turn == sentence_ix
-+            #assert writer.state.turn == sentence_ix
-+            #assert reader.state.turn == sentence_ix
- 
-             if is_selection_prediction:
-                 is_selection_prob = writer.is_selection_outs[-1].sigmoid()
-diff --git a/aaai2020/experiments/gptdialog.py b/aaai2020/experiments/gptdialog.py
-index f1130e2b..e67b2921 100644
---- a/aaai2020/experiments/gptdialog.py
-+++ b/aaai2020/experiments/gptdialog.py
-@@ -429,7 +429,7 @@ class HierarchicalDialog(Dialog):
-             out_words = writer.write()
- 
-             # READER
--            reader.read()
-+            reader.read(out_words)
- 
-             words_left -= len(out_words)
-             length += len(out_words)
+> /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py(1)<module>()
+-> import argparse
+(Pdb) b4e626d493cfde6f4f1af68223e3cbe4c7ea9b0e
+diff --git a/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out b/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out
+index 860014f7..35c4feac 100644
+--- a/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out
++++ b/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out
+@@ -1,72 +1,3 @@
+-c9b8f41948b97d02832e404aa39cc51528fedc23
+-diff --git a/aaai2020/experiments/dialog.py b/aaai2020/experiments/dialog.py
+-index c1a0f40b..f98d9aa1 100644
+---- a/aaai2020/experiments/dialog.py
+-+++ b/aaai2020/experiments/dialog.py
+-@@ -382,12 +382,14 @@ class HierarchicalDialog(Dialog):
+- 
+-         max_sentences = self.args.max_sentences
+- 
+-+        """
+-         for agent in self.agents:
+-             assert [] == agent.model.args.ref_beliefs \
+-                    == agent.model.args.partner_ref_beliefs \
+-                    == agent.model.args.generation_beliefs \
+-                    == agent.model.args.selection_beliefs \
+-                    == agent.model.args.mention_beliefs
+-+        """
+-         belief_constructor = BlankBeliefConstructor()
+- 
+-         for agent, agent_id, ctx, real_ids in zip(self.agents, [0, 1], ctxs[1], ctxs[2]):
+-@@ -395,7 +397,8 @@ class HierarchicalDialog(Dialog):
+-             agent.real_ids = real_ids
+-             agent.agent_id = agent_id
+- 
+--        device = self.agents[0].state.ctx_h.device
+-+        #device = self.agents[0].state.ctx_h.device
+-+        device = "cpu"
+- 
+-         # Choose who goes first by random
+-         if np.random.rand() < 0.5:
+-@@ -403,8 +406,15 @@ class HierarchicalDialog(Dialog):
+-         else:
+-             reader, writer = self.agents
+- 
+--        is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
+--        is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
+-+        try:
+-+            is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
+-+        except:
+-+            is_selection_prediction = False
+-+        try:
+-+            is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
+-+        except:
+-+            is_selection_prediction_ = False
+-+
+-         if is_selection_prediction != is_selection_prediction_:
+-             raise NotImplementedError("both models must use --is_selection_prediction or not")
+- 
+-@@ -419,8 +429,8 @@ class HierarchicalDialog(Dialog):
+-         sentence_ix = 0
+- 
+-         while sentence_ix < max_sentences:
+--            assert writer.state.turn == sentence_ix
+--            assert reader.state.turn == sentence_ix
+-+            #assert writer.state.turn == sentence_ix
+-+            #assert reader.state.turn == sentence_ix
+- 
+-             if is_selection_prediction:
+-                 is_selection_prob = writer.is_selection_outs[-1].sigmoid()
+-diff --git a/aaai2020/experiments/gptdialog.py b/aaai2020/experiments/gptdialog.py
+-index f1130e2b..e67b2921 100644
+---- a/aaai2020/experiments/gptdialog.py
+-+++ b/aaai2020/experiments/gptdialog.py
+-@@ -429,7 +429,7 @@ class HierarchicalDialog(Dialog):
+-             out_words = writer.write()
+- 
+-             # READER
+--            reader.read()
+-+            reader.read(out_words)
+- 
+-             words_left -= len(out_words)
+-             length += len(out_words)
++> /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py(1)<module>()
++-> import argparse
++(Pdb) b4e626d493cfde6f4f1af68223e3cbe4c7ea9b0e
+gpt_selfplay.py --context_file=shared_4 --cuda --markable_detector_file=serialized_models/markable_detector_with_dict_1.th --verbose --num_contexts 10 --log_file=gpt_logs/gpt_selfplay_ctx-4.selfplay.log
+{'alice_forward_model_file': None,
+ 'alice_model_file': None,
+ 'belief_alice': False,
+ 'belief_bob': False,
+ 'bob_model_file': None,
+ 'bsz': 16,
+ 'context_file': 'shared_4',
+ 'cuda': True,
+ 'data': 'data/onecommon',
+ 'dialog_log_dir': 'analysis_log',
+ 'domain': 'one_common',
+ 'eps': 0.0,
+ 'log_attention': False,
+ 'log_file': 'gpt_logs/gpt_selfplay_ctx-4.selfplay.log',
+ 'markable_detector_file': 'serialized_models/markable_detector_with_dict_1.th',
+ 'markables_file': 'selfplay_markables.json',
+ 'max_turns': 20,
+ 'must_contain': None,
+ 'num_contexts': 10,
+ 'plot_metrics': False,
+ 'record_markables': False,
+ 'ref_text': None,
+ 'referents_file': 'selfplay_referents.json',
+ 'repeat_selfplay': False,
+ 'rollout_bsz': 3,
+ 'rollout_count_threshold': 3,
+ 'rollout_model_file': '',
+ 'seed': 1,
+ 'selection_model_file': '',
+ 'smart_alice': False,
+ 'smart_bob': False,
+ 'symbolic': False,
+ 'unk_threshold': 10,
+ 'verbose': True,
+ 'visual': False}
+Uncaught exception. Entering post mortem debugging
+Running 'cont' or 'step' will restart the program
+> /home/justinchiu/research/onecommon-gpt/oc/agent/planner.py(68)plan_start()
+-> confirmation = self.plans[-1].sum() > 0,
+(Pdb) []
+(Pdb) 
+Post mortem debugger finished. The /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py will be restarted
+> /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py(1)<module>()
+-> import argparse
+(Pdb) 
