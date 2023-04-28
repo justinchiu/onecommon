@@ -482,9 +482,6 @@ class HierarchicalDialog(Dialog):
             agree = False
         logger.dump('-' * 80)
         logger.dump_agreement(agree)
-        for i, (agent, reward) in enumerate(zip(self.agents, rewards)):
-            j = 1 if i == 0 else 0
-            agent.update(agree, reward, choice=choices[i])
 
         if agree:
             self.metrics.record('advantage', rewards[0] - rewards[1])
@@ -501,14 +498,6 @@ class HierarchicalDialog(Dialog):
         for agent, reward in zip(self.agents, rewards):
             self.metrics.record('%s_rew' % agent.name, reward if agree else 0)
             self.metrics.record('%s_moving_rew' % agent.name, reward if agree else 0)
-
-        for agent in self.agents:
-            if agent.ref_resolution_scores:
-                self.metrics.record('%s_ref_resolution_score' % agent.name, np.mean(agent.ref_resolution_scores))
-            if agent.language_model_scores:
-                self.metrics.record('%s_language_model_score' % agent.name, np.mean(agent.language_model_scores))
-            if agent.joint_scores:
-                self.metrics.record('%s_joint_score' % agent.name, np.mean(agent.joint_scores))
 
         if self.markable_detector is not None and self.markable_detector_corpus is not None:
             markable_list = []

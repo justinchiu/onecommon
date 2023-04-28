@@ -48,6 +48,10 @@ class SelfPlay(object):
         success = 0
         for ctxs in self.ctx_gen.iter():
             n += 1
+            # DEBUG
+            if n < 4:
+                continue
+            # / DEBUG
             if self.args.smart_alice and n > max_n:
                 break
             if n > max_n:
