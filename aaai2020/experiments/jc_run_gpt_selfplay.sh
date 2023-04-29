@@ -31,7 +31,6 @@ rerank_args2="--language_beam_size 16 --next_mention_reranking_k 4 --next_mentio
 # 50 contexts for now
 python -m pdb gpt_selfplay.py \
   --context_file=shared_${shared_ctx_count} \
-  --cuda \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
   --num_contexts 10 \
