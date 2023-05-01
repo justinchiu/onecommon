@@ -35,5 +35,5 @@ python -m pdb gpt_selfplay.py \
   --verbose \
   --num_contexts 10 \
   --log_file=${log_file} \
-  $@ #\
+  #$@ \
   #| tee ${out_file}

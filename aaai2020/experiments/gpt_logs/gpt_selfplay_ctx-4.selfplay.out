@@ -1,87 +1,172 @@
 > /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py(1)<module>()
 -> import argparse
-(Pdb) b4e626d493cfde6f4f1af68223e3cbe4c7ea9b0e
+(Pdb) a9901f7997aadd057810247e216b9a488aede96d
+diff --git a/aaai2020/experiments/domain.py b/aaai2020/experiments/domain.py
+index 25d98035..06881fee 100644
+--- a/aaai2020/experiments/domain.py
++++ b/aaai2020/experiments/domain.py
+@@ -146,7 +146,8 @@ class OneCommonDomain(Domain):
+             return 0
+ 
+     def score_choices(self, choices, ctxs):
+-        agree = (choices[0] == choices[1])
++        dots1, dots2 = ctxs[-1]
++        agree = (dots1[choices[0]] == dots2[choices[1]])
+         scores = [int(agree), int(agree)]
+         return agree, scores
+ 
 diff --git a/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out b/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out
-index 860014f7..35c4feac 100644
+index bb066b16..3f8ed5f3 100644
 --- a/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out
 +++ b/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out
-@@ -1,72 +1,3 @@
--c9b8f41948b97d02832e404aa39cc51528fedc23
--diff --git a/aaai2020/experiments/dialog.py b/aaai2020/experiments/dialog.py
--index c1a0f40b..f98d9aa1 100644
----- a/aaai2020/experiments/dialog.py
--+++ b/aaai2020/experiments/dialog.py
--@@ -382,12 +382,14 @@ class HierarchicalDialog(Dialog):
-- 
--         max_sentences = self.args.max_sentences
-- 
--+        """
--         for agent in self.agents:
--             assert [] == agent.model.args.ref_beliefs \
--                    == agent.model.args.partner_ref_beliefs \
--                    == agent.model.args.generation_beliefs \
--                    == agent.model.args.selection_beliefs \
--                    == agent.model.args.mention_beliefs
--+        """
--         belief_constructor = BlankBeliefConstructor()
-- 
--         for agent, agent_id, ctx, real_ids in zip(self.agents, [0, 1], ctxs[1], ctxs[2]):
--@@ -395,7 +397,8 @@ class HierarchicalDialog(Dialog):
--             agent.real_ids = real_ids
--             agent.agent_id = agent_id
-- 
---        device = self.agents[0].state.ctx_h.device
--+        #device = self.agents[0].state.ctx_h.device
--+        device = "cpu"
-- 
--         # Choose who goes first by random
--         if np.random.rand() < 0.5:
--@@ -403,8 +406,15 @@ class HierarchicalDialog(Dialog):
--         else:
--             reader, writer = self.agents
-- 
---        is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
---        is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
--+        try:
--+            is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
--+        except:
--+            is_selection_prediction = False
--+        try:
--+            is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
--+        except:
--+            is_selection_prediction_ = False
--+
--         if is_selection_prediction != is_selection_prediction_:
--             raise NotImplementedError("both models must use --is_selection_prediction or not")
-- 
--@@ -419,8 +429,8 @@ class HierarchicalDialog(Dialog):
--         sentence_ix = 0
-- 
--         while sentence_ix < max_sentences:
---            assert writer.state.turn == sentence_ix
---            assert reader.state.turn == sentence_ix
--+            #assert writer.state.turn == sentence_ix
--+            #assert reader.state.turn == sentence_ix
-- 
--             if is_selection_prediction:
--                 is_selection_prob = writer.is_selection_outs[-1].sigmoid()
--diff --git a/aaai2020/experiments/gptdialog.py b/aaai2020/experiments/gptdialog.py
--index f1130e2b..e67b2921 100644
----- a/aaai2020/experiments/gptdialog.py
--+++ b/aaai2020/experiments/gptdialog.py
--@@ -429,7 +429,7 @@ class HierarchicalDialog(Dialog):
--             out_words = writer.write()
-- 
--             # READER
---            reader.read()
--+            reader.read(out_words)
-- 
--             words_left -= len(out_words)
--             length += len(out_words)
-+> /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py(1)<module>()
-+-> import argparse
-+(Pdb) b4e626d493cfde6f4f1af68223e3cbe4c7ea9b0e
-gpt_selfplay.py --context_file=shared_4 --cuda --markable_detector_file=serialized_models/markable_detector_with_dict_1.th --verbose --num_contexts 10 --log_file=gpt_logs/gpt_selfplay_ctx-4.selfplay.log
+@@ -1,129 +1,3 @@
+ > /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py(1)<module>()
+ -> import argparse
+-(Pdb) b4e626d493cfde6f4f1af68223e3cbe4c7ea9b0e
+-diff --git a/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out b/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out
+-index 860014f7..35c4feac 100644
+---- a/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out
+-+++ b/aaai2020/experiments/gpt_logs/gpt_selfplay_ctx-4.selfplay.out
+-@@ -1,72 +1,3 @@
+--c9b8f41948b97d02832e404aa39cc51528fedc23
+--diff --git a/aaai2020/experiments/dialog.py b/aaai2020/experiments/dialog.py
+--index c1a0f40b..f98d9aa1 100644
+----- a/aaai2020/experiments/dialog.py
+--+++ b/aaai2020/experiments/dialog.py
+--@@ -382,12 +382,14 @@ class HierarchicalDialog(Dialog):
+-- 
+--         max_sentences = self.args.max_sentences
+-- 
+--+        """
+--         for agent in self.agents:
+--             assert [] == agent.model.args.ref_beliefs \
+--                    == agent.model.args.partner_ref_beliefs \
+--                    == agent.model.args.generation_beliefs \
+--                    == agent.model.args.selection_beliefs \
+--                    == agent.model.args.mention_beliefs
+--+        """
+--         belief_constructor = BlankBeliefConstructor()
+-- 
+--         for agent, agent_id, ctx, real_ids in zip(self.agents, [0, 1], ctxs[1], ctxs[2]):
+--@@ -395,7 +397,8 @@ class HierarchicalDialog(Dialog):
+--             agent.real_ids = real_ids
+--             agent.agent_id = agent_id
+-- 
+---        device = self.agents[0].state.ctx_h.device
+--+        #device = self.agents[0].state.ctx_h.device
+--+        device = "cpu"
+-- 
+--         # Choose who goes first by random
+--         if np.random.rand() < 0.5:
+--@@ -403,8 +406,15 @@ class HierarchicalDialog(Dialog):
+--         else:
+--             reader, writer = self.agents
+-- 
+---        is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
+---        is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
+--+        try:
+--+            is_selection_prediction = vars(writer.model.args).get('is_selection_prediction', False)
+--+        except:
+--+            is_selection_prediction = False
+--+        try:
+--+            is_selection_prediction_ = vars(reader.model.args).get('is_selection_prediction', False)
+--+        except:
+--+            is_selection_prediction_ = False
+--+
+--         if is_selection_prediction != is_selection_prediction_:
+--             raise NotImplementedError("both models must use --is_selection_prediction or not")
+-- 
+--@@ -419,8 +429,8 @@ class HierarchicalDialog(Dialog):
+--         sentence_ix = 0
+-- 
+--         while sentence_ix < max_sentences:
+---            assert writer.state.turn == sentence_ix
+---            assert reader.state.turn == sentence_ix
+--+            #assert writer.state.turn == sentence_ix
+--+            #assert reader.state.turn == sentence_ix
+-- 
+--             if is_selection_prediction:
+--                 is_selection_prob = writer.is_selection_outs[-1].sigmoid()
+--diff --git a/aaai2020/experiments/gptdialog.py b/aaai2020/experiments/gptdialog.py
+--index f1130e2b..e67b2921 100644
+----- a/aaai2020/experiments/gptdialog.py
+--+++ b/aaai2020/experiments/gptdialog.py
+--@@ -429,7 +429,7 @@ class HierarchicalDialog(Dialog):
+--             out_words = writer.write()
+-- 
+--             # READER
+---            reader.read()
+--+            reader.read(out_words)
+-- 
+--             words_left -= len(out_words)
+--             length += len(out_words)
+-+> /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py(1)<module>()
+-+-> import argparse
+-+(Pdb) b4e626d493cfde6f4f1af68223e3cbe4c7ea9b0e
+-gpt_selfplay.py --context_file=shared_4 --cuda --markable_detector_file=serialized_models/markable_detector_with_dict_1.th --verbose --num_contexts 10 --log_file=gpt_logs/gpt_selfplay_ctx-4.selfplay.log
+-{'alice_forward_model_file': None,
+- 'alice_model_file': None,
+- 'belief_alice': False,
+- 'belief_bob': False,
+- 'bob_model_file': None,
+- 'bsz': 16,
+- 'context_file': 'shared_4',
+- 'cuda': True,
+- 'data': 'data/onecommon',
+- 'dialog_log_dir': 'analysis_log',
+- 'domain': 'one_common',
+- 'eps': 0.0,
+- 'log_attention': False,
+- 'log_file': 'gpt_logs/gpt_selfplay_ctx-4.selfplay.log',
+- 'markable_detector_file': 'serialized_models/markable_detector_with_dict_1.th',
+- 'markables_file': 'selfplay_markables.json',
+- 'max_turns': 20,
+- 'must_contain': None,
+- 'num_contexts': 10,
+- 'plot_metrics': False,
+- 'record_markables': False,
+- 'ref_text': None,
+- 'referents_file': 'selfplay_referents.json',
+- 'repeat_selfplay': False,
+- 'rollout_bsz': 3,
+- 'rollout_count_threshold': 3,
+- 'rollout_model_file': '',
+- 'seed': 1,
+- 'selection_model_file': '',
+- 'smart_alice': False,
+- 'smart_bob': False,
+- 'symbolic': False,
+- 'unk_threshold': 10,
+- 'verbose': True,
+- 'visual': False}
+-Uncaught exception. Entering post mortem debugging
+-Running 'cont' or 'step' will restart the program
+-> /home/justinchiu/research/onecommon-gpt/oc/agent/planner.py(68)plan_start()
+--> confirmation = self.plans[-1].sum() > 0,
+-(Pdb) []
+-(Pdb) 
+-Post mortem debugger finished. The /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py will be restarted
+-> /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py(1)<module>()
+--> import argparse
+-(Pdb) 
++(Pdb) a9901f7997aadd057810247e216b9a488aede96d
+diff --git a/aaai2020/experiments/gpt_selfplay.py b/aaai2020/experiments/gpt_selfplay.py
+index 36ffc063..8fe5088d 100644
+--- a/aaai2020/experiments/gpt_selfplay.py
++++ b/aaai2020/experiments/gpt_selfplay.py
+@@ -48,10 +48,7 @@ class SelfPlay(object):
+         success = 0
+         for ctxs in self.ctx_gen.iter():
+             n += 1
+-            # DEBUG
+-            if n < 5:
+-                continue
+-            # / DEBUG
++            if n < 6: continue
+             if self.args.smart_alice and n > max_n:
+                 break
+             if n > max_n:
+gpt_selfplay.py --context_file=shared_4 --markable_detector_file=serialized_models/markable_detector_with_dict_1.th --verbose --num_contexts 10 --log_file=gpt_logs/gpt_selfplay_ctx-4.selfplay.log
 {'alice_forward_model_file': None,
  'alice_model_file': None,
  'belief_alice': False,
@@ -89,7 +174,7 @@ gpt_selfplay.py --context_file=shared_4 --cuda --markable_detector_file=serializ
  'bob_model_file': None,
  'bsz': 16,
  'context_file': 'shared_4',
- 'cuda': True,
+ 'cuda': False,
  'data': 'data/onecommon',
  'dialog_log_dir': 'analysis_log',
  'domain': 'one_common',
@@ -117,13 +202,894 @@ gpt_selfplay.py --context_file=shared_4 --cuda --markable_detector_file=serializ
  'unk_threshold': 10,
  'verbose': True,
  'visual': False}
+Do you see a pair of dots, where the left dot is small-sized and dark and the right dot is small-sized and grey
+
+import sys
+sys.path.append("fns")
+
+from oc.fns.context import get_ctx
+from oc.fns.shapes import is_triangle, is_line, is_square
+from oc.fns.spatial import all_close, is_above, is_below, is_right, is_left, is_middle
+from oc.fns.spatial import get_top, get_bottom, get_right, get_left
+from oc.fns.spatial import get_top_right, get_top_left, get_bottom_right, get_bottom_left
+from oc.fns.spatial import get_middle
+from oc.fns.spatial import get_distance, get_minimum_radius
+from oc.fns.color import is_dark, is_grey, is_light, lightest, darkest, same_color, different_color, is_darker, is_lighter
+from oc.fns.size import is_large, is_small, is_medium_size, largest, smallest, same_size, different_size, is_larger, is_smaller
+from oc.fns.iterators import get1idxs, get2idxs, get3idxs, getsets
+from oc.fns.lists import add
+from oc.fns.lists import sort_state
+import numpy as np
+from functools import partial
+from itertools import permutations
+
+
+def get_ctx():
+    ctx = np.array([[0.56, 0.31, 0.3333333333333333, -0.26666666666666666], [-0.55, 0.63, 0.6666666666666666, 0.7866666666666666], [0.32, -0.275, -0.3333333333333333, -0.7066666666666667], [-0.76, -0.06, -0.6666666666666666, -0.5733333333333334], [0.035, -0.995, 0.6666666666666666, -1.0], [0.9, -0.335, -0.6666666666666666, 0.24], [0.16, 0.77, 0.6666666666666666, 0.22666666666666666]])
+    return ctx
+
+
+
+idxs = list(range(7))
+
+# New.
+ctx = get_ctx()
+state = set()
+
+# Them: Got a triangle of 3 light grey dots by itself.
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 3):
+        for x,y,z in permutations(config):
+            check_xyz_triangle = is_triangle([x,y,z], ctx)
+            check_xyz_light = all([is_light(dot, ctx) for dot in [x,y,z]])
+            check_xyz_alone = all([not all_close([x,y,z,dot], ctx) for dot in idxs if dot not in [x,y,z]])
+            if (
+                check_xyz_triangle
+                and check_xyz_light
+                and check_xyz_alone
+            ):
+                dots = frozenset([x,y,z])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Could be. One on right is largest with a tiny gray on top??
+def turn(state):
+    # Follow up question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_right = a == get_right([a,b,c], ctx)
+            check_a_largest = a == largest([a,b,c], ctx)
+            check_b_tiny = is_small(b, ctx)
+            check_b_grey = is_grey(b, ctx)
+            check_b_top = b == get_top([a,b,c], ctx)
+            if (
+                check_a_right
+                and check_a_largest
+                and check_b_tiny
+                and check_b_grey
+                and check_b_top
+            ):
+                dots = frozenset([a,b,c])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# Them: Nevermind. Do you see a pair of dark dots? One with another above and to the right of it? Same size as well.
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 2):
+        for x, y in permutations(config):
+            check_xy_pair = all_close([x,y], ctx)
+            check_xy_dark = is_dark(x, ctx) and is_dark(y, ctx)
+            check_y_right_x = is_right(y, x, ctx)
+            check_y_above_x = is_above(y, x, ctx)
+            check_xy_same_size = same_size([x,y], ctx)
+            if (
+                check_xy_pair
+                and check_xy_dark
+                and check_y_right_x
+                and check_y_above_x
+                and check_xy_same_size
+            ):
+                dots = frozenset([x,y])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: No.
+def turn(state):
+    # New question.
+    return []
+state = turn(state)
+# End.
+
+# Them: What about a large medium grey dot near the center?
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 1):
+        for x, in permutations(config):
+            check_x_large = is_large(x, ctx)
+            check_x_grey = is_grey(x, ctx)
+            check_x_center = is_middle(x, None, ctx)
+            if (
+                check_x_large
+                and check_x_grey
+                and check_x_center
+            ):
+                dots = frozenset([x])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Is there a smaller black one next to it?
+def turn(state):
+    # Follow up question, new dot.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a, in permutations(config):
+            for x, in get1idxs(idxs, exclude=[a]):
+                check_x_smaller_a = is_smaller(x, a, ctx)
+                check_x_dark = is_dark(x, ctx)
+                check_x_next_to_a = all_close([a,x], ctx)
+                if(
+                    check_x_smaller_a
+                    and check_x_dark
+                    and check_x_next_to_a
+                ):
+                    dots = frozenset([a,x])
+                    if dots not in results:
+                        results.add(dots)
+                        orderedresults.append(dots)
+                        parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# Them: No. Do you see three dots in a diagonal line, where the top left dot is light, middle dot is grey, and bottom right dot is dark?
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 3):
+        for x,y,z in permutations(config):
+            check_xyz_line = is_line([x,y,z], ctx)
+            check_x_top_left = x == get_top_left([x, y, z], ctx)
+            check_x_light = is_light(x, ctx)
+            check_y_middle = is_middle(y, [x,y,z], ctx)
+            check_y_grey = is_grey(y, ctx)
+            check_z_bottom_right = z == get_bottom_right([x, y, z], ctx)
+            check_z_dark = is_dark(z, ctx)
+            if (
+                check_xyz_line
+                and check_x_top_left
+                and check_x_light
+                and check_y_middle
+                and check_y_grey
+                and check_z_bottom_right
+                and check_z_dark
+            ):
+                dots = frozenset([x,y,z])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Yes. Is the top one close to the middle darker one?
+def turn(state):
+    # Follow up question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_top = a == get_top([a,b,c], ctx)
+            check_b_middle = b == get_middle([a,b,c], ctx)
+            check_ab_close = all_close([a, b], ctx)
+            check_b_darker_a = is_darker(b, a, ctx)
+            if (
+                check_a_top
+                and check_b_middle
+                and check_ab_close
+                and check_b_darker_a
+            ):
+                results.add(frozenset([a,b,c]))
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# Them: Yes. And the smallest is on the bottom right.
+def turn(state):
+    # Follow up question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_smallest = a == smallest([a,b,c], ctx)
+            check_a_bottom_right = a == get_bottom_right([a,b,c], ctx)
+            if (
+                check_a_smallest
+                and check_a_bottom_right
+            ):
+                dots = frozenset([a,b,c])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Yes, let's select the large one. <selection>.
+def select(state):
+    # Select a dot.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_large = is_large(a, ctx)
+            check_b_not_large = not is_large(b, ctx)
+            check_c_not_large = not is_large(c, ctx)
+            if (
+                check_a_large
+                and check_b_not_large
+                and check_c_not_large
+            ):
+                dots = frozenset([a])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=True)
+state = select(state)
+# End.
+
+# New.
+ctx = get_ctx()
+state = []
+
+# You: Do you see a large black dot on the bottom left?
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 1):
+        for x, in permutations(config):
+            check_x_large = is_large(x, ctx)
+            check_x_dark = is_dark(x, ctx)
+            check_x_below_left = is_below(x, None, ctx) and is_left(x, None, ctx)
+            if (
+                check_x_large
+                and check_x_dark
+                and check_x_below_left
+            ):
+                dots = frozenset([x])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+ 
+# Them: I see a large black dot next to two smaller lighter dots. The two smaller ones are the same size and color. We have different views though.
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 3):
+        for x,y,z in permutations(config):
+            check_xyz_close = all_close([x,y,z], ctx)
+            check_x_large = is_large(x, ctx)
+            check_z_dark = is_dark(z, ctx)
+            check_y_smaller_x = is_smaller(y, x, ctx)
+            check_z_smaller_x = is_smaller(z, x, ctx)
+            check_y_lighter_x = is_lighter(y, x, ctx)
+            check_z_lighter_x = is_lighter(z, x, ctx)
+            check_yz_same_size = same_size([y,z], ctx)
+            check_yz_same_color = same_color([y,z], ctx)
+            if (
+                check_xyz_close
+                and check_x_large
+                and check_z_dark
+                and check_y_smaller_x
+                and check_z_smaller_x
+                and check_y_lighter_x
+                and check_z_lighter_x
+                and check_yz_same_size
+                and check_yz_same_color
+            ):
+                dots = frozenset([x,y,z])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Select the largest one.
+def select(state):
+    # Select a dot.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_largest = a == get_largest([a,b,c], ctx)
+            if (
+                check_a_largest
+            ):
+                dots = frozenset([a])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=True)
+state = select(state)
+# End.
+ 
+# Them: Okay.
+def noop(state):
+    # No op.
+    return state
+state = noop(state)
+# End.
+ 
+# You: Okay. <selection>.
+def noop(state):
+    # No op.
+    return state
+state = noop(state)
+# End.
+
+
+# New.
+ctx = get_ctx()
+state = set()
+
+# You: Do you see a pair of dots, where the left dot is small-sized and dark and the right dot is small-sized and grey?
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 2):
+        for x, y in permutations(config):
+            check_xy_pair = all_close([x,y], ctx)
+            check_x_left = is_left(x, y, ctx)
+            check_x_small = is_small(x, ctx)
+            check_x_dark = is_dark(x, ctx)
+            check_y_right = is_right(y, x, ctx)
+            check_y_small = is_small(y, ctx)
+            check_y_grey = is_grey(y, ctx)
+            if (
+                check_xy_pair
+                and check_x_left
+                and check_x_small
+                and check_x_dark
+                and check_y_right
+                and check_y_small
+                and check_y_grey
+            ):
+                dots = frozenset([x,y])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+
+
+print([tuple(x) for x in state])
+
+#print(sorted(
+#    [tuple(x) for x in state],
+#    key = lambda x: get_minimum_radius(x, ctx),
+#))
+[(2, 5)]
+
+import sys
+sys.path.append("fns")
+
+from oc.fns.context import get_ctx
+from oc.fns.shapes import is_triangle, is_line, is_square
+from oc.fns.spatial import all_close, is_above, is_below, is_right, is_left, is_middle
+from oc.fns.spatial import get_top, get_bottom, get_right, get_left
+from oc.fns.spatial import get_top_right, get_top_left, get_bottom_right, get_bottom_left
+from oc.fns.spatial import get_middle
+from oc.fns.spatial import get_distance, get_minimum_radius
+from oc.fns.color import is_dark, is_grey, is_light, lightest, darkest, same_color, different_color, is_darker, is_lighter
+from oc.fns.size import is_large, is_small, is_medium_size, largest, smallest, same_size, different_size, is_larger, is_smaller
+from oc.fns.iterators import get1idxs, get2idxs, get3idxs, getsets
+from oc.fns.lists import add
+from oc.fns.lists import sort_state
+import numpy as np
+from functools import partial
+from itertools import permutations
+
+
+def get_ctx():
+    ctx = np.array([[0.545, -0.81, -0.3333333333333333, -0.14666666666666667], [0.66, 0.54, -1.0, 0.30666666666666664], [0.19, 0.57, 0.3333333333333333, -0.26666666666666666], [-0.055, -0.015, -0.3333333333333333, -0.7066666666666667], [-0.335, -0.735, 0.6666666666666666, -1.0], [0.63, 0.18, 0.6666666666666666, 0.7333333333333333], [0.525, -0.075, -0.6666666666666666, 0.24]])
+    return ctx
+
+
+
+idxs = list(range(7))
+
+# New.
+ctx = get_ctx()
+state = set()
+
+# Them: Got a triangle of 3 light grey dots by itself.
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 3):
+        for x,y,z in permutations(config):
+            check_xyz_triangle = is_triangle([x,y,z], ctx)
+            check_xyz_light = all([is_light(dot, ctx) for dot in [x,y,z]])
+            check_xyz_alone = all([not all_close([x,y,z,dot], ctx) for dot in idxs if dot not in [x,y,z]])
+            if (
+                check_xyz_triangle
+                and check_xyz_light
+                and check_xyz_alone
+            ):
+                dots = frozenset([x,y,z])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Could be. One on right is largest with a tiny gray on top??
+def turn(state):
+    # Follow up question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_right = a == get_right([a,b,c], ctx)
+            check_a_largest = a == largest([a,b,c], ctx)
+            check_b_tiny = is_small(b, ctx)
+            check_b_grey = is_grey(b, ctx)
+            check_b_top = b == get_top([a,b,c], ctx)
+            if (
+                check_a_right
+                and check_a_largest
+                and check_b_tiny
+                and check_b_grey
+                and check_b_top
+            ):
+                dots = frozenset([a,b,c])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# Them: Nevermind. Do you see a pair of dark dots? One with another above and to the right of it? Same size as well.
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 2):
+        for x, y in permutations(config):
+            check_xy_pair = all_close([x,y], ctx)
+            check_xy_dark = is_dark(x, ctx) and is_dark(y, ctx)
+            check_y_right_x = is_right(y, x, ctx)
+            check_y_above_x = is_above(y, x, ctx)
+            check_xy_same_size = same_size([x,y], ctx)
+            if (
+                check_xy_pair
+                and check_xy_dark
+                and check_y_right_x
+                and check_y_above_x
+                and check_xy_same_size
+            ):
+                dots = frozenset([x,y])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: No.
+def turn(state):
+    # New question.
+    return []
+state = turn(state)
+# End.
+
+# Them: What about a large medium grey dot near the center?
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 1):
+        for x, in permutations(config):
+            check_x_large = is_large(x, ctx)
+            check_x_grey = is_grey(x, ctx)
+            check_x_center = is_middle(x, None, ctx)
+            if (
+                check_x_large
+                and check_x_grey
+                and check_x_center
+            ):
+                dots = frozenset([x])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Is there a smaller black one next to it?
+def turn(state):
+    # Follow up question, new dot.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a, in permutations(config):
+            for x, in get1idxs(idxs, exclude=[a]):
+                check_x_smaller_a = is_smaller(x, a, ctx)
+                check_x_dark = is_dark(x, ctx)
+                check_x_next_to_a = all_close([a,x], ctx)
+                if(
+                    check_x_smaller_a
+                    and check_x_dark
+                    and check_x_next_to_a
+                ):
+                    dots = frozenset([a,x])
+                    if dots not in results:
+                        results.add(dots)
+                        orderedresults.append(dots)
+                        parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# Them: No. Do you see three dots in a diagonal line, where the top left dot is light, middle dot is grey, and bottom right dot is dark?
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 3):
+        for x,y,z in permutations(config):
+            check_xyz_line = is_line([x,y,z], ctx)
+            check_x_top_left = x == get_top_left([x, y, z], ctx)
+            check_x_light = is_light(x, ctx)
+            check_y_middle = is_middle(y, [x,y,z], ctx)
+            check_y_grey = is_grey(y, ctx)
+            check_z_bottom_right = z == get_bottom_right([x, y, z], ctx)
+            check_z_dark = is_dark(z, ctx)
+            if (
+                check_xyz_line
+                and check_x_top_left
+                and check_x_light
+                and check_y_middle
+                and check_y_grey
+                and check_z_bottom_right
+                and check_z_dark
+            ):
+                dots = frozenset([x,y,z])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Yes. Is the top one close to the middle darker one?
+def turn(state):
+    # Follow up question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_top = a == get_top([a,b,c], ctx)
+            check_b_middle = b == get_middle([a,b,c], ctx)
+            check_ab_close = all_close([a, b], ctx)
+            check_b_darker_a = is_darker(b, a, ctx)
+            if (
+                check_a_top
+                and check_b_middle
+                and check_ab_close
+                and check_b_darker_a
+            ):
+                results.add(frozenset([a,b,c]))
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# Them: Yes. And the smallest is on the bottom right.
+def turn(state):
+    # Follow up question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_smallest = a == smallest([a,b,c], ctx)
+            check_a_bottom_right = a == get_bottom_right([a,b,c], ctx)
+            if (
+                check_a_smallest
+                and check_a_bottom_right
+            ):
+                dots = frozenset([a,b,c])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Yes, let's select the large one. <selection>.
+def select(state):
+    # Select a dot.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_large = is_large(a, ctx)
+            check_b_not_large = not is_large(b, ctx)
+            check_c_not_large = not is_large(c, ctx)
+            if (
+                check_a_large
+                and check_b_not_large
+                and check_c_not_large
+            ):
+                dots = frozenset([a])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=True)
+state = select(state)
+# End.
+
+# New.
+ctx = get_ctx()
+state = []
+
+# You: Do you see a large black dot on the bottom left?
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 1):
+        for x, in permutations(config):
+            check_x_large = is_large(x, ctx)
+            check_x_dark = is_dark(x, ctx)
+            check_x_below_left = is_below(x, None, ctx) and is_left(x, None, ctx)
+            if (
+                check_x_large
+                and check_x_dark
+                and check_x_below_left
+            ):
+                dots = frozenset([x])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+ 
+# Them: I see a large black dot next to two smaller lighter dots. The two smaller ones are the same size and color. We have different views though.
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 3):
+        for x,y,z in permutations(config):
+            check_xyz_close = all_close([x,y,z], ctx)
+            check_x_large = is_large(x, ctx)
+            check_z_dark = is_dark(z, ctx)
+            check_y_smaller_x = is_smaller(y, x, ctx)
+            check_z_smaller_x = is_smaller(z, x, ctx)
+            check_y_lighter_x = is_lighter(y, x, ctx)
+            check_z_lighter_x = is_lighter(z, x, ctx)
+            check_yz_same_size = same_size([y,z], ctx)
+            check_yz_same_color = same_color([y,z], ctx)
+            if (
+                check_xyz_close
+                and check_x_large
+                and check_z_dark
+                and check_y_smaller_x
+                and check_z_smaller_x
+                and check_y_lighter_x
+                and check_z_lighter_x
+                and check_yz_same_size
+                and check_yz_same_color
+            ):
+                dots = frozenset([x,y,z])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+# End.
+
+# You: Select the largest one.
+def select(state):
+    # Select a dot.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in state:
+        for a,b,c in permutations(config):
+            check_a_largest = a == get_largest([a,b,c], ctx)
+            if (
+                check_a_largest
+            ):
+                dots = frozenset([a])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=True)
+state = select(state)
+# End.
+ 
+# Them: Okay.
+def noop(state):
+    # No op.
+    return state
+state = noop(state)
+# End.
+ 
+# You: Okay. <selection>.
+def noop(state):
+    # No op.
+    return state
+state = noop(state)
+# End.
+
+
+# New.
+ctx = get_ctx()
+state = set()
+
+# Them: Do you see a pair of dots, where the left dot is small-sized and dark and the right dot is small-sized and grey?
+def turn(state):
+    # New question.
+    results = set()
+    orderedresults = []
+    parents = []
+    for config in getsets(idxs, 2):
+        for x, y in permutations(config):
+            check_xy_pair = all_close([x,y], ctx)
+            check_x_left = is_left(x, y, ctx)
+            check_x_small = is_small(x, ctx)
+            check_x_dark = is_dark(x, ctx)
+            check_y_right = is_right(y, x, ctx)
+            check_y_small = is_small(y, ctx)
+            check_y_grey = is_grey(y, ctx)
+            if (
+                check_xy_pair
+                and check_x_left
+                and check_x_small
+                and check_x_dark
+                and check_y_right
+                and check_y_small
+                and check_y_grey
+            ):
+                dots = frozenset([x,y])
+                if dots not in results:
+                    results.add(dots)
+                    orderedresults.append(dots)
+                    parents.append(config)
+    return sort_state(orderedresults, parents, ctx, select=False)
+state = turn(state)
+
+
+print([tuple(x) for x in state])
+
+#print(sorted(
+#    [tuple(x) for x in state],
+#    key = lambda x: get_minimum_radius(x, ctx),
+#))
+[(3, 6)]
 Uncaught exception. Entering post mortem debugging
 Running 'cont' or 'step' will restart the program
-> /home/justinchiu/research/onecommon-gpt/oc/agent/planner.py(68)plan_start()
--> confirmation = self.plans[-1].sum() > 0,
-(Pdb) []
-(Pdb) 
-Post mortem debugger finished. The /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py will be restarted
-> /home/justinchiu/research/onecommon/aaai2020/experiments/gpt_selfplay.py(1)<module>()
--> import argparse
+> /home/justinchiu/research/onecommon-gpt/oc/agent/planner.py(146)plan_select()
+-> ridx2 = revsuc[ridx1+1:].index(True) + ridx1 + 1
+(Pdb) 141  	        """
+142  	
+143  	        pred_successes = [x.sum() > 0 for x in self.preds]
+144  	        revsuc = list(reversed(pred_successes))
+145  	        ridx1 = revsuc.index(True)
+146  ->	        ridx2 = revsuc[ridx1+1:].index(True) + ridx1 + 1
+147  	
+148  	        idx1 = len(self.preds) - ridx1 - 1
+149  	        idx2 = len(self.preds) - ridx2 - 1
+150  	        dots = self.preds[idx1][0]
+151  	        olddots = self.preds[idx2][0]
+(Pdb) array([0.00807981, 0.00616085, 0.00616085, 0.00444754, 0.00616085,
+       0.0030832 , 0.00253   , 0.002163  , 0.00616085, 0.02328044,
+       0.0038521 , 0.02263908, 0.00373881, 0.01903148, 0.00227178,
+       0.01851907, 0.00616085, 0.00382523, 0.00406522, 0.00285194,
+       0.00235879, 0.00186035, 0.00162233, 0.00136413, 0.00398931,
+       0.02030657, 0.0025581 , 0.02013583, 0.0023527 , 0.01661104,
+       0.00148377, 0.01648201, 0.00616085, 0.00399703, 0.00436754,
+       0.00306403, 0.00190755, 0.0019439 , 0.00174298, 0.00146558,
+       0.00347161, 0.02034587, 0.00265381, 0.02163331, 0.00204739,
+       0.01664318, 0.00153929, 0.01770776, 0.00423663, 0.00267112,
+       0.00291873, 0.00201386, 0.00157633, 0.00127765, 0.00114559,
+       0.00098633, 0.00266596, 0.0188592 , 0.00180637, 0.02006552,
+       0.00154633, 0.01543704, 0.00107283, 0.01643511, 0.00616085,
+       0.00380948, 0.00328246, 0.00267252, 0.0035173 , 0.00211354,
+       0.00182114, 0.0014583 , 0.01873272, 0.0193912 , 0.01580252,
+       0.0188691 , 0.0164351 , 0.01586226, 0.01385149, 0.01544514,
+       0.00231844, 0.00229858, 0.00210484, 0.00168547, 0.00130869,
+       0.00125425, 0.00114853, 0.00094172, 0.01633978, 0.01692501,
+       0.01455584, 0.01679355, 0.01434487, 0.01385382, 0.01276697,
+       0.01375513, 0.00247389, 0.00240181, 0.00226138, 0.00181082,
+       0.00137254, 0.00131058, 0.00123395, 0.00101175, 0.01421934,
+       0.01695776, 0.01510047, 0.01804246, 0.01248331, 0.01388063,
+       0.01324466, 0.01477808, 0.00165324, 0.00157861, 0.00148631,
+       0.00121867, 0.00090211, 0.00088201, 0.00083044, 0.00076112,
+       0.01514584, 0.01572882, 0.01450502, 0.01674576, 0.01330528,
+       0.01288304, 0.01273064, 0.0137249 ])
 (Pdb) 

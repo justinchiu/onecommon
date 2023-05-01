@@ -146,7 +146,8 @@ class OneCommonDomain(Domain):
             return 0
 
     def score_choices(self, choices, ctxs):
-        agree = (choices[0] == choices[1])
+        dots1, dots2 = ctxs[-1]
+        agree = (dots1[choices[0]] == dots2[choices[1]])
         scores = [int(agree), int(agree)]
         return agree, scores
 
