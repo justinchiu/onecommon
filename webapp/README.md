@@ -10,6 +10,7 @@ This repository includes basic functions for dataset collection, dataset visuali
 To run the web server, move to `src` directory and simply run `run_sample.sh`. Make sure to append `onecommon/webapp` and `onecommon/webapp/src` directories to the PYTHONPATH, e.g.
 
 Use `run_pomdp.sh` instead.
+2023: Use `run_gpt.sh` instead.
 
 ```
 export PYTHONPATH=$PYTHONPATH:~/onecommon/webapp/src:~/onecommon/webapp:~/onecommon/aaai2020/experiments:~/onecommon/aaai2020
