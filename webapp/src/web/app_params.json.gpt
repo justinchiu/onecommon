@@ -3,7 +3,7 @@
 	        "num_seconds": 120
 	    },
 	    "chat": {
-	        "num_seconds": 380
+	        "num_seconds": 600
 	    },
 	    "finished": {
 	        "num_seconds": -1
@@ -21,7 +21,7 @@
 	        "num_seconds": -1
 	    }
     },
-    "idle_timeout_num_seconds": 120,
+    "idle_timeout_num_seconds": 480,
     "connection_timeout_num_seconds": 3,
     "templates_dir": "web/templates",
     "images_base": "web/static/images",
