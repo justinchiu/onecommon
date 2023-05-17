@@ -23,7 +23,8 @@ class GptSession(Session):
         }
 
     def _is_selection(self, out):
-        return len(out) == 1 and out[0] == '<selection>'
+        return "<selection>" in out
+        #return len(out) == 1 and out[0] == '<selection>'
 
     def send(self):
         if self.state['selected']:
@@ -38,7 +39,8 @@ class GptSession(Session):
         tokens = self.model.write()
 
         if self._is_selection(tokens):
-            return self.select()
+            #return self.select()
+            self.state["selected"] = True
         # TODO: nltk detok?
         # Omit the last <eos> symbol
         return self.message(' '.join(tokens[:-1]))
