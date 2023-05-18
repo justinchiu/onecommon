@@ -82,7 +82,7 @@ class GptSystem(System):
 
         # feed context, can probably save agent in init.
         ctx = create_input(kb.items, Dummy())
-        model.feed_context(ctx)
+        model.feed_context(ctx, flip_y=True)
         model.agent_id = agent
         model.real_ids = [int(item["id"]) for item in kb.items]
 
