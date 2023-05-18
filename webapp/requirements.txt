@@ -2,8 +2,8 @@ certifi
 Click
 Flask
 Flask-SocketIO
-gevent
-greenlet
+greenlet==1.1.3
+gevent==21.8.0
 itsdangerous
 Jinja2
 MarkupSafe
