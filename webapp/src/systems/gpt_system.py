@@ -13,7 +13,8 @@ import utils as utils
 import pprint
 
 import minichain
-from oc.agent.agent import Agent
+#from oc.agent.agent import Agent
+from oc.agent2.agent import Agent
 from engines.beliefs import BlankBeliefConstructor
 
 
