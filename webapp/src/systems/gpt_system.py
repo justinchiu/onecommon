@@ -79,7 +79,7 @@ class GptSystem(System):
 
     def new_session(self, agent, kb):
         #model = Agent(self.backend, "codegen", "templateonly", "gpt-4")
-        model = Agent(self.backend, "shortcodegen", "templateonly", "gpt-4")
+        model = Agent(self.backend, "shortcodegen2", "templateonly", "gpt-4")
 
         # feed context, can probably save agent in init.
         ctx = create_input(kb.items, Dummy())

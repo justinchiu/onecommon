@@ -410,10 +410,10 @@ if __name__ == "__main__":
                             #keyfile='/etc/letsencrypt/live/berkeleynlp.com/privkey.pem',
                             #certfile='/etc/letsencrypt/live/berkeleynlp.com/fullchain.pem'
                             # justin linux
-                            #keyfile='/home/justinchiu/keys/key.pem',
-                            #certfile='/home/justinchiu/keys/cert.pem',
+                            keyfile='/home/justinchiu/keys/key.pem',
+                            certfile='/home/justinchiu/keys/cert.pem',
                             # justin mac
-                            keyfile='/Users/justinchiu/keys/key.pem',
-                            certfile='/Users/justinchiu/keys/cert.pem',
+                            #keyfile='/Users/justinchiu/keys/key.pem',
+                            #certfile='/Users/justinchiu/keys/cert.pem',
         )
         server.serve_forever()
