@@ -23,7 +23,8 @@ import pprint
 #from symbolic_dialog import SymbolicDialog
 
 # gpt stuff
-from oc.agent.agent import Agent
+#from oc.agent.agent import Agent
+from oc.agent2.agent import Agent
 import minichain
 
 
@@ -70,7 +71,9 @@ class SelfPlay(object):
 
 def get_agent_type(model, backend, smart=False, belief=False, gpt=False):
     if gpt:
-        return Agent(backend, "codegen", "templateonly", "gpt-4")
+        #return Agent(backend, "codegen", "templateonly", "gpt-4")
+        #return Agent(backend, "shortcodegen", "templateonly", "gpt-4")
+        return Agent(backend, "shortcodegen2", "templateonly", "gpt-4")
     if isinstance(model, (RnnReferenceModel)):
         if smart:
             assert False
@@ -195,10 +198,12 @@ def main():
 
         with minichain.start_chain("tmp.txt") as backend:
             #alice = Agent(backend, "codegen", "templateonly", "gpt-4")
-            alice = Agent(backend, "shortcodegen", "templateonly", "gpt-4")
+            #alice = Agent(backend, "shortcodegen", "templateonly", "gpt-4")
+            alice = Agent(backend, "shortcodegen2", "templateonly", "gpt-4")
             alice.name = "alice"
             #bob = Agent(backend, "codegen", "templateonly", "gpt-4")
-            bob = Agent(backend, "shortcodegen", "templateonly", "gpt-4")
+            #bob = Agent(backend, "shortcodegen", "templateonly", "gpt-4")
+            bob = Agent(backend, "shortcodegen2", "templateonly", "gpt-4")
             bob.name = "bob"
 
             # dialog = Dialog([alice, bob], args, markable_detector)
