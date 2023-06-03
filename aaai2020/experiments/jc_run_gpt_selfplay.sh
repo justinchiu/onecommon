@@ -1,7 +1,7 @@
 #!/bin/bash
 
-dir=gpt_logs
-name=gpt_selfplay
+dir=gpt2_logs
+name=gpt2_selfplay
 shared_ctx_count=4
 
 shift
@@ -29,11 +29,11 @@ rerank_args2="--language_beam_size 16 --next_mention_reranking_k 4 --next_mentio
 # tee-ing to out for now, messes up signals
 
 # 50 contexts for now
-python -m pdb gpt_selfplay.py \
+python gpt_selfplay.py \
   --context_file=shared_${shared_ctx_count} \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
-  --num_contexts 10 \
+  --num_contexts 50 \
   --log_file=${log_file} \
-  #$@ \
-  #| tee ${out_file}
+  $@ \
+  | tee ${out_file}
