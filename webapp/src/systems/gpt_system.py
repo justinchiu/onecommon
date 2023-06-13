@@ -20,7 +20,7 @@ from engines.beliefs import BlankBeliefConstructor
 
 CUDA = False
 
-torch.set_grad_enabled(False)
+#torch.set_grad_enabled(False)
 
 class Dummy:
     def __init__(self):

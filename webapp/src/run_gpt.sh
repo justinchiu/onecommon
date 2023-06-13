@@ -4,7 +4,7 @@
 export PYTHONPATH="..:.:../../aaai2020:../../aaai2020/experiments:..:$PYTHONPATH"
 
 scenarios="shared_4"
-instance=4
+instance=turk1
 
 python web/chat_app.py --port 5005 \
     --schema-path data/schema.json \

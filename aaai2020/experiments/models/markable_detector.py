@@ -58,6 +58,8 @@ class BiLSTM_CRF(nn.Module):
         self.hidden = self.init_hidden()
 
     def init_hidden(self):
+        if not hasattr(self, "device"):
+            self.device = "cpu"
         return (
             torch.randn(2, 1, self.hidden_dim // 2, device=self.device),
             torch.randn(2, 1, self.hidden_dim // 2, device=self.device),

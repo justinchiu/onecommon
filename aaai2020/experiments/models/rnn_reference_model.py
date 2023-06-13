@@ -2301,10 +2301,14 @@ class RnnReferenceModel(nn.Module):
         return reader_and_writer_lang_hs, state
 
     def word2var(self, word):
+        if not hasattr(self, "device"):
+            self.device = "cpu"
         x = torch.empty(1, device=self.device, dtype=torch.long).fill_(self.word_dict.get_idx(word))
         return Variable(x)
 
     def words2var(self, words):
+        if not hasattr(self, "device"):
+            self.device = "cpu"
         return torch.tensor([self.word_dict.get_idx(word) for word in words], dtype=torch.long, device=self.device)
 
     def write(self, state: State, max_words, temperature,
