@@ -1,0 +1,14 @@
+================================================================================
+dialog 1
+Alice : do you see two black dots close together ? <eos>
+Bob   : yes . <eos>
+Alice : is one below and to the right of the other ? <eos>
+Bob   : no . <eos>
+Alice : do you see a cluster of five grey dots ? <eos>
+Bob   : no . <eos>
+Alice : do you see a cluster of four grey dots ? <eos>
+Bob   : no . <eos>
+Alice : do you see a triangle of three grey dots ? <eos>
+Bob   : yes . <eos>
+Alice : is there a big black dot below and to the left of it ? <eos>
+Bob   : yes . <eos>

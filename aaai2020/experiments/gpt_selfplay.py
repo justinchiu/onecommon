@@ -49,7 +49,7 @@ class SelfPlay(object):
         success = 0
         for ctxs in self.ctx_gen.iter():
             n += 1
-            #if n < 6: continue
+            if n < 90: continue
             if self.args.smart_alice and n > max_n:
                 break
             if n > max_n:

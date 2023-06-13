@@ -1,12 +1,14 @@
 #!/bin/bash
 
-dir=gpt2_logs
-name=gpt2_selfplay
+dir=gpt200_90_logs
+name=gpt200_90_selfplay
 shared_ctx_count=4
 
 shift
 shift
 shift
+
+mkdir -p $dir
 
 log_file=${dir}/${name}_ctx-${shared_ctx_count}.selfplay.log
 out_file=${dir}/${name}_ctx-${shared_ctx_count}.selfplay.out
@@ -33,7 +35,7 @@ python gpt_selfplay.py \
   --context_file=shared_${shared_ctx_count} \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
-  --num_contexts 50 \
+  --num_contexts 200 \
   --log_file=${log_file} \
   $@ \
   | tee ${out_file}
