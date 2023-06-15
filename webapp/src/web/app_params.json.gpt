@@ -49,8 +49,8 @@
             "model_path": "models/plain-hierarchical-structured-recurrence/1_ep-12.th",
             "markable_detector_path": "models/markable_detector_with_dict_1.th",
             "inference_args": {
-              "language_beam_size": 20,
-              "next_mention_reranking_k": 8,
+              "language_beam_size": 100,
+              "next_mention_reranking_k": 20,
               "min_num_mentions": 0,
               "max_num_mentions": 10,
               "language_rerank": true,
