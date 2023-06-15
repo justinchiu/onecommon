@@ -49,7 +49,6 @@ class SelfPlay(object):
         success = 0
         for ctxs in self.ctx_gen.iter():
             n += 1
-            if n < 90: continue
             if self.args.smart_alice and n > max_n:
                 break
             if n > max_n:
@@ -199,11 +198,13 @@ def main():
         with minichain.start_chain("tmp.txt") as backend:
             #alice = Agent(backend, "codegen", "templateonly", "gpt-4")
             #alice = Agent(backend, "shortcodegen", "templateonly", "gpt-4")
-            alice = Agent(backend, "shortcodegen2", "templateonly", "gpt-4")
+            #alice = Agent(backend, "shortcodegen2", "templateonly", "gpt-4")
+            alice = Agent(backend, "shortcodegen2", "templateonly", "gpt-4-0613")
             alice.name = "alice"
             #bob = Agent(backend, "codegen", "templateonly", "gpt-4")
             #bob = Agent(backend, "shortcodegen", "templateonly", "gpt-4")
-            bob = Agent(backend, "shortcodegen2", "templateonly", "gpt-4")
+            #bob = Agent(backend, "shortcodegen2", "templateonly", "gpt-4")
+            bob = Agent(backend, "shortcodegen2", "templateonly", "gpt-4-0613")
             bob.name = "bob"
 
             # dialog = Dialog([alice, bob], args, markable_detector)

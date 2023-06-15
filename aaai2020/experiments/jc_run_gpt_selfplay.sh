@@ -2,6 +2,10 @@
 
 dir=gpt200_90_logs
 name=gpt200_90_selfplay
+
+dir=dbg-gpt-4-0613
+name=dbg-gpt-4-0613-selfplay
+
 shared_ctx_count=4
 
 shift
@@ -35,7 +39,7 @@ python gpt_selfplay.py \
   --context_file=shared_${shared_ctx_count} \
   --markable_detector_file=serialized_models/markable_detector_with_dict_1.th \
   --verbose \
-  --num_contexts 200 \
+  --num_contexts 50 \
   --log_file=${log_file} \
   $@ \
   | tee ${out_file}
