@@ -6,6 +6,7 @@ export PYTHONPATH="..:.:../../aaai2020:../../aaai2020/experiments:..:$PYTHONPATH
 scenarios="shared_4"
 #instance=turk3
 #instance=lab3-oldgpt
+instance=dbg-concurrency
 
 python web/chat_app.py --port 5005 \
     --schema-path data/schema.json \
