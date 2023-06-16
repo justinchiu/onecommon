@@ -70,6 +70,7 @@ class SelfPlay(object):
 
 def get_agent_type(model, backend, smart=False, belief=False, gpt=False):
     if gpt:
+        raise NotImplementedError
         #return Agent(backend, "codegen", "templateonly", "gpt-4")
         #return Agent(backend, "shortcodegen", "templateonly", "gpt-4")
         return Agent(backend, "shortcodegen2", "templateonly", "gpt-4")
