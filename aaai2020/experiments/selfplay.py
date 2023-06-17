@@ -34,6 +34,8 @@ from symbolic_dialog import SymbolicDialog
 
 import pprint
 
+torch.set_grad_enabled(False)
+
 def dump_json(file, path):
     try:
         with open(path, "w") as fout:

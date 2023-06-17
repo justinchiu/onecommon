@@ -74,3 +74,4 @@ overwriting key bsz with value 8 with value 16
 overwriting key cuda with value True with value False
 overwriting key bsz with value 8 with value 16
 overwriting key cuda with value True with value False
+100: dialog_len=3.24 sent_len=14.54 agree=64.00% moving_agree=64.00% advantage=0.00 moving_advantage=0.00 time=36.137s comb_rew=1.28 agree_comb_rew=1.97 alice_rew=0.64 alice_moving_rew=0.64 agree_alice_rew=0.98 alice_make_sel=49.00% alice_unique=160 alice_ref_resolution_score=-0.08 alice_language_model_score=-17.69 alice_joint_score=-0.10 bob_rew=0.64 bob_moving_rew=0.64 agree_bob_rew=0.98 bob_make_sel=51.00% bob_unique=160 bob_ref_resolution_score=-10101010.43 bob_language_model_score=-16.05 bob_joint_score=-0.78

@@ -323,38 +323,39 @@ def make_candidates(ref_out, num_markables, k, sample, exhaustive_single=False, 
     if ref_out_full is None:
         ref_out_full = StructuredAttentionLayer.marginal_logits_to_full_logits(ref_out_logits).contiguous()
 
-    if ref_dist is None and N > 1:
-        ref_dist = StructuredTemporalAttentionLayer.make_distribution(
-            ref_out_full, num_markables, transition_potentials=None
-        )
+    with torch.enable_grad():
+        if ref_dist is None and N > 1:
+            ref_dist = StructuredTemporalAttentionLayer.make_distribution(
+                ref_out_full, num_markables, transition_potentials=None
+            )
 
-    # assert not sample
+        # assert not sample
 
-    if N > 1:
-        # TODO: sample without replacement
-        if sample:
-            # k x bsz x N-1 x C x C
-            candidate_edges = ref_dist.sample((k,))
-        else:
-            # k x bsz x N-1 x C x C
-            candidate_edges = ref_dist.topk(k)
-        # (k*bsz) x N
-        candidates, C = ref_dist.struct.from_parts(candidate_edges.view((-1,) + candidate_edges.size()[2:]))
-        assert C == 2**num_dots
-        candidates = candidates.view(k, bsz, N)
-        # N x bsz x k
-        candidate_indices_multi = candidates.transpose(0,2)
-        candidate_indices[:,use_temporal] = candidate_indices_multi[:,use_temporal]
+        if N > 1:
+            # TODO: sample without replacement
+            if sample:
+                # k x bsz x N-1 x C x C
+                candidate_edges = ref_dist.sample((k,))
+            else:
+                # k x bsz x N-1 x C x C
+                candidate_edges = ref_dist.topk(k)
+            # (k*bsz) x N
+            candidates, C = ref_dist.struct.from_parts(candidate_edges.view((-1,) + candidate_edges.size()[2:]))
+            assert C == 2**num_dots
+            candidates = candidates.view(k, bsz, N)
+            # N x bsz x k
+            candidate_indices_multi = candidates.transpose(0,2)
+            candidate_indices[:,use_temporal] = candidate_indices_multi[:,use_temporal]
 
-        # k x bsz
-        candidate_l0_scores_multi = ref_dist.log_prob(candidate_edges)
-        # bsz x k
-        candidate_l0_scores_multi = candidate_l0_scores_multi.transpose(0,1)
-        # tile across the mention dimension N, which will allow us to argmax independently over the k dimension
-        # to recover the joint argmax
-        # N x bsz x k
-        candidate_l0_scores_multi = candidate_l0_scores_multi.unsqueeze(0).repeat_interleave(N, dim=0)
-        candidate_l0_scores[:,use_temporal] = candidate_l0_scores_multi[:,use_temporal]
+            # k x bsz
+            candidate_l0_scores_multi = ref_dist.log_prob(candidate_edges)
+            # bsz x k
+            candidate_l0_scores_multi = candidate_l0_scores_multi.transpose(0,1)
+            # tile across the mention dimension N, which will allow us to argmax independently over the k dimension
+            # to recover the joint argmax
+            # N x bsz x k
+            candidate_l0_scores_multi = candidate_l0_scores_multi.unsqueeze(0).repeat_interleave(N, dim=0)
+            candidate_l0_scores[:,use_temporal] = candidate_l0_scores_multi[:,use_temporal]
 
     # num_mentions x bsz x
     assert ref_out_full.dim() == 2 + num_dots
