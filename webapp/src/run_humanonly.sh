@@ -1,18 +1,19 @@
 #!/bin/bash
 
-port=5005
+port=5007
 iter=1
 
 # think aaai2020 is for annotation, maybe?
 export PYTHONPATH="..:.:../../aaai2020:../../aaai2020/experiments:..:$PYTHONPATH"
 
 scenarios="shared_4"
-instance=dbg-concurrency-${port}-${iter}
+
+instance=human-only-${port}-${iter}
 #port=5007
 
 python web/chat_app.py --port ${port} \
     --schema-path data/schema.json \
-    --config web/app_params.json.gpt \
+    --config web/app_params.json.humanonly \
     --scenarios-path ../../aaai2020/experiments/data/onecommon/${scenarios}.json \
-    --output logs/gpt-${instance} \
+    --output logs/${instance} \
     $@

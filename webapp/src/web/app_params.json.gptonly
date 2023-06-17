@@ -1,0 +1,48 @@
+{ "status_params": {
+	    "waiting": {
+	        "num_seconds": 120
+	    },
+	    "chat": {
+	        "num_seconds": 600
+	    },
+	    "finished": {
+	        "num_seconds": -1
+	    },
+	    "redirected": {
+	        "num_seconds": -1
+	    },
+	    "incomplete": {
+	        "num_seconds": -1
+	    },
+	    "reporting": {
+	        "num_seconds": -1
+	    },
+        "survey": {
+	        "num_seconds": -1
+	    }
+    },
+    "idle_timeout_num_seconds": 480,
+    "connection_timeout_num_seconds": 3,
+    "templates_dir": "web/templates",
+    "images_base": "web/static/images",
+    "end_survey": 1,
+    "instructions": "web/templates/instructions.html",
+    "coreference_instructions": "web/templates/coreference_instructions.html",
+    "task_title": "Find One In Common!",
+    "icon": "handshake.jpg",
+    "num_chats_per_scenario": {
+        "human": 0,
+        "gpt": 4
+    },
+    "models": {
+        "gpt": {
+            "active": true,
+            "type": "gpt",
+            "model_path": "",
+            "markable_detector_path": "models/markable_detector_with_dict_1.th",
+            "inference_args": {}
+        }
+    },
+    "debug": true,
+    "quit_after": 1200
+}

@@ -12,6 +12,7 @@ import torch
 
 from nltk import word_tokenize
 
+
 class GptSession(Session):
     def __init__(self, agent, kb, model):
         super(GptSession, self).__init__(agent)
