@@ -12,6 +12,9 @@ import torch
 
 from nltk import word_tokenize
 
+# should be fine!
+torch.set_grad_enabled(False)
+
 class RnnSession(Session):
     def __init__(self, agent, kb, model, inference_args):
         super(RnnSession, self).__init__(agent)
