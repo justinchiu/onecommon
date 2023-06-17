@@ -16,7 +16,14 @@ rerank_args="--language_rerank --next_mention_reranking --language_beam_keep_all
 #rerank_args2="--language_beam_size 16 --next_mention_reranking_k 4 --next_mention_reranking_max_mentions 4"
 #rerank_args2="--language_beam_size 25 --next_mention_reranking_k 8 --next_mention_reranking_max_mentions 4"
 #rerank_args2="--language_beam_size 25 --next_mention_reranking_k 16 --next_mention_reranking_max_mentions 4"
-rerank_args2="--language_beam_size 50 --next_mention_reranking_k 8 --next_mention_reranking_max_mentions 4"
+
+#rerank_args2="--language_beam_size 100 --next_mention_reranking_k 8 --next_mention_reranking_max_mentions 4"
+#rerank_args2="--language_beam_size 100 --next_mention_reranking_k 16 --next_mention_reranking_max_mentions 4"
+#rerank_args2="--language_beam_size 100 --next_mention_reranking_k 20 --next_mention_reranking_max_mentions 4"
+
+#rerank_args2="--language_beam_size 50 --next_mention_reranking_k 8 --next_mention_reranking_max_mentions 4"
+#rerank_args2="--language_beam_size 50 --next_mention_reranking_k 16 --next_mention_reranking_max_mentions 4"
+rerank_args2="--language_beam_size 50 --next_mention_reranking_k 20 --next_mention_reranking_max_mentions 4"
 
 #python -u selfplay.py \
   #--alice_model_file=${model_dir_a}/1_ep-12.th \

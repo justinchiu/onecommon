@@ -1,0 +1,109 @@
+freq cutoff: 10
+vocab size: 649
+dataset data/onecommon/train_reference_1.txt, 8304 instances, total 545056, unks 4302, ratio 0.79%
+dataset data/onecommon/valid_reference_1.txt, 1038 instances, total 69348, unks 686, ratio 0.99%
+dataset data/onecommon/test_reference_1.txt, 1038 instances, total 67284, unks 636, ratio 0.95%
+0b064dba825c7bf0382977f4615a8b4f6d221240
+diff --git a/aaai2020/experiments/gpt_selfplay.py b/aaai2020/experiments/gpt_selfplay.py
+index effe53f6..b592823a 100644
+--- a/aaai2020/experiments/gpt_selfplay.py
++++ b/aaai2020/experiments/gpt_selfplay.py
+@@ -49,7 +49,7 @@ class SelfPlay(object):
+         success = 0
+         for ctxs in self.ctx_gen.iter():
+             n += 1
+-            #if n < 6: continue
++            if n < 90: continue
+             if self.args.smart_alice and n > max_n:
+                 break
+             if n > max_n:
+diff --git a/aaai2020/experiments/selfplay.py b/aaai2020/experiments/selfplay.py
+index c7309a73..77c0a9cd 100644
+--- a/aaai2020/experiments/selfplay.py
++++ b/aaai2020/experiments/selfplay.py
+@@ -61,8 +61,8 @@ class SelfPlay(object):
+                 break
+             self.logger.dump('=' * 80)
+             self.logger.dump(f'dialog {n}')
+-            with torch.no_grad():
+-                _, agree, _ = self.dialog.run(ctxs, self.logger)
++            #with torch.no_grad():
++            _, agree, _ = self.dialog.run(ctxs, self.logger)
+             if agree:
+                 success += 1
+             self.logger.dump('=' * 80)
+selfplay.py --alice_model_file=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/1_ep-12.th --bob_model_file=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/1_ep-12.th --context_file=shared_4 --markable_detector_file=serialized_models/markable_detector_with_dict_1.th --verbose --num_contexts 200 --language_rerank --next_mention_reranking --language_beam_keep_all_finished --reranking_confidence --language_beam_size 25 --next_mention_reranking_k 8 --next_mention_reranking_max_mentions 4 --log_file=expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/TEST_BASELINE_ctx-4.selfplay.log
+{'DBG_GEN': False,
+ 'DBG_PLAN': '',
+ 'absolute_bucketing': 1,
+ 'alice_forward_model_file': None,
+ 'alice_model_file': 'expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/1_ep-12.th',
+ 'belief': 'or',
+ 'belief_alice': False,
+ 'belief_bob': False,
+ 'belief_entropy_threshold': 2.0,
+ 'belief_threshold': 0.8,
+ 'bob_model_file': 'expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/1_ep-12.th',
+ 'bsz': 16,
+ 'context_file': 'shared_4',
+ 'contiguity_coef': 0,
+ 'cuda': False,
+ 'data': 'data/onecommon',
+ 'dialog_log_dir': 'analysis_log',
+ 'diameter_coef': 0,
+ 'domain': 'one_common',
+ 'eps': 0.0,
+ 'language_beam_keep_all_finished': True,
+ 'language_beam_size': 25,
+ 'language_inference': 'forgetful_noised_beam',
+ 'language_rerank': True,
+ 'language_rerank_weight': 0.999,
+ 'language_sample_temperature': 0.25,
+ 'length_coef': 0,
+ 'log_attention': False,
+ 'log_file': 'expts/rel3_tsel_ref_dial_model_separate/nov-15/plain-hierarchical-structured-recurrence/1/TEST_BASELINE_ctx-4.selfplay.log',
+ 'markable_detector_file': 'serialized_models/markable_detector_with_dict_1.th',
+ 'markables_file': 'selfplay_markables.json',
+ 'max_sentences': 20,
+ 'max_turns': 20,
+ 'must_contain': None,
+ 'next_mention_candidate_generation': 'topk',
+ 'next_mention_reranking': True,
+ 'next_mention_reranking_k': 8,
+ 'next_mention_reranking_max_mentions': 4,
+ 'next_mention_reranking_score': 'log_max_probability',
+ 'next_mention_reranking_use_stop_scores': False,
+ 'next_mention_reranking_weight': 0,
+ 'num_color_buckets': 5,
+ 'num_contexts': 200,
+ 'num_size_buckets': 5,
+ 'plot_metrics': False,
+ 'record_markables': False,
+ 'ref_text': None,
+ 'referents_file': 'selfplay_referents.json',
+ 'repeat_selfplay': False,
+ 'reranking_confidence': True,
+ 'reranking_confidence_exp_score_threshold': 0.8,
+ 'reranking_confidence_score': 'joint',
+ 'reranking_confidence_type': 'first_above_threshold',
+ 'rollout_bsz': 3,
+ 'rollout_count_threshold': 3,
+ 'rollout_model_file': '',
+ 'seed': 1,
+ 'select_config_size': 3,
+ 'selection_model_file': '',
+ 'smart_alice': False,
+ 'smart_bob': False,
+ 'symbolic': False,
+ 'unk_threshold': 10,
+ 'verbose': True,
+ 'visual': False}
+overwriting key cuda with value True with value False
+overwriting key bsz with value 8 with value 16
+overwriting key cuda with value True with value False
+overwriting key bsz with value 8 with value 16
+100: dialog_len=2.88 sent_len=14.37 agree=62.00% moving_agree=62.00% advantage=0.00 moving_advantage=0.00 time=7.034s comb_rew=1.24 agree_comb_rew=2.00 alice_rew=0.62 alice_moving_rew=0.62 agree_alice_rew=1.00 alice_make_sel=43.00% alice_unique=140 alice_ref_resolution_score=-0.19 alice_language_model_score=-15.74 alice_joint_score=-0.20 bob_rew=0.62 bob_moving_rew=0.62 agree_bob_rew=1.00 bob_make_sel=57.00% bob_unique=146 bob_ref_resolution_score=-0.02 bob_language_model_score=-15.39 bob_joint_score=-0.04
+200: dialog_len=3.15 sent_len=14.48 agree=61.50% moving_agree=61.00% advantage=0.00 moving_advantage=0.00 time=7.708s comb_rew=1.23 agree_comb_rew=2.00 alice_rew=0.61 alice_moving_rew=0.61 agree_alice_rew=1.00 alice_make_sel=50.50% alice_unique=308 alice_ref_resolution_score=-0.11 alice_language_model_score=-14.88 alice_joint_score=-0.12 bob_rew=0.61 bob_moving_rew=0.61 agree_bob_rew=1.00 bob_make_sel=49.50% bob_unique=306 bob_ref_resolution_score=-0.24 bob_language_model_score=-15.65 bob_joint_score=-0.26
+dump selfplay_markables.json
+dump selfplay_referents.json
+repeat selfplay results 0.61194030 ( 0.00000000 )
