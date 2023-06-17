@@ -1,4 +1,4 @@
-
+import time
 import random
 import re
 
@@ -28,6 +28,7 @@ class GptSession(Session):
         return len(out) == 1 and out[0] == '<selection>'
 
     def send(self):
+        start_time = time.time()
         if self.state['selected']:
             return self.select()
 
@@ -47,10 +48,12 @@ class GptSession(Session):
         # TODO: nltk detok?
         # Omit the last <eos> symbol
         tokens = [x for x in tokens if x not in ["<eos>", "<selection>"]]
+        print(f"GPT SEND TOOK {time.time() - start_time} seconds")
         return self.message(' '.join(tokens))
 
 
     def receive(self, event):
+        start_time = time.time()
         if event.action in Event.decorative_events:
             return
         if event.action == 'select':
@@ -62,6 +65,7 @@ class GptSession(Session):
             tokens = word_tokenize(event.data.lower().strip()) + ['<eos>']
             # maybe cut out tokenization?
             self.model.read(tokens)
+        print(f"GPT READ TOOK {time.time() - start_time} seconds")
 
     def select(self):
         choice = self.model.choose()
