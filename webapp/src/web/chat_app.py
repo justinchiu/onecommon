@@ -149,6 +149,12 @@ def add_systems(args, config_dict, schema):
     for sys_name in inactive_bots:
         systems.pop(sys_name, None)
 
+    if args.no_human_partner:
+        pairing_probabilities[HumanSystem.name()] = 0
+        # renormalize
+        Z = sum(pairing_probabilities.values())
+        pairing_probabilities = {k: v / Z for k,v in pairing_probabilities.items()}
+
     return systems, pairing_probabilities
 
 def cleanup(flask_app):
@@ -208,6 +214,7 @@ if __name__ == "__main__":
     parser.add_argument('--selfplay_markables', type=str, default='data/selfplay_markables.json')
     parser.add_argument('--selfplay_referents', type=str, default='data/selfplay_referents.json')
     parser.add_argument('--dump-only', action='store_true')
+    parser.add_argument('--no_human_partner', action='store_true')
     add_website_arguments(parser)
     add_scenario_arguments(parser)
     print(' '.join(sys.argv))

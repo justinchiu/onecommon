@@ -1,0 +1,64 @@
+{ "status_params": {
+	    "waiting": {
+	        "num_seconds": 120
+	    },
+	    "chat": {
+	        "num_seconds": 600
+	    },
+	    "finished": {
+	        "num_seconds": -1
+	    },
+	    "redirected": {
+	        "num_seconds": -1
+	    },
+	    "incomplete": {
+	        "num_seconds": -1
+	    },
+	    "reporting": {
+	        "num_seconds": -1
+	    },
+        "survey": {
+	        "num_seconds": -1
+	    }
+    },
+    "idle_timeout_num_seconds": 480,
+    "connection_timeout_num_seconds": 3,
+    "templates_dir": "web/templates",
+    "images_base": "web/static/images",
+    "end_survey": 1,
+    "instructions": "web/templates/instructions.html",
+    "coreference_instructions": "web/templates/coreference_instructions.html",
+    "task_title": "Find One In Common!",
+    "icon": "handshake.jpg",
+    "num_chats_per_scenario": {
+        "human": 0,
+        "pragmatic_confidence": 4
+    },
+    "models": {
+        "pragmatic_confidence": {
+            "active": true,
+            "type": "full",
+            "model_path": "models/plain-hierarchical-structured-recurrence/1_ep-12.th",
+            "markable_detector_path": "models/markable_detector_with_dict_1.th",
+            "inference_args": {
+              "language_beam_size": 100,
+              "next_mention_reranking_k": 20,
+              "min_num_mentions": 0,
+              "max_num_mentions": 10,
+              "language_rerank": true,
+              "language_inference": "forgetful_noised_beam",
+              "language_beam_keep_all_finished": true,
+              "language_rerank_weight": 0.999,
+              "next_mention_reranking": true,
+              "next_mention_reranking_weight": 0.0,
+              "next_mention_reranking_score": "log_max_probability",
+              "reranking_confidence": true,
+              "reranking_confidence_exp_score_threshold": 0.8,
+              "reranking_confidence_type": "first_above_threshold",
+              "reranking_confidence_score": "joint"
+            }
+        }
+    },
+    "debug": true,
+    "quit_after": 1200
+}

@@ -1,4 +1,4 @@
-
+import time
 import random
 import re
 
@@ -27,6 +27,7 @@ class RnnSession(Session):
         return len(out) == 1 and out[0] == '<selection>'
 
     def send(self):
+        start_time = time.time()
         if self.state['selected']:
             return self.select()
 
@@ -59,6 +60,7 @@ class RnnSession(Session):
             max_num_mentions=max_num_mentions,
         )
 
+        print(f"RNN SEND took {time.time() - start_time} seconds")
         if self._is_selection(tokens):
             return self.select()
         # TODO: nltk detok?
@@ -67,6 +69,7 @@ class RnnSession(Session):
 
 
     def receive(self, event):
+        start_time = time.time()
         if event.action in Event.decorative_events:
             return
         if event.action == 'select':
@@ -88,6 +91,7 @@ class RnnSession(Session):
                 detect_markables=True,
                 is_selection=this_is_selection,
             )
+        print(f"RNN READ took {time.time() - start_time} seconds")
 
     def select(self):
         choice = self.model.choose()

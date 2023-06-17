@@ -411,7 +411,7 @@ class Backend(object):
                 for partner_type in partner_types:
                     active_types[partner_type].append(sid)
 
-            if other_waiting_users:
+            if other_waiting_users and active_types[HumanSystem.name()]:
                 p = HumanSystem.name()
             elif try_human is None:
                 # no preference, any active
@@ -429,6 +429,8 @@ class Backend(object):
                     p = np.random.choice(bots)
                     return self.scenario_db.get(sid), p
                 p = np.random.choice(bots)
+            #print(p)
+            #print(active_types[p])
             sid = np.random.choice(active_types[p])
             return self.scenario_db.get(sid), p
 

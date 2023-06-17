@@ -7,12 +7,12 @@ iter=1
 export PYTHONPATH="..:.:../../aaai2020:../../aaai2020/experiments:..:$PYTHONPATH"
 
 scenarios="shared_4"
-instance=dbg-concurrency-${port}-${iter}
-#port=5007
+instance=gpt-only-${port}-${iter}
 
 python web/chat_app.py --port ${port} \
     --schema-path data/schema.json \
-    --config web/app_params.json.gpt \
+    --config web/app_params.json.gptonly \
     --scenarios-path ../../aaai2020/experiments/data/onecommon/${scenarios}.json \
-    --output logs/gpt-${instance} \
+    --output logs/${instance} \
+    --no_human_partner \
     $@
