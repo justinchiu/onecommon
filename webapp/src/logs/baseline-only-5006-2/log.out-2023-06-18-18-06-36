@@ -17557,3 +17557,19 @@ INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:50:38] "GET /dialogue/_disconnect/?
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:50:38] "GET /dialogue/_leave_chat/?uid=MT_fd763f4d6a494a8191299d9cf7d052e1 HTTP/1.1" 200 130 0.004112
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:50:38] "GET /dialogue/static/css/survey.css HTTP/1.1" 200 3895 0.000812
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:50:38] "GET /dialogue/_connect/?uid=MT_fd763f4d6a494a8191299d9cf7d052e1 HTTP/1.1" 200 130 0.000621
+DEBUG:web:User MT_fd763f4d6a494a8191299d9cf7d052e1 submitted survey for chat C_bbe34c18ba3d4ea58ac587eda0c599c9
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:50:45] "POST /dialogue/_submit_survey/ HTTP/1.1" 200 130 0.006809
+DEBUG:web:Got updated status finished for user MT_fd763f4d6a494a8191299d9cf7d052e1
+DEBUG:web:User MT_fd763f4d6a494a8191299d9cf7d052e1 got completion code TASK_DONE_c2236e15e63ca49759ed63de1905e9c36
+DEBUG:web:Add C_bbe34c18ba3d4ea58ac587eda0c599c9 to completed scenarios
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:50:46] "GET /dialogue/?index=Hit277&mturk=1&assignmentId=3EA3QWIZ4X5OY49OHT4IMDZIY3DIT4&hitId=307FVKVSZ5P56FG9TZUBYW1REKK47I&workerId=A94DL4GI8ZBUO&uid=MT_fd763f4d6a494a8191299d9cf7d052e1&index=Hit277&mturk=1&assignmentId=3EA3QWIZ4X5OY49OHT4IMDZIY3DIT4&hitId=307FVKVSZ5P56FG9TZUBYW1REKK47I&workerId=A94DL4GI8ZBUO HTTP/1.1" 200 1749 0.005537
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:50:46] "GET /dialogue/_disconnect/?uid=MT_fd763f4d6a494a8191299d9cf7d052e1 HTTP/1.1" 200 130 0.003916
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:50:46] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.001043
+DEBUG:web:User MT_60fb504461b14963a42c945b967daaf0 submitted survey for chat C_0903b05683294897aeef99162d509df1
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:51:19] "POST /dialogue/_submit_survey/ HTTP/1.1" 200 130 0.005177
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:51:19] "GET /dialogue/_disconnect/?uid=MT_60fb504461b14963a42c945b967daaf0 HTTP/1.1" 200 130 0.004172
+DEBUG:web:Got updated status finished for user MT_60fb504461b14963a42c945b967daaf0
+DEBUG:web:User MT_60fb504461b14963a42c945b967daaf0 got completion code TASK_DONE_a5cdcf6b936864c45ab72ada21d4baaad
+DEBUG:web:Add C_0903b05683294897aeef99162d509df1 to completed scenarios
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:51:19] "GET /dialogue/?index=Hit123&mturk=1&assignmentId=3K2755HG57DX7OB1UVYIEC44FPXDFP&hitId=3MQKOF1EFGYXWQ03UI3GTGUEKOMDW6&workerId=A2BK45LZGGWPLX&uid=MT_60fb504461b14963a42c945b967daaf0&index=Hit123&mturk=1&assignmentId=3K2755HG57DX7OB1UVYIEC44FPXDFP&hitId=3MQKOF1EFGYXWQ03UI3GTGUEKOMDW6&workerId=A2BK45LZGGWPLX HTTP/1.1" 200 1730 0.004569
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:51:19] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.001019
