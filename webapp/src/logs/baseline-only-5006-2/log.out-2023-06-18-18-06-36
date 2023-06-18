@@ -16714,3 +16714,126 @@ DEBUG:web:User MT_77da3c19234a43c1a26294782e9cb680 got completion code TASK_DONE
 DEBUG:web:Add C_1667d04e1f8b4017b141d5d455ae8e18 to completed scenarios
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:38:27] "GET /dialogue/?index=Hit245&mturk=1&assignmentId=3IGI0VL64MU0ZDF7ISVBXBPCLUNNO0&hitId=3WGZLY9VDVWM6P4LWFNAF0RS2HJD8R&workerId=A94DL4GI8ZBUO&uid=MT_77da3c19234a43c1a26294782e9cb680&index=Hit245&mturk=1&assignmentId=3IGI0VL64MU0ZDF7ISVBXBPCLUNNO0&hitId=3WGZLY9VDVWM6P4LWFNAF0RS2HJD8R&workerId=A94DL4GI8ZBUO HTTP/1.1" 200 1730 0.005081
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:38:27] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000620
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:56] "GET /dialogue/?index=Hit99&mturk=1&assignmentId=3BC8WZX3VI6OBOZF3RTW0QZRXEWRR1&hitId=3FULMHZ7P87ORINWX5W0HEYH99F4MT&workerId=A94DL4GI8ZBUO HTTP/1.1" 302 1356 0.000592
+DEBUG:web:Got updated status waiting for user MT_0ed6bcb1b00c49238e662ac3d8e9cc00
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:56] "GET /dialogue/?index=Hit99&mturk=1&assignmentId=3BC8WZX3VI6OBOZF3RTW0QZRXEWRR1&hitId=3FULMHZ7P87ORINWX5W0HEYH99F4MT&workerId=A94DL4GI8ZBUO&uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00&index=Hit99&mturk=1&assignmentId=3BC8WZX3VI6OBOZF3RTW0QZRXEWRR1&hitId=3FULMHZ7P87ORINWX5W0HEYH99F4MT&workerId=A94DL4GI8ZBUO HTTP/1.1" 200 2900 0.004560
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:56] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000635
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:56] "GET /dialogue/static/img/handshake.jpg HTTP/1.1" 304 189 0.000455
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:56] "GET /dialogue/_connect/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.004288
+DEBUG:web:Paired user MT_0ed6bcb1b00c49238e662ac3d8e9cc00 with bot of type pragmatic_confidence in chat with ID C_7e248beef5034caa846f2ebf98ea373f and scenario S_S8GB4o72hqWba4Ic
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:57] "GET /dialogue/_check_status_change/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00&assumed_status=waiting HTTP/1.1" 200 137 0.025878
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:58] "GET /dialogue/_check_status_change/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00&assumed_status=waiting HTTP/1.1" 200 136 0.000880
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:58] "GET /dialogue/_disconnect/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.003737
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:58] "GET /dialogue/_disconnect/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.000628
+DEBUG:web:Got updated status chat for user MT_0ed6bcb1b00c49238e662ac3d8e9cc00
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:58] "GET /dialogue/?index=Hit99&mturk=1&assignmentId=3BC8WZX3VI6OBOZF3RTW0QZRXEWRR1&hitId=3FULMHZ7P87ORINWX5W0HEYH99F4MT&workerId=A94DL4GI8ZBUO&uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00&index=Hit99&mturk=1&assignmentId=3BC8WZX3VI6OBOZF3RTW0QZRXEWRR1&hitId=3FULMHZ7P87ORINWX5W0HEYH99F4MT&workerId=A94DL4GI8ZBUO HTTP/1.1" 200 27495 0.001101
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:58] "GET /dialogue/static/img/sample_colored.png HTTP/1.1" 304 194 0.000482
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:39:58] "GET /dialogue/static/img/handshake.jpg HTTP/1.1" 304 189 0.000406
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_join_chat/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 171 17.979463
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000927
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 319 0.000498
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_connect/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.003680
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000691
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000466
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000654
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000466
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000686
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000465
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000691
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:16] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000459
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000929
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000472
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000444
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000447
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000495
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000440
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000446
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000447
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000444
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000460
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000446
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000447
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000438
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/static/chat.wav HTTP/1.1" 206 197030 0.000681
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /favicon.ico HTTP/1.1" 404 331 0.000375
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:17] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000546
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:18] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000573
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:19] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000757
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:19] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000461
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:20] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000573
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:21] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000728
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:22] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000738
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:22] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000451
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:23] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000483
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:24] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000516
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:25] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000835
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:25] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000464
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:26] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000634
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:27] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000751
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:28] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000798
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:28] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000458
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:29] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000931
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:30] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000528
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:31] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000729
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:31] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000458
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:32] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000517
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:33] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000544
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:34] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000764
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:34] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000448
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:35] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000517
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:36] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000932
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:37] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000513
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:37] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000723
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:38] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000521
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:39] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000504
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:40] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000721
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:40] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000450
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:41] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000515
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:42] "GET /dialogue/_send_message/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00&message=Yes.&time_taken=2.0379998683929443 HTTP/1.1" 200 194 0.363358
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:42] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 286 0.000651
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:43] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000826
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:43] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000494
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:44] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000528
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:45] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000590
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:46] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000744
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:46] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000464
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:47] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000520
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:48] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000555
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:49] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000764
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:49] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000456
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:50] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000524
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:51] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000520
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:52] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000764
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:52] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000461
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:53] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000559
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:54] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000591
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:55] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000747
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:55] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000479
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:56] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000740
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:57] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000529
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:58] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000515
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:40:58] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 128 0.000708
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:00] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000547
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:00] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 132 0.000544
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:01] "GET /dialogue/_select_option/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00&selection=35 HTTP/1.1" 200 162 0.010613
+DEBUG:web:Accepted chat with ID C_7e248beef5034caa846f2ebf98ea373f for user MT_0ed6bcb1b00c49238e662ac3d8e9cc00 (agent ID 1), and redirecting to survey
+DEBUG:web:Setting controller for chat C_7e248beef5034caa846f2ebf98ea373f to inactive
+DEBUG:web:game_over_and_transition
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:01] "GET /dialogue/_check_chat_valid/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 261 0.005044
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:01] "GET /dialogue/_check_inbox/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 248 0.000498
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:01] "GET /dialogue/_leave_chat/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.000657
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:01] "GET /dialogue/_disconnect/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.003629
+DEBUG:web:Got updated status survey for user MT_0ed6bcb1b00c49238e662ac3d8e9cc00
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:01] "GET /dialogue/?index=Hit99&mturk=1&assignmentId=3BC8WZX3VI6OBOZF3RTW0QZRXEWRR1&hitId=3FULMHZ7P87ORINWX5W0HEYH99F4MT&workerId=A94DL4GI8ZBUO&uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00&index=Hit99&mturk=1&assignmentId=3BC8WZX3VI6OBOZF3RTW0QZRXEWRR1&hitId=3FULMHZ7P87ORINWX5W0HEYH99F4MT&workerId=A94DL4GI8ZBUO HTTP/1.1" 200 5970 0.000996
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:01] "GET /dialogue/_disconnect/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.000605
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:01] "GET /dialogue/_leave_chat/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.003819
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:02] "GET /dialogue/static/css/survey.css HTTP/1.1" 200 3895 0.000484
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:02] "GET /dialogue/_connect/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.004083
+DEBUG:web:User MT_0ed6bcb1b00c49238e662ac3d8e9cc00 submitted survey for chat C_7e248beef5034caa846f2ebf98ea373f
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:09] "POST /dialogue/_submit_survey/ HTTP/1.1" 200 130 0.004442
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:09] "GET /dialogue/_disconnect/?uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00 HTTP/1.1" 200 130 0.003657
+DEBUG:web:Got updated status finished for user MT_0ed6bcb1b00c49238e662ac3d8e9cc00
+DEBUG:web:User MT_0ed6bcb1b00c49238e662ac3d8e9cc00 got completion code TASK_DONE_c02ece8c8cfbf4adb846cf6cf6b986bd4
+DEBUG:web:Add C_7e248beef5034caa846f2ebf98ea373f to completed scenarios
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:09] "GET /dialogue/?index=Hit99&mturk=1&assignmentId=3BC8WZX3VI6OBOZF3RTW0QZRXEWRR1&hitId=3FULMHZ7P87ORINWX5W0HEYH99F4MT&workerId=A94DL4GI8ZBUO&uid=MT_0ed6bcb1b00c49238e662ac3d8e9cc00&index=Hit99&mturk=1&assignmentId=3BC8WZX3VI6OBOZF3RTW0QZRXEWRR1&hitId=3FULMHZ7P87ORINWX5W0HEYH99F4MT&workerId=A94DL4GI8ZBUO HTTP/1.1" 200 1749 0.004428
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:41:09] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000695
