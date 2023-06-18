@@ -16231,3 +16231,8 @@ DEBUG:web:User MT_2e5394ed210f407684c4ba19d05a4f5b got completion code TASK_DONE
 DEBUG:web:Add C_56af4da3e32c4a1cb846596ddebcc349 to completed scenarios
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:17:45] "GET /dialogue/?index=Hit170&mturk=1&assignmentId=345LHZDEDC2O8E6UWVN5N3JVYZH3UA&hitId=3QI9WAYOH4L5404F0QL1QLH1XP36SS&workerId=A1HKYY6XI2OHO1&uid=MT_2e5394ed210f407684c4ba19d05a4f5b&index=Hit170&mturk=1&assignmentId=345LHZDEDC2O8E6UWVN5N3JVYZH3UA&hitId=3QI9WAYOH4L5404F0QL1QLH1XP36SS&workerId=A1HKYY6XI2OHO1 HTTP/1.1" 200 1749 0.004801
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:17:45] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000614
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:24:17] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000845
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:24:44] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000804
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:24:44] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000721
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:24:45] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000557
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:24:45] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000642
