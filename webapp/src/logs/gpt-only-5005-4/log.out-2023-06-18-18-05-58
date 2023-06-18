@@ -16257,3 +16257,19 @@ INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:55:55] "GET /dialogue/_leave_chat/?
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:55:55] "GET /dialogue/_disconnect/?uid=MT_c6337dfd7c0a49c082647035e962b8cc HTTP/1.1" 200 130 0.003465
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:55:55] "GET /dialogue/static/css/survey.css HTTP/1.1" 200 3895 0.000475
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:55:55] "GET /dialogue/_connect/?uid=MT_c6337dfd7c0a49c082647035e962b8cc HTTP/1.1" 200 130 0.004011
+DEBUG:web:User MT_c6337dfd7c0a49c082647035e962b8cc submitted survey for chat C_472feef1261144f8b80b31ec476eb34b
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:56:17] "POST /dialogue/_submit_survey/ HTTP/1.1" 200 130 0.005487
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:56:18] "GET /dialogue/_disconnect/?uid=MT_c6337dfd7c0a49c082647035e962b8cc HTTP/1.1" 200 130 0.008183
+DEBUG:web:Got updated status finished for user MT_c6337dfd7c0a49c082647035e962b8cc
+DEBUG:web:User MT_c6337dfd7c0a49c082647035e962b8cc got completion code TASK_DONE_a93e6cd16f25944a9be3ff540ab4910ce
+DEBUG:web:Add C_472feef1261144f8b80b31ec476eb34b to completed scenarios
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:56:18] "GET /dialogue/?index=Hit22&mturk=1&assignmentId=32M8BPYGA8WKTZNIXT5BNUKT895IGV&hitId=3ZQA3IO32P1VZMBPN3SBBKGJSPK1OS&workerId=A31PW970Z2PC5P&uid=MT_c6337dfd7c0a49c082647035e962b8cc&index=Hit22&mturk=1&assignmentId=32M8BPYGA8WKTZNIXT5BNUKT895IGV&hitId=3ZQA3IO32P1VZMBPN3SBBKGJSPK1OS&workerId=A31PW970Z2PC5P HTTP/1.1" 200 1730 0.011989
+DEBUG:web:User MT_4156938f8dc94f9884d9111951383943 submitted survey for chat C_cab1e1620e7549b28f20ab1f17ce7130
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:56:18] "POST /dialogue/_submit_survey/ HTTP/1.1" 200 130 0.005628
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:56:18] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.000700
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:56:18] "GET /dialogue/_disconnect/?uid=MT_4156938f8dc94f9884d9111951383943 HTTP/1.1" 200 130 0.007742
+DEBUG:web:Got updated status finished for user MT_4156938f8dc94f9884d9111951383943
+DEBUG:web:User MT_4156938f8dc94f9884d9111951383943 got completion code TASK_DONE_cf571cd7d65bd485ca4ced5bb9b50f085
+DEBUG:web:Add C_cab1e1620e7549b28f20ab1f17ce7130 to completed scenarios
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:56:18] "GET /dialogue/?index=Hit244&mturk=1&assignmentId=3B3WTRP3DQC134M8UKE98XRPF0E29E&hitId=3M47JKRKDBBNLGP6MSFW9UH0LVW68S&workerId=A31PW970Z2PC5P&uid=MT_4156938f8dc94f9884d9111951383943&index=Hit244&mturk=1&assignmentId=3B3WTRP3DQC134M8UKE98XRPF0E29E&hitId=3M47JKRKDBBNLGP6MSFW9UH0LVW68S&workerId=A31PW970Z2PC5P HTTP/1.1" 200 1749 0.012704
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 21:56:18] "GET /dialogue/static/css/bootstrap.min.css HTTP/1.1" 200 106299 0.003103
