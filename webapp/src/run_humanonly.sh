@@ -1,7 +1,7 @@
 #!/bin/bash
 
 port=5007
-iter=1
+iter=2
 
 # think aaai2020 is for annotation, maybe?
 export PYTHONPATH="..:.:../../aaai2020:../../aaai2020/experiments:..:$PYTHONPATH"

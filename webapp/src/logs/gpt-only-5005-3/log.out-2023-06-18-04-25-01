@@ -325,3 +325,5 @@ INFO:web:::ffff:127.0.0.1 - - [2023-06-18 05:07:32] "GET /dialogue/static/img/sa
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 05:07:46] "GET /dialogue/static/img/sample_colored.png HTTP/1.1" 304 194 0.000619
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 05:09:51] "POST /boaform/admin/formLogin HTTP/1.1" 404 331 0.000546
 INFO:web:::ffff:127.0.0.1 - - [2023-06-18 05:11:41] "GET /dialogue/static/img/sample_colored.png HTTP/1.1" 304 194 0.000702
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 05:14:45] "GET /dialogue/static/img/sample_colored.png HTTP/1.1" 304 194 0.001188
+INFO:web:::ffff:127.0.0.1 - - [2023-06-18 05:19:55] "GET / HTTP/1.1" 404 331 0.000585
