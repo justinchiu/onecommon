@@ -1,0 +1,4706 @@
+[
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_fe279ee9d60d45ca9bbff0425a71fe2e",
+        "dialogue": [
+            [
+                0,
+                "two large dots , one is slightly larger and lighter and the other is black"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_9f2525971291470e9f31783c7e74e25e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664163.5018044"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "two large dots , one is slightly larger and lighter and the other is black",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664168.7073488"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_9f2525971291470e9f31783c7e74e25e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664252.3220482"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_KNJzHyQjL0UrkMj0",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_7ff325c19b9b43e6b6ddd2cfdcd76af3",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the bottom left dot is medium-sized and grey and the top right dot is large-sized and dark"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_a02681c3f07c40c1b2f48c3f22d5d70d",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664212.1099784"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the bottom left dot is medium-sized and grey and the top right dot is large-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664213.5104897"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_a02681c3f07c40c1b2f48c3f22d5d70d",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664298.2732728"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_R5VwH2Fq8kJfz4ei",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_ca47109c8f3042cfb316a01f7bf1eab6",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the right dot is medium-sized and grey and the left dot is large-sized and grey"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_68ebd5a66075473796a15f1016bd2371",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664224.700203"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the right dot is medium-sized and grey and the left dot is large-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664226.0723615"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"53\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664296.5442662"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"40\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664296.5545406"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_00bAOcyO8V1MwokX",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_3f63dd18bc8a4a4485d11e7c38b5b196",
+        "dialogue": [
+            [
+                0,
+                "dark grey dot with a smaller black dot below it and slightly to the left"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_68ebd5a66075473796a15f1016bd2371",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664299.1757302"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "dark grey dot with a smaller black dot below it and slightly to the left",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664304.2434523"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"72\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664367.6052208"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"72\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664367.6149833"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 1
+        },
+        "scenario_id": "S_IOQTtzYTLhzmVhKU",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "pragmatic_confidence"
+        },
+        "chat_id": "C_e71fc510b72e4f6ca84fc9f8e8941540",
+        "dialogue": [
+            [
+                1,
+                "line of three dots , two dark and one light gray"
+            ],
+            [
+                0,
+                "Is that down on the bottom"
+            ],
+            [
+                1,
+                "mine is the same . i see that ."
+            ],
+            [
+                0,
+                "are they two big and one small"
+            ],
+            [
+                1,
+                "yup"
+            ],
+            [
+                0,
+                "I see that"
+            ],
+            [
+                1,
+                "pick the black one"
+            ],
+            [
+                0,
+                "ok"
+            ],
+            [
+                1,
+                "yes"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_e44e7fca073040d9909b6cacb0857355",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664354.480045"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "line of three dots , two dark and one light gray",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664359.4355738"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Is that down on the bottom",
+                "metadata": null,
+                "start_time": "1686664383.2137802",
+                "time": "1686664389.2567801"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "mine is the same . i see that .",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664390.1069472"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "are they two big and one small",
+                "metadata": null,
+                "start_time": "1686664429.0348885",
+                "time": "1686664435.1398885"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yup",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664435.344631"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "I see that",
+                "metadata": null,
+                "start_time": "1686664448.9100668",
+                "time": "1686664457.020067"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "pick the black one",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664457.5401542"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "ok",
+                "metadata": null,
+                "start_time": "1686664472.648936",
+                "time": "1686664473.320936"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664473.394924"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"72\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664473.4029691"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"73\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664473.4072776"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_UqX1JeFbt9sJ93nF",
+        "survey_result": {
+            "comments": "",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 5,
+            "understand_you": 5
+        },
+        "workers": [
+            "A1ROEDVMTO9Y3X"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_d4615e48eea448d48d619f8ff8e2d072",
+        "dialogue": [
+            [
+                0,
+                "have a large black dot by itself , do you have it ?"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_68ebd5a66075473796a15f1016bd2371",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664370.7219508"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "have a large black dot by itself , do you have it ?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664375.4288394"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"40\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664457.0037947"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"27\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664457.0130005"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_PkU3ijYiCa2LyYEF",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_c43c3740abd342c6a0a9c9cabab69009",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the bottom dot is small-sized and light and the top dot is medium-sized and grey"
+            ],
+            [
+                0,
+                "yes...there are 3 grey dots"
+            ],
+            [
+                1,
+                "No. Let's select the small size and light color one."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_0a00eda71d8142bfab07cbb3989305c0",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664380.4470341"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the bottom dot is small-sized and light and the top dot is medium-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664381.8563194"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "yes...there are 3 grey dots",
+                "metadata": null,
+                "start_time": "1686664438.0853934",
+                "time": "1686664461.6273932"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "No. Let's select the small size and light color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664473.3128026"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"5\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664494.2790217"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"5\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664494.2877374"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 1
+        },
+        "scenario_id": "S_GYqfNGAAGwR5o3mH",
+        "survey_result": {
+            "comments": "",
+            "confidence": 5,
+            "has_survey": true,
+            "humanlike": 5,
+            "understand_them": 5,
+            "understand_you": 5
+        },
+        "workers": [
+            "A1PRUVH5Q0T9FS"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_2137a5542f244cd589d4ade22b8c849f",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the bottom dot is medium-sized and dark and the top dot is small-sized and grey"
+            ],
+            [
+                0,
+                "I see a larger medium gray dot"
+            ],
+            [
+                1,
+                "No. Do you see a pair of dots, where the bottom dot is medium-sized and light and the top dot is small-sized and light"
+            ],
+            [
+                0,
+                "Yes I do"
+            ],
+            [
+                1,
+                "Is there a medium size and dark color dot above those?"
+            ],
+            [
+                0,
+                "There is nothing above the two dots. There is a medium dark dot to the right"
+            ],
+            [
+                1,
+                "Is there a medium size and grey color dot left of those?"
+            ],
+            [
+                0,
+                "Yes there is a medium size gray color dot to the left"
+            ],
+            [
+                1,
+                "Let's select the small size and light color one."
+            ],
+            [
+                0,
+                "OK"
+            ],
+            [
+                1,
+                "Let's select the small size and light color one."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_a694321a05b94d68b951cbbf8910e239",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664411.3042462"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the bottom dot is medium-sized and dark and the top dot is small-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664412.7068434"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "I see a larger medium gray dot",
+                "metadata": null,
+                "start_time": "1686664433.354555",
+                "time": "1686664441.146555"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "No. Do you see a pair of dots, where the bottom dot is medium-sized and light and the top dot is small-sized and light",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664456.9870849"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Yes I do",
+                "metadata": null,
+                "start_time": "1686664483.1135232",
+                "time": "1686664484.9375231"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Is there a medium size and dark color dot above those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664491.4937782"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "There is nothing above the two dots. There is a medium dark dot to the right",
+                "metadata": null,
+                "start_time": "1686664503.12235",
+                "time": "1686664520.3443499"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Is there a medium size and grey color dot left of those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664538.6937006"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Yes there is a medium size gray color dot to the left",
+                "metadata": null,
+                "start_time": "1686664549.6836603",
+                "time": "1686664562.5376604"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Let's select the small size and light color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664569.7973776"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "OK",
+                "metadata": null,
+                "start_time": "1686664581.687805",
+                "time": "1686664582.3808048"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Let's select the small size and light color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664589.7497864"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"3\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664598.9739783"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"8\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664598.9820907"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_XAGNoOAW5mlvvWbP",
+        "survey_result": {
+            "comments": "",
+            "confidence": 3,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 3,
+            "understand_you": 2
+        },
+        "workers": [
+            "A3Q6YRWUMALT6D"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_e27a00fbaa304179bf86eef6d473a5dc",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the bottom dot is large-sized and dark and the top dot is medium-sized and grey"
+            ],
+            [
+                1,
+                "hi"
+            ],
+            [
+                0,
+                "Do you see a pair of dots, where the top dot is medium-sized and grey and the bottom dot is medium-sized and grey"
+            ],
+            [
+                1,
+                "yes"
+            ],
+            [
+                0,
+                "Is there a large size and dark color dot below those?"
+            ],
+            [
+                1,
+                "yes"
+            ],
+            [
+                0,
+                "Let's select the medium size and grey color one."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_aedf19a431a84edb81f347c65aa4442a",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664906.2513757"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the bottom dot is large-sized and dark and the top dot is medium-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664907.650671"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "hi",
+                "metadata": null,
+                "start_time": "1686664932.3644555",
+                "time": "1686664933.2684555"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the top dot is medium-sized and grey and the bottom dot is medium-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664940.7421868"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686664951.089525",
+                "time": "1686664952.419525"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Is there a large size and dark color dot below those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664958.9414647"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686664971.9755745",
+                "time": "1686664973.3005743"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Let's select the medium size and grey color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664979.5274346"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"46\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664986.2310534"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"64\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686664986.2388103"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_OwxBjtA4QBVZ2cWK",
+        "survey_result": {
+            "comments": "nice",
+            "confidence": 5,
+            "has_survey": true,
+            "humanlike": 5,
+            "understand_them": 5,
+            "understand_you": 5
+        },
+        "workers": [
+            "A30EBFU1OCU9Z3"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_f6e2c97c15a944dc92f1039b438354fd",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the right dot is large-sized and light and the left dot is small-sized and dark"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_88c2ad6f47b44685bdbe7c4e0ad370a7",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686665170.8776937"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the right dot is large-sized and light and the left dot is small-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686665172.2415087"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_88c2ad6f47b44685bdbe7c4e0ad370a7",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686665226.81138"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_88c2ad6f47b44685bdbe7c4e0ad370a7",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686665227.0027614"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_88c2ad6f47b44685bdbe7c4e0ad370a7",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686665235.8116927"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_htDlKXJHZZeS48BM",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_28a8ee17d74547bfaccaa3687413aef7",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the right dot is large-sized and dark and the left dot is small-sized and dark"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_38de5cca067e467c8080203c12d4d7a1",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686665600.6896222"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the right dot is large-sized and dark and the left dot is small-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686665602.0697713"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_38de5cca067e467c8080203c12d4d7a1",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686665631.6824713"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": -1
+        },
+        "scenario_id": "S_iilnpUhuQGplZitF",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_7934f6a03a5141c8bd8fa81a296b6d7e",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the top dot is small-sized and light and the bottom dot is small-sized and dark"
+            ],
+            [
+                0,
+                "I see one big grey dot"
+            ],
+            [
+                1,
+                "No. Do you see a pair of dots, where the top left dot is small-sized and dark and the bottom right dot is small-sized and dark"
+            ],
+            [
+                0,
+                "yes  I see it between top and bottom in between there is little large dot"
+            ],
+            [
+                1,
+                "No. Is there a small size and light color dot to the right and above those?"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_9dbe9f2a32494128b85b69aad69935d9",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686666859.1695957"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the top dot is small-sized and light and the bottom dot is small-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686666860.53544"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "I see one big grey dot",
+                "metadata": null,
+                "start_time": "1686666936.9889917",
+                "time": "1686666958.7109919"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "No. Do you see a pair of dots, where the top left dot is small-sized and dark and the bottom right dot is small-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686666970.8332233"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "yes  I see it between top and bottom in between there is little large dot",
+                "metadata": null,
+                "start_time": "1686666986.2973042",
+                "time": "1686667021.8563042"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "No. Is there a small size and light color dot to the right and above those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686667036.9215977"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"45\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686667042.7356315"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"61\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686667042.7439122"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_47bcu0BJTplGnzCZ",
+        "survey_result": {
+            "comments": "",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 5,
+            "understand_them": 4,
+            "understand_you": 5
+        },
+        "workers": [
+            "ASKY9B3BMZUXB"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_c5234ac122164695845d32ef4a061b14",
+        "dialogue": [],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_bec8a1471c884f87a1feb7d43570c73e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668068.2324677"
+            },
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_db81e612c0164e8ead88a8c287ed5a8d",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668068.2820423"
+            },
+            {
+                "action": "leave",
+                "agent": 0,
+                "data": "MT_db81e612c0164e8ead88a8c287ed5a8d",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668086.92943"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_bec8a1471c884f87a1feb7d43570c73e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668087.168599"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": -1
+        },
+        "scenario_id": "S_DxPAlNBGttJPZ6iG",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "pragmatic_confidence"
+        },
+        "chat_id": "C_6f9311ee0aaa43de833238aaebfeb239",
+        "dialogue": [
+            [
+                1,
+                "the largest dots i have are dark dots . the one on the right is darker . they are very close together"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_c20c0c9028374d0189fc2f7b4744b524",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668413.62398"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "the largest dots i have are dark dots . the one on the right is darker . they are very close together",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668421.8616593"
+            },
+            {
+                "action": "leave",
+                "agent": 0,
+                "data": "MT_c20c0c9028374d0189fc2f7b4744b524",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668424.4110928"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_sSqqvODI0CDthTtn",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_a5fd8a08be544fcab9b2bb6ff563ec88",
+        "dialogue": [
+            [
+                0,
+                "cluster of three dots , two dark dots , one small and light grey"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_9943397d9f9d4c40986af7a3f7d9796e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668647.5560718"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "cluster of three dots , two dark dots , one small and light grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668656.980907"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_9943397d9f9d4c40986af7a3f7d9796e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668679.9413464"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": -1
+        },
+        "scenario_id": "S_enjzf39GPit0lGKm",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_bdcc1e1216cc4e66815d3e8e15d42fdd",
+        "dialogue": [
+            [
+                0,
+                "hi do you have a large black dot with a smaller light gray dot to the left of it ?"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_88f9b2acf9074da2ae32ec5d64c6ad9e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668690.8954027"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "hi do you have a large black dot with a smaller light gray dot to the left of it ?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668695.9448526"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_88f9b2acf9074da2ae32ec5d64c6ad9e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668707.4648476"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": -1
+        },
+        "scenario_id": "S_Z14H3a3qZUV5AYXR",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_d5c087a0230349c491267ea2490525eb",
+        "dialogue": [
+            [
+                0,
+                "lone large black dot . it is black . do you have that ?"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_5c1d5a8c197046ffae9145a17f765adb",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668790.3205884"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "lone large black dot . it is black . do you have that ?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668794.861414"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_5c1d5a8c197046ffae9145a17f765adb",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668796.0997143"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_tjiTk2nX05iBkfCe",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_0d61e92ee3434c16b44bfc64bfc11df5",
+        "dialogue": [
+            [
+                0,
+                "a large dark gray dot with a small light grey dot below it"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_ae23e052cbcd4b1a9377fdc3954c47d2",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686668998.8642566"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "a large dark gray dot with a small light grey dot below it",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686669003.9406168"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_QzoG6uQG7v5ObKPd",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_9a3127a96c8946df81dad5a071596f7f",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the top left dot is small-sized and grey and the bottom right dot is large-sized and light"
+            ],
+            [
+                1,
+                "HI"
+            ],
+            [
+                0,
+                "Do you see a pair of dots, where the bottom left dot is small-sized and grey and the top right dot is large-sized and light"
+            ],
+            [
+                1,
+                "YES"
+            ],
+            [
+                0,
+                "Is there a small size and grey color dot above those?"
+            ],
+            [
+                1,
+                "OK"
+            ],
+            [
+                0,
+                "Is there a medium size and grey color dot to the left and above those?"
+            ],
+            [
+                1,
+                "YES"
+            ],
+            [
+                0,
+                "Let's select the small size and grey color one."
+            ],
+            [
+                1,
+                "OK"
+            ],
+            [
+                0,
+                "Let's select the small size and grey color one."
+            ],
+            [
+                1,
+                "YES"
+            ],
+            [
+                0,
+                "Is there a small size and grey color dot to the left and above those?"
+            ],
+            [
+                1,
+                "WHAT"
+            ],
+            [
+                0,
+                "Do you see a pair of dots, where the bottom dot is medium-sized and grey and the top dot is small-sized and grey"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_a9ff3307290b43569fa86a55f46e2a85",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686670881.4533422"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the top left dot is small-sized and grey and the bottom right dot is large-sized and light",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686670882.8259308"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "HI",
+                "metadata": null,
+                "start_time": "1686670992.792161",
+                "time": "1686670995.8431609"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the bottom left dot is small-sized and grey and the top right dot is large-sized and light",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671003.848885"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "YES",
+                "metadata": null,
+                "start_time": "1686671015.8840318",
+                "time": "1686671020.2810316"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Is there a small size and grey color dot above those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671027.6753037"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "OK",
+                "metadata": null,
+                "start_time": "1686671056.6018574",
+                "time": "1686671058.6718574"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Is there a medium size and grey color dot to the left and above those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671066.0399299"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "YES",
+                "metadata": null,
+                "start_time": "1686671095.4438045",
+                "time": "1686671099.7478046"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Let's select the small size and grey color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671105.6426475"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "OK",
+                "metadata": null,
+                "start_time": "1686671143.5749805",
+                "time": "1686671145.0559804"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Let's select the small size and grey color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671152.866143"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "YES",
+                "metadata": null,
+                "start_time": "1686671185.8998682",
+                "time": "1686671187.2888684"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Is there a small size and grey color dot to the left and above those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671194.823086"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "WHAT",
+                "metadata": null,
+                "start_time": "1686671257.9260588",
+                "time": "1686671260.4430587"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the bottom dot is medium-sized and grey and the top dot is small-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671268.950557"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_IO3TgPS5Gicb0y34",
+        "survey_result": {
+            "comments": "",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 4,
+            "understand_you": 4
+        },
+        "workers": [
+            "A116QUKBGZ6DLC"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "pragmatic_confidence"
+        },
+        "chat_id": "C_e7cb98f5cb324ab2b0505f94a27ec611",
+        "dialogue": [
+            [
+                1,
+                "cluster of three dots , one small light grey , a large dark grey"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_aa39102ef16e40c3a9a24b0749530392",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671094.6241424"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "cluster of three dots , one small light grey , a large dark grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671099.7338681"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"9\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671179.008814"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"26\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671179.018055"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_YntppFKiFHywTghq",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_8c355387b2ea456496875b553a17991a",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the bottom right dot is small-sized and grey and the top left dot is small-sized and dark"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_aa39102ef16e40c3a9a24b0749530392",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671196.7097206"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the bottom right dot is small-sized and grey and the top left dot is small-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671198.1055198"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_uICBD8ljbMrShIay",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_32811137d07c4f29b8b83b874ad50d2b",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the top left dot is medium-sized and light and the bottom right dot is medium-sized and grey"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_b158306c870f4eae81bd4cf92edf285e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671379.4113543"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the top left dot is medium-sized and light and the bottom right dot is medium-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671380.7784047"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"78\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671489.506508"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"38\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671489.5156221"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_3wq7YjYGLc3jFFQH",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "pragmatic_confidence"
+        },
+        "chat_id": "C_c6c45f30734849aead6a21fe8763eb98",
+        "dialogue": [
+            [
+                1,
+                "there are two large dark dots . one is slightly larger and above and to the right of the other"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_cf596172680e4558b4e6e21e9d855367",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671383.6822088"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "there are two large dark dots . one is slightly larger and above and to the right of the other",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671388.7929177"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_dPeeXJQgIjB4145G",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": [
+            "A1EUMT73IXVC6S"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_74b532fa1822430f891114e84ee115c3",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the top dot is small-sized and grey and the bottom dot is small-sized and dark"
+            ],
+            [
+                0,
+                "Which one?"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_ee348216259c410198e26def90cc948d",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671391.2890718"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the top dot is small-sized and grey and the bottom dot is small-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671392.6691551"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Which one?",
+                "metadata": null,
+                "start_time": "1686671581.6382365",
+                "time": "1686671588.7032363"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_lNsLTreg7eouiuAn",
+        "survey_result": {
+            "comments": "Had a great time.",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 2,
+            "understand_them": 4,
+            "understand_you": 4
+        },
+        "workers": [
+            "A3U40H7NM3W1KZ"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_8483edf1dc94429c8db6da2f90df7baa",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the top dot is large-sized and light and the bottom dot is small-sized and grey"
+            ],
+            [
+                1,
+                "No. I have a triangle of three dots, and then below them two dots above one another"
+            ],
+            [
+                0,
+                "Yes. Is there a small size and grey color dot near any of those?"
+            ],
+            [
+                1,
+                "The triangle contains two smaller dots, one slightly lighter grey than the other"
+            ],
+            [
+                0,
+                "Yes. Let's select the large size and grey color one."
+            ],
+            [
+                1,
+                "Ok"
+            ],
+            [
+                0,
+                "Let's select the large size and grey color one."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_6712aab71b1c4b138e51b239b1069463",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671458.3458972"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the top dot is large-sized and light and the bottom dot is small-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671459.7340631"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "No. I have a triangle of three dots, and then below them two dots above one another",
+                "metadata": null,
+                "start_time": "1686671497.064982",
+                "time": "1686671522.689982"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Yes. Is there a small size and grey color dot near any of those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671578.7882695"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "The triangle contains two smaller dots, one slightly lighter grey than the other",
+                "metadata": null,
+                "start_time": "1686671599.0183427",
+                "time": "1686671622.3473427"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Yes. Let's select the large size and grey color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671680.38599"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Ok",
+                "metadata": null,
+                "start_time": "1686671690.8952892",
+                "time": "1686671691.5232892"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Let's select the large size and grey color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671697.7244415"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"2\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671701.3385887"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"2\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671701.347126"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 1
+        },
+        "scenario_id": "S_Iv4dUkg0pTeHrYGp",
+        "survey_result": {
+            "comments": "",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 5,
+            "understand_them": 4,
+            "understand_you": 5
+        },
+        "workers": [
+            "A3GWRDHAURRNK6"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_d9d2c3a9585149cdadd8c70f15c182ac",
+        "dialogue": [
+            [
+                0,
+                "hi"
+            ],
+            [
+                1,
+                "hi"
+            ],
+            [
+                0,
+                "i saw grey colors dot in the circle"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_10bacbe28a914d76aea23764f1557a4d",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671495.0163717"
+            },
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_6965fe78ebb04f80a23f0a49bc80989e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671495.0389478"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "hi",
+                "metadata": null,
+                "start_time": "1686671578.3424473",
+                "time": "1686671578.8284473"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "hi",
+                "metadata": null,
+                "start_time": "1686671585.0447989",
+                "time": "1686671585.895799"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "i saw grey colors dot in the circle",
+                "metadata": null,
+                "start_time": "1686671802.8030486",
+                "time": "1686671819.0500486"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"73\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671852.8480852"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"63\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671860.5964067"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_8e1RZ3EQ4GATsu9S",
+        "survey_result": {
+            "comments": "good",
+            "confidence": 5,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 4,
+            "understand_you": 5
+        },
+        "workers": [
+            "A3MY6T1KDLAZVP",
+            "A2DDY1EG1U8IWB"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_55c602af46584f25a6f2932a4ef8dd08",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the top left dot is large-sized and light and the bottom right dot is medium-sized and dark"
+            ],
+            [
+                0,
+                "Which one"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_b158306c870f4eae81bd4cf92edf285e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671496.167339"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the top left dot is large-sized and light and the bottom right dot is medium-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671497.547209"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Which one",
+                "metadata": null,
+                "start_time": "1686671578.177186",
+                "time": "1686671580.6751862"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_qVOqHNgS7sdef0bB",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": [
+            "A3BN69Q9D7RQGR"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_e4e9c5815a9e4b9b89565da4a4d53881",
+        "dialogue": [],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_b45ee402caae462c8c8bf0395caa524c",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671586.8404703"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_575310285b9d47d782cec01d4c5fd859",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671588.1215632"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"74\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671857.3725088"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"64\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671876.6662138"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_Tm9LFjssZl8GvibX",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_aa31791f03b94c6d9c26e7e6cb18863c",
+        "dialogue": [],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_aa39102ef16e40c3a9a24b0749530392",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671684.111608"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_4dfa9c06dc624b7aa826156878006c31",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671684.432507"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"49\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671894.6985385"
+            }
+        ],
+        "num_players_selected": 1,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_qFUSvxTYSnnlE74M",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": [
+            "A2M4O8KQW0H7HV"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_bb8e6224926444fdabc179efed771eb6",
+        "dialogue": [],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_575310285b9d47d782cec01d4c5fd859",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671881.8730733"
+            },
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_b45ee402caae462c8c8bf0395caa524c",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671881.879584"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"72\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686671944.713832"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"68\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672075.252041"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_jZLvkddOopW2M6ju",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_e82ca9cd76024cc59baf8ba3b4bb8bda",
+        "dialogue": [
+            [
+                0,
+                "Big grey dot at top."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_575310285b9d47d782cec01d4c5fd859",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672079.752633"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_b45ee402caae462c8c8bf0395caa524c",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672079.990662"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Big grey dot at top.",
+                "metadata": null,
+                "start_time": "1686672145.209906",
+                "time": "1686672155.1799061"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"49\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672168.7520318"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"49\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672174.2577758"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 1
+        },
+        "scenario_id": "S_o2SRQF7BEtWbFMz2",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_6aa92ac7f0b241579de7d746d40df93c",
+        "dialogue": [
+            [
+                1,
+                "Big sized black dot."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_4dfa9c06dc624b7aa826156878006c31",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672178.3867667"
+            },
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_575310285b9d47d782cec01d4c5fd859",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672178.506154"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Big sized black dot.",
+                "metadata": null,
+                "start_time": "1686672209.7829673",
+                "time": "1686672247.0469673"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"70\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672288.1005461"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"63\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672294.5978222"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_XsKIFGXF13QkhOjW",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_e1f285a7e179477a805f9ce294d2b347",
+        "dialogue": [
+            [
+                0,
+                "I see two gray dots."
+            ],
+            [
+                1,
+                "I don't think i see it"
+            ],
+            [
+                0,
+                "I see a big black dot downward."
+            ],
+            [
+                1,
+                "yes I see it"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_b45ee402caae462c8c8bf0395caa524c",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672188.71917"
+            },
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_b094345e867d4db1a737315ae35f2fcd",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672190.3607428"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"15\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672283.6941793"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "I see two gray dots.",
+                "metadata": null,
+                "start_time": "1686672392.819982",
+                "time": "1686672408.500982"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "I don't think i see it",
+                "metadata": null,
+                "start_time": "1686672602.8089302",
+                "time": "1686672641.7789302"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "I see a big black dot downward.",
+                "metadata": null,
+                "start_time": "1686672652.1705868",
+                "time": "1686672683.547587"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes I see it",
+                "metadata": null,
+                "start_time": "1686672756.843671",
+                "time": "1686672762.519671"
+            }
+        ],
+        "num_players_selected": 1,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_d0MEoYDu4UAA0RT5",
+        "survey_result": {
+            "comments": "Had a great time.",
+            "confidence": 2,
+            "has_survey": true,
+            "humanlike": 5,
+            "understand_them": 4,
+            "understand_you": 2
+        },
+        "workers": [
+            "A1EUMT73IXVC6S",
+            "A2CNWM7VG2VGTU"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_a639be9fc5e8418195263a06be9282ea",
+        "dialogue": [
+            [
+                0,
+                "Top left dark circle"
+            ],
+            [
+                1,
+                "Do you see the pair grey dots near to circle."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_bfbaa331c0984007a32aa4e961fae50b",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672297.6619036"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_575310285b9d47d782cec01d4c5fd859",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672298.000643"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Top left dark circle",
+                "metadata": null,
+                "start_time": "1686672333.3234446",
+                "time": "1686672343.0934446"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see the pair grey dots near to circle.",
+                "metadata": null,
+                "start_time": "1686672319.5250015",
+                "time": "1686672344.0210016"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"69\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672387.1226223"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"69\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672387.9618444"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 1
+        },
+        "scenario_id": "S_YoZny9596GBELpIq",
+        "survey_result": {
+            "comments": "Had a great time to spend this study.",
+            "confidence": 5,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 5,
+            "understand_you": 5
+        },
+        "workers": [
+            "A3BN69Q9D7RQGR",
+            "AB5WBMZGLX57B"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_dd221a4486c24387a2ef52bf2507b24b",
+        "dialogue": [
+            [
+                1,
+                "Black dot near to circle"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_84c66b7326874e3687f987aab8ef19db",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672394.583348"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_4dfa9c06dc624b7aa826156878006c31",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672394.9710133"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Black dot near to circle",
+                "metadata": null,
+                "start_time": "1686672532.5544868",
+                "time": "1686672541.0074868"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_nYRXLr8wlAuijhRh",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_2bf6b32353b24fda8be55fa18bea7b02",
+        "dialogue": [
+            [
+                1,
+                "downward gray you see it"
+            ],
+            [
+                0,
+                "small grey dot in downward."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_bec09c51895b462da2236eae73e88dfb",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672969.9077055"
+            },
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_4dfa9c06dc624b7aa826156878006c31",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686672970.6096222"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "downward gray you see it",
+                "metadata": null,
+                "start_time": "1686672984.4640994",
+                "time": "1686672995.1180992"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"49\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673046.4275775"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "small grey dot in downward.",
+                "metadata": null,
+                "start_time": "1686673059.9128227",
+                "time": "1686673081.5208228"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"38\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673083.4262044"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_tGuDYyazJIs34hOp",
+        "survey_result": {
+            "comments": "Good",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 4,
+            "understand_you": 4
+        },
+        "workers": [
+            "A1KGUJMWDCPSYG",
+            "A1EUMT73IXVC6S"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_c8cbe62bcc984535a262f91af9fe06df",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the bottom right dot is small-sized and grey and the top left dot is small-sized and grey"
+            ],
+            [
+                0,
+                "yeah"
+            ],
+            [
+                1,
+                "Is there a small size and dark color dot to the left and below those?"
+            ],
+            [
+                0,
+                "yes"
+            ],
+            [
+                1,
+                "Is there a large size and dark color dot below those?"
+            ],
+            [
+                0,
+                "yes"
+            ],
+            [
+                1,
+                "Let's select the small size and grey color one."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_9247b4e8e3704083ab8d0420272fad21",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673710.3517478"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the bottom right dot is small-sized and grey and the top left dot is small-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673711.7622874"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "yeah",
+                "metadata": null,
+                "start_time": "1686673828.3237567",
+                "time": "1686673830.8907568"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Is there a small size and dark color dot to the left and below those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673837.4526749"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686673850.2741835",
+                "time": "1686673851.8431835"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Is there a large size and dark color dot below those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673859.785196"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686673873.7443118",
+                "time": "1686673875.0163116"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Let's select the small size and grey color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673882.6255138"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"5\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673890.593422"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"52\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673890.6030667"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_7ULIYDmdDAC54L4m",
+        "survey_result": {
+            "comments": "",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 4,
+            "understand_you": 4
+        },
+        "workers": [
+            "A1W7T8V97ZPUH0"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_7906fa4bbec84eb0a3d9b19b97839303",
+        "dialogue": [
+            [
+                1,
+                "There is two big dot one is dark color and other is light grey"
+            ],
+            [
+                0,
+                "I see a dark dot"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_d6d30b6adccc435eabe2fa7c303e9b8a",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673801.5019207"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_314dcea6365e4c28bce5d01a20d7a100",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686673801.6201062"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "There is two big dot one is dark color and other is light grey",
+                "metadata": null,
+                "start_time": "1686673823.2078836",
+                "time": "1686673860.6318836"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "I see a dark dot",
+                "metadata": null,
+                "start_time": "1686674210.018497",
+                "time": "1686674218.259497"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"39\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686674312.1358504"
+            }
+        ],
+        "num_players_selected": 1,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_slwbR50SMxQJdXu2",
+        "survey_result": {
+            "comments": "",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 5,
+            "understand_them": 4,
+            "understand_you": 4
+        },
+        "workers": [
+            "AEPFYYENKG69F",
+            "A3OZHKAI24FEIE"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_fc72a2a9981e46469d9f4181df8a8890",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the bottom dot is small-sized and grey and the top dot is medium-sized and dark"
+            ],
+            [
+                1,
+                "Yes"
+            ],
+            [
+                0,
+                "Let's select the small size and grey color one."
+            ],
+            [
+                1,
+                "Ok"
+            ],
+            [
+                0,
+                "Let's select the small size and grey color one."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_0d495e1989c842ca8edbf64febe97495",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686676007.7973256"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the bottom dot is small-sized and grey and the top dot is medium-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686676009.1769419"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Yes",
+                "metadata": null,
+                "start_time": "1686676036.7156248",
+                "time": "1686676037.890625"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Let's select the small size and grey color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686676045.7466352"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Ok",
+                "metadata": null,
+                "start_time": "1686676061.8440197",
+                "time": "1686676065.1380196"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Let's select the small size and grey color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686676071.124021"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"18\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686676088.6138263"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"18\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686676088.6240325"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 1
+        },
+        "scenario_id": "S_TwJ5xhrgNmWWy9tS",
+        "survey_result": {
+            "comments": "",
+            "confidence": 3,
+            "has_survey": true,
+            "humanlike": 1,
+            "understand_them": 4,
+            "understand_you": 4
+        },
+        "workers": [
+            "A26UIS59SY4NM6"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_d5b080dee80b452a85e64957f57bf236",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the bottom right dot is small-sized and dark and the top left dot is large-sized and grey"
+            ],
+            [
+                1,
+                "Is the top large dot above and to the left of the small size dot?"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_8f1b81a3d5794f959a3e30b984b49d7c",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677189.4061644"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the bottom right dot is small-sized and dark and the top left dot is large-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677190.7676046"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Is the top large dot above and to the left of the small size dot?",
+                "metadata": null,
+                "start_time": "1686677229.5967405",
+                "time": "1686677288.2617404"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": -1
+        },
+        "scenario_id": "S_r7JRuE5MrADZSQuT",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_4f886433ce1e402a8304b6181a02cc86",
+        "dialogue": [],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_8f1b81a3d5794f959a3e30b984b49d7c",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677414.6068163"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_ea507a6a8b9a4767897050efe0402387",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677415.2173913"
+            },
+            {
+                "action": "leave",
+                "agent": 0,
+                "data": "MT_8f1b81a3d5794f959a3e30b984b49d7c",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677425.9745848"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_wvUwS5VdYU82yv8r",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_00835af59acc4176aac169fc60bc046c",
+        "dialogue": [],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_ea507a6a8b9a4767897050efe0402387",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677445.2913067"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_9336a152a749435895916865e6d3f87a",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677445.4573076"
+            },
+            {
+                "action": "leave",
+                "agent": 0,
+                "data": "MT_ea507a6a8b9a4767897050efe0402387",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677451.0058284"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_yi06p1GRRAhll5hP",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": [
+            "A3NMQ3019X6YE0"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_463dea7b304a4080983d1b181ec35a43",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the top right dot is small-sized and dark and the bottom left dot is medium-sized and grey"
+            ],
+            [
+                1,
+                "yes"
+            ],
+            [
+                0,
+                "Is there a large size and light color dot to the right and above those?"
+            ],
+            [
+                1,
+                "no"
+            ],
+            [
+                0,
+                "Is there a small size and dark color dot to the right and above those?"
+            ],
+            [
+                1,
+                "no there is nothing above them"
+            ],
+            [
+                0,
+                "Do you see a pair of dots, where the top left dot is large-sized and light and the bottom right dot is small-sized and dark"
+            ],
+            [
+                1,
+                "yes. "
+            ],
+            [
+                0,
+                "Is there a medium size and grey color dot to the left and below those?"
+            ],
+            [
+                1,
+                "no"
+            ],
+            [
+                0,
+                "Let's select the small size and dark color one."
+            ],
+            [
+                1,
+                "Do you see a medium size dark dot with a large light gray dot below it?"
+            ],
+            [
+                0,
+                "No. Let's select the small size and dark color one."
+            ],
+            [
+                1,
+                "okay. I have one small size dark one with a medium dark above it and to the right. There is also a large gray dot below it and to the left. "
+            ],
+            [
+                0,
+                "Yes. Let's select the small size and dark color one."
+            ],
+            [
+                1,
+                "Okay so I will select the small dark one then"
+            ],
+            [
+                0,
+                "Let's select the small size and dark color one."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_57f5d180a9eb4aa29136ff5ecef08dc1",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677599.694779"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the top right dot is small-sized and dark and the bottom left dot is medium-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677601.484259"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686677629.5110035",
+                "time": "1686677630.0300035"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Is there a large size and light color dot to the right and above those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677638.366057"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "no",
+                "metadata": null,
+                "start_time": "1686677658.5615838",
+                "time": "1686677659.0735838"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Is there a small size and dark color dot to the right and above those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677666.8859842"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "no there is nothing above them",
+                "metadata": null,
+                "start_time": "1686677675.6257665",
+                "time": "1686677681.9857666"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the top left dot is large-sized and light and the bottom right dot is small-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677690.580128"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes. ",
+                "metadata": null,
+                "start_time": "1686677715.9785416",
+                "time": "1686677718.8825417"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Is there a medium size and grey color dot to the left and below those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677726.110438"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "no",
+                "metadata": null,
+                "start_time": "1686677777.5751913",
+                "time": "1686677778.623191"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Let's select the small size and dark color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677787.0135455"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a medium size dark dot with a large light gray dot below it?",
+                "metadata": null,
+                "start_time": "1686677795.8201594",
+                "time": "1686677816.8191593"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "No. Let's select the small size and dark color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677832.5410233"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "okay. I have one small size dark one with a medium dark above it and to the right. There is also a large gray dot below it and to the left. ",
+                "metadata": null,
+                "start_time": "1686677858.6235116",
+                "time": "1686677915.8965116"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Yes. Let's select the small size and dark color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677939.0615551"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Okay so I will select the small dark one then",
+                "metadata": null,
+                "start_time": "1686677947.0601268",
+                "time": "1686677957.2051268"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Let's select the small size and dark color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677964.8190308"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"15\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677968.8475583"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"55\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677968.8567016"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_iEcFTRQQGhLa4tzX",
+        "survey_result": {
+            "comments": "",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 3,
+            "understand_them": 5,
+            "understand_you": 4
+        },
+        "workers": [
+            "A3NMQ3019X6YE0"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_44c7bd4f47414dc3a55644e854bcd9bf",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the bottom dot is small-sized and grey and the top dot is large-sized and dark"
+            ],
+            [
+                1,
+                "I see that in two places, is it toward the middle?"
+            ],
+            [
+                0,
+                "Yes. Is there a large size and dark color dot to the left and above those?"
+            ],
+            [
+                1,
+                "I believe you are describing a smaller dot that is technically in between 2 larger ones"
+            ],
+            [
+                0,
+                "Do you see a pair of dots, where the left dot is large-sized and dark and the right dot is small-sized and grey"
+            ],
+            [
+                1,
+                "Yes, at the top and top right is the larger dot and smaller one respectively"
+            ],
+            [
+                0,
+                "Yes. Is there a medium size and grey color dot to the left and below those?"
+            ],
+            [
+                1,
+                "yes"
+            ],
+            [
+                0,
+                "Is there a small size and grey color dot left of those?"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_86e0c79dfe054c5e8879c9329322cb3a",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677731.433846"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the bottom dot is small-sized and grey and the top dot is large-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677733.1721144"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "I see that in two places, is it toward the middle?",
+                "metadata": null,
+                "start_time": "1686677775.1679046",
+                "time": "1686677792.7179046"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Yes. Is there a large size and dark color dot to the left and above those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677805.817469"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "I believe you are describing a smaller dot that is technically in between 2 larger ones",
+                "metadata": null,
+                "start_time": "1686677821.6910694",
+                "time": "1686677840.9580693"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the left dot is large-sized and dark and the right dot is small-sized and grey",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677853.2353365"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Yes, at the top and top right is the larger dot and smaller one respectively",
+                "metadata": null,
+                "start_time": "1686677881.1366136",
+                "time": "1686677901.0546136"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Yes. Is there a medium size and grey color dot to the left and below those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677915.8850586"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686677938.7357774",
+                "time": "1686677939.4957774"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Is there a small size and grey color dot left of those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677946.387372"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"1\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677970.9612865"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"25\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686677970.969834"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_errmvx91KGpCMV7L",
+        "survey_result": {
+            "comments": "",
+            "confidence": 3,
+            "has_survey": true,
+            "humanlike": 3,
+            "understand_them": 2,
+            "understand_you": 3
+        },
+        "workers": [
+            "A2G4O61TYSWYS9"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_c2b7782344ec4799a68fd522a44330a9",
+        "dialogue": [
+            [
+                0,
+                "hello , i have a small black dot with a light gray dot below and to the left of it"
+            ],
+            [
+                1,
+                "I see a big gray dot on top."
+            ],
+            [
+                0,
+                "click the large light grey dot . let 's pick it"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_1ca847a6f4844a248527481775b3f071",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678597.5090158"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "hello , i have a small black dot with a light gray dot below and to the left of it",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678602.6604888"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "I see a big gray dot on top.",
+                "metadata": null,
+                "start_time": "1686678683.678664",
+                "time": "1686678726.575664"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "click the large light grey dot . let 's pick it",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678727.5565898"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"68\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678746.2405717"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"68\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678746.250548"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 1
+        },
+        "scenario_id": "S_UdiLWCceyP3ftDBt",
+        "survey_result": {
+            "comments": "Had a great time.",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 5,
+            "understand_them": 4,
+            "understand_you": 4
+        },
+        "workers": [
+            "AWJKR5GA7BS7V"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_4334fd2bd9134544a6c4fef5626cac3b",
+        "dialogue": [
+            [
+                0,
+                "one large black dot . it is all by itself"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_b5293b553f634b778bc23018300f7673",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678614.7722502"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "one large black dot . it is all by itself",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678619.5825012"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_b5293b553f634b778bc23018300f7673",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678660.4844112"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": -1
+        },
+        "scenario_id": "S_mGaCFLGrndjOiEc3",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "human"
+        },
+        "chat_id": "C_16bc0d7e3a8e44239602e38e72f42b9d",
+        "dialogue": [],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_96cca1cc13a74f6d8cdf4dc884d37379",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678620.7871342"
+            },
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_48215b57964a4b1296d2ccd9cafbe99f",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678621.004243"
+            },
+            {
+                "action": "leave",
+                "agent": 0,
+                "data": "MT_96cca1cc13a74f6d8cdf4dc884d37379",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678669.537366"
+            },
+            {
+                "action": "leave",
+                "agent": 1,
+                "data": "MT_48215b57964a4b1296d2ccd9cafbe99f",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678672.5612826"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "human",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_DZjZgigXgV40CC02",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "gpt",
+            "1": "human"
+        },
+        "chat_id": "C_d65b056e96734282952518f0061b3aa1",
+        "dialogue": [
+            [
+                0,
+                "Do you see a pair of dots, where the top right dot is medium-sized and grey and the bottom left dot is small-sized and light"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_ca8ffe276eb34f089ce93557f889a1a5",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678677.3389943"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you see a pair of dots, where the top right dot is medium-sized and grey and the bottom left dot is small-sized and light",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678679.0967462"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_M0UoGFv3vD5dSttf",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "pragmatic_confidence"
+        },
+        "chat_id": "C_0f2944898f1e426a836aaf218bcdd6a8",
+        "dialogue": [
+            [
+                1,
+                "massive dark grey dot , it is also the lightest of the circle , it is medium gray"
+            ],
+            [
+                0,
+                "no i could not see but in outer circle there is small dark circle touvhing the line"
+            ],
+            [
+                1,
+                "let us select the darker one"
+            ],
+            [
+                0,
+                "okk"
+            ],
+            [
+                1,
+                "the dark one"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_83bb8b51edb34569991154a604f6f15a",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678776.8185716"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "massive dark grey dot , it is also the lightest of the circle , it is medium gray",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678781.4696488"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "no i could not see but in outer circle there is small dark circle touvhing the line",
+                "metadata": null,
+                "start_time": "1686678798.0617604",
+                "time": "1686678833.0967605"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "let us select the darker one",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678833.6930299"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "okk",
+                "metadata": null,
+                "start_time": "1686678860.1934726",
+                "time": "1686678861.0834725"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "the dark one",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678861.5450473"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"78\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678864.83507"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"43\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678864.8447485"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_X2rtCLmcEvmhAhPf",
+        "survey_result": {
+            "comments": "",
+            "confidence": 4,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 4,
+            "understand_you": 4
+        },
+        "workers": [
+            "A2TT3TZHR48VSX"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_e551842d51ee40308b8d1a0b77f5a7f6",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the top dot is large-sized and dark and the bottom dot is small-sized and dark"
+            ],
+            [
+                0,
+                "yes, i see click large sized dark dot"
+            ],
+            [
+                1,
+                "Yes. Is there a large size and grey color dot to the left and below those?"
+            ],
+            [
+                0,
+                "actually what you first said is correct click large size dark dot."
+            ],
+            [
+                1,
+                "Yes. Is there a medium size and light color dot to the left and below those?"
+            ],
+            [
+                0,
+                "yes"
+            ],
+            [
+                1,
+                "Is there a small size and dark color dot right of those?"
+            ],
+            [
+                0,
+                "yes. toching a line"
+            ],
+            [
+                1,
+                "Let's select the large size and dark color one."
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_4c6794625e0243faa42a93cfb9afd76c",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678788.6305587"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the top dot is large-sized and dark and the bottom dot is small-sized and dark",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678790.3508446"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "yes, i see click large sized dark dot",
+                "metadata": null,
+                "start_time": "1686678863.4686258",
+                "time": "1686678917.4806259"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Yes. Is there a large size and grey color dot to the left and below those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686678929.172377"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "actually what you first said is correct click large size dark dot.",
+                "metadata": null,
+                "start_time": "1686678986.6736586",
+                "time": "1686679018.0426586"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Yes. Is there a medium size and light color dot to the left and below those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679033.3320732"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686679061.8331687",
+                "time": "1686679063.5611687"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Is there a small size and dark color dot right of those?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679072.6106076"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "yes. toching a line",
+                "metadata": null,
+                "start_time": "1686679090.7241137",
+                "time": "1686679104.6391137"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Let's select the large size and dark color one.",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679111.9380927"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"3\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679124.5602088"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"3\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679124.568918"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 1
+        },
+        "scenario_id": "S_EnXPkZpXOmPocxAZ",
+        "survey_result": {
+            "comments": "I had a great time.",
+            "confidence": 5,
+            "has_survey": true,
+            "humanlike": 5,
+            "understand_them": 5,
+            "understand_you": 5
+        },
+        "workers": [
+            "A2841N70V7W3E"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "pragmatic_confidence"
+        },
+        "chat_id": "C_85796cdc930348249c102391e735e504",
+        "dialogue": [
+            [
+                1,
+                "tiny black dot by itself . do you have it ?"
+            ],
+            [
+                0,
+                "Yes, I see one"
+            ],
+            [
+                1,
+                "lets pick the small black dot"
+            ],
+            [
+                0,
+                "Ok"
+            ],
+            [
+                1,
+                "!"
+            ],
+            [
+                0,
+                "Do you have any other details about your black dot?"
+            ],
+            [
+                1,
+                "i have a small black dot by itself"
+            ],
+            [
+                0,
+                "What is the color of the bigger dot to the right of it?"
+            ],
+            [
+                1,
+                "do you have a tiny black dot by itself ?"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_596b57b669b14f6c8b8037c4476b3632",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679115.5359073"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "tiny black dot by itself . do you have it ?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679120.5290349"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Yes, I see one",
+                "metadata": null,
+                "start_time": "1686679132.2284827",
+                "time": "1686679141.2694826"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "lets pick the small black dot",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679141.7983015"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Ok",
+                "metadata": null,
+                "start_time": "1686679151.7934892",
+                "time": "1686679152.3794892"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "!",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679152.4472134"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "Do you have any other details about your black dot?",
+                "metadata": null,
+                "start_time": "1686679173.7011468",
+                "time": "1686679178.5171468"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "i have a small black dot by itself",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679179.5246565"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "What is the color of the bigger dot to the right of it?",
+                "metadata": null,
+                "start_time": "1686679185.2752979",
+                "time": "1686679197.0992978"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "do you have a tiny black dot by itself ?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679198.0784216"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"64\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679205.0929508"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"64\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679205.1016219"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 1
+        },
+        "scenario_id": "S_dT0Dgox5AcwBLvQ0",
+        "survey_result": {
+            "comments": "",
+            "confidence": 1,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 4,
+            "understand_you": 2
+        },
+        "workers": [
+            "A2WNTI69VVVWMZ"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "human",
+            "1": "gpt"
+        },
+        "chat_id": "C_1af72b7daf0846e48b4a13d7fe1e8208",
+        "dialogue": [
+            [
+                1,
+                "Do you see a pair of dots, where the left dot is large-sized and dark and the right dot is small-sized and light"
+            ],
+            [
+                0,
+                "I see 5 different colored gray dots. The lightest color grey is 1 dot. Then there is 1 slightly darker grey dot. Then there is a pair of even darker grey dots - one larger, one smaller. Then finally there are a pair of darker than that grey dots - one smaller, one larger. Then finally there is the DARKEST grey dot, by itself."
+            ],
+            [
+                1,
+                "No. Do you see a pair of dots, where the bottom right dot is medium-sized and grey and the top left dot is small-sized and light"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 0,
+                "data": "MT_45cdfcabb17b4568b707248381fa56b2",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679418.1860573"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "Do you see a pair of dots, where the left dot is large-sized and dark and the right dot is small-sized and light",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679419.961282"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "I see 5 different colored gray dots. The lightest color grey is 1 dot. Then there is 1 slightly darker grey dot. Then there is a pair of even darker grey dots - one larger, one smaller. Then finally there are a pair of darker than that grey dots - one smaller, one larger. Then finally there is the DARKEST grey dot, by itself.",
+                "metadata": null,
+                "start_time": "1686679450.53802",
+                "time": "1686679547.7570198"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "No. Do you see a pair of dots, where the bottom right dot is medium-sized and grey and the top left dot is small-sized and light",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679588.955334"
+            }
+        ],
+        "num_players_selected": 0,
+        "opponent_type": "gpt",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_EmT2IMufrHUQIRqQ",
+        "survey_result": {
+            "comments": null,
+            "confidence": null,
+            "has_survey": false,
+            "humanlike": null,
+            "understand_them": null,
+            "understand_you": null
+        },
+        "workers": []
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_38dc7445f995407bacece855d33a5121",
+        "dialogue": [
+            [
+                0,
+                "two black dots with a large grey dot below and to the right of the black one"
+            ],
+            [
+                1,
+                "yes"
+            ],
+            [
+                0,
+                "let 's pick the small black dot"
+            ],
+            [
+                1,
+                "no i don't have small black dot"
+            ],
+            [
+                0,
+                "does the light grey have a larger slightly darker dot below and to the left ?"
+            ],
+            [
+                1,
+                "yes"
+            ],
+            [
+                0,
+                "k"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_bdbf25a99b0f4585866897251678900e",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679617.6488068"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "two black dots with a large grey dot below and to the right of the black one",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679622.7966745"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686679672.3459847",
+                "time": "1686679674.8479846"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "let 's pick the small black dot",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679675.3130112"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "no i don't have small black dot",
+                "metadata": null,
+                "start_time": "1686679695.4692097",
+                "time": "1686679713.9722097"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "does the light grey have a larger slightly darker dot below and to the left ?",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679714.9118364"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686679757.9643896",
+                "time": "1686679759.3793895"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "k",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679759.4533887"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"61\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679765.7243116"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"70\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686679765.7329159"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_p0kmwzkPhSYAj2RY",
+        "survey_result": {
+            "comments": "",
+            "confidence": 5,
+            "has_survey": true,
+            "humanlike": 1,
+            "understand_them": 1,
+            "understand_you": 2
+        },
+        "workers": [
+            "A2QHI85LQPJZYP"
+        ]
+    },
+    {
+        "agent_types": {
+            "0": "pragmatic_confidence",
+            "1": "human"
+        },
+        "chat_id": "C_fa30b55d709945a7a674744dc71c1c53",
+        "dialogue": [
+            [
+                0,
+                "darkest dot , with a larger grey dot to the right of it"
+            ],
+            [
+                1,
+                "yes"
+            ],
+            [
+                0,
+                "lets pick the black one"
+            ]
+        ],
+        "events": [
+            {
+                "action": "join",
+                "agent": 1,
+                "data": "MT_ec4f3b3894144d0cb4eaa8b4e2083d0f",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686681720.423954"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "darkest dot , with a larger grey dot to the right of it",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686681725.4467819"
+            },
+            {
+                "action": "message",
+                "agent": 1,
+                "data": "yes",
+                "metadata": null,
+                "start_time": "1686681751.1727965",
+                "time": "1686681753.5337963"
+            },
+            {
+                "action": "message",
+                "agent": 0,
+                "data": "lets pick the black one",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686681754.3004992"
+            },
+            {
+                "action": "select",
+                "agent": 1,
+                "data": "\"9\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686681789.7694924"
+            },
+            {
+                "action": "select",
+                "agent": 0,
+                "data": "\"43\"",
+                "metadata": null,
+                "start_time": null,
+                "time": "1686681789.7816415"
+            }
+        ],
+        "num_players_selected": 2,
+        "opponent_type": "pragmatic_confidence",
+        "outcome": {
+            "reward": 0
+        },
+        "scenario_id": "S_yf774XwIt6odaPPp",
+        "survey_result": {
+            "comments": "",
+            "confidence": 5,
+            "has_survey": true,
+            "humanlike": 4,
+            "understand_them": 5,
+            "understand_you": 4
+        },
+        "workers": [
+            "A2FQVRBXJZQAWT"
+        ]
+    }
+]
