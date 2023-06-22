@@ -1,5 +1,6 @@
 import boto3
 import pandas
+import os
 
 batch_results = pandas.read_csv('Batch_5093535_batch_results.csv')#.set_index(['HITId', 'WorkerId'])
 
@@ -27,7 +28,10 @@ mturk = mturk_client(True)
 
 def bonus(live_hit, worker_id, assignment_id, bonus_amount, reason):
     mturk = mturk_client(live_hit)
-    response = mturk.send_bonus(WorkerId=worker_id, AssignmentId=assignment_id, BonusAmount=bonus_amount, Reason=reason)
+    response = mturk.send_bonus(
+        WorkerId=worker_id, AssignmentId=assignment_id, BonusAmount=bonus_amount, Reason=reason,
+        UniqueRequestToken=f"{assignment_id}||{worker_id}"
+    )
     if ("ResponseMetadata" not in response or 
             "HTTPStatusCode" not in response["ResponseMetadata"] or
             response["ResponseMetadata"]["HTTPStatusCode"] != 200
@@ -41,4 +45,3 @@ for row in batch_results[["WorkerId", "AssignmentId"]].iloc:
     worker_id = row[0]
     assignment_id = row[1]
     bonus(True, worker_id, assignment_id, "0.15", "visual dialogue game")
-    import pdb; pdb.set_trace()
