@@ -134,9 +134,10 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("chat_json_file")
-    parser.add_argument("--min_successful_games", type=int)
-    parser.add_argument("--min_completed_games", type=int)
-    parser.add_argument("--min_success_type", choices=['all_games', 'human_human_games'])
+    parser.add_argument("--min_successful_games", type=int, default=0)
+    parser.add_argument("--min_completed_games", type=int, default=1)
+    parser.add_argument("--min_success_type", choices=['all_games', 'human_human_games'],
+        default="human_human_games")
     args = parser.parse_args()
     with open(args.chat_json_file, 'r') as f:
         chats = json.load(f)

@@ -1,9 +1,9 @@
 import json                                                  
 from pathlib import Path
 import numpy as np
-from collections import Counter
+from collections import Counter, defaultdict
 
-with Path("turk12.json").open("r") as f:
+with Path("blah.json").open("r") as f:
     chats = json.load(f)
 
 zero_chats = [chat for chat in chats if chat["outcome"]["reward"] == 0]
@@ -27,13 +27,16 @@ print(sel_lens)
 
 ok_selected_chats = [
     chat for chat in chats
-    if chat["num_players_selected"] == 2 and len(chat["dialogue"]) > 2
+    if chat["num_players_selected"] == 2
 ]
 
 
 def compute_wins(chats):
     wins = Counter()
     total = Counter()
+    turns = defaultdict(list)
+    words = defaultdict(list)
+    humanwords = defaultdict(list)
     for chat in chats:
         # get system
         agent_types = list(chat["agent_types"].values())
@@ -47,30 +50,90 @@ def compute_wins(chats):
         total[system] += 1
         if chat["outcome"]["reward"] == 1:
             wins[system] += 1
-    return wins, total
+
+        turns[system].append(len(chat["dialogue"]))
+        for speaker, turn in chat["dialogue"]:
+            words[system].append(len(turn.strip().split()))
+            if agent_types[speaker] == "human":
+                humanwords[system].append(len(turn.strip().split()))
+    return wins, total, turns, words, humanwords
 
 
-wins, totals = compute_wins(ok_selected_chats)
+wins, totals, turns, words, humanwords = compute_wins(ok_selected_chats)
 
 gpt_selected_chats = [
     chat for chat in chats
     if chat["num_players_selected"] == 2
-    and len(chat["dialogue"]) > 2
     and "gpt" in list(chat["agent_types"].values())
 ]
 pragmatic_selected_chats = [
     chat for chat in chats
     if chat["num_players_selected"] == 2
-    and len(chat["dialogue"]) > 2
     and "pragmatic_confidence" in list(chat["agent_types"].values())
 ]
 human_selected_chats = [
     chat for chat in chats
     if chat["num_players_selected"] == 2
-    #and len(chat["dialogue"]) > 2
     and "gpt" not in list(chat["agent_types"].values())
     and "pragmatic_confidence" not in list(chat["agent_types"].values())
 ]
 
-print(any(["AKQAI78JTXXC9" in chat["workers"] for chat in chats]))
+total_non_expert = len([c["outcome"]["reward"] for c in human_selected_chats if None not in c["workers"]])
+win_non_expert = sum([c["outcome"]["reward"] for c in human_selected_chats if None not in c["workers"]])
+win_expert = sum([c["outcome"]["reward"] for c in human_selected_chats if None in c["workers"]])
+total_expert = len([c["outcome"]["reward"] for c in human_selected_chats if None in c["workers"]])
+
+print("Win rate for non expert", win_non_expert / total_non_expert)
+print("Win rate for expert", win_expert / total_expert)
+
+print("num unique workers", len(set([worker for chat in chats for worker in chat["workers"]])))
+
+print("avg num turns")
+for k,v in turns.items():
+    print(k, np.mean(v))
+
+print("avg num words per turn")
+for k,v in words.items():
+    print(k, np.mean(v))
+
+print("avg num human words per turn")
+for k,v in humanwords.items():
+    print(k, np.mean(v))
+
+print("median human words per turn")
+for k,v in humanwords.items():
+    print(k, np.median(v))
+
+
+print("non-expert stuff")
+non_expert_chats = [c for c in human_selected_chats if None not in c["workers"]]
+nwins, ntotals, nturns, nwords, nhumanwords = compute_wins(non_expert_chats)
+print("avg num turns")
+for k,v in nturns.items():
+    print(k, np.mean(v))
+
+print("avg num words per turn")
+for k,v in nwords.items():
+    print(k, np.mean(v))
+
+print("avg num human words per turn")
+for k,v in nhumanwords.items():
+    print(k, np.mean(v))
+
+print("expert stuff")
+expert_chats = [c for c in human_selected_chats if None in c["workers"]]
+nwins, ntotals, nturns, nwords, nhumanwords = compute_wins(expert_chats)
+print("avg num turns")
+for k,v in nturns.items():
+    print(k, np.mean(v))
+
+print("avg num words per turn")
+for k,v in nwords.items():
+    print(k, np.mean(v))
+
+print("avg num human words per turn")
+for k,v in nhumanwords.items():
+    print(k, np.mean(v))
+
 import pdb; pdb.set_trace()
+
