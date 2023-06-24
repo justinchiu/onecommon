@@ -6,6 +6,7 @@ import seaborn as sns
 from scipy import stats
 import matplotlib.ticker as mtick
 import nltk
+
 #to_print = list(reversed(['uabaseline_same_opt', 'pragmatic_confidence', 'human']))
 to_print = list(reversed(['gpt', 'pragmatic_confidence', 'human']))
 # to_print = list(reversed(['uabaseline_same_opt', 'human']))
@@ -134,13 +135,24 @@ if __name__ == "__main__":
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("chat_json_file")
-    parser.add_argument("--min_successful_games", type=int)
-    parser.add_argument("--min_completed_games", type=int)
-    parser.add_argument("--min_success_type", choices=['all_games', 'human_human_games'])
+    parser.add_argument("--min_successful_games", type=int, default=0)
+    parser.add_argument("--min_completed_games", type=int, default=1)
+    parser.add_argument("--min_success_type", choices=['all_games', 'human_human_games'], default="human_human_games")
     args = parser.parse_args()
     with open(args.chat_json_file, 'r') as f:
         chats = json.load(f)
-    _, _, chat_stats = analyze(
+
+    # FILTER OUT HUMAN GAMES WITHOUT 2 TURKERS
+    # ENSURE 1 TURKER VS ROBOT
+    chats = [
+        chat for chat in chats
+        if ("gpt" in chat["agent_types"].values() and None not in chat["workers"])
+        or ("pragmatic_confidence" in chat["agent_types"].values() and None not in chat["workers"])
+        or (len(chat["workers"]) == 2 and None not in chat["workers"])
+        #or len(chat["workers"]) == 2
+    ]
+
+    worker_completed_counts, worker_success_counts, chat_stats = analyze(
         chats, min_successful_games=args.min_successful_games, min_completed_games=args.min_completed_games,
         print_order=to_print
         #print_order=['human']
@@ -161,6 +173,8 @@ if __name__ == "__main__":
     diffs = [('pragmatic_confidence', 'gpt')]
 
     chat_stats_df = pandas.DataFrame(chat_stats)
+    chat_stats_df = chat_stats_df.fillna(0)
+
     x_vals = []
     means_by_key = {k: [] for k in to_print}
     std_errs_by_key = {k: [] for k in to_print}
@@ -185,30 +199,39 @@ if __name__ == "__main__":
         standard_error_mean = np.sqrt(success_rates * (1 - success_rates) / counts)
         total_count = 0
         for k in to_print:
-            total_count += counts[k]
-            means_by_key[k].append(success_rates[k])
-            std_errs_by_key[k].append(standard_error_mean[k])
-            num_turns_by_key[k].append(num_turns[k])
-            num_turns_std_dev_by_key[k].append(num_turns_std_dev[k])
-            num_words_per_turn_by_key[k].append(num_words_per_turn[k])
-            num_words_per_turn_std_dev_by_key[k].append(num_words_per_turn_std_dev[k])
+            if k in counts:
+                total_count += counts[k]
+                means_by_key[k].append(success_rates[k])
+                std_errs_by_key[k].append(standard_error_mean[k])
+                num_turns_by_key[k].append(num_turns[k])
+                num_turns_std_dev_by_key[k].append(num_turns_std_dev[k])
+                num_words_per_turn_by_key[k].append(num_words_per_turn[k])
+                num_words_per_turn_std_dev_by_key[k].append(num_words_per_turn_std_dev[k])
+            else:
+                means_by_key[k].append(0)
+                std_errs_by_key[k].append(0)
+                num_turns_by_key[k].append(0)
+                num_turns_std_dev_by_key[k].append(0)
+                num_words_per_turn_by_key[k].append(0)
+                num_words_per_turn_std_dev_by_key[k].append(0)
         #print("{:.2f}: {}".format(min_success_rate, total_count))
         for diff in diffs:
             a, b = diff
-            n = counts[a] + counts[b]
-            p = (success_counts[a] + success_counts[b]) / (n)
-            z = (success_rates[a] - success_rates[b]) / np.sqrt(p * (1 - p) * (1.0 / counts[a] + 1.0 / counts[b]))
-            p_value = stats.t.sf(z, n-1)
-            if p_value < 0.05:
-                sig_str = "**"
-            elif p_value < 0.1:
-                sig_str = "*"
-            else:
-                sig_str = ""
-            if len(diffs) > 1:
-                print("{}{:.2f}\t{}\t{}\t{:.4f}\t{:.4f}".format(sig_str, min_success_rate, total_count, diff, z, p_value))
-            else:
-                print("{}{:.2f}\t{}\t{:.4f}\t{:.4f}".format(sig_str, min_success_rate, total_count, z, p_value))
+            if a in counts and b in counts:
+                n = counts[a] + counts[b]
+                p = (success_counts[a] + success_counts[b]) / (n)
+                z = (success_rates[a] - success_rates[b]) / np.sqrt(p * (1 - p) * (1.0 / counts[a] + 1.0 / counts[b]))
+                p_value = stats.t.sf(z, n-1)
+                if p_value < 0.05:
+                    sig_str = "**"
+                elif p_value < 0.1:
+                    sig_str = "*"
+                else:
+                    sig_str = ""
+                if len(diffs) > 1:
+                    print("{}{:.2f}\t{}\t{}\t{:.4f}\t{:.4f}".format(sig_str, min_success_rate, total_count, diff, z, p_value))
+                else:
+                    print("{}{:.2f}\t{}\t{:.4f}\t{:.4f}".format(sig_str, min_success_rate, total_count, z, p_value))
         if len(diffs) > 1:
             print()
         x_vals.append(min_success_rate)
@@ -219,6 +242,7 @@ if __name__ == "__main__":
         'pragmatic_confidence': 'mediumblue',
     }
     print(num_turns_by_key)
+    plt.rcParams.update({'font.size': 16})
     def plot(stats_by_key, std_errs_by_key=None, y_percentage=True):
         fig, ax = plt.subplots()
         for k, y_mean in stats_by_key.items():
@@ -240,10 +264,14 @@ if __name__ == "__main__":
             ax.spines['top'].set_visible(False)
             ax.spines['right'].set_visible(False)
     plot(means_by_key, std_errs_by_key)
-    plt.ylabel("Per-Condition Success")
-    plt.xlabel("Minimum {} Worker Success".format(success_name))
-    plt.legend(loc='lower right')
+    plt.ylabel("Success Rate")
+    plt.xlabel("Minimum {} Success".format(success_name))
+    plt.legend(loc='upper left')
     #plt.vlines(0.287, ymin=0.2, ymax=1)
+    plt.savefig("Figure_1.png",bbox_inches="tight")
+    import sys
+    sys.exit()
+
     plt.show()
 
     #plot(num_turns_by_key, num_turns_std_dev_by_key, y_percentage=False)

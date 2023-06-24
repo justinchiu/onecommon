@@ -1,9 +1,9 @@
 import json                                                  
 from pathlib import Path
 import numpy as np
-from collections import Counter
+from collections import Counter, defaultdict
 
-with Path("turk12.json").open("r") as f:
+with Path("all.json").open("r") as f:
     chats = json.load(f)
 
 zero_chats = [chat for chat in chats if chat["outcome"]["reward"] == 0]
@@ -27,13 +27,15 @@ print(sel_lens)
 
 ok_selected_chats = [
     chat for chat in chats
-    if chat["num_players_selected"] == 2 and len(chat["dialogue"]) > 2
+    if chat["num_players_selected"] == 2
+    and None not in chat["workers"]
 ]
 
 
 def compute_wins(chats):
     wins = Counter()
     total = Counter()
+    turns = defaultdict(list)
     for chat in chats:
         # get system
         agent_types = list(chat["agent_types"].values())
@@ -47,10 +49,13 @@ def compute_wins(chats):
         total[system] += 1
         if chat["outcome"]["reward"] == 1:
             wins[system] += 1
-    return wins, total
+
+        turns[system].append(len(chat["dialogue"]))
+
+    return wins, total, turns
 
 
-wins, totals = compute_wins(ok_selected_chats)
+wins, totals, turns = compute_wins(ok_selected_chats)
 
 gpt_selected_chats = [
     chat for chat in chats
@@ -70,7 +75,21 @@ human_selected_chats = [
     #and len(chat["dialogue"]) > 2
     and "gpt" not in list(chat["agent_types"].values())
     and "pragmatic_confidence" not in list(chat["agent_types"].values())
+    and None not in chat["workers"]
 ]
 
 print(any(["AKQAI78JTXXC9" in chat["workers"] for chat in chats]))
+
+#print(compute_wins(human_selected_chats))
+print("wins")
+print(wins)
+print("totals")
+print(totals)
+
+print("turns")
+for k,v in turns.items():
+    print(k, np.mean(v))
+
+
+
 import pdb; pdb.set_trace()
