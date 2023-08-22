@@ -9,6 +9,10 @@ name=dbg-gpt-4-0613-selfplay
 dir=gpt-4-0613-200
 name=gpt-4-0613--200selfplay
 
+
+dir=baselinegpt4-0822-200
+name=baselinegpt4-0822--200selfplay
+
 shared_ctx_count=4
 
 shift
@@ -44,5 +48,5 @@ python gpt_selfplay.py \
   --verbose \
   --num_contexts 200 \
   --log_file=${log_file} \
-  $@ \
-  | tee ${out_file}
+  $@ #\
+  #| tee ${out_file}

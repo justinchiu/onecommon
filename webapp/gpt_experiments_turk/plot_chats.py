@@ -66,5 +66,13 @@ if __name__ == "__main__":
             if game["outcome"]["reward"] == 1:
                 worker2success[worker][partner] += 1
             worker2total[worker][partner] += 1
+
+    worker2rate = {
+        worker: {
+            key: worker2success[worker][key] / worker2total[worker][key]
+            for key in worker2success[worker].keys()
+        }
+        for worker in workers
+    }
     import pdb; pdb.set_trace()
 

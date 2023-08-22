@@ -24,7 +24,8 @@ import pprint
 
 # gpt stuff
 #from oc.agent.agent import Agent
-from oc.agent2.agent import Agent
+#from oc.agent2.agent import Agent
+from oc.gptagent.agent import Agent
 import minichain
 
 

@@ -141,8 +141,6 @@ boards = {
     for scenario in scenario_list
 }
 
-import pdb; pdb.set_trace()
-
 idx = st.number_input("Train dialogue number", 0, len(finished_dialogues))
 process_dialogue(finished_dialogues[idx])
 print(len(finished_dialogues))
